@@ -17,4 +17,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 - `.nojekyll` tells Pages to serve files as-is (no Jekyll build).
 - The Supabase apps read their project URL and publishable key from each folder's `config.js`.
   The `.sql` files in `rsvp/` are the database schema and migrations.
+- Installable app: `manifest.webmanifest` (name, icons, home-screen shortcuts), `icons/`, and `sw.js`
+  (network-first service worker so pages still open offline). If you change cached files and they
+  look stale, bump `CACHE` in `sw.js`.
 - `tests/rsvp_test.js` is a Playwright check for the RSVP app (see the comments at its top).
