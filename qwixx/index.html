@@ -71,6 +71,16 @@ input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid v
 .chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
 .chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
 .chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer}
+.privopt{display:flex;gap:12px;align-items:flex-start;margin-top:12px;cursor:pointer}
+.privopt input{width:22px;height:22px;accent-color:var(--brand);flex:none;margin-top:2px}
+.privopt small{display:block;color:var(--muted);font-size:13.5px}
+.turnbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:var(--brand-t);font-size:15px}
+.turnbar .step{flex:1;min-width:200px}
+.turnbar .step b{font-weight:700}
+.turnbar button{min-height:40px;padding:0 14px;border:1.5px solid var(--brand);border-radius:10px;background:var(--surface);color:var(--brand);font-weight:700;cursor:pointer}
+.turnbar button.go{background:var(--brand);color:var(--brand-ink)}
+.turnbar.done{background:var(--bg);border:1px dashed var(--line)}
+.ptab.locked{opacity:.75}
 .rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
 .rules li{margin:5px 0}
 
@@ -187,6 +197,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       <label class="mode"><input type="checkbox" id="useCards" checked><b>📝 Score cards</b><small>One card per player</small></label>
     </div>
     <p class="hint" id="modeHint"></p>
+    <label class="privopt" id="privOpt"><input type="checkbox" id="privateCards"><span><b>Keep score cards private</b><small>When playing on everyone’s phones, each phone only sees its own card and score until the game ends.</small></span></label>
   </section>
 
   <section class="card">
@@ -234,6 +245,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   <section class="card" id="cardsCard" aria-label="Score cards">
     <div class="ptabs" id="ptabs" role="tablist"></div>
+    <div class="turnbar" id="turnbar" hidden></div>
     <div class="sheet" id="sheet"></div>
     <div class="pens" id="pens"></div>
     <div class="tally" id="tally"></div>
@@ -301,6 +313,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     var src = game;
     $('useDice').checked = src ? src.dice : true;
     $('useCards').checked = src ? src.cards : true;
+    $('privateCards').checked = !!(src && src.private);
     draft = src ? src.players.map(function (p) { return { id: p.id, name: p.name }; }) : [];
     $('backBtn').hidden = !game;
     $('play').hidden = true; $('setup').hidden = false; keepAwake(false); scrollTo(0, 0);
@@ -370,7 +383,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       if (i > -1) mem.players.splice(i, 1); mem.players.unshift(p.name);
     });
     mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
-    newGame(d, c, draft, 0);
+    newGame(d, c, draft, 0, $('privateCards').checked);
     sync.started(sync.shared() ? game.players[sync.box.meIndex()] : null);
   });
   function hasProgress() {
@@ -378,12 +391,12 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   }
 
   // ================= Game =================
-  function newGame(dice, cards, names, first) {
+  function newGame(dice, cards, names, first, priv) {
     // Names, or {id, name} to keep the same players (and their phones) for a rematch.
     var players = names.map(function (n) { return typeof n === 'string' ? { id: uid(), name: n } : { id: n.id, name: n.name }; }), sheets = {};
     players.forEach(function (p) { sheets[p.id] = newSheet(); });
     game = { dice: dice, cards: cards, players: players, cur: players.length ? first % players.length : 0, roll: {}, rollNo: 0,
-             out: {}, sheets: sheets, locks: {}, over: false };
+             out: {}, sheets: sheets, locks: {}, over: false, private: !!priv, ready: {} };
     view = null;
     undo = []; save(); showPlay();
   }
@@ -404,10 +417,35 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   function rowCount(s, c) { return s[c].length + (hasLock(s, c) ? 1 : 0); }   // the lock counts as a cross
   function rowScore(s, c) { return tri(rowCount(s, c)); }
   function total(pid) { var s = sheet(pid); return COLORS.reduce(function (t, c) { return t + rowScore(s, c); }, 0) - 5 * s.pen; }
+  // ---- One roll's moves ----
+  // With the app's dice, each roll allows: everyone one cross with the white sum, then the roller
+  // one cross with a white + colored die (only after using or skipping the white sum).
+  // s.t records this player's moves for the current roll: w (white cross), ws (white skipped),
+  // cc (color cross), p (took a penalty).
+  function enforced() { return game.dice && game.cards && game.rollNo > 0 && !!game.roll.w1; }
+  function rec(pid) {
+    var s = sheet(pid);
+    if (!s.t || s.t.r !== game.rollNo) s.t = { r: game.rollNo, w: null, ws: false, cc: null, p: false };
+    return s.t;
+  }
+  function isRoller(pid) { var r = roller(); return !!r && r.id === pid; }
+  function whiteSum() { return game.roll.w1 + game.roll.w2; }
+  // What a cross here would count as right now: 'white', 'color', 'free' (no dice to check), or null.
+  function moveKind(pid, c, idx) {
+    if (!enforced()) return 'free';
+    var t = rec(pid), n = NUMS[c][idx], R = game.roll;
+    if (isReady(pid)) return null;
+    if (!t.w && !t.ws) return n === whiteSum() ? 'white' : null;
+    if (isRoller(pid) && !t.cc && inPlay(c) && R[c] && (n === R.w1 + R[c] || n === R.w2 + R[c])) return 'color';
+    return null;
+  }
+  function isReady(pid) { return !!game.ready && game.ready[pid] === game.rollNo; }
+  function setReady(pid, on) { if (!game.ready) game.ready = {}; if (on) game.ready[pid] = game.rollNo; else if (isReady(pid)) delete game.ready[pid]; }
   // Can this player cross position idx in this row right now?
   function canCross(pid, c, idx) {
     if (game.over) return false;
     var s = sheet(pid);
+    if (idx < 0 || !moveKind(pid, c, idx)) return false;
     if (idx <= lastIdx(s, c)) return false;                   // left to right only
     if (idx === 10 && s[c].length < 5) return false;           // locking needs 5 crosses first
     var L = game.locks[c];
@@ -421,8 +459,12 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   function cross(pid, c, idx) {
     if (!canCross(pid, c, idx)) return;
     snap();
-    var s = sheet(pid);
+    var s = sheet(pid), kind = moveKind(pid, c, idx);
     s[c].push(idx); s.mark = game.rollNo;
+    if (kind === 'white') rec(pid).w = [c, idx];
+    if (kind === 'color') rec(pid).cc = [c, idx];
+    // Nothing more this player can do this roll: mark them done.
+    if ((kind === 'white' && !isRoller(pid)) || kind === 'color') setReady(pid, true);
     if (idx === 10 && !game.locks[c]) game.locks[c] = { by: pid, roll: game.rollNo };
     checkOver(); save(); buzz(); render();
     if (idx === 10) toast(NAME[c] + ' row locked' + (game.dice ? '. The ' + NAME[c].toLowerCase() + ' die is out.' : '.'));
@@ -431,6 +473,12 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     var s = sheet(pid), i = lastIdx(s, c); if (i < 0) return;
     snap();
     s[c].splice(s[c].indexOf(i), 1);
+    if (enforced()) {
+      var t = rec(pid);
+      if (t.cc && t.cc[0] === c && t.cc[1] === i) t.cc = null;
+      else if (t.w && t.w[0] === c && t.w[1] === i) t.w = null;
+      setReady(pid, false);
+    }
     if (i === 10 && game.locks[c] && game.locks[c].by === pid) {
       var other = game.players.filter(function (p) { return p.id !== pid && hasLock(sheet(p.id), c); })[0];
       if (other) game.locks[c].by = other.id; else delete game.locks[c];
@@ -438,7 +486,26 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     checkOver(); save(); buzz(); render();
   }
   function setPen(pid, n) {
-    snap(); sheet(pid).pen = Math.max(0, Math.min(4, n)); checkOver(); save(); buzz(); render();
+    snap();
+    var s = sheet(pid), before = s.pen;
+    s.pen = Math.max(0, Math.min(4, n));
+    // The roller marking a penalty on their own roll counts as their penalty for it (no second one later).
+    if (enforced() && isRoller(pid)) { rec(pid).p = s.pen > before ? true : false; if (s.pen > before) setReady(pid, true); }
+    checkOver(); save(); buzz(); render();
+  }
+  // Roller finishing their roll: no cross and no penalty yet means the −5 penalty.
+  function rollerPenaltyDue(pid) { var t = rec(pid); return !t.w && !t.cc && !t.p; }
+  function finishRoll(pid) {
+    snap();
+    var s = sheet(pid);
+    if (isRoller(pid) && rollerPenaltyDue(pid) && s.pen < 4) { s.pen++; rec(pid).p = true; toast(nameOf(pid) + ' crossed nothing on their roll: −5 penalty.'); }
+    setReady(pid, true); checkOver(); save(); buzz(); render();
+  }
+  function skipWhite(pid) { snap(); rec(pid).ws = true; if (!isRoller(pid)) setReady(pid, true); save(); buzz(); render(); }
+  // Players with their own phone who haven't finished this roll yet.
+  function notReady() {
+    if (!PebblySync.active() || !game.cards || !game.dice || !game.rollNo || game.over) return [];
+    return game.players.filter(function (p) { return PebblySync.hasPhone(p.id) && !isReady(p.id); });
   }
   function checkOver() {
     var was = game.over;
@@ -465,16 +532,15 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   }
   function doRoll() {
     if (game.over) return;
-    // The roller must cross something on their own roll, or take a penalty.
-    if (game.cards && game.rollNo > 0 && roller()) {
-      var r = roller(), s = sheet(r.id);
-      if (s.mark !== game.rollNo && s.pen < 4 &&
-          confirm(r.name + ' didn’t cross anything on their roll, so that’s a penalty (−5). Add it?\n\nTap Cancel if they did cross something.')) {
-        snap(); s.pen++; checkOver(); save();
-        if (game.over) { render(); return; }
+    snap();
+    // The roller must cross at least one number on their roll, or take −5 (unless they already marked it).
+    if (enforced() && roller()) {
+      var r = roller(), rs = sheet(r.id);
+      if (rollerPenaltyDue(r.id) && rs.pen < 4) {
+        rs.pen++; rec(r.id).p = true; toast(r.name + ' crossed nothing on their roll: −5 penalty.');
+        checkOver(); if (game.over) { save(); render(); return; }
       }
     }
-    snap();
     if (game.rollNo > 0 && game.players.length) game.cur = (game.cur + 1) % game.players.length;
     game.rollNo++;
     game.roll = {};
@@ -490,6 +556,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     'Each roll: everyone may cross the <b>sum of the two white dice</b> in any one row.',
     'Then the roller may also cross <b>one white die + one colored die</b> in that color’s row.',
     'Cross numbers <b>left to right</b>. Anything you skip can’t be crossed later.',
+    'Always the white dice first, then the color: one of each at most, and the color one only for the roller.',
     'If the roller crosses nothing on their roll, they take a <b>penalty (−5)</b>.',
     'With <b>5 or more crosses</b> in a row you may cross its last number to <b>lock</b> it. The lock counts as an extra cross, and that color is out for everyone.',
     'The game ends when <b>two rows are locked</b> or someone takes a <b>4th penalty</b>.',
@@ -535,12 +602,15 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     }
     $('sums').innerHTML = h;
     var next = game.players.length ? game.players[game.rollNo ? (game.cur + 1) % game.players.length : game.cur] : null;
+    var pending = rollOverride === game.rollNo ? [] : notReady();
     var waiting = next && !PebblySync.canAct(next.id) && rollOverride !== game.rollNo && !game.over;
-    $('rollBtn').disabled = game.over || waiting;
-    $('rollBtn').textContent = waiting ? 'Waiting for ' + next.name + ' to roll'
+    $('rollBtn').disabled = game.over || waiting || pending.length > 0;
+    $('rollBtn').textContent = pending.length ? 'Waiting for ' + listNames(pending) + ' to finish'
+      : waiting ? 'Waiting for ' + next.name + ' to roll'
       : game.players.length > 1 && next && game.rollNo ? 'Roll for ' + next.name : 'Roll';
-    $('rollFor').hidden = !waiting;
-    if (waiting) $('rollFor').textContent = 'Roll for ' + next.name + ' from this phone';
+    $('rollFor').hidden = !(waiting || pending.length);
+    if (pending.length) $('rollFor').textContent = 'Roll anyway';
+    else if (waiting) $('rollFor').textContent = 'Roll for ' + next.name + ' from this phone';
     // Without score cards, colors are taken out by hand when a row gets locked.
     var o = $('outrow'); o.hidden = game.cards;
     if (!game.cards) o.innerHTML = COLORS.map(function (c) {
@@ -549,31 +619,33 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   }
 
   function moveHints(pid) {
-    // Which cells this roll allows: the white sum for everyone, color combos for the roller.
-    var R = game.roll, out = {};
-    if (!game.dice || !R.w1 || game.over) return out;
-    var ws = R.w1 + R.w2, isRoller = roller() && roller().id === pid;
+    // Which cells this roll allows right now: the white sum (solid) or, for the roller after
+    // that step, a white + colored die (dashed).
+    var out = {};
+    if (!enforced() || game.over) return out;
     COLORS.forEach(function (c) {
       var set = {};
-      var wi = NUMS[c].indexOf(ws); if (canCross(pid, c, wi)) set[wi] = 'white';
-      if (isRoller && inPlay(c) && R[c]) [R.w1 + R[c], R.w2 + R[c]].forEach(function (v) {
-        var i = NUMS[c].indexOf(v); if (canCross(pid, c, i) && !set[i]) set[i] = 'color';
-      });
+      for (var i = 0; i <= 10; i++) if (canCross(pid, c, i)) set[i] = moveKind(pid, c, i);
       out[c] = set;
     });
     return out;
   }
 
+  // Private cards: while playing together, a phone only sees its own card (and players without a phone).
+  function hidden(pid) { return !!game.private && PebblySync.active() && !game.over && !PebblySync.canAct(pid); }
   function renderCards() {
-    if (!game.players.some(function (p) { return p.id === view; })) {
+    if (!game.players.some(function (p) { return p.id === view; }) || hidden(view)) {
       var me = PebblySync.me(); view = game.players.some(function (p) { return p.id === me; }) ? me : game.players[0].id;
     }
     var r = roller();
     $('ptabs').innerHTML = game.players.map(function (p) {
-      return '<button type="button" class="ptab" role="tab" data-p="' + p.id + '" aria-selected="' + (p.id === view) + '">' +
-        '<span class="n">' + esc(p.name) + '</span><span class="t">' + total(p.id) + '</span>' +
-        (game.dice && r && r.id === p.id && game.rollNo ? '<span class="rl">🎲 rolled</span>' : '') + '</button>';
+      var hid = hidden(p.id), ready = isReady(p.id) && notReadyTracked();
+      return '<button type="button" class="ptab' + (hid ? ' locked' : '') + '" role="tab" data-p="' + p.id + '" aria-selected="' + (p.id === view) + '">' +
+        '<span class="n">' + esc(p.name) + '</span><span class="t">' + (hid ? '🔒' : total(p.id)) + '</span>' +
+        (game.dice && r && r.id === p.id && game.rollNo ? '<span class="rl">🎲 rolled' + (ready ? ' · ✓' : '') + '</span>'
+          : ready ? '<span class="rl">✓ done</span>' : '') + '</button>';
     }).join('');
+    renderTurnbar(view);
     $('ptabs').hidden = game.players.length < 2;
 
     var pid = view, s = sheet(pid), hints = moveHints(pid), h = '';
@@ -613,6 +685,33 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     lg.push('Tap a number to cross it. Tap your latest cross in a row to take it back.');
     $('legend').textContent = lg.join(' ');
   }
+  function listNames(ps) {
+    var me = PebblySync.me();
+    var n = ps.map(function (p) { return p.id === me ? 'you' : p.name; });
+    if (n.indexOf('you') > 0) { n.splice(n.indexOf('you'), 1); n.unshift('you'); }
+    return n.length <= 2 ? n.join(' and ') : n.slice(0, -1).join(', ') + ' and ' + n[n.length - 1];
+  }
+  function notReadyTracked() { return PebblySync.active() && game.dice && game.rollNo > 0 && !game.over; }
+  function renderTurnbar(pid) {
+    var el = $('turnbar');
+    if (!enforced() || game.over) { el.hidden = true; return; }
+    var t = rec(pid), ws = whiteSum(), roll = isRoller(pid), who = PebblySync.me() === pid || !PebblySync.active() ? '' : nameOf(pid) + ': ';
+    var h = '', done = isReady(pid);
+    if (done) {
+      var wait = notReady();
+      h = '<span class="step">✓ ' + esc(who) + 'Done with this roll.' + (wait.length ? ' Waiting for ' + esc(listNames(wait)) + '.' : '') + '</span>';
+    } else if (!t.w && !t.ws) {
+      h = '<span class="step">' + esc(who) + (roll ? '<b>Step 1:</b> ' : '') + 'cross <b>' + ws + '</b> (the white dice) in any row, or</span>' +
+        '<button type="button" data-tb="skip">' + (roll ? 'Skip' : 'Pass') + '</button>';
+    } else if (roll && !t.cc) {
+      var due = rollerPenaltyDue(pid);
+      h = '<span class="step">' + esc(who) + '<b>Step 2:</b> cross a white + colored die in that color’s row, or</span>' +
+        '<button type="button" class="go" data-tb="done">' + (due ? 'Done (−5 penalty)' : 'Done') + '</button>';
+    } else {
+      h = '<span class="step">' + esc(who) + 'Nothing more to cross this roll.</span><button type="button" class="go" data-tb="done">Done</button>';
+    }
+    el.innerHTML = h; el.hidden = false; el.classList.toggle('done', done);
+  }
   function nameOf(pid) { var p = game.players.find(function (q) { return q.id === pid; }); return p ? p.name : ''; }
 
   var toastT;
@@ -635,7 +734,9 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     save(); render();
   });
   $('ptabs').addEventListener('click', function (e) {
-    var b = e.target.closest('.ptab'); if (!b) return; view = b.dataset.p; store('pebbly_qwixx2_view', view); render();
+    var b = e.target.closest('.ptab'); if (!b) return;
+    if (hidden(b.dataset.p)) { toast('Score cards are private until the game ends.'); return; }
+    view = b.dataset.p; store('pebbly_qwixx2_view', view); render();
   });
   $('sheet').addEventListener('click', function (e) {
     var b = e.target.closest('.qc[data-c]'); if (!b || b.disabled) return;
@@ -647,6 +748,10 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     }
     if (i === 10 && !confirm('Lock the ' + NAME[c].toLowerCase() + ' row? This ends it for everyone' + (game.dice ? ' and takes the ' + NAME[c].toLowerCase() + ' die out' : '') + '.')) return;
     cross(view, c, i);
+  });
+  $('turnbar').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-tb]'); if (!b) return;
+    if (b.dataset.tb === 'skip') skipWhite(view); else finishRoll(view);
   });
   $('pens').addEventListener('click', function (e) {
     var b = e.target.closest('.pen'); if (!b) return;
@@ -669,12 +774,19 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (hasProgress() && !game.over && !confirm('Start over with the same players?')) return;
     $('menuDlg').close(); $('scoreDlg').close();
     // Next game: the next player rolls first.
-    newGame(game.dice, game.cards, game.players, game.cur + 1);
+    newGame(game.dice, game.cards, game.players, game.cur + 1, game.private);
   }
   $('mRestart').addEventListener('click', restart);
   $('sRestart').addEventListener('click', restart);
   $('mScores').addEventListener('click', function () { $('menuDlg').close(); showScores(false); });
   function showScores(final) {
+    if (game.players.some(function (p) { return hidden(p.id); })) {
+      $('finalList').innerHTML = game.players.map(function (p) {
+        return '<li><span class="place"></span><span class="nm">' + esc(p.name) + '</span><span class="tt">' + (hidden(p.id) ? '🔒' : total(p.id)) + '</span></li>';
+      }).join('');
+      $('scoreTitle').textContent = 'Scores are private until the end';
+      $('scoreDlg').showModal(); return;
+    }
     var rows = game.players.map(function (p) {
       var s = sheet(p.id);
       return { p: p, t: total(p.id), st: COLORS.map(function (c) { return NAME[c][0] + ' ' + rowScore(s, c); }).join(' · ') + (s.pen ? ' · −' + 5 * s.pen : '') };
