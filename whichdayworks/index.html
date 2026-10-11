@@ -128,6 +128,14 @@ textarea{resize:vertical}
 .day:disabled{background:transparent;color:#A3B2AC;cursor:default}
 .day.today .n{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
 .day.sel,.row.sel{outline:3px solid var(--ink);outline-offset:2px}
+.day.final,.row.final{box-shadow:0 0 0 3px var(--brand),0 0 0 5px var(--surface)}
+.day.final .g::before{content:"📌";font-size:10px}
+.decided{margin:14px 0 0;padding:14px 16px;border-radius:14px;background:var(--preferred-t);border:2px solid var(--preferred)}
+.decided h2{font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0}
+.decided .when{display:block;font-family:var(--head);font-size:22px;font-weight:800;margin:4px 0 8px}
+.decided .row-btns{margin-top:4px}
+.best li{display:flex;flex-direction:column;gap:6px}
+.best .mk{align-self:flex-start;margin:-2px 0 4px 18px}
 .day.hasnote::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.8}
 .day[data-s="preferred"]{background:var(--preferred);color:#fff}
 .day[data-s="second"]{background:var(--second);color:#fff}
@@ -350,6 +358,7 @@ var remoteApi = {
     return this.rpc('wdw_update_event', { p_code: a.code, p_owner_token: a.owner, p_name: a.name, p_description: a.description,
       p_num_days: a.num_days, p_earliest: a.earliest || null, p_latest: a.latest || null });
   },
+  setFinal: function (a) { return this.rpc('wdw_set_final', { p_code: a.code, p_owner_token: a.owner, p_start: a.start || null }); },
   removeResponse: function (a) { return this.rpc('wdw_remove_response', { p_code: a.code, p_owner_token: a.owner, p_response: a.id }); },
   deleteEvent: function (a) { return this.rpc('wdw_delete_event', { p_code: a.code, p_owner_token: a.owner }); },
   adminGrant: function (pw, code) {
@@ -418,6 +427,10 @@ var localApi = {
     Object.assign(db.events[a.code], { name: a.name.trim(), description: (a.description || '').trim(), num_days: a.num_days,
       earliest: a.earliest || null, latest: a.latest || null });
     this.put(db); return Promise.resolve();
+  },
+  setFinal: function (a) {
+    var db = this.owned(a); if (!db) return Promise.reject(new ApiError('not_owner'));
+    db.events[a.code].final_start = a.start || null; this.put(db); return Promise.resolve();
   },
   removeResponse: function (a) {
     var db = this.owned(a); if (!db) return Promise.reject(new ApiError('not_owner'));
@@ -891,7 +904,8 @@ function renderEvent() {
       (facts.length ? '<p class="facts">' + facts.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</p>' : '') +
       '<div class="tools"><button type="button" class="chipbtn" data-act="copy-link">Copy link</button>' +
       '<button type="button" class="chipbtn" data-act="refresh">Refresh</button></div></header>' +
-    (isExpired(ev) ? '<div class="banner" role="status"><strong>This event’s dates have passed.</strong> You can still look at the answers.</div>' : '') +
+    '<section id="decided" aria-live="polite"></section>' +
+    (isExpired(ev) && !ev.final_start ? '<div class="banner" role="status"><strong>This event’s dates have passed.</strong> You can still look at the answers.</div>' : '') +
     '<div class="bar">' +
       '<div class="seg" role="group" aria-label="Mode">' +
         '<button type="button" data-act="mode" data-mode="view" aria-pressed="' + !editing + '">View</button>' +
@@ -950,7 +964,50 @@ function editBottomHTML() {
     (mine ? '<p style="margin-top:6px"><button type="button" class="link danger" data-act="delete">Delete my response</button></p>' : '');
 }
 
-function renderParts() { renderFilter(); renderCalendar(); renderDayPanel(); renderBest(); renderPeople(); renderOwnerTools(); }
+function renderParts() { renderDecided(); renderFilter(); renderCalendar(); renderDayPanel(); renderBest(); renderPeople(); renderOwnerTools(); }
+
+/* ------------------------------------------------------------- final date */
+function finalRange() {
+  var f = S.ev && S.ev.final_start; if (!f) return null;
+  return { start: f, end: addDays(f, Math.max(1, S.ev.num_days) - 1) };
+}
+function isFinalDay(d) { var f = finalRange(); return !!f && d >= f.start && d <= f.end; }
+function finalText(f) { return f.start === f.end ? fmtLong(f.start) : fmtShort(f.start) + ' to ' + fmtShort(f.end); }
+function renderDecided() {
+  var el = document.getElementById('decided'); if (!el) return;
+  var f = finalRange();
+  if (!f) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="decided"><h2>📌 It’s decided</h2><span class="when">' + esc(finalText(f)) + '</span>' +
+    '<div class="row-btns"><a class="btn small" target="_blank" rel="noopener" href="' + esc(googleCalUrl(f)) + '">Google Calendar</a>' +
+    '<button type="button" class="btn small" data-act="ics">Apple / Outlook (.ics)</button>' +
+    (S.isOwner ? '<button type="button" class="btn small danger" data-act="clear-final">Undo pick</button>' : '') + '</div></div>';
+}
+function ymd(d) { return d.replace(/-/g, ''); }
+function calDetails() { return (S.ev.description ? S.ev.description + '\n\n' : '') + shareUrl(S.code); }
+function googleCalUrl(f) {
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(S.ev.name) +
+    '&dates=' + ymd(f.start) + '/' + ymd(addDays(f.end, 1)) + '&details=' + encodeURIComponent(calDetails());
+}
+function downloadIcs() {
+  var f = finalRange(); if (!f) return;
+  function e(t) { return String(t).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1'); }
+  var now = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//pebbly.dev//Which day works//EN', 'BEGIN:VEVENT',
+    'UID:' + S.code + '@pebbly.dev', 'DTSTAMP:' + now, 'DTSTART;VALUE=DATE:' + ymd(f.start), 'DTEND;VALUE=DATE:' + ymd(addDays(f.end, 1)),
+    'SUMMARY:' + e(S.ev.name), 'DESCRIPTION:' + e(calDetails()), 'URL:' + shareUrl(S.code), 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' }));
+  a.download = (S.ev.name.replace(/[^\w\- ]+/g, '').trim() || 'event') + '.ics';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+function setFinal(start) {
+  api.setFinal({ code: S.code, owner: S.owner, start: start }).then(reload).then(function () {
+    renderEvent(); toast(start ? 'Final date set. Everyone with the link will see it.' : 'Final date cleared.');
+    if (start) { var d = document.getElementById('decided'); if (d && d.scrollIntoView) d.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  }, function (e) {
+    toast(/find the function|schema cache|does not exist/i.test(e.message || '') ? 'Picking a final date needs final_date.sql run in Supabase first.' : friendly(e));
+  });
+}
 
 function renderOwnerTools() {
   var el = document.getElementById('ownerTools');
@@ -974,7 +1031,8 @@ function renderOwnerTools() {
     return;
   }
   el.innerHTML = '<div class="panel owner"><h2>Organizer tools</h2>' +
-    '<p class="hint" style="margin-top:4px">Only you can see this.' + (S.responses.length ? ' To remove someone’s answers, tap Remove next to their name above.' : '') + '</p>' +
+    '<p class="hint" style="margin-top:4px">Only you can see this. To pick the final date, tap “Make this final” under Best dates, or tap any day on the calendar.' +
+      (S.responses.length ? ' To remove someone’s answers, tap Remove next to their name above.' : '') + '</p>' +
     '<div class="row-btns"><button type="button" class="btn small" data-act="edit-ev">Edit event</button>' +
     '<button type="button" class="btn small" data-act="copy-owner">Copy organizer link</button>' +
     '<button type="button" class="btn small danger" data-act="del-ev">Delete event</button></div>' +
@@ -1063,9 +1121,9 @@ function renderCalendar() {
     for (var d = ms; d <= me; d = addDays(d, 1)) {
       var off = d < r.lo || d > r.hi;
       var info = off ? { status: 'none', label: 'Not available' } : cellInfo(d);
-      var cls = 'day' + (d === today ? ' today' : '') + (d === S.sel ? ' sel' : '') + (info.note ? ' hasnote' : '');
+      var cls = 'day' + (d === today ? ' today' : '') + (d === S.sel ? ' sel' : '') + (info.note ? ' hasnote' : '') + (!off && isFinalDay(d) ? ' final' : '');
       html += '<button type="button" class="' + cls + '" data-day="' + d + '"' + (off ? ' disabled' : ' data-s="' + info.status + '"') +
-        ' aria-label="' + esc(fmtLong(d) + ', ' + info.label) + '"' + (d === S.sel ? ' aria-pressed="true"' : '') + '>' +
+        ' aria-label="' + esc(fmtLong(d) + ', ' + (isFinalDay(d) ? 'the final date, ' : '') + info.label) + '"' + (d === S.sel ? ' aria-pressed="true"' : '') + '>' +
         '<span class="n">' + parse(d).getDate() + '</span><span class="g" aria-hidden="true">' + (off ? '' : glyphFor(info.status)) + '</span></button>';
     }
     html += '</div>';
@@ -1077,9 +1135,9 @@ function renderCalendar() {
     for (var i = 0; i < 7; i++) {
       var day = addDays(ws, i), o = day < r.lo || day > r.hi;
       var inf = o ? { status: 'none', label: 'Not available', sub: '' } : cellInfo(day);
-      html += '<button type="button" class="row' + (day === S.sel ? ' sel' : '') + '" data-day="' + day + '"' + (o ? ' disabled' : ' data-s="' + inf.status + '"') +
+      html += '<button type="button" class="row' + (day === S.sel ? ' sel' : '') + (!o && isFinalDay(day) ? ' final' : '') + '" data-day="' + day + '"' + (o ? ' disabled' : ' data-s="' + inf.status + '"') +
         ' aria-label="' + esc(fmtLong(day) + ', ' + inf.label) + '"' + (day === S.sel ? ' aria-pressed="true"' : '') + '>' +
-        '<b>' + esc(fmtShort(day)) + (day === today ? ' (today)' : '') + '</b>' +
+        '<b>' + esc(fmtShort(day)) + (day === today ? ' (today)' : '') + (!o && isFinalDay(day) ? ' 📌' : '') + '</b>' +
         '<span class="l">' + esc(inf.label) + ' <span class="g" aria-hidden="true">' + (o ? '' : glyphFor(inf.status)) + '</span></span>' +
         (inf.sub ? '<span class="sub">' + esc(inf.sub) + '</span>' : '') + '</button>';
     }
@@ -1147,7 +1205,7 @@ function renderDayPanel() {
     el.innerHTML = S.mode === 'view' ? '<p class="hint">Tap a day to see who said what.</p>' : '';
     return;
   }
-  var day = S.sel, html = '<h3>' + esc(fmtLong(day)) + '</h3>';
+  var day = S.sel, html = '<h3>' + esc(fmtLong(day)) + (isFinalDay(day) ? ' 📌' : '') + '</h3>';
   if (S.mode === 'edit') {
     var p = S.draft.picks[day];
     if (p) {
@@ -1160,6 +1218,7 @@ function renderDayPanel() {
     el.innerHTML = html;
     return;
   }
+  if (S.isOwner && S.mode === 'view') html += finalButton(day);
   if (!vis().length) {
     el.innerHTML = html + '<p class="hint" style="margin-top:6px">' + (S.responses.length ? 'Nobody is switched on above. Turn on a name to see their answers.' : 'No answers yet.') + '</p>';
     return;
@@ -1179,6 +1238,13 @@ function renderDayPanel() {
         (r.note ? '<span class="wnote">“' + esc(r.note) + '”</span>' : '') + '</li>';
     }).join('') + '</ul>';
   el.innerHTML = html;
+}
+
+function finalButton(start) {
+  var f = finalRange();
+  if (f && f.start === start) return '';
+  var label = S.ev.num_days > 1 ? 'Make ' + fmtShort(start) + ' to ' + fmtShort(addDays(start, S.ev.num_days - 1)) + ' the final date' : 'Make this the final date';
+  return '<p style="margin:8px 0 2px"><button type="button" class="btn small primary" data-act="set-final" data-start="' + start + '">📌 ' + esc(label) + '</button></p>';
 }
 
 function whyLines(w) {
@@ -1217,7 +1283,8 @@ function renderBest() {
     var when = S.ev.num_days > 1 ? fmtShort(w.start) + ' to ' + fmtShort(w.end) : fmtLong(w.start);
     var y = whyLines(w);
     return '<li><button type="button" class="bd" data-act="pick-best" data-start="' + w.start + '"><i data-s="' + bar + '"></i>' +
-      '<b>' + esc(when) + '</b><span><span class="ok">' + esc(y.first) + '.</span>' + (y.rest ? ' ' + esc(y.rest) + '.' : '') + '</span></button></li>';
+      '<b>' + esc(when) + (isFinalDay(w.start) && finalRange().start === w.start ? ' 📌' : '') + '</b><span><span class="ok">' + esc(y.first) + '.</span>' + (y.rest ? ' ' + esc(y.rest) + '.' : '') + '</span></button>' +
+      (S.isOwner && !(finalRange() && finalRange().start === w.start) ? '<button type="button" class="btn small mk" data-act="set-final" data-start="' + w.start + '">📌 Make this final</button>' : '') + '</li>';
   }).join('') + '</ul>' +
   (list.length > shown.length ? '<p style="margin-top:8px"><button type="button" class="link" data-act="more">Show more dates</button></p>' : '');
 }
@@ -1362,6 +1429,9 @@ $app.addEventListener('click', function (e) {
     case 'edit-ev': S.editEv = true; renderOwnerTools(); var ef = document.getElementById('evForm'); if (ef && ef.scrollIntoView) ef.scrollIntoView({ block: 'start', behavior: 'smooth' }); break;
     case 'edit-ev-cancel': S.editEv = false; renderOwnerTools(); break;
     case 'del-ev': deleteEvent(); break;
+    case 'set-final': setFinal(t.dataset.start); break;
+    case 'clear-final': if (confirm('Undo the final date? Everyone will see the event as undecided again.')) setFinal(null); break;
+    case 'ics': downloadIcs(); break;
     case 'rm-resp': removeResponse(t.dataset.id, t.dataset.name); break;
     case 'copy-owner':
       copyText(ownerUrl(S.code)).then(function (ok) { toast(ok ? 'Organizer link copied. Keep it private.' : 'Could not copy.'); });
