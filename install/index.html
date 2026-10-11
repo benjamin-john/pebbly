@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Put Pebbly on your phone's home screen.">
+<title>Install Pebbly</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#2f7a63">
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f4f6f5; --card: #ffffff; --text: #1f2a27; --muted: #5d6b66;
+    --line: #dde4e1; --accent: #2f7a63;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141a18; --card: #1d2522; --text: #e3ebe8; --muted: #9aaba5; --line: #2c3833; --accent: #6cc4a4; }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5;
+  }
+  main { max-width: 640px; margin: 0 auto; padding: 40px 16px 56px; }
+  h1 { margin: 0 0 4px; font-size: 2rem; font-weight: 650; }
+  .lead { margin: 0 0 24px; color: var(--muted); }
+  section {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 16px 18px; margin-bottom: 14px;
+  }
+  section.mine { border-color: var(--accent); border-width: 2px; }
+  h2 { margin: 0 0 8px; font-size: 1.15rem; }
+  h3 { margin: 14px 0 4px; font-size: .95rem; color: var(--muted); font-weight: 600; }
+  ol { margin: 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  .tag { display: none; font-size: .75rem; font-weight: 600; color: var(--accent); margin-left: 6px; }
+  section.mine .tag { display: inline; }
+  .note { color: var(--muted); font-size: .92rem; margin: 10px 0 0; }
+  #installBtn {
+    display: none; margin: 0 0 10px; padding: 10px 16px; border: 0; border-radius: 10px;
+    background: var(--accent); color: #fff; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  a { color: var(--accent); }
+</style>
+<script src="/nav.js"></script>
+</head>
+<body>
+<main>
+  <h1>Install Pebbly</h1>
+  <p class="lead">Add Pebbly to your home screen and it opens like an app: full screen, with its own icon. It's free and takes about 20 seconds.</p>
+  <p><button id="installBtn" type="button">Install Pebbly</button></p>
+
+  <section id="android">
+    <h2>Android<span class="tag">Your phone</span></h2>
+    <h3>Chrome</h3>
+    <ol>
+      <li>Open <strong>pebbly.dev</strong> in Chrome.</li>
+      <li>Tap the <strong>⋮</strong> menu at the top right.</li>
+      <li>Tap <strong>Add to Home screen</strong>, then <strong>Install</strong>.</li>
+    </ol>
+    <h3>Samsung Internet</h3>
+    <ol>
+      <li>Tap the <strong>☰</strong> menu at the bottom right.</li>
+      <li>Tap <strong>Add page to</strong> → <strong>Home screen</strong>.</li>
+    </ol>
+    <p class="note">Tip: long-press the Pebbly icon for shortcuts straight to RSVP, Poll and more.</p>
+  </section>
+
+  <section id="iphone">
+    <h2>iPhone and iPad<span class="tag">Your phone</span></h2>
+    <ol>
+      <li>Open <strong>pebbly.dev</strong> in Safari.</li>
+      <li>Tap the <strong>Share</strong> button (a square with an arrow pointing up). If you don't see it, tap <strong>⋯</strong> first.</li>
+      <li>Scroll down and tap <strong>Add to Home Screen</strong>.</li>
+      <li>If you see <strong>Open as Web App</strong>, leave it on. Tap <strong>Add</strong>.</li>
+    </ol>
+    <p class="note">Chrome on iPhone works too: tap the Share button in the address bar, then <strong>Add to Home Screen</strong>.</p>
+  </section>
+
+  <section id="computer">
+    <h2>Computer<span class="tag">Your device</span></h2>
+    <ol>
+      <li>Open <strong>pebbly.dev</strong> in Chrome or Edge.</li>
+      <li>Click the install icon at the right end of the address bar, or open the browser menu and choose <strong>Install Pebbly</strong> (in Chrome it's under <strong>Cast, save, and share</strong>).</li>
+    </ol>
+  </section>
+
+  <p class="note">You don't need to install it to use it: every app works in a normal browser too. <a href="/">Back to Pebbly</a></p>
+</main>
+<script>
+  // Highlight the section for the device being used, and move it to the top.
+  var ua = navigator.userAgent;
+  var ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var mine = document.getElementById(ios ? 'iphone' : /Android/.test(ua) ? 'android' : 'computer');
+  mine.classList.add('mine');
+  mine.parentNode.insertBefore(mine, document.getElementById('android'));
+
+  // Chrome on Android/desktop can offer a one-tap install button.
+  var deferred = null, btn = document.getElementById('installBtn');
+  addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); deferred = e; btn.style.display = 'inline-block'; });
+  btn.addEventListener('click', function () { if (deferred) { deferred.prompt(); deferred = null; btn.style.display = 'none'; } });
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+</script>
+</body>
+</html>

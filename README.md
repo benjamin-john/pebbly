@@ -10,6 +10,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/poll/` | Group polls (Supabase) |
 | `/qwixx/` | Qwixx dice roller |
 | `/namegame/` | The Name Game |
+| `/install/` | How to add Pebbly to a phone or computer home screen |
 
 - Any folder with an `index.html` becomes a page (`poll/index.html` → `https://pebbly.dev/poll/`).
   When adding an app, also add a link to it on the homepage `index.html`, and put
