@@ -26,7 +26,8 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
-body.in-game{height:100vh;height:100dvh;overflow:hidden}
+/* --app-h is the height the phone really shows; some Android installs report 100dvh too tall. */
+body.in-game{height:100vh;height:100dvh;height:var(--app-h,100dvh);overflow:auto}
 button{font:inherit;color:inherit}
 [hidden]{display:none !important}
 h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
@@ -165,6 +166,19 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 .final .st{color:var(--muted);font-size:14px;font-weight:400;text-align:right}
 .big{font:800 26px/1.2 var(--head);text-align:center;margin:4px 0 12px}
 </style>
+<script>
+  // Size full-screen layouts to the visible area (measured), not the CSS viewport units.
+  (function () {
+    function fit() {
+      var h = window.visualViewport ? Math.min(window.innerHeight, window.visualViewport.height) : window.innerHeight;
+      document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+    }
+    fit();
+    addEventListener('resize', fit);
+    addEventListener('orientationchange', function () { setTimeout(fit, 200); });
+    if (window.visualViewport) visualViewport.addEventListener('resize', fit);
+  })();
+</script>
 <script src="/nav.js"></script>
 </head>
 <body>
