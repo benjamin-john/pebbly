@@ -1,8 +1,15 @@
 # Database changes
 
 The Supabase project is linked to this repo (Supabase dashboard → Project Settings → Integrations →
-GitHub). With **Deploy to production** on, any new file in `supabase/migrations/` is run against the
-live database when it reaches `main`. Supabase records each file it has run, so nothing runs twice.
+GitHub) with these settings:
+
+- Supabase directory: `.` (the repo root, which holds this `supabase/` folder)
+- Production branch: `main`
+- Deploy to production: **on**
+- Automatic branching (preview databases per pull request): **off**
+
+Any new file in `supabase/migrations/` is run against the live database when it reaches `main`.
+Supabase records each file it has run, so nothing runs twice.
 
 ## Adding a change
 
