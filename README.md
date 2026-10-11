@@ -12,7 +12,10 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/namegame/` | The Name Game |
 
 - Any folder with an `index.html` becomes a page (`poll/index.html` → `https://pebbly.dev/poll/`).
-  When adding an app, also add a link to it on the homepage `index.html`.
+  When adding an app, also add a link to it on the homepage `index.html`, and put
+  `<script src="/nav.js"></script>` in its `<head>` for the "← Pebbly" home bar.
+- `nav.js` shows that home bar only in the installed app, never in a normal browser tab.
+  Add `?appnav` to a URL to preview it.
 - `CNAME` holds the custom domain. Don't delete it.
 - `.nojekyll` tells Pages to serve files as-is (no Jekyll build).
 - The Supabase apps read their project URL and publishable key from each folder's `config.js`.
