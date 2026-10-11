@@ -1,0 +1,4 @@
+# Supabase project settings for the GitHub integration.
+# Only database migrations (supabase/migrations/) are deployed from this repo. Auth, API and other
+# settings are managed in the Supabase dashboard; production ignores them here by default.
+project_id = "pebbly"

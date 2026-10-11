@@ -32,6 +32,8 @@ Static site served by GitHub Pages at https://pebbly.dev.
   `whichdayworks/schema_snapshot.sql` records the live setup (the original scripts were never
   saved), `whichdayworks/organizer.sql` adds organizer links and `whichdayworks/final_date.sql`
   the organizer's final pick.
+- **Database changes** go in `supabase/migrations/` and are applied automatically when they reach
+  `main` (Supabase GitHub integration). See `supabase/README.md`.
 - Installable app: `manifest.webmanifest` (name, icons, home-screen shortcuts), `icons/`, and `sw.js`
   (network-first service worker so pages still open offline). If you change cached files and they
   look stale, bump `CACHE` in `sw.js`.

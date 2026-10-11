@@ -1,0 +1,11 @@
+-- Starting point for automatic database changes.
+--
+-- Everything that existed before this was set up by hand in the Supabase SQL Editor, using the
+-- scripts kept for reference in rsvp/, whichdayworks/ and play/ (Poll's original setup and the
+-- shared admin password setup were never saved to the repo). Those are already applied and are
+-- NOT re-run from here.
+--
+-- This file changes nothing. It only marks where the migration history begins: once Supabase has
+-- applied it, every later file in this folder is run automatically, once, in order, when it
+-- reaches the main branch.
+select 1;
