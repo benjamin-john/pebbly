@@ -100,6 +100,12 @@
 </main>
 <script>
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  // Ask the browser to keep Pebbly's saved data (see nav.js).
+  (function () {
+    var installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    if (navigator.storage && navigator.storage.persist && (installed || !/Firefox\//.test(navigator.userAgent)))
+      navigator.storage.persisted().then(function (p) { if (!p) return navigator.storage.persist(); }).catch(function () {});
+  })();
 </script>
 </body>
 </html>
