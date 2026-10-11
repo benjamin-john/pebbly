@@ -39,7 +39,9 @@ database for the apps that share data between people. See README.md for the app 
   `--muted #5D6B66`, `--line #DDE4E1`, `--brand #2F7A63` (green), `--brand-ink #FFF`, `--brand-t #E6F2ED`.
   Dark mode under `@media (prefers-color-scheme: dark)` (`--bg #141A18`, `--surface #1D2522`,
   `--brand #6CC4A4`, …). The games and homepage support dark mode; RSVP/Poll/Which Day Works? are light only.
-- `<meta name="theme-color" content="#2F7A63">`, favicon `/icons/favicon.png`.
+- `<meta name="theme-color" content="#2F7A63">`, favicon `/icons/favicon.png`, and
+  `<meta name="robots" content="noindex, nofollow">` on every page: Pebbly is for friends and family,
+  not search engines (don't add a robots.txt that blocks crawling, or Google can't see the tag).
 - Cards: white surface, 1px `--line` border, 14–16px radius. Buttons: 52px tall green primary, ghost
   (outlined) and plain variants. Tap targets ≥ 44px. Always include `[hidden]{display:none !important}`
   (button `display` rules otherwise override `hidden`).
