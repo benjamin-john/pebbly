@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#2F7A63">
-<title>Qwixx Dice Roller</title>
+<title>Qwixx</title>
 <link rel="icon" type="image/png" href="/icons/favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,201 +12,665 @@
 <style>
 :root{
   color-scheme:light dark;
-  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --brand:#2F7A63; --brand-ink:#FFFFFF;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead-t:#FBF0CC; --no:#CC423D;
   --red:#D93F3B; --yellow:#F2C230; --green:#2E9B5A; --blue:#3570C9;
+  --red-t:#FBE3E2; --yellow-t:#FDF3CF; --green-t:#DDF1E5; --blue-t:#DFE8F8;
+  --red-i:#B32B27; --yellow-i:#7A5D00; --green-i:#1E7344; --blue-i:#2758A3;
   --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){
-  :root{ --bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --brand:#6CC4A4; --brand-ink:#0F1F19; }
+  :root{ --bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead-t:#3A3218; --no:#F07A75;
+    --red-t:#3A2120; --yellow-t:#3A3219; --green-t:#1B3326; --blue-t:#1C2840;
+    --red-i:#FF9C98; --yellow-i:#F5D46B; --green-i:#7FD6A2; --blue-i:#9DBDF2; }
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
-.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom))}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.wrap{max-width:680px;margin:0 auto;padding:12px 12px calc(32px + env(safe-area-inset-bottom))}
 h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
-.lead{margin:0 0 16px;color:var(--muted)}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
 h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:500 17px/1.2 var(--body)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.stack{display:grid;gap:10px}
 
-/* Dice */
-.dice{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-@media (min-width:560px){ .dice{grid-template-columns:repeat(6,1fr)} }
-.die{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
-.face{
-  width:100%;aspect-ratio:1/1;border-radius:18%;padding:14%;
-  display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);
-  box-shadow:inset 0 -4px 0 rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.12);
-  --pip:#fff;
-}
+/* ---------- Setup ---------- */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mode{display:flex;flex-direction:column;align-items:center;gap:4px;padding:14px 8px;border:1px solid var(--line);border-radius:14px;cursor:pointer;text-align:center}
+.mode input{width:22px;height:22px;accent-color:var(--brand)}
+.mode b{font-size:17px}
+.mode small{color:var(--muted);font-size:13px}
+.mode:has(input:checked){border:2px solid var(--brand);background:var(--brand-t)}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:22px;flex:none;text-align:right;color:var(--muted);font-size:14px}
+.plist input{flex:1;min-width:0}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:5px 0}
+
+/* ---------- Top bar ---------- */
+.topbar{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+
+/* ---------- Dice ---------- */
+.roller{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:15px}
+.roller b{font-weight:700}
+.roller button{border:0;background:none;color:var(--brand);font-weight:600;cursor:pointer;padding:6px}
+.dice{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.die{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:0}
+.face{width:100%;max-width:72px;aspect-ratio:1/1;border-radius:18%;padding:13%;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.14),0 2px 5px rgba(0,0,0,.12);--pip:#fff}
 .die.white .face{background:#fff;border:1px solid #D5DCD9;--pip:#1F2A27}
-.die.red .face{background:var(--red)}
-.die.yellow .face{background:var(--yellow);--pip:#3A2E05}
-.die.green .face{background:var(--green)}
-.die.blue .face{background:var(--blue)}
+.die.red .face{background:var(--red)} .die.yellow .face{background:var(--yellow);--pip:#3A2E05}
+.die.green .face{background:var(--green)} .die.blue .face{background:var(--blue)}
 .pip{width:72%;aspect-ratio:1/1;border-radius:50%;background:var(--pip);place-self:center;visibility:hidden}
 .pip.on{visibility:visible}
-.die .name{font-size:13px;font-weight:600;color:var(--muted)}
-.die.off .face{opacity:.18;box-shadow:none}
-.die.off .name{text-decoration:line-through;opacity:.6}
 .face.blank .pip{visibility:hidden}
-.face.blank::after{content:"?";grid-area:2/2;place-self:center;font:800 28px/1 var(--head);color:var(--pip);opacity:.35}
-@keyframes tumble{0%{transform:rotate(0) scale(1)}35%{transform:rotate(-14deg) scale(.92)}70%{transform:rotate(10deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
+.face.blank::after{content:"?";grid-area:2/2;place-self:center;font:800 22px/1 var(--head);color:var(--pip);opacity:.35}
+.die .nm{font-size:12px;font-weight:600;color:var(--muted)}
+.die.off .face{opacity:.15;box-shadow:none}
+.die.off .nm{text-decoration:line-through;opacity:.6}
+@keyframes tumble{0%{transform:rotate(0) scale(1)}35%{transform:rotate(-14deg) scale(.9)}70%{transform:rotate(10deg) scale(1.05)}100%{transform:rotate(0) scale(1)}}
 .rolling .die:not(.off) .face{animation:tumble .35s ease-out}
-@media (prefers-reduced-motion:reduce){ .rolling .die .face{animation:none} }
-
-.roll{
-  display:block;width:100%;min-height:56px;margin:16px 0 0;border:0;border-radius:14px;
-  background:var(--brand);color:var(--brand-ink);font:800 20px/1 var(--head);cursor:pointer;
-  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
-}
-.roll:active{transform:scale(.98)}
-.roll:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
-
-/* Sums */
-.sums{display:grid;gap:8px;margin:0;padding:0;list-style:none}
-.sums li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
-.sums li:last-child{border-bottom:0}
-.dot{width:14px;height:14px;border-radius:50%;flex:none}
-.dot.white{background:#fff;border:1px solid #B4C2BC}
-.dot.red{background:var(--red)} .dot.yellow{background:var(--yellow)}
+@media (prefers-reduced-motion:reduce){.rolling .die .face{animation:none}}
+.roll{margin-top:12px;min-height:56px;font:800 20px/1 var(--head)}
+.sums{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;padding:0;list-style:none;font-size:15px}
+.sums li{display:flex;align-items:center;gap:6px}
+.sums b{font:800 18px/1 var(--head);font-variant-numeric:tabular-nums}
+.sums small{color:var(--muted)}
+.sums li.off{opacity:.4}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.dot.white{background:#fff;border:1px solid var(--field)} .dot.red{background:var(--red)} .dot.yellow{background:var(--yellow)}
 .dot.green{background:var(--green)} .dot.blue{background:var(--blue)}
-.sums .lbl{flex:1}
-.sums .val{font:800 22px/1 var(--head);font-variant-numeric:tabular-nums}
-.sums .val small{font:500 14px/1 var(--body);color:var(--muted);margin:0 6px}
-.sums li.off{opacity:.45}
-.sums li.off .val{font:500 15px/1 var(--body)}
+.outrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.outrow button{display:flex;align-items:center;gap:6px;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);
+  cursor:pointer;font-size:14px;font-weight:600}
+.outrow button[aria-pressed="false"]{border-style:dashed;color:var(--muted)}
+.outrow button[aria-pressed="false"] .dot{opacity:.3}
 
-/* Row toggles */
-.rows{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-@media (min-width:560px){ .rows{grid-template-columns:repeat(4,1fr)} }
-.rowbtn{
-  display:flex;align-items:center;gap:10px;min-height:48px;padding:0 12px;border-radius:12px;
-  border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px/1 var(--body);
-  cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:left;
-}
-.rowbtn .state{margin-left:auto;font-weight:500;font-size:13px;color:var(--muted)}
-.rowbtn[aria-pressed="false"]{border-style:dashed;color:var(--muted)}
-.rowbtn[aria-pressed="false"] .dot{opacity:.3}
-.rowbtn:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
-.hint{margin:10px 0 0;color:var(--muted);font-size:14px}
+/* ---------- Score cards ---------- */
+.ptabs{display:flex;gap:6px;overflow-x:auto;margin:0 -2px 12px;padding:2px;scrollbar-width:none}
+.ptabs::-webkit-scrollbar{display:none}
+.ptab{flex:none;display:flex;flex-direction:column;align-items:flex-start;min-width:84px;padding:6px 12px;border:1px solid var(--line);border-radius:12px;
+  background:var(--surface);cursor:pointer;text-align:left}
+.ptab .n{font-weight:700;font-size:15px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ptab .t{font:800 18px/1.1 var(--head);font-variant-numeric:tabular-nums}
+.ptab[aria-selected="true"]{border:2px solid var(--brand);background:var(--brand-t)}
+.ptab .rl{font-size:12px;color:var(--brand);font-weight:600}
+.sheet{display:grid;gap:6px}
+.qrow{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;padding:5px;border-radius:10px}
+.qrow.red{background:var(--red)} .qrow.yellow{background:var(--yellow)} .qrow.green{background:var(--green)} .qrow.blue{background:var(--blue)}
+.qc{position:relative;aspect-ratio:1/1.05;min-width:0;border:0;border-radius:6px;background:var(--surface);cursor:pointer;padding:0;
+  font:800 clamp(13px,3.6vw,20px)/1 var(--head);font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.qrow.red .qc{color:var(--red-i)} .qrow.yellow .qc{color:var(--yellow-i)} .qrow.green .qc{color:var(--green-i)} .qrow.blue .qc{color:var(--blue-i)}
+.qc:disabled{cursor:default}
+.qc.skip{opacity:.38}
+.qc.x::after{content:"";position:absolute;inset:12%;background:
+  linear-gradient(45deg,transparent calc(50% - 2px),var(--ink) calc(50% - 2px),var(--ink) calc(50% + 2px),transparent calc(50% + 2px)),
+  linear-gradient(-45deg,transparent calc(50% - 2px),var(--ink) calc(50% - 2px),var(--ink) calc(50% + 2px),transparent calc(50% + 2px))}
+.qc.lockc{font-size:clamp(13px,3.6vw,19px)}
+.qc.closed{opacity:.3}
+.qc.can{box-shadow:0 0 0 3px var(--ink) inset}
+.qc.can.mine{box-shadow:none;outline:3px dashed var(--ink);outline-offset:-4px}
+.rowinfo{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted);margin:-2px 4px 2px}
+.rowinfo b{color:var(--ink)}
+.pens{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.pens span{font-weight:600}
+.pen{width:40px;height:40px;border:2px solid var(--field);border-radius:8px;background:var(--surface);cursor:pointer;font:800 18px/1 var(--head);color:var(--no)}
+.pen.on{border-color:var(--no);background:var(--no);color:#fff}
+.tally{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.tally .b{display:inline-flex;align-items:center;gap:4px;font-weight:700}
+.tally .op{color:var(--muted)}
+.tally .tot{margin-left:auto;font:800 24px/1 var(--head)}
+.legend{font-size:13px;color:var(--muted);margin:8px 2px 0}
+.banner{padding:10px 12px;border-radius:12px;background:var(--lead-t);font-weight:600;margin-bottom:12px}
+
+/* ---------- Dialogs ---------- */
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+.final{list-style:none;margin:0 0 6px;padding:0}
+.final li{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:17px}
+.final li:first-child{font-weight:700}
+.final .place{width:28px;color:var(--muted);font-weight:600}
+.final .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.final .st{display:block;color:var(--muted);font-size:13px;font-weight:400}
+.final .tt{font:800 22px/1 var(--head)}
 </style>
 <script src="/keepawake.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
-<main class="wrap">
-  <h1>Qwixx Dice Roller</h1>
-  <p class="lead">Roll all six dice from one phone and see every sum you can mark.</p>
 
-  <section class="card" aria-label="Dice">
+<!-- ================= Setup ================= -->
+<main class="wrap" id="setup" hidden>
+  <h1>Qwixx</h1>
+  <p class="lead">Roll the dice, keep everyone's score cards, or both, all on one phone.</p>
+
+  <section class="card">
+    <h2>Use</h2>
+    <div class="modes">
+      <label class="mode"><input type="checkbox" id="useDice" checked><b>🎲 Dice</b><small>Roll all six dice</small></label>
+      <label class="mode"><input type="checkbox" id="useCards" checked><b>📝 Score cards</b><small>One card per player</small></label>
+    </div>
+    <p class="hint" id="modeHint"></p>
+  </section>
+
+  <section class="card">
+    <h2>Players</h2>
+    <ul class="plist" id="setupPlayers"></ul>
+    <form class="addrow" id="addPlayerForm" autocomplete="off">
+      <input type="text" id="newPlayer" maxlength="16" placeholder="Add a player" enterkeyhint="done">
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <div class="chips" id="playerChips"></div>
+    <p class="hint" id="playerHint"></p>
+  </section>
+
+  <section class="card">
+    <h2>How to play</h2>
+    <ul class="rules" id="rulesList"></ul>
+  </section>
+
+  <div class="stack">
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <button class="btn ghost" id="backBtn" type="button" hidden>Back to current game</button>
+  </div>
+</main>
+
+<!-- ================= Play ================= -->
+<main class="wrap" id="play" hidden>
+  <div class="topbar">
+    <div class="title"><h1>Qwixx</h1><div class="sub" id="sub"></div></div>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+
+  <div class="banner" id="overBanner" hidden></div>
+
+  <section class="card" id="diceCard" aria-label="Dice">
+    <div class="roller" id="roller"></div>
     <div class="dice" id="dice"></div>
-    <button class="roll" id="rollBtn" type="button">Roll</button>
-  </section>
-
-  <section class="card">
-    <h2>Sums</h2>
     <ul class="sums" id="sums" aria-live="polite"></ul>
+    <button class="btn roll" id="rollBtn" type="button">Roll</button>
+    <div class="outrow" id="outrow"></div>
   </section>
 
-  <section class="card">
-    <h2>Colors in play</h2>
-    <div class="rows" id="rows"></div>
-    <p class="hint">When a row gets locked, tap its color to take that die out of the game.</p>
+  <section class="card" id="cardsCard" aria-label="Score cards">
+    <div class="ptabs" id="ptabs" role="tablist"></div>
+    <div class="sheet" id="sheet"></div>
+    <div class="pens" id="pens"></div>
+    <div class="tally" id="tally"></div>
+    <p class="legend" id="legend"></p>
   </section>
 </main>
 
+<!-- ================= Menu ================= -->
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mScores">Scores so far</button>
+      <button class="btn plain" type="button" id="mRestart">Play again, same players</button>
+      <button class="btn plain" type="button" id="mSetup">Change players or mode</button>
+    </div>
+    <h2 style="margin-top:16px">Rules</h2>
+    <ul class="rules" id="menuRules"></ul>
+  </div>
+</dialog>
+
+<!-- ================= Scores ================= -->
+<dialog id="scoreDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="scoreTitle">Scores</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <ol class="final" id="finalList"></ol>
+    <div class="stack" style="margin-top:14px">
+      <button class="btn" type="button" id="sRestart">Play again, same players</button>
+      <button class="btn plain" type="button" data-close>Close</button>
+    </div>
+  </div>
+</dialog>
+
 <script>
 (function () {
-  var DICE = [
-    { key: 'w1', name: 'White', cls: 'white' },
-    { key: 'w2', name: 'White', cls: 'white' },
-    { key: 'red', name: 'Red', cls: 'red', color: true },
-    { key: 'yellow', name: 'Yellow', cls: 'yellow', color: true },
-    { key: 'green', name: 'Green', cls: 'green', color: true },
-    { key: 'blue', name: 'Blue', cls: 'blue', color: true }
-  ];
-  var COLORS = DICE.filter(function (d) { return d.color; });
-  // Which of the 9 grid cells hold a pip for each value.
+  'use strict';
+  var KEY = 'pebbly_qwixx2', K_UNDO = 'pebbly_qwixx2_undo', K_MEM = 'pebbly_score_memory';
+  var COLORS = ['red', 'yellow', 'green', 'blue'];
+  var NAME = { red: 'Red', yellow: 'Yellow', green: 'Green', blue: 'Blue' };
+  // Red and yellow run 2→12, green and blue 12→2. Index 10 is the last number (the locking one).
+  var NUMS = { red: [2,3,4,5,6,7,8,9,10,11,12], yellow: [2,3,4,5,6,7,8,9,10,11,12],
+               green: [12,11,10,9,8,7,6,5,4,3,2], blue: [12,11,10,9,8,7,6,5,4,3,2] };
   var PIPS = { 1: [4], 2: [2, 6], 3: [2, 4, 6], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
-  var KEY = 'pebbly_qwixx';
-
-  var state = { roll: {}, on: { red: true, yellow: true, green: true, blue: true } };
-  try { var saved = JSON.parse(localStorage.getItem(KEY)); if (saved && saved.on) state = saved; } catch (e) {}
-  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
-
   var $ = function (id) { return document.getElementById(id); };
-  function inPlay(d) { return !d.color || state.on[d.key]; }
-  function rand() {
-    var a = new Uint32Array(1); crypto.getRandomValues(a); return (a[0] % 6) + 1;
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s || '').trim().replace(/\s+/g, ' '); }
+  function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
+  function rand() { var a = new Uint32Array(1); crypto.getRandomValues(a); return (a[0] % 6) + 1; }
+  function tri(n) { return n * (n + 1) / 2; }
+
+  /* game = { dice, cards, players:[{id,name}], cur, roll:{}, rollNo, out:{color:true},
+              sheets:{pid:{red:[idx], ..., pen, mark}}, locks:{color:{by, roll}}, over, view } */
+  var game = load(KEY, null), undo = load(K_UNDO, []);
+  var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
+  function save() { store(KEY, game); store(K_UNDO, undo); }
+  function snap() { undo.push(JSON.stringify(game)); if (undo.length > 150) undo.shift(); }
+
+  // ================= Setup =================
+  var draft = [];
+  function openSetup() {
+    var src = game;
+    $('useDice').checked = src ? src.dice : true;
+    $('useCards').checked = src ? src.cards : true;
+    draft = src ? src.players.map(function (p) { return { id: p.id, name: p.name }; }) : [];
+    $('backBtn').hidden = !game;
+    $('play').hidden = true; $('setup').hidden = false; keepAwake(false); scrollTo(0, 0);
+    renderSetup();
+  }
+  function renderSetup() {
+    var d = $('useDice').checked, c = $('useCards').checked;
+    $('modeHint').textContent = !d && !c ? 'Pick at least one.' : d && !c ? 'Just the dice. Use paper score cards.' :
+      !d && c ? 'Just the score cards. Roll real dice.' : 'Dice and score cards together. The app highlights what each roll lets you cross.';
+    renderPlayerList();
+    var taken = draft.map(function (p) { return p.name.toLowerCase(); });
+    var left = mem.players.filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 16);
+    var chips = $('playerChips'); chips.innerHTML = '';
+    left.forEach(function (n) {
+      var s = document.createElement('span'); s.className = 'chip';
+      s.innerHTML = '<button type="button" class="add"></button><button type="button" class="forget" aria-label="Forget ' + esc(n) + '">×</button>';
+      s.firstChild.textContent = n;
+      s.firstChild.addEventListener('click', function () { draft.push({ id: uid(), name: n }); renderSetup(); });
+      s.lastChild.addEventListener('click', function () { mem.players = mem.players.filter(function (x) { return x !== n; }); store(K_MEM, mem); renderSetup(); });
+      chips.appendChild(s);
+    });
+    $('playerHint').textContent = c ? (draft.length ? 'Turn order is the order above. Use the arrows to change it.' : 'Add everyone who has a score card.')
+      : 'Optional with just dice: add players to see whose roll it is.';
+    $('rulesList').innerHTML = RULES.map(function (r) { return '<li>' + r + '</li>'; }).join('');
+    var ok = (d || c) && (!c || draft.length > 0);
+    $('startBtn').disabled = !ok;
+    $('startBtn').textContent = !(d || c) ? 'Pick dice, score cards or both' : c && !draft.length ? 'Add at least one player' : 'Start';
+  }
+  function renderPlayerList() {
+    var ul = $('setupPlayers'); ul.innerHTML = '';
+    draft.forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num">' + (i + 1) + '</span>';
+      var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 16; inp.value = p.name;
+      inp.setAttribute('aria-label', 'Player ' + (i + 1) + ' name');
+      inp.addEventListener('change', function () { var v = tidy(inp.value); if (v) p.name = v; else inp.value = p.name; });
+      li.appendChild(inp);
+      [['↑', -1, 'Move up'], ['↓', 1, 'Move down']].forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'icon-btn'; b.textContent = m[0];
+        b.setAttribute('aria-label', m[2] + ' ' + p.name);
+        var j = i + m[1]; b.disabled = j < 0 || j >= draft.length;
+        b.addEventListener('click', function () { draft.splice(j, 0, draft.splice(i, 1)[0]); renderSetup(); });
+        li.appendChild(b);
+      });
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'icon-btn x'; x.textContent = '✕';
+      x.setAttribute('aria-label', 'Remove ' + p.name);
+      x.addEventListener('click', function () { draft.splice(i, 1); renderSetup(); });
+      li.appendChild(x); ul.appendChild(li);
+    });
+  }
+  $('useDice').addEventListener('change', renderSetup);
+  $('useCards').addEventListener('change', renderSetup);
+  $('addPlayerForm').addEventListener('submit', function (e) {
+    e.preventDefault(); var v = tidy($('newPlayer').value); if (!v) return;
+    draft.push({ id: uid(), name: v }); $('newPlayer').value = ''; renderSetup(); $('newPlayer').focus();
+  });
+  $('backBtn').addEventListener('click', showPlay);
+  $('startBtn').addEventListener('click', function () {
+    var pending = tidy($('newPlayer').value);
+    if (pending) { draft.push({ id: uid(), name: pending }); $('newPlayer').value = ''; }
+    var d = $('useDice').checked, c = $('useCards').checked;
+    if (!(d || c) || (c && !draft.length)) return;
+    if (game && hasProgress() && !confirm('Start a new game? The current one will be cleared.')) return;
+    draft.slice().reverse().forEach(function (p) {
+      var i = mem.players.findIndex(function (x) { return x.toLowerCase() === p.name.toLowerCase(); });
+      if (i > -1) mem.players.splice(i, 1); mem.players.unshift(p.name);
+    });
+    mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
+    newGame(d, c, draft.map(function (p) { return p.name; }), 0);
+  });
+  function hasProgress() {
+    return game.rollNo > 0 || game.players.some(function (p) { var s = game.sheets[p.id]; return s && (s.pen || COLORS.some(function (c) { return s[c].length; })); });
   }
 
-  // Build the dice and toggles once.
-  DICE.forEach(function (d) {
-    var die = document.createElement('div');
-    die.className = 'die ' + d.cls; die.id = 'die-' + d.key;
-    var face = document.createElement('div'); face.className = 'face'; face.setAttribute('role', 'img');
-    for (var i = 0; i < 9; i++) { var p = document.createElement('span'); p.className = 'pip'; face.appendChild(p); }
-    var name = document.createElement('span'); name.className = 'name'; name.textContent = d.name;
-    die.appendChild(face); die.appendChild(name); $('dice').appendChild(die);
-  });
-  COLORS.forEach(function (d) {
-    var b = document.createElement('button');
-    b.type = 'button'; b.className = 'rowbtn'; b.id = 'row-' + d.key;
-    b.innerHTML = '<span class="dot ' + d.cls + '"></span>' + d.name + '<span class="state"></span>';
-    b.addEventListener('click', function () { state.on[d.key] = !state.on[d.key]; delete state.roll[d.key]; save(); render(); });
-    $('rows').appendChild(b);
-  });
+  // ================= Game =================
+  function newGame(dice, cards, names, first) {
+    var players = names.map(function (n) { return { id: uid(), name: n }; }), sheets = {};
+    players.forEach(function (p) { sheets[p.id] = { red: [], yellow: [], green: [], blue: [], pen: 0, mark: -1 }; });
+    game = { dice: dice, cards: cards, players: players, cur: players.length ? first % players.length : 0, roll: {}, rollNo: 0,
+             out: {}, sheets: sheets, locks: {}, over: false, view: players.length ? players[0].id : null };
+    undo = []; save(); showPlay();
+  }
+  function showPlay() {
+    $('setup').hidden = true; $('play').hidden = false;
+    $('diceCard').hidden = !game.dice; $('cardsCard').hidden = !game.cards;
+    buildDice(); keepAwake(true); render();
+  }
+  function roller() { return game.players.length ? game.players[game.cur] : null; }
+  function inPlay(color) { return game.cards ? !game.locks[color] : !game.out[color]; }
+  function lockedCount() { return COLORS.filter(function (c) { return game.locks[c]; }).length; }
+
+  // ---- Score card rules ----
+  function sheet(pid) { return game.sheets[pid]; }
+  function lastIdx(s, c) { return s[c].length ? Math.max.apply(null, s[c]) : -1; }
+  function hasLock(s, c) { return s[c].indexOf(10) > -1; }
+  function rowCount(s, c) { return s[c].length + (hasLock(s, c) ? 1 : 0); }   // the lock counts as a cross
+  function rowScore(s, c) { return tri(rowCount(s, c)); }
+  function total(pid) { var s = sheet(pid); return COLORS.reduce(function (t, c) { return t + rowScore(s, c); }, 0) - 5 * s.pen; }
+  // Can this player cross position idx in this row right now?
+  function canCross(pid, c, idx) {
+    if (game.over) return false;
+    var s = sheet(pid);
+    if (idx <= lastIdx(s, c)) return false;                   // left to right only
+    if (idx === 10 && s[c].length < 5) return false;           // locking needs 5 crosses first
+    var L = game.locks[c];
+    if (L && L.by !== pid) {
+      // Someone locked this row. Others may only lock it too, on that same roll.
+      if (idx !== 10) return false;
+      if (game.dice && L.roll !== game.rollNo) return false;
+    }
+    return true;
+  }
+  function cross(pid, c, idx) {
+    if (!canCross(pid, c, idx)) return;
+    snap();
+    var s = sheet(pid);
+    s[c].push(idx); s.mark = game.rollNo;
+    if (idx === 10 && !game.locks[c]) game.locks[c] = { by: pid, roll: game.rollNo };
+    checkOver(); save(); buzz(); render();
+    if (idx === 10) toast(NAME[c] + ' row locked' + (game.dice ? '. The ' + NAME[c].toLowerCase() + ' die is out.' : '.'));
+  }
+  function uncross(pid, c) {   // take back the latest cross in a row
+    var s = sheet(pid), i = lastIdx(s, c); if (i < 0) return;
+    snap();
+    s[c].splice(s[c].indexOf(i), 1);
+    if (i === 10 && game.locks[c] && game.locks[c].by === pid) {
+      var other = game.players.filter(function (p) { return p.id !== pid && hasLock(sheet(p.id), c); })[0];
+      if (other) game.locks[c].by = other.id; else delete game.locks[c];
+    }
+    checkOver(); save(); buzz(); render();
+  }
+  function setPen(pid, n) {
+    snap(); sheet(pid).pen = Math.max(0, Math.min(4, n)); checkOver(); save(); buzz(); render();
+  }
+  function checkOver() {
+    var was = game.over;
+    game.over = game.cards && (lockedCount() >= 2 || game.players.some(function (p) { return sheet(p.id).pen >= 4; }));
+    if (game.over && !was) setTimeout(function () { showScores(true); }, 300);
+  }
+  function overReason() {
+    if (lockedCount() >= 2) return 'Two rows are locked';
+    var p = game.players.filter(function (q) { return sheet(q.id).pen >= 4; })[0];
+    return p ? p.name + ' took a 4th penalty' : '';
+  }
+
+  // ---- Dice ----
+  var DICE = [{ k: 'w1', c: 'white', n: 'White' }, { k: 'w2', c: 'white', n: 'White' }].concat(COLORS.map(function (c) { return { k: c, c: c, n: NAME[c] }; }));
+  function buildDice() {
+    var el = $('dice'); el.innerHTML = '';
+    DICE.forEach(function (d) {
+      var die = document.createElement('div'); die.className = 'die ' + d.c; die.id = 'die-' + d.k;
+      var f = document.createElement('div'); f.className = 'face'; f.setAttribute('role', 'img');
+      for (var i = 0; i < 9; i++) { var pip = document.createElement('span'); pip.className = 'pip'; f.appendChild(pip); }
+      var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = d.n;
+      die.appendChild(f); die.appendChild(nm); el.appendChild(die);
+    });
+  }
+  function doRoll() {
+    if (game.over) return;
+    // The roller must cross something on their own roll, or take a penalty.
+    if (game.cards && game.rollNo > 0 && roller()) {
+      var r = roller(), s = sheet(r.id);
+      if (s.mark !== game.rollNo && s.pen < 4 &&
+          confirm(r.name + ' didn’t cross anything on their roll, so that’s a penalty (−5). Add it?\n\nTap Cancel if they did cross something.')) {
+        snap(); s.pen++; checkOver(); save();
+        if (game.over) { render(); return; }
+      }
+    }
+    snap();
+    if (game.rollNo > 0 && game.players.length) game.cur = (game.cur + 1) % game.players.length;
+    game.rollNo++;
+    game.roll = {};
+    DICE.forEach(function (d) { if (d.c === 'white' || inPlay(d.c)) game.roll[d.k] = rand(); });
+    if (game.cards && roller()) game.view = roller().id;
+    save();
+    var el = $('dice'); el.classList.remove('rolling'); void el.offsetWidth; el.classList.add('rolling');
+    buzz(30); render();
+  }
+
+  // ================= Render =================
+  var RULES = [
+    'Each roll: everyone may cross the <b>sum of the two white dice</b> in any one row.',
+    'Then the roller may also cross <b>one white die + one colored die</b> in that color’s row.',
+    'Cross numbers <b>left to right</b>. Anything you skip can’t be crossed later.',
+    'If the roller crosses nothing on their roll, they take a <b>penalty (−5)</b>.',
+    'With <b>5 or more crosses</b> in a row you may cross its last number to <b>lock</b> it. The lock counts as an extra cross, and that color is out for everyone.',
+    'The game ends when <b>two rows are locked</b> or someone takes a <b>4th penalty</b>.',
+    'Each row scores 1, 3, 6, 10, 15, 21… points for 1, 2, 3, 4, 5, 6… crosses. Penalties are −5 each.'
+  ];
 
   function render() {
-    var r = state.roll;
+    if (!game) return;
+    var r = roller();
+    $('undoBtn').disabled = !undo.length;
+    var bits = [];
+    if (game.players.length) bits.push(game.players.length + ' player' + (game.players.length === 1 ? '' : 's'));
+    if (game.rollNo) bits.push('Roll ' + game.rollNo);
+    if (game.cards && lockedCount()) bits.push(lockedCount() + ' locked');
+    $('sub').textContent = bits.join(' · ');
+    $('overBanner').hidden = !game.over;
+    if (game.over) $('overBanner').textContent = '🏁 Game over: ' + overReason() + '. Tap ☰ → Scores so far, or ↶ to undo.';
+    if (game.dice) renderDice();
+    if (game.cards) renderCards();
+  }
+
+  function renderDice() {
+    var r = roller(), R = game.roll;
+    $('roller').innerHTML = r ? (game.rollNo ? '🎲 <b>' + esc(r.name) + '</b> rolled' : '🎲 <b>' + esc(r.name) + '</b> rolls first') +
+      (game.players.length > 1 ? ' <button type="button" id="nextRoller">Change</button>' : '') : '';
+    $('roller').hidden = !r;
     DICE.forEach(function (d) {
-      var die = $('die-' + d.key), face = die.firstChild, v = r[d.key];
-      die.classList.toggle('off', !inPlay(d));
-      face.classList.toggle('blank', !v);
-      var on = v ? PIPS[v] : [];
-      for (var i = 0; i < 9; i++) face.children[i].classList.toggle('on', on.indexOf(i) > -1);
-      face.setAttribute('aria-label', d.name + (d.key === 'w1' ? ' 1' : d.key === 'w2' ? ' 2' : '') + ': ' +
-        (!inPlay(d) ? 'out of play' : v ? v : 'not rolled'));
+      var die = $('die-' + d.k), f = die.firstChild, v = R[d.k], off = d.c !== 'white' && !inPlay(d.c);
+      die.classList.toggle('off', off);
+      f.classList.toggle('blank', !v || off);
+      var on = v && !off ? PIPS[v] : [];
+      for (var i = 0; i < 9; i++) f.children[i].classList.toggle('on', on.indexOf(i) > -1);
+      f.setAttribute('aria-label', d.n + ': ' + (off ? 'out of play' : v || 'not rolled'));
     });
-    COLORS.forEach(function (d) {
-      var b = $('row-' + d.key);
-      b.setAttribute('aria-pressed', String(!!state.on[d.key]));
-      b.lastChild.textContent = state.on[d.key] ? 'In play' : 'Out';
-    });
-
-    var rolled = r.w1 && r.w2, html = '';
-    html += '<li><span class="dot white"></span><span class="lbl">White + white</span><span class="val">' +
-      (rolled ? r.w1 + r.w2 : '–') + '</span></li>';
-    COLORS.forEach(function (d) {
-      var off = !state.on[d.key], c = r[d.key], val;
-      if (off) val = 'Out';
-      else if (rolled && c) {
-        var a = r.w1 + c, b = r.w2 + c;
-        val = a === b ? String(a) : Math.min(a, b) + '<small>or</small>' + Math.max(a, b);
-      } else val = '–';
-      html += '<li class="' + (off ? 'off' : '') + '"><span class="dot ' + d.cls + '"></span><span class="lbl">White + ' +
-        d.name.toLowerCase() + '</span><span class="val">' + val + '</span></li>';
-    });
-    $('sums').innerHTML = html;
+    var h = '';
+    if (R.w1) {
+      h += '<li><span class="dot white"></span><small>Everyone</small><b>' + (R.w1 + R.w2) + '</b></li>';
+      COLORS.forEach(function (c) {
+        if (!inPlay(c) || !R[c]) { h += '<li class="off"><span class="dot ' + c + '"></span><small>out</small></li>'; return; }
+        var a = R.w1 + R[c], b = R.w2 + R[c];
+        h += '<li><span class="dot ' + c + '"></span><b>' + Math.min(a, b) + (a !== b ? '</b><small>or</small><b>' + Math.max(a, b) : '') + '</b></li>';
+      });
+    }
+    $('sums').innerHTML = h;
+    $('rollBtn').disabled = game.over;
+    $('rollBtn').textContent = game.players.length > 1 && game.rollNo
+      ? 'Roll for ' + game.players[(game.cur + 1) % game.players.length].name : 'Roll';
+    // Without score cards, colors are taken out by hand when a row gets locked.
+    var o = $('outrow'); o.hidden = game.cards;
+    if (!game.cards) o.innerHTML = COLORS.map(function (c) {
+      return '<button type="button" data-out="' + c + '" aria-pressed="' + !game.out[c] + '"><span class="dot ' + c + '"></span>' + NAME[c] + (game.out[c] ? ' out' : '') + '</button>';
+    }).join('') + '<p class="hint" style="width:100%;margin:0">Tap a color when its row gets locked to take that die out.</p>';
   }
 
-  function roll() {
-    DICE.forEach(function (d) { if (inPlay(d)) state.roll[d.key] = rand(); });
-    save();
-    var dice = $('dice');
-    dice.classList.remove('rolling'); void dice.offsetWidth; dice.classList.add('rolling');
-    if (navigator.vibrate) navigator.vibrate(30);
-    render();
+  function moveHints(pid) {
+    // Which cells this roll allows: the white sum for everyone, color combos for the roller.
+    var R = game.roll, out = {};
+    if (!game.dice || !R.w1 || game.over) return out;
+    var ws = R.w1 + R.w2, isRoller = roller() && roller().id === pid;
+    COLORS.forEach(function (c) {
+      var set = {};
+      var wi = NUMS[c].indexOf(ws); if (canCross(pid, c, wi)) set[wi] = 'white';
+      if (isRoller && inPlay(c) && R[c]) [R.w1 + R[c], R.w2 + R[c]].forEach(function (v) {
+        var i = NUMS[c].indexOf(v); if (canCross(pid, c, i) && !set[i]) set[i] = 'color';
+      });
+      out[c] = set;
+    });
+    return out;
   }
 
-  $('rollBtn').addEventListener('click', roll);
-  document.addEventListener('keydown', function (e) {
-    if (e.repeat || e.target.tagName === 'BUTTON' && e.key === ' ') return;
-    if (e.key === 'r' || e.key === 'R' || e.key === ' ') { e.preventDefault(); roll(); }
+  function renderCards() {
+    if (!game.players.some(function (p) { return p.id === game.view; })) game.view = game.players[0].id;
+    var r = roller();
+    $('ptabs').innerHTML = game.players.map(function (p) {
+      return '<button type="button" class="ptab" role="tab" data-p="' + p.id + '" aria-selected="' + (p.id === game.view) + '">' +
+        '<span class="n">' + esc(p.name) + '</span><span class="t">' + total(p.id) + '</span>' +
+        (game.dice && r && r.id === p.id && game.rollNo ? '<span class="rl">🎲 rolled</span>' : '') + '</button>';
+    }).join('');
+    $('ptabs').hidden = game.players.length < 2;
+
+    var pid = game.view, s = sheet(pid), hints = moveHints(pid), h = '';
+    COLORS.forEach(function (c) {
+      var last = lastIdx(s, c), L = game.locks[c], closedForMe = L && L.by !== pid && !hasLock(s, c);
+      h += '<div class="rowinfo"><span>' + NAME[c] + (L ? (L.by === pid ? ' · you locked it 🔒' : ' · locked by ' + esc(nameOf(L.by)) + ' 🔒') : '') +
+        '</span><span><b>' + rowCount(s, c) + '</b> × = <b>' + rowScore(s, c) + '</b></span></div>';
+      h += '<div class="qrow ' + c + '">';
+      NUMS[c].forEach(function (n, i) {
+        var x = s[c].indexOf(i) > -1, can = canCross(pid, c, i), hint = hints[c] && hints[c][i];
+        var cls = 'qc' + (x ? ' x' : '') + (!x && i < last ? ' skip' : '') + (!x && closedForMe && !can ? ' closed' : '') +
+          (hint ? ' can' + (hint === 'color' ? ' mine' : '') : '');
+        var lab = NAME[c] + ' ' + n + (x ? ', crossed' : i < last ? ', skipped' : can ? '' : ', not available');
+        h += '<button type="button" class="' + cls + '" data-c="' + c + '" data-i="' + i + '" aria-label="' + lab + '"' +
+          (x || can ? '' : ' disabled') + '>' + n + '</button>';
+      });
+      var locked = hasLock(s, c);
+      h += '<button type="button" class="qc lockc' + (locked ? ' x' : '') + (closedForMe ? ' closed' : '') + '" disabled aria-label="' + NAME[c] + ' lock' + (locked ? ', crossed' : '') + '">🔒</button></div>';
+    });
+    $('sheet').innerHTML = h;
+
+    var ph = '<span>Penalties</span>';
+    for (var i = 1; i <= 4; i++) ph += '<button type="button" class="pen' + (s.pen >= i ? ' on' : '') + '" data-pen="' + i + '" aria-label="Penalty ' + i + (s.pen >= i ? ', marked' : '') + '">' + (s.pen >= i ? '✕' : '') + '</button>';
+    ph += '<span class="hint" style="margin:0">−5 each</span>';
+    $('pens').innerHTML = ph;
+
+    var t = COLORS.map(function (c, k) {
+      return (k ? '<span class="op">+</span>' : '') + '<span class="b"><span class="dot ' + c + '"></span>' + rowScore(s, c) + '</span>';
+    }).join('') + '<span class="op">−</span><span class="b">' + (5 * s.pen) + '</span><span class="tot">' + total(pid) + '</span>';
+    $('tally').innerHTML = t;
+
+    var lg = [];
+    if (game.dice && game.roll.w1 && !game.over) {
+      lg.push(r && r.id === pid ? 'Solid outline: the white dice (anyone). Dashed: a white + colored die (only the roller).'
+        : 'Outlined numbers can be crossed with the white dice this roll.');
+    }
+    lg.push('Tap a number to cross it. Tap your latest cross in a row to take it back.');
+    $('legend').textContent = lg.join(' ');
+  }
+  function nameOf(pid) { var p = game.players.find(function (q) { return q.id === pid; }); return p ? p.name : ''; }
+
+  var toastT;
+  function toast(msg) {
+    var t = $('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status');
+      t.style.cssText = 'position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;font-size:15px;max-width:calc(100% - 32px);transition:opacity .2s';
+      document.body.appendChild(t); }
+    t.textContent = msg; t.style.opacity = '1'; clearTimeout(toastT); toastT = setTimeout(function () { t.style.opacity = '0'; }, 2600);
+  }
+
+  // ================= Events =================
+  $('rollBtn').addEventListener('click', doRoll);
+  $('roller').addEventListener('click', function (e) {
+    if (e.target.id !== 'nextRoller') return;
+    snap(); game.cur = (game.cur + 1) % game.players.length; save(); render();
   });
-  render();
-  keepAwake(true);
+  $('outrow').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-out]'); if (!b) return;
+    snap(); var c = b.dataset.out; if (game.out[c]) delete game.out[c]; else { game.out[c] = true; delete game.roll[c]; }
+    save(); render();
+  });
+  $('ptabs').addEventListener('click', function (e) {
+    var b = e.target.closest('.ptab'); if (!b) return; game.view = b.dataset.p; save(); render();
+  });
+  $('sheet').addEventListener('click', function (e) {
+    var b = e.target.closest('.qc[data-c]'); if (!b || b.disabled) return;
+    var c = b.dataset.c, i = +b.dataset.i, s = sheet(game.view);
+    if (s[c].indexOf(i) > -1) {
+      if (i === lastIdx(s, c)) uncross(game.view, c);
+      else toast('Only your latest cross in a row can be taken back. Use ↶ for more.');
+      return;
+    }
+    if (i === 10 && !confirm('Lock the ' + NAME[c].toLowerCase() + ' row? This ends it for everyone' + (game.dice ? ' and takes the ' + NAME[c].toLowerCase() + ' die out' : '') + '.')) return;
+    cross(game.view, c, i);
+  });
+  $('pens').addEventListener('click', function (e) {
+    var b = e.target.closest('.pen'); if (!b) return;
+    var n = +b.dataset.pen, s = sheet(game.view);
+    setPen(game.view, s.pen >= n ? n - 1 : n);
+  });
+  $('undoBtn').addEventListener('click', function () {
+    if (!undo.length) return; game = JSON.parse(undo.pop()); save(); buzz(); render();
+  });
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  });
+  $('menuBtn').addEventListener('click', function () {
+    $('mScores').hidden = !game.cards;
+    $('menuRules').innerHTML = RULES.map(function (r) { return '<li>' + r + '</li>'; }).join('');
+    $('menuDlg').showModal();
+  });
+  $('mSetup').addEventListener('click', function () { $('menuDlg').close(); openSetup(); });
+  function restart() {
+    if (hasProgress() && !game.over && !confirm('Start over with the same players?')) return;
+    $('menuDlg').close(); $('scoreDlg').close();
+    // Next game: the next player rolls first.
+    newGame(game.dice, game.cards, game.players.map(function (p) { return p.name; }), game.cur + 1);
+  }
+  $('mRestart').addEventListener('click', restart);
+  $('sRestart').addEventListener('click', restart);
+  $('mScores').addEventListener('click', function () { $('menuDlg').close(); showScores(false); });
+  function showScores(final) {
+    var rows = game.players.map(function (p) {
+      var s = sheet(p.id);
+      return { p: p, t: total(p.id), st: COLORS.map(function (c) { return NAME[c][0] + ' ' + rowScore(s, c); }).join(' · ') + (s.pen ? ' · −' + 5 * s.pen : '') };
+    }).sort(function (a, b) { return b.t - a.t; });
+    var place = 0, prev = null;
+    $('finalList').innerHTML = rows.map(function (r, i) {
+      if (r.t !== prev) place = i + 1; prev = r.t;
+      return '<li><span class="place">' + (place === 1 ? '🏆' : place) + '</span><span class="nm">' + esc(r.p.name) + '<span class="st">' + esc(r.st) + '</span></span><span class="tt">' + r.t + '</span></li>';
+    }).join('');
+    $('scoreTitle').textContent = final || game.over ? 'Final scores' : 'Scores so far';
+    $('scoreDlg').showModal();
+  }
+
+  if (game && game.players && (game.dice || game.cards)) showPlay(); else { game = null; openSetup(); }
 })();
 </script>
 </body>
