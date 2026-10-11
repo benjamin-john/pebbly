@@ -19,6 +19,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
   `<script src="/nav.js"></script>` in its `<head>` for the "← Pebbly" home bar.
 - `nav.js` shows that home bar only in the installed app, never in a normal browser tab.
   Add `?appnav` to a URL to preview it.
+- `keepawake.js` keeps the screen on during games: call `keepAwake(true)` / `keepAwake(false)`.
 - `CNAME` holds the custom domain. Don't delete it.
 - `.nojekyll` tells Pages to serve files as-is (no Jekyll build).
 - The Supabase apps read their project URL and publishable key from each folder's `config.js`.

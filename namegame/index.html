@@ -84,6 +84,7 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
 .overlay p{margin:0 0 10px;color:#BFDCCF;max-width:30ch}
 .overlay .btn{max-width:320px;background:#6CC4A4;color:#0F1F19}
 </style>
+<script src="/keepawake.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -177,19 +178,11 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
   }
 
   // Keep the screen awake while the Game Master is reading and checking off names.
-  var lock = null;
-  function wake(on) {
-    if (!('wakeLock' in navigator)) return;
-    if (on && !lock) navigator.wakeLock.request('screen').then(function (l) { lock = l; l.addEventListener('release', function () { lock = null; }); }).catch(function () {});
-    if (!on && lock) { lock.release(); lock = null; }
-  }
-  document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible' && game && (game.phase === 'memo' || game.phase === 'play')) wake(true);
-  });
+  function wake(on) { keepAwake(on); }
 
   function show(id) {
     ['s-start', 's-input', 's-memo', 's-play'].forEach(function (s) { $(s).hidden = s !== id; });
-    wake(id === 's-memo' || id === 's-play');
+    wake(id !== 's-start');   // the whole game, including passing the phone around
     scrollTo(0, 0);
   }
 

@@ -91,6 +91,7 @@ h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;col
 .rowbtn:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 .hint{margin:10px 0 0;color:var(--muted);font-size:14px}
 </style>
+<script src="/keepawake.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -205,6 +206,7 @@ h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;col
     if (e.key === 'r' || e.key === 'R' || e.key === ' ') { e.preventDefault(); roll(); }
   });
   render();
+  keepAwake(true);
 })();
 </script>
 </body>
