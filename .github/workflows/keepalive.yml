@@ -1,0 +1,20 @@
+# Pings Supabase every 3 days so the free project never hits the 7-day inactivity pause.
+# Put this file in your site repo at: .github/workflows/keepalive.yml
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: "17 14 */3 * *"    # every 3 days (UTC)
+  workflow_dispatch:            # lets you run it by hand from the Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call ping()
+        run: |
+          curl --fail --silent --show-error --retry 3 --max-time 30 \
+            -X POST "https://xujtuijpbwujduuzlwat.supabase.co/rest/v1/rpc/ping" \
+            -H "apikey: sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ" \
+            -H "Content-Type: application/json" \
+            -d '{}'
