@@ -136,9 +136,15 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .counts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
 .counts span{border-radius:999px;padding:3px 11px;font-size:14px;font-weight:600}
 .c-go{background:var(--go-t);color:#1D5E3A}.c-maybe{background:var(--maybe-t);color:#6E5108}.c-no{background:var(--no-t);color:#8A2723}
-.glist{list-style:none;margin:8px 0 0;padding:0}
-.ghead{font-weight:600;font-size:15px;margin-top:14px;color:var(--muted)}
-.g{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.gbox{margin-top:14px;padding:12px 14px 4px;border:1px solid var(--line);border-radius:14px}
+.gbox.going{border-color:var(--go);background:var(--go-t)}
+.gbox.maybe{border-color:#E5CB6B;background:var(--maybe-t)}
+.gbox.no{border-color:#D9908D;background:var(--no-t)}
+.glist{list-style:none;margin:4px 0 0;padding:0}
+.ghead{font-weight:700;font-size:15px;color:var(--muted)}
+.gbox.going .ghead{color:#1D5E3A}.gbox.maybe .ghead{color:#6E5108}.gbox.no .ghead{color:#8A2723}
+.g{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid rgba(0,0,0,.1)}
+.g:first-child{border-top:0}
 .g .nm{font-weight:600;overflow-wrap:anywhere}
 .g .plus{font-size:13px;font-weight:600;color:var(--muted);margin-left:4px}
 .g .note{display:block;color:var(--muted);font-size:14px;font-style:italic;overflow-wrap:anywhere}
@@ -1306,7 +1312,7 @@ function renderGuests() {
   ['going', 'maybe', 'no'].forEach(function (k) {
     var list = g.filter(function (x) { return x.status === k; });
     if (!list.length) return;
-    html += '<div class="ghead">' + STATUS[k].e + ' ' + STATUS[k].group + ' (' + list.length + ')</div><ul class="glist">' + list.map(function (x) {
+    html += '<div class="gbox ' + k + '"><div class="ghead">' + STATUS[k].e + ' ' + STATUS[k].group + ' (' + list.length + ')</div><ul class="glist">' + list.map(function (x) {
       var ans = S.isOwner && x.answers ? qs.filter(function (q) { return x.answers[q.id]; }).map(function (q) {
         return '<span class="ans"><i>' + esc(q.text) + '</i> ' + esc(x.answers[q.id]) + '</span>';
       }).join('') : '';
@@ -1318,7 +1324,7 @@ function renderGuests() {
           (x.updated_at && new Date(x.updated_at) - new Date(x.replied_at) > 60000 ? ' · changed ' + esc(fmtStampTime(x.updated_at)) : '') + '</span>' : '') +
         (S.isOwner ? '<button type="button" class="link danger" data-act="rm-guest" data-id="' + esc(x.id) + '" data-name="' + esc(x.name) + '">Remove</button>' : '') +
         '</div></li>';
-    }).join('') + '</ul>';
+    }).join('') + '</ul></div>';
   });
   el.innerHTML = html;
 }
