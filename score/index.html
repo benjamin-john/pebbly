@@ -172,6 +172,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   })();
 </script>
 <script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -180,6 +181,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 <main class="setup" id="setup" hidden>
   <h1>Score Keeper</h1>
   <p class="lead">Keep score for any game. Each player gets a column and the totals add up as you go.</p>
+  <div id="psJoin"></div>
 
   <section class="card">
     <h2>Game</h2>
@@ -206,6 +208,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     </div>
   </section>
 
+  <div id="psSetup"></div>
   <div class="stack">
     <button class="btn" id="startBtn" type="button">Start game</button>
     <button class="btn ghost" id="backToGame" type="button" hidden>Back to current game</button>
@@ -219,6 +222,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
     <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
   </div>
+  <div id="psBadge" hidden style="padding:0 12px"></div>
 
   <div class="tablewrap" id="tablewrap">
     <table id="table" aria-label="Scores"></table>
@@ -312,7 +316,8 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   var sel = null;        // { r, pid } when fixing an earlier score
   var buf = '';          // number being typed
 
-  function saveGame() { store(K_GAME, game); store(K_UNDO, undo); }
+  var sync = null;
+  function saveGame() { store(K_GAME, game); store(K_UNDO, undo); if (sync) sync.push(); }
   function snapshot() { undo.push(JSON.stringify(game)); if (undo.length > 60) undo.shift(); }
   function remember(list, value) {
     var v = tidy(value); if (!v) return;
@@ -336,6 +341,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   }
 
   function renderSetup() {
+    if (sync && sync.box) sync.box.redraw();
     renderPlayerList($('setupPlayers'), draft, function () { renderSetup(); });
     var taken = draft.map(function (p) { return p.name.toLowerCase(); });
     var left = mem.players.filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; });
@@ -418,13 +424,14 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (!draft.length) return;
     if (game && game.rounds.length && !confirm('Start a new game? The current scores will be cleared.')) return;
     var name = tidy($('gameName').value) || 'Game';
-    game = { name: name, players: draft.map(function (p) { return { id: uid(), name: p.name }; }), rounds: [],
+    game = { name: name, players: draft.map(function (p) { return { id: p.id, name: p.name }; }), rounds: [],
       low: document.querySelector('input[name=wins]:checked').value === 'low' };
     undo = [];
     if (name !== 'Game') remember(mem.games, name);
     game.players.slice().reverse().forEach(function (p) { remember(mem.players, p.name); });
     store(K_MEM, mem); saveGame();
     showGame();
+    sync.started(sync.shared() ? game.players[sync.box.meIndex()] : null);
   });
 
   // ================= Game =================
@@ -637,16 +644,18 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     e.preventDefault();
     var v = tidy($('newGamePlayer').value); if (!v) return;
     snapshot();
-    var p = { id: uid(), name: v };
-    // Earlier rounds count as 0 so the turn order isn't sent back to round 1.
-    game.rounds.forEach(function (row, i) {
-      var complete = game.players.every(function (q) { return row[q.id] != null; });
-      if (complete) row[p.id] = 0;
-    });
-    game.players.push(p); remember(mem.players, v); store(K_MEM, mem);
+    addPlayer(game, uid(), v); remember(mem.players, v); store(K_MEM, mem);
     $('newGamePlayer').value = ''; saveGame(); renderGamePlayers(); render(false);
   });
   $('playersDlg').addEventListener('close', function () { render(true); });
+  function addPlayer(g, id, name) {
+    // Earlier rounds count as 0 so the turn order isn't sent back to round 1.
+    g.rounds.forEach(function (row) {
+      var complete = g.players.every(function (q) { return row[q.id] != null; });
+      if (complete) row[id] = 0;
+    });
+    g.players.push({ id: id, name: name });
+  }
 
   $('mFinish').addEventListener('click', function () {
     $('menuDlg').close();
@@ -672,6 +681,19 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   // ================= Start =================
   if (game && game.players && game.players.length) showGame(); else { game = null; openSetup(null); }
+
+  // Play together (see /play/sync.js).
+  sync = PebblySync.wire('score', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    names: function () { return draft.map(function (p) { return p.name; }); },
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; store(K_GAME, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: function () { if (game && !$('game').hidden) render(false); },
+    showPlay: showGame,
+    players: function (g) { return g.players || []; },
+    addPlayer: addPlayer
+  });
 })();
   // Version + screen numbers, to check a phone has the latest code.
   (function () {

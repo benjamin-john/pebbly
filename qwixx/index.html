@@ -102,6 +102,7 @@ input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid v
 .rolling .die:not(.off) .face{animation:tumble .35s ease-out}
 @media (prefers-reduced-motion:reduce){.rolling .die .face{animation:none}}
 .roll{margin-top:12px;min-height:56px;font:800 20px/1 var(--head)}
+.linkbtn{display:block;margin:6px auto 0;border:0;background:none;color:var(--brand);font-weight:600;cursor:pointer;padding:8px}
 .sums{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;padding:0;list-style:none;font-size:15px}
 .sums li{display:flex;align-items:center;gap:6px}
 .sums b{font:800 18px/1 var(--head);font-variant-numeric:tabular-nums}
@@ -168,6 +169,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 .final .tt{font:800 22px/1 var(--head)}
 </style>
 <script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -175,7 +177,8 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 <!-- ================= Setup ================= -->
 <main class="wrap" id="setup" hidden>
   <h1>Qwixx</h1>
-  <p class="lead">Roll the dice, keep everyone's score cards, or both, all on one phone.</p>
+  <p class="lead">Roll the dice, keep everyone's score cards, or both.</p>
+  <div id="psJoin"></div>
 
   <section class="card">
     <h2>Use</h2>
@@ -202,6 +205,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <ul class="rules" id="rulesList"></ul>
   </section>
 
+  <div id="psSetup"></div>
   <div class="stack">
     <button class="btn" id="startBtn" type="button">Start</button>
     <button class="btn ghost" id="backBtn" type="button" hidden>Back to current game</button>
@@ -216,6 +220,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
   </div>
 
+  <div id="psBadge" hidden></div>
   <div class="banner" id="overBanner" hidden></div>
 
   <section class="card" id="diceCard" aria-label="Dice">
@@ -223,6 +228,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <div class="dice" id="dice"></div>
     <ul class="sums" id="sums" aria-live="polite"></ul>
     <button class="btn roll" id="rollBtn" type="button">Roll</button>
+    <button type="button" id="rollFor" class="linkbtn" hidden></button>
     <div class="outrow" id="outrow"></div>
   </section>
 
@@ -285,7 +291,8 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
               sheets:{pid:{red:[idx], ..., pen, mark}}, locks:{color:{by, roll}}, over, view } */
   var game = load(KEY, null), undo = load(K_UNDO, []);
   var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
-  function save() { store(KEY, game); store(K_UNDO, undo); }
+  var sync = null, view = load('pebbly_qwixx2_view', null), rollOverride = -1;   // view: whose card this phone shows
+  function save() { store(KEY, game); store(K_UNDO, undo); if (sync) sync.push(); }
   function snap() { undo.push(JSON.stringify(game)); if (undo.length > 150) undo.shift(); }
 
   // ================= Setup =================
@@ -300,6 +307,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     renderSetup();
   }
   function renderSetup() {
+    if (sync && sync.box) sync.box.redraw();
     var d = $('useDice').checked, c = $('useCards').checked;
     $('modeHint').textContent = !d && !c ? 'Pick at least one.' : d && !c ? 'Just the dice. Use paper score cards.' :
       !d && c ? 'Just the score cards. Roll real dice.' : 'Dice and score cards together. The app highlights what each roll lets you cross.';
@@ -362,7 +370,8 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       if (i > -1) mem.players.splice(i, 1); mem.players.unshift(p.name);
     });
     mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
-    newGame(d, c, draft.map(function (p) { return p.name; }), 0);
+    newGame(d, c, draft, 0);
+    sync.started(sync.shared() ? game.players[sync.box.meIndex()] : null);
   });
   function hasProgress() {
     return game.rollNo > 0 || game.players.some(function (p) { var s = game.sheets[p.id]; return s && (s.pen || COLORS.some(function (c) { return s[c].length; })); });
@@ -370,12 +379,15 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   // ================= Game =================
   function newGame(dice, cards, names, first) {
-    var players = names.map(function (n) { return { id: uid(), name: n }; }), sheets = {};
-    players.forEach(function (p) { sheets[p.id] = { red: [], yellow: [], green: [], blue: [], pen: 0, mark: -1 }; });
+    // Names, or {id, name} to keep the same players (and their phones) for a rematch.
+    var players = names.map(function (n) { return typeof n === 'string' ? { id: uid(), name: n } : { id: n.id, name: n.name }; }), sheets = {};
+    players.forEach(function (p) { sheets[p.id] = newSheet(); });
     game = { dice: dice, cards: cards, players: players, cur: players.length ? first % players.length : 0, roll: {}, rollNo: 0,
-             out: {}, sheets: sheets, locks: {}, over: false, view: players.length ? players[0].id : null };
+             out: {}, sheets: sheets, locks: {}, over: false };
+    view = null;
     undo = []; save(); showPlay();
   }
+  function newSheet() { return { red: [], yellow: [], green: [], blue: [], pen: 0, mark: -1 }; }
   function showPlay() {
     $('setup').hidden = true; $('play').hidden = false;
     $('diceCard').hidden = !game.dice; $('cardsCard').hidden = !game.cards;
@@ -467,7 +479,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     game.rollNo++;
     game.roll = {};
     DICE.forEach(function (d) { if (d.c === 'white' || inPlay(d.c)) game.roll[d.k] = rand(); });
-    if (game.cards && roller()) game.view = roller().id;
+    if (game.cards && roller() && !PebblySync.active()) { view = roller().id; store('pebbly_qwixx2_view', view); }   // together: each phone keeps showing its own card
     save();
     var el = $('dice'); el.classList.remove('rolling'); void el.offsetWidth; el.classList.add('rolling');
     buzz(30); render();
@@ -522,9 +534,13 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       });
     }
     $('sums').innerHTML = h;
-    $('rollBtn').disabled = game.over;
-    $('rollBtn').textContent = game.players.length > 1 && game.rollNo
-      ? 'Roll for ' + game.players[(game.cur + 1) % game.players.length].name : 'Roll';
+    var next = game.players.length ? game.players[game.rollNo ? (game.cur + 1) % game.players.length : game.cur] : null;
+    var waiting = next && !PebblySync.canAct(next.id) && rollOverride !== game.rollNo && !game.over;
+    $('rollBtn').disabled = game.over || waiting;
+    $('rollBtn').textContent = waiting ? 'Waiting for ' + next.name + ' to roll'
+      : game.players.length > 1 && next && game.rollNo ? 'Roll for ' + next.name : 'Roll';
+    $('rollFor').hidden = !waiting;
+    if (waiting) $('rollFor').textContent = 'Roll for ' + next.name + ' from this phone';
     // Without score cards, colors are taken out by hand when a row gets locked.
     var o = $('outrow'); o.hidden = game.cards;
     if (!game.cards) o.innerHTML = COLORS.map(function (c) {
@@ -549,16 +565,18 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   }
 
   function renderCards() {
-    if (!game.players.some(function (p) { return p.id === game.view; })) game.view = game.players[0].id;
+    if (!game.players.some(function (p) { return p.id === view; })) {
+      var me = PebblySync.me(); view = game.players.some(function (p) { return p.id === me; }) ? me : game.players[0].id;
+    }
     var r = roller();
     $('ptabs').innerHTML = game.players.map(function (p) {
-      return '<button type="button" class="ptab" role="tab" data-p="' + p.id + '" aria-selected="' + (p.id === game.view) + '">' +
+      return '<button type="button" class="ptab" role="tab" data-p="' + p.id + '" aria-selected="' + (p.id === view) + '">' +
         '<span class="n">' + esc(p.name) + '</span><span class="t">' + total(p.id) + '</span>' +
         (game.dice && r && r.id === p.id && game.rollNo ? '<span class="rl">🎲 rolled</span>' : '') + '</button>';
     }).join('');
     $('ptabs').hidden = game.players.length < 2;
 
-    var pid = game.view, s = sheet(pid), hints = moveHints(pid), h = '';
+    var pid = view, s = sheet(pid), hints = moveHints(pid), h = '';
     COLORS.forEach(function (c) {
       var last = lastIdx(s, c), L = game.locks[c], closedForMe = L && L.by !== pid && !hasLock(s, c);
       h += '<div class="rowinfo"><span>' + NAME[c] + (L ? (L.by === pid ? ' · you locked it 🔒' : ' · locked by ' + esc(nameOf(L.by)) + ' 🔒') : '') +
@@ -617,23 +635,23 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     save(); render();
   });
   $('ptabs').addEventListener('click', function (e) {
-    var b = e.target.closest('.ptab'); if (!b) return; game.view = b.dataset.p; save(); render();
+    var b = e.target.closest('.ptab'); if (!b) return; view = b.dataset.p; store('pebbly_qwixx2_view', view); render();
   });
   $('sheet').addEventListener('click', function (e) {
     var b = e.target.closest('.qc[data-c]'); if (!b || b.disabled) return;
-    var c = b.dataset.c, i = +b.dataset.i, s = sheet(game.view);
+    var c = b.dataset.c, i = +b.dataset.i, s = sheet(view);
     if (s[c].indexOf(i) > -1) {
-      if (i === lastIdx(s, c)) uncross(game.view, c);
+      if (i === lastIdx(s, c)) uncross(view, c);
       else toast('Only your latest cross in a row can be taken back. Use ↶ for more.');
       return;
     }
     if (i === 10 && !confirm('Lock the ' + NAME[c].toLowerCase() + ' row? This ends it for everyone' + (game.dice ? ' and takes the ' + NAME[c].toLowerCase() + ' die out' : '') + '.')) return;
-    cross(game.view, c, i);
+    cross(view, c, i);
   });
   $('pens').addEventListener('click', function (e) {
     var b = e.target.closest('.pen'); if (!b) return;
-    var n = +b.dataset.pen, s = sheet(game.view);
-    setPen(game.view, s.pen >= n ? n - 1 : n);
+    var n = +b.dataset.pen, s = sheet(view);
+    setPen(view, s.pen >= n ? n - 1 : n);
   });
   $('undoBtn').addEventListener('click', function () {
     if (!undo.length) return; game = JSON.parse(undo.pop()); save(); buzz(); render();
@@ -651,7 +669,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (hasProgress() && !game.over && !confirm('Start over with the same players?')) return;
     $('menuDlg').close(); $('scoreDlg').close();
     // Next game: the next player rolls first.
-    newGame(game.dice, game.cards, game.players.map(function (p) { return p.name; }), game.cur + 1);
+    newGame(game.dice, game.cards, game.players, game.cur + 1);
   }
   $('mRestart').addEventListener('click', restart);
   $('sRestart').addEventListener('click', restart);
@@ -670,7 +688,26 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     $('scoreDlg').showModal();
   }
 
+  $('rollFor').addEventListener('click', function () { rollOverride = game.rollNo; render(); });
   if (game && game.players && (game.dice || game.cards)) showPlay(); else { game = null; openSetup(); }
+
+  // Play together (see /play/sync.js).
+  sync = PebblySync.wire('qwixx', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    names: function () { return draft.map(function (p) { return p.name; }); },
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; store(KEY, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: function () { if (game && !$('play').hidden) render(); },
+    showPlay: showPlay,
+    players: function (g) { return g.players || []; },
+    addPlayer: function (g, id, name) { g.players.push({ id: id, name: name }); g.sheets[id] = newSheet(); },
+    onRemote: function (prev, next) {
+      if (!prev) return;
+      if (next.rollNo > prev.rollNo && next.dice) { var el = $('dice'); el.classList.remove('rolling'); void el.offsetWidth; el.classList.add('rolling'); buzz(30); }
+      if (!prev.over && next.over) showScores(true);
+    }
+  });
 })();
 </script>
 </body>

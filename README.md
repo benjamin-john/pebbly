@@ -20,6 +20,10 @@ Static site served by GitHub Pages at https://pebbly.dev.
   `<script src="/nav.js"></script>` in its `<head>` for the "← Pebbly" home bar.
 - `nav.js` shows that home bar only in the installed app, never in a normal browser tab.
   Add `?appnav` to a URL to preview it.
+- **Play together** (`play/`): any game can be shared between phones with a 5-letter code.
+  `play/play.sql` (run once in Supabase) stores each shared game as one JSON document with a
+  version number; `play/sync.js` pushes changes, polls every 1.5 s, and merges when two phones
+  change things at once. A game page hooks in with `PebblySync.wire(kind, {...})` (see Qwixx).
 - `keepawake.js` keeps the screen on during games: call `keepAwake(true)` / `keepAwake(false)`.
 - `CNAME` holds the custom domain. Don't delete it.
 - `.nojekyll` tells Pages to serve files as-is (no Jekyll build).

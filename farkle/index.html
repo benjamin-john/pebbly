@@ -117,6 +117,7 @@ details.house[open] summary::before{content:"▾"}
 .status{min-height:24px;margin:10px 0 0;font-weight:600;text-align:center}
 .status.bad{color:var(--no)}
 .status.good{color:var(--brand)}
+.ps-wait.full{grid-column:1/-1}
 .farkle{font:800 34px/1.1 var(--head);color:var(--no);text-align:center;margin:6px 0}
 
 /* dice */
@@ -176,6 +177,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 .log .neg{color:var(--no)}
 </style>
 <script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -184,6 +186,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 <main class="wrap" id="setup" hidden>
   <h1>Farkle</h1>
   <p class="lead">Roll the dice, keep score, or both, for any number of players.</p>
+  <div id="psJoin"></div>
 
   <section class="card">
     <h2>Use</h2>
@@ -221,6 +224,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     </details>
   </section>
 
+  <div id="psSetup"></div>
   <div class="stack">
     <button class="btn" id="startBtn" type="button">Start</button>
     <button class="btn ghost" id="backBtn" type="button" hidden>Back to current game</button>
@@ -234,6 +238,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
     <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
   </div>
+  <div id="psBadge" hidden></div>
   <div class="banner" id="banner" hidden></div>
 
   <section class="card" id="turnCard">
@@ -402,7 +407,14 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   var settings = load(K_SET, { dice: true, score: true, style: 'standard', R: DEFAULTS, players: [] });
   settings.R = Object.assign({}, DEFAULTS, settings.R || {});
   var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
-  function save() { store(KEY, game); store(K_UNDO, undo); }
+  var sync = null, playFor = -1;
+  function save() { store(KEY, game); store(K_UNDO, undo); if (sync) sync.push(); }
+  // Playing together: only the phone whose turn it is acts (or anyone, for a player without a phone).
+  function myTurn() { var p = cur(); return !p || PebblySync.canAct(p.id) || playFor === game.log.length; }
+  function waitHTML() {
+    var n = esc(cur().name);
+    return '<div class="ps-wait full">⏳ ' + n + ' is playing on their phone.<br><button type="button" data-a="playfor">Play for ' + n + ' from this phone</button></div>';
+  }
   function snap() { undo.push(JSON.stringify(game)); if (undo.length > 200) undo.shift(); }
 
   // ================= Setup =================
@@ -433,6 +445,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   });
   $('resetRules').addEventListener('click', function () { draftR = Object.assign({}, DEFAULTS); renderRules(); });
   function renderSetup() {
+    if (sync && sync.box) sync.box.redraw();
     var d = $('useDice').checked, s = $('useScore').checked;
     $('useHint').textContent = !d && !s ? 'Pick at least one.' : d && !s ? 'Just the dice: points for each turn are added up, but no running totals.'
       : !d && s ? 'Just the scoreboard: roll real dice and type in each turn’s points.' : 'Dice and scoreboard together: everything is counted for you.';
@@ -486,18 +499,21 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (game && !game.over && game.log.length && !confirm('Start a new game? The current one will be cleared.')) return;
     var style = document.querySelector('input[name=style]:checked').value;
     settings = { dice: d, score: s, style: style, R: draftR, players: draft.map(function (p) { return p.name; }) };
+    var keep = draft.slice();
     store(K_SET, settings);
     draft.slice().reverse().forEach(function (p) {
       var i = mem.players.findIndex(function (x) { return x.toLowerCase() === p.name.toLowerCase(); });
       if (i > -1) mem.players.splice(i, 1); mem.players.unshift(p.name);
     });
     mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
-    newGame(settings, 0);
+    newGame(Object.assign({}, settings, { players: keep }), 0);
+    sync.started(sync.shared() ? game.players[sync.box.meIndex()] : null);
   });
 
   // ================= Game flow =================
   function newGame(cfg, first) {
-    var players = (cfg.players || []).map(function (n) { return { id: uid(), name: n }; });
+    // Names, or {id, name} to keep the same players (and their phones) for a rematch.
+    var players = (cfg.players || []).map(function (n) { return typeof n === 'string' ? { id: uid(), name: n } : { id: n.id, name: n.name }; });
     game = { dice: cfg.dice, score: cfg.score, style: cfg.style, R: Object.assign({}, cfg.R), players: players,
              cur: players.length ? first % players.length : 0, totals: {}, onBoard: {}, streak: {},
              turn: null, lastBank: null, final: null, over: false, log: [] };
@@ -628,14 +644,15 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       off.hidden = false;
       off.innerHTML = '<p><b>' + esc(t.offer.name || 'Last turn') + '</b> banked <b>' + fmt(t.offer.pts) + '</b> with <b>' + nDice(t.offer.left) +
         '</b> left. Take it over? Farkle and you get nothing; bank and you keep it all.</p>' +
-        '<div class="acts" style="margin-top:0"><button class="btn" type="button" id="takeOffer">Continue with ' + fmt(t.offer.pts) + '<small>' + (game.dice ? 'roll ' : 'using ') + nDice(t.offer.left) + '</small></button>' +
-        '<button class="btn ghost" type="button" id="skipOffer">Start fresh<small>' + (game.dice ? 'roll 6 dice' : 'from 0') + '</small></button></div>';
+        (myTurn() ? '<div class="acts" style="margin-top:0"><button class="btn" type="button" id="takeOffer">Continue with ' + fmt(t.offer.pts) + '<small>' + (game.dice ? 'roll ' : 'using ') + nDice(t.offer.left) + '</small></button>' +
+        '<button class="btn ghost" type="button" id="skipOffer">Start fresh<small>' + (game.dice ? 'roll 6 dice' : 'from 0') + '</small></button></div>' : waitHTML());
     } else off.hidden = true;
 
     if (game.dice) renderDice(); else renderEntry();
     if (game.score) renderBoard();
   }
 
+  function $$dice(off) { document.querySelectorAll('#dice .die[data-i]').forEach(function (d) { d.disabled = off; }); }
   function renderDice() {
     var t = game.turn, R = game.R;
     var k = '';
@@ -674,6 +691,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       if (s !== null && bankMsg && bankMsg !== 'x' && t.sel.length) { st.textContent += ' ' + bankMsg; }
       minor = '<button type="button" data-a="best">Pick scoring dice</button>' + (t.sel.length ? '<button type="button" data-a="none">Clear</button>' : '');
     }
+    if (!myTurn() && !game.over && !t.offer) { acts = waitHTML(); minor = ''; $$dice(true); }
     $('acts').innerHTML = acts; $('minor').innerHTML = minor;
   }
 
@@ -693,6 +711,9 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     $('eBank').disabled = game.over || !!t.offer || !v || !!msg || (needLeft && !t.entryLeft);
     $('eBank').innerHTML = 'Bank ' + fmt(t.pts + v) + (needLeft && !t.entryLeft && v ? '<small>pick dice left first</small>' : '');
     $('eFarkle').disabled = game.over || !!t.offer;
+    var mine = myTurn();
+    document.querySelectorAll('#keys button, #quick button, #leftsel button').forEach(function (b) { b.disabled = !mine; });
+    if (!mine) { $('eBank').disabled = true; $('eFarkle').disabled = true; if (!t.offer && !game.over) $('eStatus').innerHTML = waitHTML(); }
   }
 
   function renderBoard() {
@@ -720,7 +741,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   // ================= Events =================
   $('dice').addEventListener('click', function (e) {
-    var b = e.target.closest('.die[data-i]'); if (!b || b.disabled) return;
+    var b = e.target.closest('.die[data-i]'); if (!b || b.disabled || !myTurn()) return;
     var t = game.turn, i = +b.dataset.i, at = t.sel.indexOf(i);
     if (at > -1) t.sel.splice(at, 1); else t.sel.push(i);
     buzz(5); save(); render();
@@ -729,6 +750,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (e.target.closest('#takeOffer')) return acceptOffer();
     if (e.target.closest('#skipOffer')) return declineOffer();
     var a = e.target.closest('[data-a]'); if (!a || a.disabled) return;
+    if (a.dataset.a === 'playfor') { playFor = game.log.length; render(); return; }
     var t = game.turn;
     switch (a.dataset.a) {
       case 'roll': rollDice(); break;
@@ -753,6 +775,9 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     var b = e.target.closest('button[data-left]'); if (!b) return; game.turn.entryLeft = +b.dataset.left; save(); render();
   });
   $('eBank').addEventListener('click', function () { var t = game.turn; bank(entryVal(), t.entryLeft || 6); });
+  $('eStatus').addEventListener('click', function (e) {
+    if (e.target.closest('[data-a="playfor"]')) { playFor = game.log.length; render(); }
+  });
   $('eFarkle').addEventListener('click', function () {
     var t = game.turn;
     if (t.pts + entryVal() > 0 && !confirm('Farkle? The ' + fmt(t.pts + entryVal()) + ' from this turn will be lost.')) return;
@@ -803,7 +828,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   function restart() {
     if (!game.over && game.log.length && !confirm('Start over with the same players?')) return;
     $('menuDlg').close(); if ($('winDlg').open) $('winDlg').close();
-    newGame({ dice: game.dice, score: game.score, style: game.style, R: game.R, players: game.players.map(function (p) { return p.name; }) }, 0);
+    newGame({ dice: game.dice, score: game.score, style: game.style, R: game.R, players: game.players }, 0);
   }
   $('mRestart').addEventListener('click', restart);
   $('wRestart').addEventListener('click', restart);
@@ -824,6 +849,25 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   }
 
   if (game && game.turn && (game.dice || game.score)) showPlay(); else { game = null; openSetup(); }
+
+  // Play together (see /play/sync.js).
+  sync = PebblySync.wire('farkle', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    names: function () { return draft.map(function (p) { return p.name; }); },
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; store(KEY, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: function () { if (game && !$('play').hidden) render(); },
+    showPlay: showPlay,
+    players: function (g) { return g.players || []; },
+    addPlayer: function (g, id, name) { g.players.push({ id: id, name: name }); g.totals[id] = 0; g.onBoard[id] = false; g.streak[id] = 0; },
+    onRemote: function (prev, next) {
+      if (!prev) return;
+      var pr = prev.turn && prev.turn.roll, nr = next.turn && next.turn.roll;
+      if (nr && JSON.stringify(pr) !== JSON.stringify(nr)) { var el = $('dice'); el.classList.remove('rolling'); void el.offsetWidth; el.classList.add('rolling'); buzz(next.turn.farkle ? [60, 60, 120] : 30); }
+      if (!prev.over && next.over) setTimeout(showWinner, 250);
+    }
+  });
 
   // Exposed for automated checks only.
   window.__farkle = { scoreOf: scoreOf, isFarkle: isFarkle, bestPick: bestPick, DEFAULTS: DEFAULTS };

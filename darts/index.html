@@ -190,6 +190,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   })();
 </script>
 <script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -198,6 +199,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 <main class="setup" id="setup" hidden>
   <h1>Darts Scorer</h1>
   <p class="lead">Score '01 (301, 501…) and Cricket one dart at a time. Busts, closed numbers and winners are handled for you.</p>
+  <div id="psJoin"></div>
 
   <section class="card">
     <h2>Game</h2>
@@ -253,6 +255,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <ul class="rules" id="rulesText"></ul>
   </section>
 
+  <div id="psSetup"></div>
   <div class="stack">
     <button class="btn" id="startBtn" type="button">Start game</button>
     <button class="btn ghost" id="backToGame" type="button" hidden>Back to current game</button>
@@ -266,6 +269,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo last dart" title="Undo last dart">↶</button>
     <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
   </div>
+  <div id="psBadge" hidden style="padding:0 12px"></div>
   <div class="board" id="board"></div>
   <section class="turnbox" aria-live="polite">
     <div class="turnhead">
@@ -335,7 +339,8 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   var settings = load(K_SET, { type: 'x01', start: 501, out: 'double', din: false, cut: false, players: [] });
   var mult = 1;
 
-  function saveGame() { store(K_GAME, game); store(K_UNDO, undo); }
+  var sync = null;
+  function saveGame() { store(K_GAME, game); store(K_UNDO, undo); if (sync) sync.push(); }
   function snapshot() { undo.push(JSON.stringify(game)); if (undo.length > 120) undo.shift(); }
 
   // A dart is { n: 1-20 | 25 | 0 (miss), m: 1-3 }.
@@ -385,6 +390,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     return r;
   }
   function renderSetup() {
+    if (sync && sync.box) sync.box.redraw();
     var c = readCfg();
     $('x01Opts').hidden = c.type !== 'x01';
     $('ckOpts').hidden = c.type !== 'cricket';
@@ -456,21 +462,24 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       mem.players.unshift(p.name);
     });
     mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
-    newGame(cfg, draft.map(function (p) { return p.name; }), 0);
+    newGame(cfg, draft, 0);
+    sync.started(sync.shared() ? game.players[sync.box.meIndex()] : null);
   });
 
   // ================= Game state =================
   // game = { cfg, players:[{id,name}], first, cur, darts:[current turn], turnStart, s:{pid: stats}, log:[turns], winner }
   function newGame(cfg, names, first) {
-    var players = names.map(function (n) { return { id: uid(), name: n }; });
+    // Names, or {id, name} to keep the same players (and their phones) for a rematch.
+    var players = names.map(function (n) { return typeof n === 'string' ? { id: uid(), name: n } : { id: n.id, name: n.name }; });
     game = { cfg: cfg, players: players, first: first % players.length, cur: first % players.length, darts: [], s: {}, log: [], winner: null, turnStart: null };
-    players.forEach(function (p) {
-      game.s[p.id] = cfg.type === 'cricket'
-        ? { marks: { 20: 0, 19: 0, 18: 0, 17: 0, 16: 0, 15: 0, 25: 0 }, pts: 0, thrown: 0, markCount: 0 }
-        : { rem: cfg.start, isIn: !cfg.din, thrown: 0, scored: 0 };
-    });
+    players.forEach(function (p) { game.s[p.id] = newStats(cfg); });
     undo = []; mult = 1;
     saveGame(); showGame();
+  }
+  function newStats(cfg) {
+    return cfg.type === 'cricket'
+      ? { marks: { 20: 0, 19: 0, 18: 0, 17: 0, 16: 0, 15: 0, 25: 0 }, pts: 0, thrown: 0, markCount: 0 }
+      : { rem: cfg.start, isIn: !cfg.din, thrown: 0, scored: 0 };
   }
   function curPlayer() { return game.players[game.cur]; }
 
@@ -736,7 +745,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   });
   $('mRestart').addEventListener('click', function () {
     if (!confirm('Restart from the beginning with the same players?')) return;
-    $('menuDlg').close(); newGame(game.cfg, game.players.map(function (p) { return p.name; }), game.first);
+    $('menuDlg').close(); newGame(game.cfg, game.players, game.first);
   });
   $('mNew').addEventListener('click', function () { $('menuDlg').close(); openSetup(); });
 
@@ -759,7 +768,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   $('wRematch').addEventListener('click', function () {
     $('winDlg').close();
     // Next leg: the next player in order throws first.
-    newGame(game.cfg, game.players.map(function (p) { return p.name; }), game.first + 1);
+    newGame(game.cfg, game.players, game.first + 1);
   });
   $('wNew').addEventListener('click', function () { $('winDlg').close(); openSetup(); });
   $('wUndo').addEventListener('click', function () { $('winDlg').close(); doUndo(); });
@@ -776,6 +785,23 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   });
 
   if (game && game.players && game.players.length) showGame(); else { game = null; openSetup(); }
+
+  // Play together (see /play/sync.js).
+  sync = PebblySync.wire('darts', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    names: function () { return draft.map(function (p) { return p.name; }); },
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; store(K_GAME, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: function () { if (game && !$('game').hidden) render(); },
+    showPlay: showGame,
+    players: function (g) { return g.players || []; },
+    addPlayer: function (g, id, name) {
+      if (g.cfg.type === 'cricket' && g.players.length >= 4) return;   // the cricket board fits 4
+      g.players.push({ id: id, name: name }); g.s[id] = newStats(g.cfg);
+    },
+    onRemote: function (prev, next) { if (prev && !prev.winner && next.winner) setTimeout(showWinner, 250); }
+  });
 })();
   // Version + screen numbers, to check a phone has the latest code.
   (function () {

@@ -30,6 +30,7 @@ h2{font:800 22px/1.2 var(--head);margin:0 0 6px}
 .lead{margin:0 0 16px;color:var(--muted)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
 .screen[hidden]{display:none}
+[hidden]{display:none !important}
 .rules{margin:0;padding-left:22px}
 .rules li{margin:6px 0}
 .btn{
@@ -85,6 +86,7 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
 .overlay .btn{max-width:320px;background:#6CC4A4;color:#0F1F19}
 </style>
 <script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -97,9 +99,11 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
 
 <main class="wrap">
   <h1>The Name Game</h1>
+  <div id="psBadge" hidden></div>
 
   <section class="screen" id="s-start">
     <p class="lead">A party memory game for one Game Master and a group of players.</p>
+    <div id="psJoin"></div>
     <div class="card">
       <h2>How to play</h2>
       <ol class="rules">
@@ -109,6 +113,7 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
         <li>The Game Master checks off each name as it's guessed.</li>
       </ol>
     </div>
+    <div id="psSetup"></div>
     <button class="btn" id="newBtn" type="button">Start a new game</button>
     <button class="btn ghost" id="resumeBtn" type="button" hidden>Continue last game</button>
   </section>
@@ -118,7 +123,7 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
       <h2>Your secret name</h2>
       <p class="count" id="count"></p>
       <form id="nameForm" autocomplete="off">
-        <label class="fld"><span>Type a name, then pass the phone</span>
+        <label class="fld"><span id="inputLabel">Type a name, then pass the phone</span>
           <input type="text" id="nameInput" maxlength="60" placeholder="e.g. Abraham Lincoln" enterkeyhint="done"></label>
         <p class="msg" id="nameMsg" role="alert"></p>
         <button class="btn" type="submit">Add my name</button>
@@ -136,6 +141,15 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
       <ol class="memo" id="memoList"></ol>
     </div>
     <button class="btn" id="playBtn" type="button">Start guessing</button>
+  </section>
+
+  <section class="screen" id="s-wait" hidden>
+    <div class="card" style="text-align:center">
+      <div style="font-size:52px;line-height:1" aria-hidden="true">🤫</div>
+      <h2 id="waitTitle" style="margin-top:10px"></h2>
+      <p class="small" id="waitText"></p>
+      <div class="progress" id="waitBar" aria-hidden="true" hidden><i></i></div>
+    </div>
   </section>
 
   <section class="screen" id="s-play" hidden>
@@ -164,9 +178,14 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
     try { var old = JSON.parse(localStorage.getItem(OLD_KEY)); if (old && old.length) game = fresh(old); } catch (e) {}
   }
   function fresh(names) { return { names: names || [], order: [], guessed: [], phase: 'input' }; }
+  var sync = null;
   function save() {
     try { localStorage.setItem(KEY, JSON.stringify(game)); localStorage.removeItem(OLD_KEY); } catch (e) {}
+    if (sync) sync.push();
   }
+  // Playing together: the host's phone is the Game Master; everyone else adds names from their own phone.
+  function together() { return PebblySync.active(); }
+  function isGM() { return !together() || PebblySync.isHost(); }
   function clearGame() {
     game = null;
     try { localStorage.removeItem(KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
@@ -181,7 +200,7 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
   function wake(on) { keepAwake(on); }
 
   function show(id) {
-    ['s-start', 's-input', 's-memo', 's-play'].forEach(function (s) { $(s).hidden = s !== id; });
+    ['s-start', 's-input', 's-memo', 's-play', 's-wait'].forEach(function (s) { $(s).hidden = s !== id; });
     wake(id !== 's-start');   // the whole game, including passing the phone around
     scrollTo(0, 0);
   }
@@ -207,20 +226,37 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
   $('newBtn').addEventListener('click', function () {
     if (game && game.names.length && !confirm('Start over? The names from the last game will be cleared.')) return;
     clearGame(); game = fresh(); save(); renderInput();
+    sync.started(sync.shared() ? { id: PebblySync.newId(), name: 'Game Master' } : null);
   });
-  $('resumeBtn').addEventListener('click', function () {
-    if (game.phase === 'play') renderPlay(); else if (game.phase === 'memo') renderMemo(); else renderInput();
-  });
+  // Show whatever screen fits the game's phase and this phone's role.
+  function renderCurrent(focus) {
+    if (!game) { renderStart(); return; }
+    if (game.phase === 'input') return renderInput(focus);
+    if (!isGM()) return renderWait();
+    if (game.phase === 'memo') renderMemo(); else renderPlay();
+  }
+  function renderWait() {
+    var n = game.names.length, g = game.guessed.length;
+    $('waitTitle').textContent = game.phase === 'memo' ? 'Listen closely!' : g === n && n ? 'Every name has been guessed!' : 'Guessing time';
+    $('waitText').textContent = game.phase === 'memo' ? 'The Game Master is reading all ' + n + ' names out loud, twice. Try to remember them.'
+      : g + ' of ' + n + ' names guessed so far.';
+    $('waitBar').hidden = game.phase !== 'play';
+    $('waitBar').firstElementChild.style.width = (n ? g / n * 100 : 0) + '%';
+    show('s-wait');
+  }
+  $('resumeBtn').addEventListener('click', function () { renderCurrent(true); });
 
   // Name entry
-  function renderInput() {
-    var n = game.names.length;
+  function renderInput(focus) {
+    var n = game.names.length, was = !$('s-input').hidden;
     $('count').textContent = n === 0 ? 'No names yet' : n + ' name' + (n === 1 ? '' : 's') + ' in';
+    $('doneBtn').hidden = !isGM();
     $('doneBtn').disabled = n < 2;
-    $('doneHint').hidden = n >= 2;
-    $('nameMsg').textContent = '';
+    $('doneHint').hidden = n >= 2 || !isGM();
+    $('inputLabel').textContent = together() ? 'Type your secret name' : 'Type a name, then pass the phone';
+    if (!was) $('nameMsg').textContent = '';
     show('s-input');
-    $('nameInput').focus();
+    if (focus !== false && !was) $('nameInput').focus();
   }
   $('nameForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -231,10 +267,14 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
     }
     game.names.push(val); save();
     input.value = ''; input.blur(); $('nameMsg').textContent = '';
-    overlay('Pass the phone', 'Hand it to the next player.', 'I have the phone', renderInput);
+    if (together()) {
+      $('nameMsg').textContent = '✓ Added. ' + (isGM() ? 'Start when everyone’s in.' : 'Wait for the Game Master, or add a name for someone without a phone.');
+      renderInput(false);
+    } else overlay('Pass the phone', 'Hand it to the next player.', 'I have the phone', renderInput);
   });
   $('doneBtn').addEventListener('click', function () {
     game.order = shuffle(game.names.length); game.guessed = []; game.phase = 'memo'; save();
+    if (together()) { renderMemo(); return; }   // this phone is the Game Master's
     // Cover the screen before the list is drawn, so the last player doesn't see it.
     overlay('Pass to the Game Master', 'Only the Game Master should see the next screen.', "I'm the Game Master", renderMemo);
   });
@@ -277,10 +317,22 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
   $('backMemoBtn').addEventListener('click', renderMemo);
   $('againBtn').addEventListener('click', function () {
     if (game.guessed.length < game.names.length && !confirm('End this game and clear the names?')) return;
+    if (together()) { game = fresh(); save(); renderInput(); return; }   // everyone starts adding names again
     clearGame(); renderStart();
   });
 
   renderStart();
+
+  // Play together (see /play/sync.js).
+  sync = PebblySync.wire('namegame', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; try { localStorage.setItem(KEY, JSON.stringify(game)); } catch (e) {} },
+    render: function () { if (game && $('s-start').hidden) renderCurrent(false); },
+    showPlay: function () { renderCurrent(true); },
+    onLeave: function () { renderStart(); }
+  });
+  if (PebblySync.active() && game) renderCurrent(false);
 })();
 </script>
 </body>
