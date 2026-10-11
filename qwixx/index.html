@@ -1,347 +1,210 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2F7A63">
 <title>Qwixx Dice Roller</title>
-
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0f172a;
-  --card:#111827;
-  --text:#ffffff;
-  --border:rgba(255,255,255,.18);
-  --radius:16px;
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --brand:#2F7A63; --brand-ink:#FFFFFF;
+  --red:#D93F3B; --yellow:#F2C230; --green:#2E9B5A; --blue:#3570C9;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
-
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --brand:#6CC4A4; --brand-ink:#0F1F19; }
+}
 *{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
 
-body{
-  margin:0;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  padding:16px;
+/* Dice */
+.dice{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (min-width:560px){ .dice{grid-template-columns:repeat(6,1fr)} }
+.die{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.face{
+  width:100%;aspect-ratio:1/1;border-radius:18%;padding:14%;
+  display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.14),0 2px 6px rgba(0,0,0,.12);
+  --pip:#fff;
 }
+.die.white .face{background:#fff;border:1px solid #D5DCD9;--pip:#1F2A27}
+.die.red .face{background:var(--red)}
+.die.yellow .face{background:var(--yellow);--pip:#3A2E05}
+.die.green .face{background:var(--green)}
+.die.blue .face{background:var(--blue)}
+.pip{width:72%;aspect-ratio:1/1;border-radius:50%;background:var(--pip);place-self:center;visibility:hidden}
+.pip.on{visibility:visible}
+.die .name{font-size:13px;font-weight:600;color:var(--muted)}
+.die.off .face{opacity:.18;box-shadow:none}
+.die.off .name{text-decoration:line-through;opacity:.6}
+.face.blank .pip{visibility:hidden}
+.face.blank::after{content:"?";grid-area:2/2;place-self:center;font:800 28px/1 var(--head);color:var(--pip);opacity:.35}
+@keyframes tumble{0%{transform:rotate(0) scale(1)}35%{transform:rotate(-14deg) scale(.92)}70%{transform:rotate(10deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
+.rolling .die:not(.off) .face{animation:tumble .35s ease-out}
+@media (prefers-reduced-motion:reduce){ .rolling .die .face{animation:none} }
 
-.app{
-  width:min(720px,100%);
-  display:grid;
-  gap:14px;
+.roll{
+  display:block;width:100%;min-height:56px;margin:16px 0 0;border:0;border-radius:14px;
+  background:var(--brand);color:var(--brand-ink);font:800 20px/1 var(--head);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
 }
+.roll:active{transform:scale(.98)}
+.roll:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
 
-h1{
-  margin:0;
-  font-size:20px;
-  font-weight:800;
+/* Sums */
+.sums{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.sums li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.sums li:last-child{border-bottom:0}
+.dot{width:14px;height:14px;border-radius:50%;flex:none}
+.dot.white{background:#fff;border:1px solid #B4C2BC}
+.dot.red{background:var(--red)} .dot.yellow{background:var(--yellow)}
+.dot.green{background:var(--green)} .dot.blue{background:var(--blue)}
+.sums .lbl{flex:1}
+.sums .val{font:800 22px/1 var(--head);font-variant-numeric:tabular-nums}
+.sums .val small{font:500 14px/1 var(--body);color:var(--muted);margin:0 6px}
+.sums li.off{opacity:.45}
+.sums li.off .val{font:500 15px/1 var(--body)}
+
+/* Row toggles */
+.rows{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (min-width:560px){ .rows{grid-template-columns:repeat(4,1fr)} }
+.rowbtn{
+  display:flex;align-items:center;gap:10px;min-height:48px;padding:0 12px;border-radius:12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px/1 var(--body);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;text-align:left;
 }
-
-.panel{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  padding:14px;
-}
-
-.dice-grid{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
-}
-@media (min-width:540px){
-  .dice-grid{ grid-template-columns:repeat(6,1fr); }
-}
-
-/* Fixed-size square dice */
-.die{
-  border-radius:14px;
-  padding:5px;
-  display:grid;
-  grid-template-rows:auto 1fr auto auto;
-  place-items:center;
-  gap:6px;
-
-  aspect-ratio:1 / 1;
-  width:100%;
-  min-width:0;
-
-  font-weight:700;
-  border:1px solid rgba(0,0,0,.15);
-  overflow:hidden;
-}
-
-.die.white{ background:#fff; color:#000; }
-.die.red{ background:#ef4444; color:#fff; }
-.die.yellow{ background:#facc15; color:#fff; }
-.die.green{ background:#22c55e; color:#fff; }
-.die.blue{ background:#3b82f6; color:#fff; }
-
-/* Black outline for white text on colored dice */
-.die.red .label, .die.red .value, .die.red .pipline, .die.red .sumline,
-.die.yellow .label, .die.yellow .value, .die.yellow .pipline, .die.yellow .sumline,
-.die.green .label, .die.green .value, .die.green .pipline, .die.green .sumline,
-.die.blue .label, .die.blue .value, .die.blue .pipline, .die.blue .sumline{
-  text-shadow:
-    -1px -1px 0 #000,
-     1px -1px 0 #000,
-    -1px  1px 0 #000,
-     1px  1px 0 #000;
-}
-
-.die[aria-disabled="true"]{
-  opacity:.25;
-  filter:saturate(.6);
-}
-
-.label{ font-size:12px; }
-
-.value{
-  font-size:36px;
-  font-weight:900;
-  line-height:1;
-}
-
-/* Dots not touching */
-.pipline{
-  font-size:12px;
-  line-height:1;
-  letter-spacing:2px;
-}
-
-/* Reserve consistent height so content length never changes die size */
-.sumline{
-  font-size:12px;
-  font-weight:900;
-  text-align:center;
-  width:100%;
-
-  /* Fixed height for 1 line on all devices */
-  min-height: 14px;
-  line-height:14px;
-
-  /* Prevent wrapping from affecting layout */
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-button{
-  border:none;
-  background:#ffffff;
-  color:#000;
-  padding:14px;
-  border-radius:14px;
-  font-weight:900;
-  font-size:16px;
-  cursor:pointer;
-  width:100%;
-  min-height:52px;
-}
-button:active{ transform:scale(.98); }
-
-.toggles{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-  margin-top:12px;
-}
-@media (min-width:540px){
-  .toggles{ grid-template-columns:repeat(4,1fr); }
-}
-
-.toggle{
-  background:#1f2937;
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:10px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  min-height:50px;
-  cursor:pointer;
-  user-select:none;
-}
-
-.toggle input{
-  appearance:none;
-  -webkit-appearance:none;
-  width:24px;
-  height:24px;
-  border-radius:6px;
-  border:2px solid #ffffff;
-  display:grid;
-  place-content:center;
-  background:transparent;
-  flex:0 0 auto;
-}
-.toggle input::before{
-  content:"";
-  width:12px;
-  height:12px;
-  transform:scale(0);
-  transition:0.1s transform ease-in-out;
-  box-shadow:inset 1em 1em #ffffff;
-  transform-origin:center;
-}
-.toggle input:checked::before{ transform:scale(1); }
-
-.swatch{
-  width:14px;
-  height:14px;
-  border-radius:50%;
-  flex:0 0 auto;
-}
-.swatch.red{ background:#ef4444; }
-.swatch.blue{ background:#3b82f6; }
-.swatch.green{ background:#22c55e; }
-.swatch.yellow{ background:#facc15; }
+.rowbtn .state{margin-left:auto;font-weight:500;font-size:13px;color:var(--muted)}
+.rowbtn[aria-pressed="false"]{border-style:dashed;color:var(--muted)}
+.rowbtn[aria-pressed="false"] .dot{opacity:.3}
+.rowbtn:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hint{margin:10px 0 0;color:var(--muted);font-size:14px}
 </style>
 <script src="/nav.js"></script>
 </head>
-
 <body>
-<main class="app">
+<main class="wrap">
   <h1>Qwixx Dice Roller</h1>
+  <p class="lead">Roll all six dice from one phone and see every sum you can mark.</p>
 
-  <section class="panel">
-    <div class="dice-grid">
-      <div class="die white" id="die-w1">
-        <div class="label">White 1</div>
-        <div class="value" id="val-w1">-</div>
-        <div class="pipline" id="pip-w1"></div>
-        <div class="sumline" id="sum-w1">Sum: -</div>
-      </div>
-
-      <div class="die white" id="die-w2">
-        <div class="label">White 2</div>
-        <div class="value" id="val-w2">-</div>
-        <div class="pipline" id="pip-w2"></div>
-        <div class="sumline" id="sum-w2">Sum: -</div>
-      </div>
-
-      <div class="die red" id="die-red">
-        <div class="label">Red</div>
-        <div class="value" id="val-red">-</div>
-        <div class="pipline" id="pip-red"></div>
-        <div class="sumline" id="sum-red">Sum: -</div>
-      </div>
-
-      <div class="die yellow" id="die-yellow">
-        <div class="label">Yellow</div>
-        <div class="value" id="val-yellow">-</div>
-        <div class="pipline" id="pip-yellow"></div>
-        <div class="sumline" id="sum-yellow">Sum: -</div>
-      </div>
-
-      <div class="die green" id="die-green">
-        <div class="label">Green</div>
-        <div class="value" id="val-green">-</div>
-        <div class="pipline" id="pip-green"></div>
-        <div class="sumline" id="sum-green">Sum: -</div>
-      </div>
-
-      <div class="die blue" id="die-blue">
-        <div class="label">Blue</div>
-        <div class="value" id="val-blue">-</div>
-        <div class="pipline" id="pip-blue"></div>
-        <div class="sumline" id="sum-blue">Sum: -</div>
-      </div>
-    </div>
+  <section class="card" aria-label="Dice">
+    <div class="dice" id="dice"></div>
+    <button class="roll" id="rollBtn" type="button">Roll</button>
   </section>
 
-  <section class="panel">
-    <button id="rollBtn">Roll</button>
+  <section class="card">
+    <h2>Sums</h2>
+    <ul class="sums" id="sums" aria-live="polite"></ul>
+  </section>
 
-    <div class="toggles">
-      <label class="toggle"><input id="toggle-red" type="checkbox" checked><span class="swatch red"></span>Red</label>
-      <label class="toggle"><input id="toggle-blue" type="checkbox" checked><span class="swatch blue"></span>Blue</label>
-      <label class="toggle"><input id="toggle-green" type="checkbox" checked><span class="swatch green"></span>Green</label>
-      <label class="toggle"><input id="toggle-yellow" type="checkbox" checked><span class="swatch yellow"></span>Yellow</label>
-    </div>
+  <section class="card">
+    <h2>Colors in play</h2>
+    <div class="rows" id="rows"></div>
+    <p class="hint">When a row gets locked, tap its color to take that die out of the game.</p>
   </section>
 </main>
 
 <script>
 (function () {
-  const DICE = [
-    { key:"w1", alwaysOn:true },
-    { key:"w2", alwaysOn:true },
-    { key:"red", toggleId:"toggle-red" },
-    { key:"yellow", toggleId:"toggle-yellow" },
-    { key:"green", toggleId:"toggle-green" },
-    { key:"blue", toggleId:"toggle-blue" }
+  var DICE = [
+    { key: 'w1', name: 'White', cls: 'white' },
+    { key: 'w2', name: 'White', cls: 'white' },
+    { key: 'red', name: 'Red', cls: 'red', color: true },
+    { key: 'yellow', name: 'Yellow', cls: 'yellow', color: true },
+    { key: 'green', name: 'Green', cls: 'green', color: true },
+    { key: 'blue', name: 'Blue', cls: 'blue', color: true }
   ];
+  var COLORS = DICE.filter(function (d) { return d.color; });
+  // Which of the 9 grid cells hold a pip for each value.
+  var PIPS = { 1: [4], 2: [2, 6], 3: [2, 4, 6], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8], 6: [0, 2, 3, 5, 6, 8] };
+  var KEY = 'pebbly_qwixx';
 
-  const state = Object.fromEntries(DICE.map(d => [d.key,null]));
-  const el = id => document.getElementById(id);
+  var state = { roll: {}, on: { red: true, yellow: true, green: true, blue: true } };
+  try { var saved = JSON.parse(localStorage.getItem(KEY)); if (saved && saved.on) state = saved; } catch (e) {}
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} }
 
-  function rand(){ return Math.floor(Math.random()*6)+1; }
-
-  function enabled(key){
-    const def = DICE.find(d=>d.key===key);
-    return def.alwaysOn || el(def.toggleId).checked;
+  var $ = function (id) { return document.getElementById(id); };
+  function inPlay(d) { return !d.color || state.on[d.key]; }
+  function rand() {
+    var a = new Uint32Array(1); crypto.getRandomValues(a); return (a[0] % 6) + 1;
   }
 
-  function renderDie(key){
-    const val = state[key];
-    el("val-"+key).textContent = val==null ? "-" : String(val);
-    el("pip-"+key).textContent = val==null ? "" : "●".repeat(val);
-    el("die-"+key).setAttribute("aria-disabled", enabled(key) ? "false":"true");
-  }
-
-  function whiteSum(){
-    const w1=state.w1, w2=state.w2;
-    if(w1==null || w2==null) return null;
-    return w1+w2;
-  }
-
-  function colorSumText(colorKey){
-    if(!enabled(colorKey)) return "Sum: -";
-    const w1=state.w1, w2=state.w2, c=state[colorKey];
-    if(w1==null || w2==null || c==null) return "Sum: -";
-    return "Sum: " + (w1+c) + " or " + (w2+c);
-  }
-
-  function renderSums(){
-    const ws = whiteSum();
-    const whiteText = ws==null ? "Sum: -" : ("Sum: " + ws);
-
-    el("sum-w1").textContent = whiteText;
-    el("sum-w2").textContent = whiteText;
-
-    el("sum-red").textContent = colorSumText("red");
-    el("sum-yellow").textContent = colorSumText("yellow");
-    el("sum-green").textContent = colorSumText("green");
-    el("sum-blue").textContent = colorSumText("blue");
-  }
-
-  function renderAll(){
-    DICE.forEach(d=>renderDie(d.key));
-    renderSums();
-  }
-
-  function roll(){
-    state.w1=rand();
-    state.w2=rand();
-    ["red","yellow","green","blue"].forEach(k=>{
-      if(enabled(k)) state[k]=rand();
-    });
-    renderAll();
-  }
-
-  ["toggle-red","toggle-yellow","toggle-green","toggle-blue"]
-    .forEach(id=>el(id).addEventListener("change",renderAll));
-
-  el("rollBtn").addEventListener("click",roll);
-  document.addEventListener("keydown",e=>{
-    if(!e.repeat && (e.key==="r"||e.key==="R")) roll();
+  // Build the dice and toggles once.
+  DICE.forEach(function (d) {
+    var die = document.createElement('div');
+    die.className = 'die ' + d.cls; die.id = 'die-' + d.key;
+    var face = document.createElement('div'); face.className = 'face'; face.setAttribute('role', 'img');
+    for (var i = 0; i < 9; i++) { var p = document.createElement('span'); p.className = 'pip'; face.appendChild(p); }
+    var name = document.createElement('span'); name.className = 'name'; name.textContent = d.name;
+    die.appendChild(face); die.appendChild(name); $('dice').appendChild(die);
+  });
+  COLORS.forEach(function (d) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'rowbtn'; b.id = 'row-' + d.key;
+    b.innerHTML = '<span class="dot ' + d.cls + '"></span>' + d.name + '<span class="state"></span>';
+    b.addEventListener('click', function () { state.on[d.key] = !state.on[d.key]; delete state.roll[d.key]; save(); render(); });
+    $('rows').appendChild(b);
   });
 
-  renderAll();
+  function render() {
+    var r = state.roll;
+    DICE.forEach(function (d) {
+      var die = $('die-' + d.key), face = die.firstChild, v = r[d.key];
+      die.classList.toggle('off', !inPlay(d));
+      face.classList.toggle('blank', !v);
+      var on = v ? PIPS[v] : [];
+      for (var i = 0; i < 9; i++) face.children[i].classList.toggle('on', on.indexOf(i) > -1);
+      face.setAttribute('aria-label', d.name + (d.key === 'w1' ? ' 1' : d.key === 'w2' ? ' 2' : '') + ': ' +
+        (!inPlay(d) ? 'out of play' : v ? v : 'not rolled'));
+    });
+    COLORS.forEach(function (d) {
+      var b = $('row-' + d.key);
+      b.setAttribute('aria-pressed', String(!!state.on[d.key]));
+      b.lastChild.textContent = state.on[d.key] ? 'In play' : 'Out';
+    });
+
+    var rolled = r.w1 && r.w2, html = '';
+    html += '<li><span class="dot white"></span><span class="lbl">White + white</span><span class="val">' +
+      (rolled ? r.w1 + r.w2 : '–') + '</span></li>';
+    COLORS.forEach(function (d) {
+      var off = !state.on[d.key], c = r[d.key], val;
+      if (off) val = 'Out';
+      else if (rolled && c) {
+        var a = r.w1 + c, b = r.w2 + c;
+        val = a === b ? String(a) : Math.min(a, b) + '<small>or</small>' + Math.max(a, b);
+      } else val = '–';
+      html += '<li class="' + (off ? 'off' : '') + '"><span class="dot ' + d.cls + '"></span><span class="lbl">White + ' +
+        d.name.toLowerCase() + '</span><span class="val">' + val + '</span></li>';
+    });
+    $('sums').innerHTML = html;
+  }
+
+  function roll() {
+    DICE.forEach(function (d) { if (inPlay(d)) state.roll[d.key] = rand(); });
+    save();
+    var dice = $('dice');
+    dice.classList.remove('rolling'); void dice.offsetWidth; dice.classList.add('rolling');
+    if (navigator.vibrate) navigator.vibrate(30);
+    render();
+  }
+
+  $('rollBtn').addEventListener('click', roll);
+  document.addEventListener('keydown', function (e) {
+    if (e.repeat || e.target.tagName === 'BUTTON' && e.key === ' ') return;
+    if (e.key === 'r' || e.key === 'R' || e.key === ' ') { e.preventDefault(); roll(); }
+  });
+  render();
 })();
 </script>
 </body>

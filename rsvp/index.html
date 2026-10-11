@@ -6,13 +6,14 @@
 <meta name="robots" content="noindex">
 <meta name="color-scheme" content="light">
 <meta name="description" content="You're invited. Tap to RSVP.">
+<meta name="theme-color" content="#2F7A63">
 <title>RSVP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#F4EEE8; --surface:#FFFFFF; --ink:#26190F; --muted:#6B5A4C; --line:#DDD0C4; --brand:#8A3B12;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --brand:#2F7A63;
   --go:#2E8B57; --go-t:#DCEFE3; --maybe:#B7860B; --maybe-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8; --gold-t:#FBF0CC;
   --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -50,7 +51,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .fld{display:block;margin-bottom:16px}
 .fld>span{display:block;font-weight:600;margin-bottom:5px;font-size:15px}
 .fld small{display:block;color:var(--muted);margin-top:4px;font-size:13px}
-input[type=text],input[type=date],input[type=time],textarea,select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #BBA999;border-radius:10px;background:#fff}
+input[type=text],input[type=date],input[type=time],textarea,select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #B4C2BC;border-radius:10px;background:#fff}
 input[type=date],input[type=time]{-webkit-appearance:none;appearance:none}
 select{-webkit-appearance:none;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236B5A4C' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:36px}
 textarea{resize:vertical}
@@ -69,7 +70,7 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--ink)}
 .emojis{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .em{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:22px;cursor:pointer;padding:0}
-.em[aria-pressed="true"]{border:2px solid var(--brand);background:#FFF6EC}
+.em[aria-pressed="true"]{border:2px solid var(--brand);background:#E6F2ED}
 .emoji-in{width:84px !important;text-align:center;font-size:22px}
 .preview{margin-bottom:16px}
 .sect{font-family:var(--head);font-size:17px;font-weight:600;margin:22px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
@@ -83,7 +84,7 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .created{margin-bottom:16px;border-color:var(--go);background:var(--go-t)}
 .created h2{font-size:19px}
 
-.hero{border-radius:20px;padding:26px 20px 22px;background:linear-gradient(135deg,var(--ga),var(--gb));color:var(--gi);text-align:center;box-shadow:0 6px 24px rgba(38,25,15,.12)}
+.hero{border-radius:20px;padding:26px 20px 22px;background:linear-gradient(135deg,var(--ga),var(--gb));color:var(--gi);text-align:center;box-shadow:0 6px 24px rgba(31,42,39,.12)}
 .hero .big{font-size:64px;line-height:1.1}
 .hero h1{font-size:34px;margin-top:6px;overflow-wrap:anywhere}
 .hero .by{margin-top:6px;font-size:16px;opacity:.92}
@@ -95,7 +96,7 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .facts .sub{display:block;color:var(--muted);font-size:14px}
 .pill{display:inline-block;margin-top:4px;font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;background:var(--gold-t)}
 .pill.now{background:var(--go);color:#fff}
-.hero .desc{margin:14px auto 0;max-width:46ch;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.55);color:#26190F;white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;font-size:16px;line-height:1.45}
+.hero .desc{margin:14px auto 0;max-width:46ch;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.55);color:#1F2A27;white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;font-size:16px;line-height:1.45}
 .hero .desc.short{text-align:center}
 .hero.light-ink .desc{background:rgba(255,255,255,.88)}
 .hero .desc a{color:inherit}
@@ -109,7 +110,7 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .stamp{display:block;color:var(--muted);font-size:12px}
 
 .annc{margin-top:18px;display:grid;gap:8px}
-.ann{background:#FFF6EC;border:1px solid #E9C9A8;border-left:5px solid var(--brand);border-radius:12px;padding:12px 14px}
+.ann{background:#E6F2ED;border:1px solid #BFDCCF;border-left:5px solid var(--brand);border-radius:12px;padding:12px 14px}
 .ann .top{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
 .ann p{margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
 
@@ -149,7 +150,7 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .item{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 12px 14px}
 .item b{font-family:var(--head);font-size:18px;font-weight:600;overflow-wrap:anywhere}
 .item .meta{display:block;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
-.item.full{background:#FAF7F3}
+.item.full{background:#F7FAF8}
 .cb{min-width:112px;min-height:46px;border-radius:10px;border:2px solid var(--go);background:var(--surface);color:var(--go);font-weight:700;cursor:pointer;font-size:14px;padding:0 10px}
 .cb[aria-pressed="true"]{background:var(--go);color:#fff}
 .cb:disabled{border-color:var(--line);color:var(--muted);cursor:default}

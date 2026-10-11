@@ -1,236 +1,294 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Name Game</title>
-    <style>
-        :root {
-            --primary: #6200ee;
-            --bg: #f5f5f5;
-            --card: #ffffff;
-            --text: #333;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
-        #game-container {
-            width: 100%;
-            max-width: 500px;
-            background: var(--card);
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .screen { display: none; }
-        .active { display: block; }
-        h1, h2 { color: var(--primary); text-align: center; }
-        p { line-height: 1.5; font-size: 0.95rem; }
-        button {
-            width: 100%;
-            padding: 15px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 8px;
-            background: var(--primary);
-            color: white;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            -webkit-tap-highlight-color: transparent;
-        }
-        button.secondary { background: #03dac6; color: #000; }
-        button.danger { background: #b00020; }
-        input[type="text"] {
-            width: 100%;
-            padding: 12px;
-            box-sizing: border-box;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
-        }
-        .overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.98);
-            color: white;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            z-index: 1000;
-            padding: 20px;
-        }
-        .name-item {
-            display: flex;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-            font-size: 1.1rem;
-        }
-        .name-item input { margin-right: 15px; width: 20px; height: 20px; }
-        .checked label { text-decoration: line-through; color: #888; }
-        .instruction-box {
-            background: #eee;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            margin-bottom: 15px;
-        }
-        ul { padding-left: 20px; }
-        li { margin-bottom: 8px; font-size: 1.1rem; }
-    </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2F7A63">
+<title>The Name Game</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --no:#CC423D;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --no:#F07A75; }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:800 22px/1.2 var(--head);margin:0 0 6px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.screen[hidden]{display:none}
+.rules{margin:0;padding-left:22px}
+.rules li{margin:6px 0}
+.btn{
+  display:block;width:100%;min-height:52px;margin:10px 0 0;padding:0 16px;border-radius:12px;
+  border:0;background:var(--brand);color:var(--brand-ink);font:600 17px/1 var(--body);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;
+}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.quiet{background:transparent;color:var(--muted);min-height:44px;font-weight:500}
+.btn:focus-visible,input:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+label.fld span{display:block;font-weight:600;margin-bottom:6px}
+input[type=text]{
+  width:100%;min-height:52px;padding:10px 14px;border:1px solid #B4C2BC;border-radius:12px;
+  background:var(--surface);color:var(--ink);font:500 18px/1.2 var(--body)
+}
+.msg{min-height:1.4em;margin:8px 0 0;color:var(--no);font-size:15px}
+.count{display:inline-flex;align-items:center;gap:8px;margin:0 0 14px;padding:6px 12px;border-radius:999px;
+  background:var(--brand-t);color:var(--brand);font-weight:600;font-size:15px}
+hr{border:0;border-top:1px solid var(--line);margin:18px 0 6px}
+.small{color:var(--muted);font-size:14px;margin:8px 0 0}
+
+.memo{margin:4px 0 0;padding:0;list-style:none;counter-reset:n}
+.memo li{counter-increment:n;display:flex;gap:12px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line);
+  font:600 22px/1.25 var(--head);overflow-wrap:anywhere}
+.memo li:last-child{border-bottom:0}
+.memo li::before{content:counter(n);min-width:1.6em;color:var(--muted);font:500 15px/1 var(--body)}
+
+.progress{height:8px;border-radius:999px;background:var(--line);overflow:hidden;margin:6px 0 12px}
+.progress i{display:block;height:100%;background:var(--brand);width:0;transition:width .25s}
+.check{margin:0;padding:0;list-style:none}
+.check label{display:flex;align-items:center;gap:14px;min-height:54px;padding:6px 4px;border-bottom:1px solid var(--line);
+  font:500 19px/1.25 var(--body);cursor:pointer;overflow-wrap:anywhere;-webkit-tap-highlight-color:transparent}
+.check li:last-child label{border-bottom:0}
+.check input{appearance:none;-webkit-appearance:none;flex:none;width:28px;height:28px;margin:0;border-radius:8px;
+  border:2px solid #B4C2BC;display:grid;place-content:center;background:var(--surface)}
+.check input::before{content:"";width:14px;height:8px;border:3px solid var(--brand-ink);border-top:0;border-right:0;
+  transform:rotate(-45deg) translate(1px,-1px) scale(0);transition:transform .12s}
+.check input:checked{background:var(--brand);border-color:var(--brand)}
+.check input:checked::before{transform:rotate(-45deg) translate(1px,-1px) scale(1)}
+.check input:checked + span{text-decoration:line-through;color:var(--muted)}
+.done{display:none;margin:12px 0 0;padding:12px 14px;border-radius:12px;background:var(--brand-t);color:var(--brand);font-weight:600}
+.done.show{display:block}
+
+/* Hand-off screen: covers everything so the next person can't see the last name */
+.overlay{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;padding:24px;text-align:center;background:#16362C;color:#fff}
+.overlay[hidden]{display:none}
+.overlay .emoji{font-size:56px;line-height:1}
+.overlay h2{font-size:28px;color:#fff;margin:6px 0 0}
+.overlay p{margin:0 0 10px;color:#BFDCCF;max-width:30ch}
+.overlay .btn{max-width:320px;background:#6CC4A4;color:#0F1F19}
+</style>
 <script src="/nav.js"></script>
 </head>
 <body>
-
-<div id="game-container">
-    <div id="overlay" class="overlay">
-        <h2 id="overlay-msg">Pass to next player</h2>
-        <button id="overlay-btn" onclick="hideOverlay()">I have the phone</button>
-    </div>
-
-    <div id="screen-start" class="screen active">
-        <h1>Name Game</h1>
-        <div class="instruction-box">
-            <strong>How to Play:</strong>
-            <ul>
-                <li>One Game Master, many players.</li>
-                <li>Each player enters a secret "random" name.</li>
-                <li>The Master reads the full list out loud twice.</li>
-                <li>Players guess who is who to recruit them.</li>
-            </ul>
-        </div>
-        <button onclick="showScreen('screen-input')">Start New Game</button>
-        <button class="secondary" id="resume-btn" style="display:none;" onclick="resumeGame()">Resume Last Session</button>
-    </div>
-
-    <div id="screen-input" class="screen">
-        <h2>Enter a Name</h2>
-        <div class="instruction-box">Keep your name a secret from others!</div>
-        <input type="text" id="name-input" placeholder="Type name here..." autocomplete="off">
-        <button onclick="submitName()">Submit & Pass Phone</button>
-        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
-        <button class="secondary" onclick="finalizeNames()">Complete Name Gathering</button>
-    </div>
-
-    <div id="screen-memorize" class="screen">
-        <h2>Memorize the List</h2>
-        <p>Game Master: Read these out loud <strong>twice</strong>. Players: Try to remember every name!</p>
-        <ul id="memo-list"></ul>
-        <button onclick="beginGame()">Begin Game</button>
-    </div>
-
-    <div id="screen-play" class="screen">
-        <h2>Game in Progress</h2>
-        <p>Game Master: Check off names as they are correctly guessed.</p>
-        <div id="checklist"></div>
-        <button class="danger" onclick="finishGame()" style="margin-top: 30px;">Finish & Clear Game</button>
-    </div>
+<div class="overlay" id="overlay" hidden role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+  <div class="emoji" aria-hidden="true">🤫</div>
+  <h2 id="ovTitle">Pass the phone</h2>
+  <p id="ovText">Hand it to the next player.</p>
+  <button class="btn" id="ovBtn" type="button">I have the phone</button>
 </div>
 
+<main class="wrap">
+  <h1>The Name Game</h1>
+
+  <section class="screen" id="s-start">
+    <p class="lead">A party memory game for one Game Master and a group of players.</p>
+    <div class="card">
+      <h2>How to play</h2>
+      <ol class="rules">
+        <li>Pass the phone around. Each player secretly types a name: a celebrity, a character, anyone.</li>
+        <li>The Game Master reads the whole list out loud, twice.</li>
+        <li>Players take turns guessing who wrote which name. Guess right and that person joins your team.</li>
+        <li>The Game Master checks off each name as it's guessed.</li>
+      </ol>
+    </div>
+    <button class="btn" id="newBtn" type="button">Start a new game</button>
+    <button class="btn ghost" id="resumeBtn" type="button" hidden>Continue last game</button>
+  </section>
+
+  <section class="screen" id="s-input" hidden>
+    <div class="card">
+      <h2>Your secret name</h2>
+      <p class="count" id="count"></p>
+      <form id="nameForm" autocomplete="off">
+        <label class="fld"><span>Type a name, then pass the phone</span>
+          <input type="text" id="nameInput" maxlength="60" placeholder="e.g. Abraham Lincoln" enterkeyhint="done"></label>
+        <p class="msg" id="nameMsg" role="alert"></p>
+        <button class="btn" type="submit">Add my name</button>
+      </form>
+      <hr>
+      <button class="btn ghost" id="doneBtn" type="button">Everyone's in: go to the Game Master</button>
+      <p class="small" id="doneHint">You need at least 2 names to play.</p>
+    </div>
+  </section>
+
+  <section class="screen" id="s-memo" hidden>
+    <div class="card">
+      <h2>Read these out loud twice</h2>
+      <p class="small" style="margin:0 0 6px">Game Master only. Players, try to remember every name.</p>
+      <ol class="memo" id="memoList"></ol>
+    </div>
+    <button class="btn" id="playBtn" type="button">Start guessing</button>
+  </section>
+
+  <section class="screen" id="s-play" hidden>
+    <div class="card">
+      <h2>Check off names as they're guessed</h2>
+      <p class="small" id="progressText" style="margin:0"></p>
+      <div class="progress" aria-hidden="true"><i id="progressBar"></i></div>
+      <ul class="check" id="checkList"></ul>
+      <p class="done" id="doneMsg">Every name has been guessed. Nice game!</p>
+    </div>
+    <button class="btn" id="againBtn" type="button">Play again</button>
+    <button class="btn quiet" id="backMemoBtn" type="button">Show the list again</button>
+  </section>
+</main>
+
 <script>
-    let names = JSON.parse(localStorage.getItem('nameGame_names')) || [];
+(function () {
+  var KEY = 'pebbly_namegame', OLD_KEY = 'nameGame_names';
+  var $ = function (id) { return document.getElementById(id); };
 
-    // Initialize: Check for cached data
-    window.onload = () => {
-        if (names.length > 0) {
-            document.getElementById('resume-btn').style.display = 'block';
-        }
-    };
+  // { names: [], order: [indexes], guessed: [indexes], phase: 'input' | 'memo' | 'play' }
+  var game = null;
+  try { game = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+  if (!game) {
+    // Pick up a game saved by the older version of this page.
+    try { var old = JSON.parse(localStorage.getItem(OLD_KEY)); if (old && old.length) game = fresh(old); } catch (e) {}
+  }
+  function fresh(names) { return { names: names || [], order: [], guessed: [], phase: 'input' }; }
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(game)); localStorage.removeItem(OLD_KEY); } catch (e) {}
+  }
+  function clearGame() {
+    game = null;
+    try { localStorage.removeItem(KEY); localStorage.removeItem(OLD_KEY); } catch (e) {}
+  }
+  function shuffle(n) {
+    var a = []; for (var i = 0; i < n; i++) a.push(i);
+    for (var j = n - 1; j > 0; j--) { var k = Math.floor(Math.random() * (j + 1)); var t = a[j]; a[j] = a[k]; a[k] = t; }
+    return a;
+  }
 
-    function showScreen(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
+  // Keep the screen awake while the Game Master is reading and checking off names.
+  var lock = null;
+  function wake(on) {
+    if (!('wakeLock' in navigator)) return;
+    if (on && !lock) navigator.wakeLock.request('screen').then(function (l) { lock = l; l.addEventListener('release', function () { lock = null; }); }).catch(function () {});
+    if (!on && lock) { lock.release(); lock = null; }
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && game && (game.phase === 'memo' || game.phase === 'play')) wake(true);
+  });
+
+  function show(id) {
+    ['s-start', 's-input', 's-memo', 's-play'].forEach(function (s) { $(s).hidden = s !== id; });
+    wake(id === 's-memo' || id === 's-play');
+    scrollTo(0, 0);
+  }
+
+  var afterOverlay = null;
+  function overlay(title, text, btn, then) {
+    $('ovTitle').textContent = title; $('ovText').textContent = text; $('ovBtn').textContent = btn;
+    afterOverlay = then || null;
+    $('overlay').hidden = false; $('ovBtn').focus();
+  }
+  $('ovBtn').addEventListener('click', function () {
+    $('overlay').hidden = true;
+    var f = afterOverlay; afterOverlay = null; if (f) f();
+  });
+
+  // Start
+  function renderStart() {
+    var has = game && game.names.length;
+    $('resumeBtn').hidden = !has;
+    if (has) $('resumeBtn').textContent = 'Continue last game (' + game.names.length + ' name' + (game.names.length === 1 ? '' : 's') + ')';
+    show('s-start');
+  }
+  $('newBtn').addEventListener('click', function () {
+    if (game && game.names.length && !confirm('Start over? The names from the last game will be cleared.')) return;
+    clearGame(); game = fresh(); save(); renderInput();
+  });
+  $('resumeBtn').addEventListener('click', function () {
+    if (game.phase === 'play') renderPlay(); else if (game.phase === 'memo') renderMemo(); else renderInput();
+  });
+
+  // Name entry
+  function renderInput() {
+    var n = game.names.length;
+    $('count').textContent = n === 0 ? 'No names yet' : n + ' name' + (n === 1 ? '' : 's') + ' in';
+    $('doneBtn').disabled = n < 2;
+    $('doneHint').hidden = n >= 2;
+    $('nameMsg').textContent = '';
+    show('s-input');
+    $('nameInput').focus();
+  }
+  $('nameForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = $('nameInput'), val = input.value.trim().replace(/\s+/g, ' ');
+    if (!val) { $('nameMsg').textContent = 'Type a name first.'; return; }
+    if (game.names.some(function (x) { return x.toLowerCase() === val.toLowerCase(); })) {
+      $('nameMsg').textContent = 'Someone already picked that one. Choose another.'; return;
     }
+    game.names.push(val); save();
+    input.value = ''; input.blur(); $('nameMsg').textContent = '';
+    overlay('Pass the phone', 'Hand it to the next player.', 'I have the phone', renderInput);
+  });
+  $('doneBtn').addEventListener('click', function () {
+    game.order = shuffle(game.names.length); game.guessed = []; game.phase = 'memo'; save();
+    // Cover the screen before the list is drawn, so the last player doesn't see it.
+    overlay('Pass to the Game Master', 'Only the Game Master should see the next screen.', "I'm the Game Master", renderMemo);
+  });
 
-    function showOverlay(msg) {
-        document.getElementById('overlay-msg').innerText = msg;
-        document.getElementById('overlay').style.display = 'flex';
-    }
+  // Read the list
+  function renderMemo() {
+    var ol = $('memoList'); ol.innerHTML = '';
+    game.order.forEach(function (i) { var li = document.createElement('li'); li.textContent = game.names[i]; ol.appendChild(li); });
+    show('s-memo');
+  }
+  $('playBtn').addEventListener('click', function () {
+    if (game.phase !== 'play') { game.order = shuffle(game.names.length); game.phase = 'play'; save(); }
+    renderPlay();
+  });
 
-    function hideOverlay() {
-        document.getElementById('overlay').style.display = 'none';
-    }
+  // Guessing
+  function renderPlay() {
+    var ul = $('checkList'); ul.innerHTML = '';
+    game.order.forEach(function (i) {
+      var li = document.createElement('li'), label = document.createElement('label'),
+          cb = document.createElement('input'), span = document.createElement('span');
+      cb.type = 'checkbox'; cb.checked = game.guessed.indexOf(i) > -1;
+      cb.addEventListener('change', function () {
+        game.guessed = game.guessed.filter(function (g) { return g !== i; });
+        if (cb.checked) game.guessed.push(i);
+        save(); renderProgress();
+      });
+      span.textContent = game.names[i];
+      label.appendChild(cb); label.appendChild(span); li.appendChild(label); ul.appendChild(li);
+    });
+    renderProgress();
+    show('s-play');
+  }
+  function renderProgress() {
+    var n = game.names.length, g = game.guessed.length;
+    $('progressText').textContent = g + ' of ' + n + ' guessed';
+    $('progressBar').style.width = (n ? g / n * 100 : 0) + '%';
+    $('doneMsg').classList.toggle('show', n > 0 && g === n);
+  }
+  $('backMemoBtn').addEventListener('click', renderMemo);
+  $('againBtn').addEventListener('click', function () {
+    if (game.guessed.length < game.names.length && !confirm('End this game and clear the names?')) return;
+    clearGame(); renderStart();
+  });
 
-    function submitName() {
-        const input = document.getElementById('name-input');
-        const val = input.value.trim();
-        if (!val) return;
-        
-        names.push(val);
-        localStorage.setItem('nameGame_names', JSON.stringify(names));
-        
-        input.value = "";
-        showOverlay("Pass to the next player");
-    }
-
-    function finalizeNames() {
-        if (names.length < 2) {
-            alert("Need at least 2 names to play!");
-            return;
-        }
-
-        // Show overlay FIRST so the last player doesn't see the list render
-        showOverlay("Pass to Game Master");
-        
-        // Prepare the list in the background
-        const shuffled = [...names].sort(() => Math.random() - 0.5);
-        const list = document.getElementById('memo-list');
-        list.innerHTML = "";
-        shuffled.forEach(n => {
-            let li = document.createElement('li');
-            li.innerText = n;
-            list.appendChild(li);
-        });
-
-        showScreen('screen-memorize');
-    }
-
-    function beginGame() {
-        const checklist = document.getElementById('checklist');
-        checklist.innerHTML = "";
-        
-        // Shuffle again for the checklist phase to keep it fresh
-        const gameList = [...names].sort(() => Math.random() - 0.5);
-        
-        gameList.forEach((name, index) => {
-            const div = document.createElement('div');
-            div.className = 'name-item';
-            div.innerHTML = `
-                <input type="checkbox" id="n-${index}" onchange="toggleName(this)">
-                <label for="n-${index}">${name}</label>
-            `;
-            checklist.appendChild(div);
-        });
-
-        showScreen('screen-play');
-    }
-
-    function toggleName(cb) {
-        cb.parentElement.classList.toggle('checked', cb.checked);
-    }
-
-    function finishGame() {
-        if(confirm("This will clear all names. Are you sure?")) {
-            localStorage.removeItem('nameGame_names');
-            names = [];
-            location.reload();
-        }
-    }
-
-    function resumeGame() {
-        showScreen('screen-input');
-    }
+  renderStart();
+})();
 </script>
-
 </body>
 </html>
