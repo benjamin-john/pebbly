@@ -184,6 +184,12 @@ textarea{resize:vertical}
 .bd span{font-size:14px;color:var(--muted)}
 .bd .ok{color:var(--ink);font-weight:500}
 .people li b{font-weight:600}
+.people .rm{margin-left:8px;font-size:14px}
+.recent .tagq{font-size:12px;font-weight:600;background:var(--not-ideal-t);border-radius:999px;padding:1px 8px;margin-left:6px}
+.owner{margin-top:26px;border:2px solid var(--brand)}
+.owner .row-btns{margin-top:12px}
+.owner .fld{margin-top:12px}
+.orgtag{color:var(--muted)}
 
 /* edit footer */
 .actions{position:sticky;bottom:0;margin:22px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(244,246,245,.95);backdrop-filter:blur(6px);border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap}
@@ -263,6 +269,13 @@ function getPid() {
   if (!id) { id = uuid(); store.set('meetup.pid', id); }
   return id;
 }
+// Organizer keys, per event code. The key only ever leaves this browser in the organizer link.
+function getOwnerToken(code) { return (store.get('meetup.owners', {}) || {})[code] || null; }
+function setOwnerToken(code, token) { var o = store.get('meetup.owners', {}) || {}; o[code] = token; store.set('meetup.owners', o); }
+function forgetEvent(code) {
+  var o = store.get('meetup.owners', {}) || {}; delete o[code]; store.set('meetup.owners', o);
+  store.set('meetup.recent', store.get('meetup.recent', []).filter(function (e) { return e.code !== code; }));
+}
 function rememberEvent(code, name) {
   var list = store.get('meetup.recent', []).filter(function (e) { return e.code !== code; });
   list.unshift({ code: code, name: name });
@@ -315,11 +328,36 @@ var remoteApi = {
       });
     }, function () { throw new ApiError('network'); });
   },
+  // The wdw_* functions come from organizer.sql. Until that has been run, fall back to the
+  // original functions (no organizer link), so creating and opening events keeps working.
+  missing: function (e) { return /find the function|schema cache|does not exist/i.test((e && e.message) || ''); },
   createEvent: function (a) {
-    return this.rpc('create_event', { p_name: a.name, p_description: a.description, p_num_days: a.num_days,
-      p_earliest: a.earliest || null, p_latest: a.latest || null });
+    var self = this, args = { p_name: a.name, p_description: a.description, p_num_days: a.num_days,
+      p_earliest: a.earliest || null, p_latest: a.latest || null };
+    return this.rpc('wdw_create', args).catch(function (e) {
+      if (!self.missing(e)) throw e;
+      return self.rpc('create_event', args).then(function (code) { return { code: code, owner_token: null }; });
+    });
   },
-  getEvent: function (code, pid) { return this.rpc('get_event', { p_code: code, p_participant: pid }); },
+  getEvent: function (code, pid, owner) {
+    var self = this;
+    return this.rpc('wdw_get', { p_code: code, p_participant: pid, p_owner_token: owner || null }).catch(function (e) {
+      if (!self.missing(e)) throw e;
+      return self.rpc('get_event', { p_code: code, p_participant: pid });
+    });
+  },
+  updateEvent: function (a) {
+    return this.rpc('wdw_update_event', { p_code: a.code, p_owner_token: a.owner, p_name: a.name, p_description: a.description,
+      p_num_days: a.num_days, p_earliest: a.earliest || null, p_latest: a.latest || null });
+  },
+  removeResponse: function (a) { return this.rpc('wdw_remove_response', { p_code: a.code, p_owner_token: a.owner, p_response: a.id }); },
+  deleteEvent: function (a) { return this.rpc('wdw_delete_event', { p_code: a.code, p_owner_token: a.owner }); },
+  adminGrant: function (pw, code) {
+    return this.rpc('wdw_admin_grant', { p_password: pw, p_code: code }).then(function (d) {
+      if (d && d.error) throw new ApiError(d.error);
+      return d.owner_token;
+    });
+  },
   saveResponse: function (a) {
     return this.rpc('save_response', { p_code: a.code, p_participant: a.pid, p_name: a.name, p_note: a.note,
       p_picks: a.picks, p_replace: !!a.replace });
@@ -354,18 +392,42 @@ var localApi = {
   },
   createEvent: function (a) {
     var db = this.db(), c = this.code(db);
+    var tok = uuid();
     db.events[c] = { code: c, name: a.name.trim(), description: (a.description || '').trim(),
-      num_days: a.num_days, earliest: a.earliest || null, latest: a.latest || null };
+      num_days: a.num_days, earliest: a.earliest || null, latest: a.latest || null, owner_token: tok };
     db.responses[c] = [];
     this.put(db);
-    return Promise.resolve(c);
+    return Promise.resolve({ code: c, owner_token: tok });
   },
-  getEvent: function (code, pid) {
+  getEvent: function (code, pid, owner) {
     var db = this.db(), e = db.events[code];
     if (!e) return Promise.resolve(null);
+    var isOwner = !!owner && owner === e.owner_token;
     var rs = (db.responses[code] || []).slice().sort(function (x, y) { return x.updated_at < y.updated_at ? -1 : 1; })
-      .map(function (r) { return { name: r.name, note: r.note, picks: r.picks, mine: r.pid === pid, updated_at: r.updated_at }; });
-    return Promise.resolve({ event: JSON.parse(JSON.stringify(e)), responses: rs });
+      .map(function (r) {
+        var o = { name: r.name, note: r.note, picks: r.picks, mine: r.pid === pid, updated_at: r.updated_at };
+        if (isOwner) o.id = r.id || r.pid;
+        return o;
+      });
+    var ev = JSON.parse(JSON.stringify(e)); delete ev.owner_token;
+    return Promise.resolve({ event: ev, responses: rs, is_owner: isOwner });
+  },
+  owned: function (a) { var db = this.db(), e = db.events[a.code]; return e && a.owner && a.owner === e.owner_token ? db : null; },
+  updateEvent: function (a) {
+    var db = this.owned(a); if (!db) return Promise.reject(new ApiError('not_owner'));
+    Object.assign(db.events[a.code], { name: a.name.trim(), description: (a.description || '').trim(), num_days: a.num_days,
+      earliest: a.earliest || null, latest: a.latest || null });
+    this.put(db); return Promise.resolve();
+  },
+  removeResponse: function (a) {
+    var db = this.owned(a); if (!db) return Promise.reject(new ApiError('not_owner'));
+    db.responses[a.code] = (db.responses[a.code] || []).filter(function (r) { return (r.id || r.pid) !== a.id; });
+    this.put(db); return Promise.resolve();
+  },
+  deleteEvent: function (a) {
+    var db = this.owned(a); if (!db) return Promise.reject(new ApiError('not_owner'));
+    delete db.events[a.code]; delete db.responses[a.code];
+    this.put(db); return Promise.resolve();
   },
   saveResponse: function (a) {
     var db = this.db();
@@ -390,7 +452,8 @@ var localApi = {
     return Promise.resolve();
   },
   adminList: function () { return Promise.reject(new ApiError('admin_needs_supabase')); },
-  adminDelete: function () { return Promise.reject(new ApiError('admin_needs_supabase')); }
+  adminDelete: function () { return Promise.reject(new ApiError('admin_needs_supabase')); },
+  adminGrant: function () { return Promise.reject(new ApiError('admin_needs_supabase')); }
 };
 
 var api = REMOTE ? remoteApi : localApi;
@@ -402,6 +465,10 @@ function friendly(e) {
     event_not_found: 'That event no longer exists.',
     event_full: 'This event already has the maximum number of responses.',
     invalid_name: 'Enter a name (up to 60 characters).',
+    not_owner: 'Only the organizer can do that.',
+    invalid_num_days: 'Number of days must be between 1 and 14.',
+    invalid_range: 'The earliest start must come before the latest end.',
+    invalid_description: 'The details can be at most 2000 characters.',
     invalid_picks: 'Those days could not be saved. Refresh the page and try again.',
     range_too_short: 'The date range is shorter than the number of days.',
     range_too_long: 'The date range can be at most two years.',
@@ -492,7 +559,8 @@ function cleanPicks(picks) {
 var S = {
   view: 'loading', code: '', ev: null, responses: [], pid: '',
   mode: 'view', calView: 'month', cursor: todayISO(), sel: null,
-  draft: { name: '', note: '', picks: {} }, hidden: {}, active: null, dirty: false, saving: false, showMore: false
+  draft: { name: '', note: '', picks: {} }, hidden: {}, active: null, dirty: false, saving: false, showMore: false,
+  owner: null, isOwner: false, editEv: false
 };
 
 function nameKey(r) { return String(r.name).trim().toLowerCase(); }
@@ -543,6 +611,7 @@ function toast(msg) {
 
 function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
 function shareUrl(code) { return baseUrl() + '?e=' + code; }
+function ownerUrl(code) { return baseUrl() + '?e=' + code + '&o=' + getOwnerToken(code); }
 
 function copyText(text, input) {
   function fallback() {
@@ -567,15 +636,21 @@ function route() {
   if (qs.has('admin') && !qs.get('e')) { renderAdmin(); return; }
   var code = qs.get('e');
   if (!code) { renderHome(); return; }
-  loadEvent(code.trim().toLowerCase());
+  code = code.trim().toLowerCase();
+  var tok = qs.get('o');
+  if (tok) { // organizer link: remember the key, then tidy the address bar
+    setOwnerToken(code, tok.trim());
+    try { history.replaceState(null, '', shareUrl(code)); } catch (e) {}
+  }
+  loadEvent(code);
 }
 
 function loadEvent(code) {
-  S.view = 'loading'; S.code = code; S.pid = getPid();
+  S.view = 'loading'; S.code = code; S.pid = getPid(); S.owner = getOwnerToken(code); S.editEv = false;
   $app.innerHTML = '<p class="hint">Loading event…</p>';
-  api.getEvent(code, S.pid).then(function (data) {
+  api.getEvent(code, S.pid, S.owner).then(function (data) {
     if (!data) { renderNotFound(); return; }
-    S.ev = data.event; S.responses = data.responses || [];
+    S.ev = data.event; S.responses = data.responses || []; S.isOwner = !!data.is_owner;
     rememberEvent(S.ev.code, S.ev.name);
     var r = eventRange(S.ev);
     S.cursor = r.lo <= r.hi ? r.lo : S.ev.earliest;
@@ -590,9 +665,9 @@ function loadEvent(code) {
 }
 
 function reload() {
-  return api.getEvent(S.code, S.pid).then(function (data) {
+  return api.getEvent(S.code, S.pid, S.owner).then(function (data) {
     if (!data) throw new ApiError('event_not_found');
-    S.ev = data.event; S.responses = data.responses || [];
+    S.ev = data.event; S.responses = data.responses || []; S.isOwner = !!data.is_owner;
   });
 }
 
@@ -608,7 +683,7 @@ function previewBanner() {
 function renderHome() {
   S.view = 'home';
   document.title = 'Which day works?';
-  var recent = store.get('meetup.recent', []);
+  var recent = store.get('meetup.recent', []), owners = store.get('meetup.owners', {}) || {};
   $app.innerHTML =
     previewBanner() +
     '<div class="banner bad" id="conn" role="alert" hidden></div>' +
@@ -626,7 +701,9 @@ function renderHome() {
       '<p class="err" id="formErr" role="alert"></p>' +
     '</form>' +
     (recent.length ? '<section class="recent"><h2>Your events</h2><ul>' +
-      recent.map(function (r) { return '<li><a href="?e=' + esc(r.code) + '">' + esc(r.name) + '</a></li>'; }).join('') +
+      recent.map(function (r) {
+        return '<li><a href="?e=' + esc(r.code) + '">' + esc(r.name) + '</a>' + (owners[r.code] ? '<span class="tagq">organizer</span>' : '') + '</li>';
+      }).join('') +
       '</ul></section>' : '') +
     '<p class="foot"><a href="?admin">Admin</a></p>';
   if (REMOTE) checkConnection();
@@ -674,6 +751,7 @@ function renderAdmin(msg) {
       else if (ev.latest) bits.push('Ending by ' + fmtMD(ev.latest) + '.');
       return '<li><div class="nm">' + esc(ev.name) + '</div><p class="meta">' + esc(bits.join(' ')) + '</p>' +
         '<div class="row-btns"><a class="btn small" href="?e=' + esc(ev.code) + '">Open</a>' +
+        '<button type="button" class="btn small" data-act="admin-org" data-code="' + esc(ev.code) + '">Open as organizer</button>' +
         '<button type="button" class="btn small danger" data-act="admin-del" data-code="' + esc(ev.code) + '">Delete</button></div></li>';
     }).join('') + '</ul>' : '<p class="hint" style="margin-top:14px">There are no events yet.</p>');
 }
@@ -723,19 +801,25 @@ function checkConnection() {
   });
 }
 
+// Reads and checks the event fields shared by the create and edit forms.
+function eventFields(form, isNew) {
+  var f = form.elements;
+  var v = { name: f.name.value.trim(), description: f.description.value, num_days: parseInt(f.num_days.value, 10),
+            earliest: f.earliest.value || null, latest: f.latest.value || null, problem: '' };
+  var n = v.num_days, earliest = v.earliest, latest = v.latest;
+  if (!v.name) v.problem = 'Give the event a name.';
+  else if (!(n >= 1 && n <= 14)) v.problem = 'Number of days must be between 1 and 14.';
+  else if (earliest && latest && earliest > latest) v.problem = 'The earliest start must come before the latest end.';
+  else if (earliest && latest && diffDays(earliest, latest) + 1 < n) v.problem = 'The date range is shorter than the number of days.';
+  else if (earliest && latest && diffDays(earliest, latest) > 730) v.problem = 'The date range can be at most two years.';
+  else if (isNew && latest && latest < todayISO()) v.problem = 'The latest end date has already passed.';
+  return v;
+}
+
 function submitCreate(form) {
   var f = form.elements, err = $('#formErr');
-  var name = f.name.value.trim();
-  var n = parseInt(f.num_days.value, 10);
-  var earliest = f.earliest.value || null, latest = f.latest.value || null;
-  var problem = '';
-  if (!name) problem = 'Give the event a name.';
-  else if (!(n >= 1 && n <= 14)) problem = 'Number of days must be between 1 and 14.';
-  else if (earliest && latest && earliest > latest) problem = 'The earliest start must come before the latest end.';
-  else if (earliest && latest && diffDays(earliest, latest) + 1 < n) problem = 'The date range is shorter than the number of days.';
-  else if (earliest && latest && diffDays(earliest, latest) > 730) problem = 'The date range can be at most two years.';
-  else if (latest && latest < todayISO()) problem = 'The latest end date has already passed.';
-  if (problem) { err.textContent = problem; return; }
+  var v = eventFields(form, true), name = v.name, n = v.num_days, earliest = v.earliest, latest = v.latest;
+  if (v.problem) { err.textContent = v.problem; return; }
   err.textContent = '';
   var btn = form.querySelector('button[type=submit]');
   btn.disabled = true; btn.textContent = 'Creating…';
@@ -749,7 +833,9 @@ function submitCreate(form) {
   var started;
   try { started = api.createEvent({ name: name, description: f.description.value, num_days: n, earliest: earliest, latest: latest }); }
   catch (e) { failed(e); return; }
-  started.then(function (code) {
+  started.then(function (res) {
+    var code = typeof res === 'string' ? res : res.code;
+    if (res && res.owner_token) setOwnerToken(code, res.owner_token);
     rememberEvent(code, name);
     renderCreated(code, name);
   }, failed);
@@ -771,6 +857,12 @@ function renderCreated(code, name) {
         '<a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="' + esc(url) + '">Open event</a>' +
       '</div>' +
     '</div>' +
+    (getOwnerToken(code) ? '<div class="panel owner">' +
+      '<strong>Your organizer link</strong>' +
+      '<p class="hint" style="margin-top:4px">Keep this one private. It lets you edit or delete the event and remove answers, from any device.</p>' +
+      '<div class="linkbox"><input type="text" id="ownerUrl" readonly value="' + esc(ownerUrl(code)) + '" aria-label="Organizer link"></div>' +
+      '<div class="row-btns"><button class="btn" type="button" data-act="copy-owner-new">Copy organizer link</button></div>' +
+    '</div>' : '') +
     '<p class="hint" style="margin-top:16px">Open the event yourself first and add your own days, then send the link.</p>';
 }
 
@@ -792,7 +884,8 @@ function renderEvent() {
 
   $app.innerHTML =
     previewBanner() +
-    '<nav class="topnav"><a href="' + esc(baseUrl()) + '">New event</a></nav>' +
+    '<nav class="topnav"><a href="' + esc(baseUrl()) + '">New event</a>' +
+      (S.isOwner ? '<span class="orgtag">You’re the organizer</span>' : '') + '</nav>' +
     '<header class="head"><h1>' + esc(ev.name) + '</h1>' +
       (ev.description ? '<p class="desc">' + esc(ev.description) + '</p>' : '') +
       (facts.length ? '<p class="facts">' + facts.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</p>' : '') +
@@ -826,7 +919,8 @@ function renderEvent() {
         : 'Each day shows the hardest answer anyone gave: red, then yellow, then green. Blue means nobody marked it as a favorite or a problem.') + '</p>' +
     '</section>' +
     '<section id="dayPanel" class="day-panel" aria-live="polite"></section>' +
-    (editing ? editBottomHTML() : '<section id="best" class="block"></section><section id="people" class="block people"></section>');
+    (editing ? editBottomHTML() : '<section id="best" class="block"></section><section id="people" class="block people"></section>' +
+      '<section id="ownerTools"></section>');
 
   renderParts();
   updateEditControls();
@@ -856,7 +950,68 @@ function editBottomHTML() {
     (mine ? '<p style="margin-top:6px"><button type="button" class="link danger" data-act="delete">Delete my response</button></p>' : '');
 }
 
-function renderParts() { renderFilter(); renderCalendar(); renderDayPanel(); renderBest(); renderPeople(); }
+function renderParts() { renderFilter(); renderCalendar(); renderDayPanel(); renderBest(); renderPeople(); renderOwnerTools(); }
+
+function renderOwnerTools() {
+  var el = document.getElementById('ownerTools');
+  if (!el) return;
+  if (!S.isOwner) { el.innerHTML = ''; return; }
+  if (S.editEv && document.getElementById('evForm')) return;   // keep what's being typed
+  var ev = S.ev;
+  if (S.editEv) {
+    el.innerHTML = '<form id="evForm" class="panel owner" novalidate><h2>Edit event</h2>' +
+      '<label class="fld"><span>Event name</span><input type="text" name="name" maxlength="120" value="' + esc(ev.name) + '" autocomplete="off"></label>' +
+      '<label class="fld"><span>Details (optional)</span><textarea name="description" rows="3" maxlength="2000">' + esc(ev.description || '') + '</textarea></label>' +
+      '<label class="fld"><span>Number of days</span><input type="number" name="num_days" min="1" max="14" value="' + esc(ev.num_days) + '" inputmode="numeric"></label>' +
+      '<div class="two">' +
+        '<label class="fld"><span>Earliest start</span><input type="date" name="earliest" value="' + esc(ev.earliest || '') + '"><small>Optional</small></label>' +
+        '<label class="fld"><span>Latest end</span><input type="date" name="latest" value="' + esc(ev.latest || '') + '"><small>Optional</small></label>' +
+      '</div>' +
+      '<p class="hint">Answers people already gave are kept. Days outside a new date range just stop showing.</p>' +
+      '<div class="row-btns"><button class="btn primary" type="submit">Save changes</button>' +
+      '<button class="btn" type="button" data-act="edit-ev-cancel">Cancel</button></div>' +
+      '<p class="err" id="evErr" role="alert"></p></form>';
+    return;
+  }
+  el.innerHTML = '<div class="panel owner"><h2>Organizer tools</h2>' +
+    '<p class="hint" style="margin-top:4px">Only you can see this.' + (S.responses.length ? ' To remove someone’s answers, tap Remove next to their name above.' : '') + '</p>' +
+    '<div class="row-btns"><button type="button" class="btn small" data-act="edit-ev">Edit event</button>' +
+    '<button type="button" class="btn small" data-act="copy-owner">Copy organizer link</button>' +
+    '<button type="button" class="btn small danger" data-act="del-ev">Delete event</button></div>' +
+    '<p class="hint" style="margin-top:10px;font-size:13px">The organizer link gives control of this event on another device. Keep it private.</p></div>';
+}
+
+function submitEditEvent(form) {
+  var v = eventFields(form, false), err = document.getElementById('evErr');
+  if (v.problem) { err.textContent = v.problem; return; }
+  var btn = form.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Saving…';
+  api.updateEvent({ code: S.code, owner: S.owner, name: v.name, description: v.description, num_days: v.num_days,
+                    earliest: v.earliest, latest: v.latest })
+    .then(reload)
+    .then(function () {
+      S.editEv = false; rememberEvent(S.ev.code, S.ev.name);
+      var r = eventRange(S.ev); S.cursor = r.lo <= r.hi ? r.lo : (S.ev.earliest || S.cursor); S.sel = null;
+      renderEvent(); toast('Event updated.');
+    }, function (e) { btn.disabled = false; btn.textContent = 'Save changes'; err.textContent = friendly(e); });
+}
+
+function removeResponse(id, name) {
+  if (!confirm('Remove ' + name + '’s answers from this event?')) return;
+  api.removeResponse({ code: S.code, owner: S.owner, id: id }).then(reload).then(function () {
+    if (S.mode === 'edit') initDraft();
+    renderEvent(); toast('Removed ' + name + '’s answers.');
+  }, function (e) { toast(friendly(e)); });
+}
+
+function deleteEvent() {
+  var n = S.responses.length;
+  if (!confirm('Delete “' + S.ev.name + '”' + (n ? ' and its ' + n + (n === 1 ? ' response' : ' responses') : '') + '? This can’t be undone.')) return;
+  api.deleteEvent({ code: S.code, owner: S.owner }).then(function () {
+    forgetEvent(S.code);
+    try { history.replaceState(null, '', baseUrl()); } catch (e) {}
+    renderHome(); toast('Event deleted.');
+  }, function (e) { toast(friendly(e)); });
+}
 
 /* ----------------------------------------------------------------- calendar */
 
@@ -1072,7 +1227,8 @@ function renderPeople() {
   if (!el) return;
   if (!S.responses.length) { el.innerHTML = ''; return; }
   el.innerHTML = '<h2>Who has answered (' + S.responses.length + ')</h2><ul>' + S.responses.map(function (r) {
-    return '<li><b>' + esc(r.name) + (r.mine ? ' (you)' : '') + '</b>' + (r.note ? ' <span class="note">' + esc(r.note) + '</span>' : '') + '</li>';
+    return '<li><b>' + esc(r.name) + (r.mine ? ' (you)' : '') + '</b>' + (r.note ? ' <span class="note">' + esc(r.note) + '</span>' : '') +
+      (S.isOwner && r.id ? '<button type="button" class="link danger rm" data-act="rm-resp" data-id="' + esc(r.id) + '" data-name="' + esc(r.name) + '">Remove</button>' : '') + '</li>';
   }).join('') + '</ul>';
 }
 
@@ -1197,6 +1353,24 @@ $app.addEventListener('click', function (e) {
       break;
     case 'admin-out': A.pw = ''; A.events = null; renderAdmin(); break;
     case 'admin-del': adminDelete(t.dataset.code); break;
+    case 'admin-org':
+      api.adminGrant(A.pw, t.dataset.code).then(function (tok) {
+        setOwnerToken(t.dataset.code, tok);
+        location.href = shareUrl(t.dataset.code);
+      }, adminFail);
+      break;
+    case 'edit-ev': S.editEv = true; renderOwnerTools(); var ef = document.getElementById('evForm'); if (ef && ef.scrollIntoView) ef.scrollIntoView({ block: 'start', behavior: 'smooth' }); break;
+    case 'edit-ev-cancel': S.editEv = false; renderOwnerTools(); break;
+    case 'del-ev': deleteEvent(); break;
+    case 'rm-resp': removeResponse(t.dataset.id, t.dataset.name); break;
+    case 'copy-owner':
+      copyText(ownerUrl(S.code)).then(function (ok) { toast(ok ? 'Organizer link copied. Keep it private.' : 'Could not copy.'); });
+      break;
+    case 'copy-owner-new':
+      copyText(document.getElementById('ownerUrl').value, document.getElementById('ownerUrl')).then(function (ok) {
+        toast(ok ? 'Organizer link copied. Keep it private.' : 'Press and hold the link to copy it.');
+      });
+      break;
     case 'new-person':
       store.set('meetup.pid', uuid()); store.set('meetup.name', '');
       toast('You are now a new person in this browser.');
@@ -1226,10 +1400,11 @@ $app.addEventListener('change', function (e) {
 $app.addEventListener('submit', function (e) {
   if (e.target.id === 'createForm') { e.preventDefault(); submitCreate(e.target); }
   else if (e.target.id === 'adminForm') { e.preventDefault(); submitAdmin(e.target); }
+  else if (e.target.id === 'evForm') { e.preventDefault(); submitEditEvent(e.target); }
 });
 
 document.addEventListener('visibilitychange', function () {
-  if (document.visibilityState === 'visible' && S.view === 'event' && S.mode === 'view') refreshNow(true);
+  if (document.visibilityState === 'visible' && S.view === 'event' && S.mode === 'view' && !S.editEv) refreshNow(true);
 });
 window.addEventListener('beforeunload', function (e) {
   if (S.view === 'event' && S.mode === 'edit' && S.dirty) { e.preventDefault(); e.returnValue = ''; }

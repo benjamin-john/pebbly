@@ -22,7 +22,9 @@ Static site served by GitHub Pages at https://pebbly.dev.
 - `CNAME` holds the custom domain. Don't delete it.
 - `.nojekyll` tells Pages to serve files as-is (no Jekyll build).
 - The Supabase apps read their project URL and publishable key from each folder's `config.js`.
-  The `.sql` files in `rsvp/` are the database schema and migrations.
+  The `.sql` files in `rsvp/` are the database schema and migrations. For Which Day Works?,
+  `whichdayworks/schema_snapshot.sql` records the live setup (the original scripts were never
+  saved) and `whichdayworks/organizer.sql` adds organizer links.
 - Installable app: `manifest.webmanifest` (name, icons, home-screen shortcuts), `icons/`, and `sw.js`
   (network-first service worker so pages still open offline). If you change cached files and they
   look stale, bump `CACHE` in `sw.js`.
