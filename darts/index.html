@@ -1,0 +1,756 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2F7A63">
+<title>Darts Scorer</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8;
+  --key:#FFFFFF; --key-2:#E9EFEC; --dbl:#2E8B57; --trp:#C2410C;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{ --bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --key:#26302C; --key-2:#1A211E; --dbl:#5CC08A; --trp:#F59E5B; }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+body.in-game{height:100vh;height:100dvh;overflow:hidden}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,.chip button:focus-visible,.pad button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;
+  background:var(--surface);color:var(--ink);font:500 17px/1.2 var(--body)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+
+/* ---------- Setup ---------- */
+.setup{max-width:620px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom))}
+.lead{margin:0 0 16px;color:var(--muted)}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px}
+.seg.wrap{grid-auto-flow:row;grid-template-columns:repeat(4,1fr)}
+.seg label{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:48px;padding:6px 8px;
+  border:1px solid var(--line);border-radius:12px;cursor:pointer;font-weight:500;text-align:center;line-height:1.2}
+.seg label small{display:block;font-weight:400;color:var(--muted);font-size:12.5px;margin-top:2px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label:has(input:checked){border:2px solid var(--brand);background:var(--brand-t);color:var(--brand);font-weight:700}
+.seg label:has(input:focus-visible){outline:3px solid var(--brand);outline-offset:2px}
+.opt{margin-top:16px}
+.opt > span{display:block;font-weight:600;margin-bottom:8px}
+.toggle{display:flex;align-items:center;gap:12px;min-height:48px;cursor:pointer}
+.toggle input{width:22px;height:22px;accent-color:var(--brand);flex:none}
+.toggle span small{display:block;color:var(--muted);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:22px;flex:none;text-align:right;color:var(--muted);font-size:14px}
+.plist input{flex:1;min-width:0}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:4px 0}
+
+/* ---------- Game ---------- */
+.game{height:100%;display:flex;flex-direction:column;max-width:720px;margin:0 auto}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 12px 6px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:22px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .sub{color:var(--muted);font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.board{flex:1;min-height:0;overflow:auto;margin:0 12px;overscroll-behavior:contain}
+
+/* '01 player cards */
+.x01{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.pc{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;min-width:0}
+.pc.turn{border:2px solid var(--brand);background:var(--brand-t)}
+.pc .nm{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pc .rem{font:800 44px/1 var(--head);font-variant-numeric:tabular-nums;margin:4px 0 2px}
+.pc .meta{color:var(--muted);font-size:13px;display:flex;flex-wrap:wrap;gap:2px 10px}
+.pc .out{color:var(--brand);font-weight:600}
+.pc .notin{color:var(--no);font-weight:600}
+
+/* Cricket board */
+.ck{width:100%;border-collapse:separate;border-spacing:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  table-layout:fixed;font-variant-numeric:tabular-nums}
+.ck th,.ck td{text-align:center;border-bottom:1px solid var(--line);padding:0}
+.ck tr:last-child td,.ck tr:last-child th{border-bottom:0}
+.ck thead th{height:40px;font:700 14px/1.1 var(--body);padding:0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-bottom:2px solid var(--line)}
+.ck thead th.turn{color:var(--brand);box-shadow:inset 0 -3px 0 var(--brand)}
+.ck .tg{width:56px;font:800 19px/1 var(--head);background:var(--bg)}
+.ck td.m{height:40px;font:800 24px/1 var(--head)}
+.ck td.m.closed{color:var(--brand)}
+.ck tr.dead td,.ck tr.dead th{opacity:.35}
+.ck tr.pts td{height:46px;font:800 22px/1 var(--head);border-top:2px solid var(--line)}
+.ck tr.pts th{font:600 11px/1.1 var(--body);text-transform:uppercase;letter-spacing:.04em;border-top:2px solid var(--line)}
+.ck td.leader{background:var(--lead-t)}
+.ck tr.mpr td,.ck tr.mpr th{height:28px;font:500 12.5px/1 var(--body);color:var(--muted)}
+
+/* Turn panel */
+.turnbox{padding:8px 12px 0}
+.turnhead{display:flex;align-items:center;gap:10px}
+.turnhead .who{flex:1;min-width:0}
+.turnhead .who b{display:block;font:800 19px/1.2 var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.turnhead .who span{color:var(--muted);font-size:13.5px}
+.darts{display:flex;gap:6px}
+.dart{width:52px;height:40px;border-radius:10px;border:1.5px dashed var(--field);display:grid;place-items:center;font:700 15px/1 var(--body);color:var(--muted)}
+.dart.hit{border:1.5px solid var(--line);background:var(--surface);color:var(--ink)}
+.dart.d{color:var(--dbl)} .dart.t{color:var(--trp)}
+.dart.miss{color:var(--muted)}
+.dart.next{border-color:var(--brand)}
+.last{min-height:22px;margin:6px 0 0;font-size:14px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.last.bust{color:var(--no);font-weight:600}
+.checkout{color:var(--brand);font-weight:600}
+
+/* Pad */
+.pad{padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+.mods{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
+.mods button{min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--key);font:700 15px/1 var(--body);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.mods button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.mods button.d[aria-pressed="true"]{background:var(--dbl);border-color:var(--dbl);color:#fff}
+.mods button.t[aria-pressed="true"]{background:var(--trp);border-color:var(--trp);color:#fff}
+.nums{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.nums.ck7{grid-template-columns:repeat(4,1fr)}
+.nums button{min-height:46px;border:1px solid var(--line);border-radius:10px;background:var(--key);font:600 19px/1 var(--body);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.nums.ck7 button{min-height:56px;font-size:22px}
+.nums button:active{background:var(--key-2);transform:scale(.97)}
+.nums button:disabled{opacity:.3}
+.nums button.fn{background:var(--key-2);font-size:16px}
+.nums button.wide{grid-column:span 2}
+.endrow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
+.endrow .btn{min-height:46px;font-size:15.5px}
+
+/* Dialogs */
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);
+  box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+.stack{display:grid;gap:10px}
+.final{list-style:none;margin:0 0 6px;padding:0}
+.final li{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:17px}
+.final li:first-child{font-weight:700}
+.final .place{width:28px;color:var(--muted);font-weight:600}
+.final .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.final .st{color:var(--muted);font-size:14px;font-weight:400;text-align:right}
+.big{font:800 26px/1.2 var(--head);text-align:center;margin:4px 0 12px}
+</style>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Setup ================= -->
+<main class="setup" id="setup" hidden>
+  <h1>Darts Scorer</h1>
+  <p class="lead">Score '01 (301, 501…) and Cricket one dart at a time. Busts, closed numbers and winners are handled for you.</p>
+
+  <section class="card">
+    <h2>Game</h2>
+    <div class="seg">
+      <label><input type="radio" name="type" value="x01" checked>'01<small>301, 501…</small></label>
+      <label><input type="radio" name="type" value="cricket">Cricket<small>15–20 and bull</small></label>
+    </div>
+
+    <div id="x01Opts">
+      <div class="opt"><span>Starting score</span>
+        <div class="seg wrap">
+          <label><input type="radio" name="start" value="301">301</label>
+          <label><input type="radio" name="start" value="501" checked>501</label>
+          <label><input type="radio" name="start" value="701">701</label>
+          <label><input type="radio" name="start" value="901">901</label>
+        </div>
+      </div>
+      <div class="opt"><span>Finish</span>
+        <div class="seg">
+          <label><input type="radio" name="out" value="straight">Straight out<small>Any dart</small></label>
+          <label><input type="radio" name="out" value="double" checked>Double out<small>Double or bull</small></label>
+          <label><input type="radio" name="out" value="master">Master out<small>Double or triple</small></label>
+        </div>
+      </div>
+      <div class="opt">
+        <label class="toggle"><input type="checkbox" id="din"><span>Double in<small>Scoring starts with a double (or bull)</small></span></label>
+      </div>
+    </div>
+
+    <div id="ckOpts" hidden>
+      <div class="opt"><span>Scoring</span>
+        <div class="seg">
+          <label><input type="radio" name="ck" value="standard" checked>Standard<small>Highest points wins</small></label>
+          <label><input type="radio" name="ck" value="cut">Cut-throat<small>Points go to opponents; lowest wins</small></label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Players</h2>
+    <ul class="plist" id="setupPlayers"></ul>
+    <form class="addrow" id="addPlayerForm" autocomplete="off">
+      <input type="text" id="newPlayer" maxlength="16" placeholder="Add a player" enterkeyhint="done">
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <div class="chips" id="playerChips"></div>
+    <p class="hint" id="limitHint"></p>
+  </section>
+
+  <section class="card">
+    <h2>Rules</h2>
+    <ul class="rules" id="rulesText"></ul>
+  </section>
+
+  <div class="stack">
+    <button class="btn" id="startBtn" type="button">Start game</button>
+    <button class="btn ghost" id="backToGame" type="button" hidden>Back to current game</button>
+  </div>
+</main>
+
+<!-- ================= Game ================= -->
+<main class="game" id="game" hidden>
+  <div class="topbar">
+    <div class="title"><h1 id="gTitle"></h1><div class="sub" id="gSub"></div></div>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo last dart" title="Undo last dart">↶</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+  <div class="board" id="board"></div>
+  <section class="turnbox" aria-live="polite">
+    <div class="turnhead">
+      <div class="who"><b id="tName"></b><span id="tInfo"></span></div>
+      <div class="darts" id="tDarts"></div>
+    </div>
+    <p class="last" id="tLast"></p>
+  </section>
+  <section class="pad" aria-label="Enter a dart">
+    <div class="mods" id="mods">
+      <button type="button" data-m="1" aria-pressed="true">Single</button>
+      <button type="button" class="d" data-m="2" aria-pressed="false">Double</button>
+      <button type="button" class="t" data-m="3" aria-pressed="false">Triple</button>
+    </div>
+    <div class="nums" id="nums"></div>
+    <div class="endrow">
+      <button class="btn plain" type="button" id="missBtn">Miss</button>
+      <button class="btn ghost" type="button" id="endBtn">End turn</button>
+    </div>
+  </section>
+</main>
+
+<!-- ================= Menu ================= -->
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Game menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mRestart">Restart this game</button>
+      <button class="btn plain" type="button" id="mNew">New game setup</button>
+      <button class="btn plain" type="button" data-close>Keep playing</button>
+    </div>
+    <ul class="rules" id="menuRules" style="margin-top:14px"></ul>
+  </div>
+</dialog>
+
+<!-- ================= Winner ================= -->
+<dialog id="winDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Game over</h3></div>
+    <p class="big" id="winText"></p>
+    <ol class="final" id="finalList"></ol>
+    <div class="stack" style="margin-top:14px">
+      <button class="btn" type="button" id="wRematch">Play again</button>
+      <button class="btn ghost" type="button" id="wNew">New game setup</button>
+      <button class="btn plain" type="button" id="wUndo">Undo the last dart</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var K_GAME = 'pebbly_darts_game', K_UNDO = 'pebbly_darts_undo', K_SET = 'pebbly_darts_settings', K_MEM = 'pebbly_score_memory';
+  var TARGETS = [20, 19, 18, 17, 16, 15, 25];
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s || '').trim().replace(/\s+/g, ' '); }
+  function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+
+  var game = load(K_GAME, null), undo = load(K_UNDO, []);
+  var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
+  var settings = load(K_SET, { type: 'x01', start: 501, out: 'double', din: false, cut: false, players: [] });
+  var mult = 1;
+
+  function saveGame() { store(K_GAME, game); store(K_UNDO, undo); }
+  function snapshot() { undo.push(JSON.stringify(game)); if (undo.length > 120) undo.shift(); }
+
+  // A dart is { n: 1-20 | 25 | 0 (miss), m: 1-3 }.
+  function dartValue(d) { return d.n * d.m; }
+  function dartLabel(d) {
+    if (!d.n) return 'Miss';
+    if (d.n === 25) return d.m === 2 ? 'Bull' : '25';
+    return (d.m === 2 ? 'D' : d.m === 3 ? 'T' : '') + d.n;
+  }
+  function maxPlayers(type) { return type === 'cricket' ? 4 : 8; }
+
+  // ================= Setup =================
+  var draft = [];
+  function val(name) { var el = document.querySelector('input[name=' + name + ']:checked'); return el ? el.value : null; }
+  function setRadio(name, v) { var el = document.querySelector('input[name=' + name + '][value="' + v + '"]'); if (el) el.checked = true; }
+
+  function openSetup() {
+    var s = game ? game.cfg : settings;
+    setRadio('type', s.type); setRadio('start', s.start); setRadio('out', s.out); setRadio('ck', s.cut ? 'cut' : 'standard');
+    $('din').checked = !!s.din;
+    var names = game ? game.players.map(function (p) { return p.name; }) : (settings.players || []);
+    draft = names.map(function (n) { return { id: uid(), name: n }; });
+    $('backToGame').hidden = !(game && !game.winner);
+    document.body.classList.remove('in-game');
+    $('game').hidden = true; $('setup').hidden = false; scrollTo(0, 0);
+    renderSetup();
+  }
+  function readCfg() {
+    return { type: val('type'), start: +val('start'), out: val('out'), din: $('din').checked, cut: val('ck') === 'cut' };
+  }
+  function rulesFor(c) {
+    if (c.type === 'cricket') return [
+      'Targets are 20 down to 15, plus the bull. Three marks close a number.',
+      'Single = 1 mark, double = 2, triple = 3. Outer bull = 1 mark, bullseye = 2.',
+      c.cut ? 'Cut-throat: extra hits on a number you closed add points to every opponent who hasn\'t closed it.'
+            : 'Extra hits on a number you closed score points while any opponent still has it open.',
+      c.cut ? 'Close everything with the lowest (or tied lowest) points to win.'
+            : 'Close everything with the most (or tied most) points to win.'
+    ];
+    var r = ['Everyone starts at ' + c.start + '. Each turn is 3 darts; subtract what you score.'];
+    if (c.din) r.push('Double in: your score only starts counting once you hit a double or the bullseye.');
+    if (c.out === 'straight') r.push('Straight out: hit exactly 0 with any dart to win.');
+    if (c.out === 'double') r.push('Double out: the last dart must be a double or the bullseye.');
+    if (c.out === 'master') r.push('Master out: the last dart must be a double, triple or the bullseye.');
+    r.push('Bust: going below 0' + (c.out !== 'straight' ? ', leaving 1, or hitting 0 the wrong way' : '') +
+      ' ends your turn and puts your score back to where it started.');
+    return r;
+  }
+  function renderSetup() {
+    var c = readCfg();
+    $('x01Opts').hidden = c.type !== 'x01';
+    $('ckOpts').hidden = c.type !== 'cricket';
+    $('rulesText').innerHTML = rulesFor(c).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
+    renderPlayerList($('setupPlayers'), draft, renderSetup);
+    var max = maxPlayers(c.type), full = draft.length >= max;
+    $('newPlayer').disabled = full;
+    var taken = draft.map(function (p) { return p.name.toLowerCase(); });
+    var left = full ? [] : mem.players.filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 16);
+    chips($('playerChips'), left);
+    $('limitHint').textContent = draft.length > max ? c.type + ' works best with up to ' + max + ' players. Remove ' + (draft.length - max) + ' to start.'
+      : full ? 'That\'s the most players for this game.' : (left.length ? 'Tap a name from past games to add it.' : '');
+    $('startBtn').disabled = !draft.length || draft.length > max;
+  }
+  function chips(el, names) {
+    el.innerHTML = '';
+    names.forEach(function (n) {
+      var c = document.createElement('span'); c.className = 'chip';
+      var a = document.createElement('button'); a.type = 'button'; a.className = 'add'; a.textContent = n;
+      a.addEventListener('click', function () { draft.push({ id: uid(), name: n }); renderSetup(); });
+      var f = document.createElement('button'); f.type = 'button'; f.className = 'forget'; f.textContent = '×';
+      f.setAttribute('aria-label', 'Forget ' + n);
+      f.addEventListener('click', function () { mem.players = mem.players.filter(function (x) { return x !== n; }); store(K_MEM, mem); renderSetup(); });
+      c.appendChild(a); c.appendChild(f); el.appendChild(c);
+    });
+  }
+  function renderPlayerList(ul, list, changed) {
+    ul.innerHTML = '';
+    list.forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num">' + (i + 1) + '</span>';
+      var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 16; inp.value = p.name;
+      inp.setAttribute('aria-label', 'Player ' + (i + 1) + ' name');
+      inp.addEventListener('change', function () { var v = tidy(inp.value); if (v) p.name = v; else inp.value = p.name; });
+      li.appendChild(inp);
+      [['↑', -1, 'Move up'], ['↓', 1, 'Move down']].forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'icon-btn'; b.textContent = m[0];
+        b.setAttribute('aria-label', m[2] + ' ' + p.name);
+        var j = i + m[1]; b.disabled = j < 0 || j >= list.length;
+        b.addEventListener('click', function () { list.splice(j, 0, list.splice(i, 1)[0]); changed(); });
+        li.appendChild(b);
+      });
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'icon-btn x'; x.textContent = '✕';
+      x.setAttribute('aria-label', 'Remove ' + p.name);
+      x.addEventListener('click', function () { list.splice(i, 1); changed(); });
+      li.appendChild(x);
+      ul.appendChild(li);
+    });
+  }
+  document.querySelectorAll('#setup input[type=radio], #din').forEach(function (r) { r.addEventListener('change', renderSetup); });
+  $('addPlayerForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = tidy($('newPlayer').value); if (!v) return;
+    draft.push({ id: uid(), name: v }); $('newPlayer').value = ''; renderSetup(); $('newPlayer').focus();
+  });
+  $('backToGame').addEventListener('click', showGame);
+  $('startBtn').addEventListener('click', function () {
+    var pending = tidy($('newPlayer').value);
+    if (pending && draft.length < maxPlayers(val('type'))) { draft.push({ id: uid(), name: pending }); $('newPlayer').value = ''; }
+    if (!draft.length) return;
+    if (game && !game.winner && game.log.length && !confirm('Start a new game? The current game will be cleared.')) return;
+    var cfg = readCfg();
+    draft.forEach(function (p) { p.name = tidy(p.name) || 'Player'; });
+    settings = Object.assign({}, cfg, { players: draft.map(function (p) { return p.name; }) });
+    store(K_SET, settings);
+    draft.slice().reverse().forEach(function (p) {
+      var i = mem.players.findIndex(function (x) { return x.toLowerCase() === p.name.toLowerCase(); });
+      if (i > -1) mem.players.splice(i, 1);
+      mem.players.unshift(p.name);
+    });
+    mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
+    newGame(cfg, draft.map(function (p) { return p.name; }), 0);
+  });
+
+  // ================= Game state =================
+  // game = { cfg, players:[{id,name}], first, cur, darts:[current turn], turnStart, s:{pid: stats}, log:[turns], winner }
+  function newGame(cfg, names, first) {
+    var players = names.map(function (n) { return { id: uid(), name: n }; });
+    game = { cfg: cfg, players: players, first: first % players.length, cur: first % players.length, darts: [], s: {}, log: [], winner: null, turnStart: null };
+    players.forEach(function (p) {
+      game.s[p.id] = cfg.type === 'cricket'
+        ? { marks: { 20: 0, 19: 0, 18: 0, 17: 0, 16: 0, 15: 0, 25: 0 }, pts: 0, thrown: 0, markCount: 0 }
+        : { rem: cfg.start, isIn: !cfg.din, thrown: 0, scored: 0 };
+    });
+    undo = []; mult = 1;
+    saveGame(); showGame();
+  }
+  function curPlayer() { return game.players[game.cur]; }
+
+  // ---- '01 ----
+  function isDouble(d) { return d.m === 2; }       // includes the bullseye (25 × 2)
+  function x01Dart(d) {
+    var p = curPlayer(), s = game.s[p.id], c = game.cfg;
+    if (game.darts.length === 0) game.turnStart = { rem: s.rem, isIn: s.isIn };
+    game.darts.push(d); s.thrown++;
+    if (!s.isIn) {
+      if (d.n && isDouble(d)) s.isIn = true; else return endIfDone();
+    }
+    var v = dartValue(d), left = s.rem - v;
+    var finishOk = c.out === 'straight' || (c.out === 'double' && isDouble(d)) || (c.out === 'master' && (d.m === 2 || d.m === 3));
+    var bust = left < 0 || (c.out !== 'straight' && left === 1) || (left === 0 && !finishOk);
+    if (bust) {
+      s.scored -= (game.turnStart.rem - s.rem);   // take back this turn's points
+      s.rem = game.turnStart.rem; s.isIn = game.turnStart.isIn;
+      endTurn('bust'); buzz([30, 40, 30]); return;
+    }
+    s.rem = left; s.scored += v;
+    if (left === 0) { game.winner = p.id; endTurn('win'); return; }
+    endIfDone();
+  }
+
+  // ---- Cricket ----
+  function openFor(pid, n) {   // does any opponent of pid still have n open?
+    return game.players.some(function (q) { return q.id !== pid && game.s[q.id].marks[n] < 3; });
+  }
+  function ckDart(d) {
+    var p = curPlayer(), s = game.s[p.id], c = game.cfg;
+    game.darts.push(d); s.thrown++;
+    if (d.n && TARGETS.indexOf(d.n) > -1) {
+      var have = s.marks[d.n], add = d.m, toClose = Math.max(0, 3 - have);
+      var closing = Math.min(add, toClose), extra = add - closing;
+      s.marks[d.n] = Math.min(3, have + add);
+      var counted = closing;
+      if (extra > 0 && openFor(p.id, d.n)) {
+        counted += extra;
+        if (c.cut) game.players.forEach(function (q) { if (q.id !== p.id && game.s[q.id].marks[d.n] < 3) game.s[q.id].pts += extra * d.n; });
+        else s.pts += extra * d.n;
+      }
+      s.markCount += counted;
+      d.marks = counted;
+    }
+    var w = ckWinner(); if (w) { game.winner = w; endTurn('win'); return; }
+    endIfDone();
+  }
+  function allClosed(pid) { return TARGETS.every(function (n) { return game.s[pid].marks[n] >= 3; }); }
+  function ckWinner() {
+    // Only the player who just threw can complete the win condition.
+    var p = curPlayer(), me = game.s[p.id];
+    if (!allClosed(p.id)) return null;
+    var ok = game.players.every(function (q) {
+      if (q.id === p.id) return true;
+      return game.cfg.cut ? me.pts <= game.s[q.id].pts : me.pts >= game.s[q.id].pts;
+    });
+    return ok ? p.id : null;
+  }
+
+  // ---- Turns ----
+  function endIfDone() { if (game.darts.length >= 3) endTurn(); }
+  function endTurn(kind) {
+    var p = curPlayer(), entry = { pid: p.id, darts: game.darts.slice(), kind: kind || '' };
+    if (game.cfg.type === 'x01' && game.turnStart) entry.pts = game.turnStart.rem - game.s[p.id].rem;
+    game.log.push(entry);
+    game.darts = []; game.turnStart = null; mult = 1;
+    if (kind !== 'win') game.cur = (game.cur + 1) % game.players.length;
+  }
+  function throwDart(n) {
+    if (!game || game.winner) return;
+    var m = n === 0 ? 1 : mult;
+    if (n === 25 && m === 3) return;
+    snapshot();
+    var d = { n: n, m: m };
+    if (game.cfg.type === 'cricket') ckDart(d); else x01Dart(d);
+    mult = 1; buzz();
+    saveGame(); render();
+    if (game.winner) setTimeout(showWinner, 250);
+  }
+  function endTurnEarly() {
+    if (!game || game.winner) return;
+    snapshot();
+    while (game.darts.length < 3 && !game.winner) {
+      if (game.cfg.type === 'cricket') ckDart({ n: 0, m: 1 }); else x01Dart({ n: 0, m: 1 });
+      if (game.darts.length === 0) break;   // turn ended (bust or 3 darts)
+    }
+    saveGame(); render();
+  }
+
+  // ================= Checkout hints ('01) =================
+  var DARTS = [];
+  for (var i = 1; i <= 20; i++) { DARTS.push({ n: i, m: 1 }, { n: i, m: 2 }, { n: i, m: 3 }); }
+  DARTS.push({ n: 25, m: 1 }, { n: 25, m: 2 });
+  var FAV = [20, 16, 18, 12, 10, 8, 19, 17, 14, 15, 13, 11, 9, 6, 4, 2, 7, 5, 3, 1, 25];
+  function finishRank(d) { return (d.m === 3 ? 30 : 0) + FAV.indexOf(d.n); }
+  function setupCost(d) { return d.n === 25 ? 4 : d.m === 3 ? (20 - d.n) * 0.1 + 1 : d.m === 2 ? 3 : (20 - d.n) * 0.05; }
+  var memo = {};
+  function checkout(rem, dartsLeft, out) {
+    if (out === 'straight' || rem > 180 || rem < 2) return null;
+    var key = rem + '/' + dartsLeft + '/' + out;
+    if (key in memo) return memo[key];
+    var finishes = DARTS.filter(function (d) { return d.m === 2 || (out === 'master' && d.m === 3); });
+    var best = null, bestScore = Infinity;
+    function consider(path, score) { if (score < bestScore) { bestScore = score; best = path; } }
+    for (var k = 1; k <= dartsLeft && !best; k++) {
+      finishes.forEach(function (f) {
+        var need = rem - dartValue(f);
+        if (k === 1) { if (need === 0) consider([f], finishRank(f)); return; }
+        if (k === 2) {
+          DARTS.forEach(function (a) { if (dartValue(a) === need) consider([a, f], finishRank(f) * 10 + setupCost(a)); });
+          return;
+        }
+        DARTS.forEach(function (a) {
+          var r2 = need - dartValue(a); if (r2 <= 0) return;
+          DARTS.forEach(function (b) {
+            if (dartValue(b) === r2 && dartValue(b) <= dartValue(a))
+              consider([a, b, f], finishRank(f) * 10 + setupCost(a) + setupCost(b));
+          });
+        });
+      });
+    }
+    memo[key] = best ? best.map(dartLabel).join(' · ') : null;
+    return memo[key];
+  }
+
+  // ================= Render =================
+  function showGame() {
+    $('setup').hidden = true; $('game').hidden = false; document.body.classList.add('in-game');
+    buildPad(); render();
+    if (game.winner) setTimeout(showWinner, 100);
+  }
+  function buildPad() {
+    var nums = $('nums'), ck = game.cfg.type === 'cricket', h = '';
+    nums.className = 'nums' + (ck ? ' ck7' : '');
+    if (ck) TARGETS.forEach(function (n) { h += '<button type="button" data-n="' + n + '"' + (n === 25 ? ' class="wide"' : '') + '>' + (n === 25 ? 'Bull' : n) + '</button>'; });
+    else {
+      for (var i = 1; i <= 20; i++) h += '<button type="button" data-n="' + i + '">' + i + '</button>';
+      h += '<button type="button" class="wide" data-n="25">Bull</button>';
+      h += '<button type="button" class="fn wide" data-n="0">Miss</button>';
+      h += '<button type="button" class="fn" data-act="end">End</button>';
+    }
+    nums.innerHTML = h;
+    $('missBtn').parentNode.hidden = !ck;   // '01 has Miss/End in the grid
+  }
+  function marksSym(n) { return n >= 3 ? 'Ⓧ' : n === 2 ? '✕' : n === 1 ? '/' : ''; }
+
+  function render() {
+    if (!game) return;
+    var c = game.cfg, p = curPlayer(), s = game.s[p.id], ck = c.type === 'cricket';
+    $('gTitle').textContent = ck ? (c.cut ? 'Cut-throat Cricket' : 'Cricket') : String(c.start);
+    $('gSub').textContent = ck ? plural(game.players.length, 'player')
+      : (c.din ? 'Double in · ' : '') + (c.out === 'straight' ? 'Straight out' : c.out === 'double' ? 'Double out' : 'Master out');
+    $('undoBtn').disabled = !undo.length;
+    var turnNo = Math.floor(game.log.length / game.players.length) + 1;
+
+    // Board
+    var h = '';
+    if (!ck) {
+      h = '<div class="x01">';
+      game.players.forEach(function (q, i) {
+        var st = game.s[q.id], avg = st.thrown ? (st.scored / st.thrown * 3).toFixed(1) : '–';
+        var live = i === game.cur && !game.winner;
+        var remNow = st.rem, dl = 3 - (live ? game.darts.length : 0);
+        var co = st.isIn ? checkout(remNow, live ? dl : 3, c.out) : null;
+        h += '<div class="pc' + (live ? ' turn' : '') + '"><div class="nm">' + esc(q.name) + '</div>' +
+          '<div class="rem">' + remNow + '</div><div class="meta"><span>Avg ' + avg + '</span>' +
+          (!st.isIn ? '<span class="notin">Needs a double</span>' : co ? '<span class="out">' + esc(co) + '</span>' : '') + '</div></div>';
+      });
+      h += '</div>';
+    } else {
+      var lead = null;
+      if (game.log.length || game.darts.length) {
+        var pts = game.players.map(function (q) { return game.s[q.id].pts; });
+        lead = c.cut ? Math.min.apply(null, pts) : Math.max.apply(null, pts);
+      }
+      h = '<table class="ck"><thead><tr><th class="tg" scope="col"></th>';
+      game.players.forEach(function (q, i) { h += '<th scope="col"' + (i === game.cur && !game.winner ? ' class="turn"' : '') + '>' + esc(q.name) + '</th>'; });
+      h += '</tr></thead><tbody>';
+      TARGETS.forEach(function (n) {
+        var dead = game.players.every(function (q) { return game.s[q.id].marks[n] >= 3; });
+        h += '<tr' + (dead ? ' class="dead"' : '') + '><th class="tg" scope="row">' + (n === 25 ? 'B' : n) + '</th>';
+        game.players.forEach(function (q) {
+          var mk = game.s[q.id].marks[n];
+          h += '<td class="m' + (mk >= 3 ? ' closed' : '') + '" aria-label="' + esc(q.name) + ' ' + (n === 25 ? 'bull' : n) + ': ' + mk + ' marks">' + marksSym(mk) + '</td>';
+        });
+        h += '</tr>';
+      });
+      h += '<tr class="pts"><th class="tg" scope="row">Pts</th>';
+      game.players.forEach(function (q) {
+        var v = game.s[q.id].pts; h += '<td' + (lead !== null && v === lead && game.players.length > 1 ? ' class="leader"' : '') + '>' + v + '</td>';
+      });
+      h += '</tr><tr class="mpr"><th class="tg" scope="row">MPR</th>';
+      game.players.forEach(function (q) { var st = game.s[q.id]; h += '<td>' + (st.thrown ? (st.markCount / st.thrown * 3).toFixed(2) : '–') + '</td>'; });
+      h += '</tr></tbody></table>';
+    }
+    $('board').innerHTML = h;
+
+    // Turn panel
+    $('tName').textContent = game.winner ? 'Game over' : p.name;
+    var info = 'Turn ' + turnNo;
+    if (!ck && !game.winner) {
+      var start = game.darts.length ? game.turnStart.rem : s.rem;
+      var sum = start - s.rem;
+      info += game.darts.length ? ' · ' + sum + ' this turn' : ' · ' + s.rem + ' left';
+    }
+    $('tInfo').textContent = info;
+    var dh = '';
+    for (var i = 0; i < 3; i++) {
+      var d = game.darts[i];
+      if (d) dh += '<div class="dart hit' + (!d.n ? ' miss' : d.m === 2 ? ' d' : d.m === 3 ? ' t' : '') + '">' + dartLabel(d) + '</div>';
+      else dh += '<div class="dart' + (i === game.darts.length && !game.winner ? ' next' : '') + '"></div>';
+    }
+    $('tDarts').innerHTML = dh;
+    var last = game.log[game.log.length - 1], lt = '', bust = false;
+    if (last && !game.darts.length) {
+      var who = game.players.find(function (q) { return q.id === last.pid; });
+      var labels = last.darts.map(dartLabel).join(', ');
+      if (last.kind === 'bust') { lt = (who ? who.name : '') + ' busted (' + labels + ')'; bust = true; }
+      else if (ck) {
+        var mk = last.darts.reduce(function (a, d) { return a + (d.marks || 0); }, 0);
+        lt = (who ? who.name : '') + ': ' + labels + ' · ' + plural(mk, 'mark');
+      } else {
+        lt = (who ? who.name : '') + ': ' + labels + ' = ' + (last.pts || 0);
+      }
+    }
+    $('tLast').textContent = lt; $('tLast').classList.toggle('bust', bust);
+
+    // Pad state
+    document.querySelectorAll('#mods button').forEach(function (b) { b.setAttribute('aria-pressed', String(+b.dataset.m === mult)); });
+    document.querySelectorAll('#nums button[data-n="25"]').forEach(function (b) {
+      b.disabled = mult === 3; b.textContent = mult === 2 ? 'Bullseye' : ck ? 'Bull' : 'Bull 25';
+    });
+    document.querySelectorAll('#nums button, #missBtn, #endBtn, #mods button').forEach(function (b) {
+      if (game.winner) b.disabled = true; else if (b.dataset.n !== '25') b.disabled = false;
+    });
+  }
+
+  // ================= Events =================
+  $('mods').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-m]'); if (!b) return;
+    var m = +b.dataset.m; mult = mult === m && m !== 1 ? 1 : m; buzz(5); render();
+  });
+  $('nums').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.dataset.act === 'end') return endTurnEarly();
+    throwDart(+b.dataset.n);
+  });
+  $('missBtn').addEventListener('click', function () { throwDart(0); });
+  $('endBtn').addEventListener('click', endTurnEarly);
+  function doUndo() {
+    if (!undo.length) return;
+    game = JSON.parse(undo.pop()); mult = 1; saveGame(); buzz(); render();
+  }
+  $('undoBtn').addEventListener('click', doUndo);
+
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d && d.id !== 'winDlg' || e.target.closest('[data-close]')) d.close(); });
+  });
+  $('menuBtn').addEventListener('click', function () {
+    $('menuRules').innerHTML = rulesFor(game.cfg).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
+    $('menuDlg').showModal();
+  });
+  $('mRestart').addEventListener('click', function () {
+    if (!confirm('Restart from the beginning with the same players?')) return;
+    $('menuDlg').close(); newGame(game.cfg, game.players.map(function (p) { return p.name; }), game.first);
+  });
+  $('mNew').addEventListener('click', function () { $('menuDlg').close(); openSetup(); });
+
+  function showWinner() {
+    if (!game.winner || $('winDlg').open) return;
+    var c = game.cfg, w = game.players.find(function (p) { return p.id === game.winner; });
+    $('winText').textContent = '🎯 ' + w.name + ' wins!';
+    var rows = game.players.map(function (p) {
+      var s = game.s[p.id];
+      return c.type === 'cricket'
+        ? { p: p, key: p.id === game.winner ? -1e9 : (c.cut ? s.pts : -s.pts), main: s.pts + ' pts', st: 'MPR ' + (s.thrown ? (s.markCount / s.thrown * 3).toFixed(2) : '–') }
+        : { p: p, key: s.rem, main: s.rem === 0 ? 'Out' : s.rem + ' left', st: 'Avg ' + (s.thrown ? (s.scored / s.thrown * 3).toFixed(1) : '–') + ' · ' + plural(s.thrown, 'dart') };
+    }).sort(function (a, b) { return a.key - b.key; });
+    $('finalList').innerHTML = rows.map(function (r, i) {
+      return '<li><span class="place">' + (i === 0 ? '🏆' : i + 1) + '</span><span class="nm">' + esc(r.p.name) +
+        '</span><span>' + esc(r.main) + '<div class="st">' + esc(r.st) + '</div></span></li>';
+    }).join('');
+    $('winDlg').showModal();
+  }
+  $('wRematch').addEventListener('click', function () {
+    $('winDlg').close();
+    // Next leg: the next player in order throws first.
+    newGame(game.cfg, game.players.map(function (p) { return p.name; }), game.first + 1);
+  });
+  $('wNew').addEventListener('click', function () { $('winDlg').close(); openSetup(); });
+  $('wUndo').addEventListener('click', function () { $('winDlg').close(); doUndo(); });
+
+  // Keyboard: digits aren't practical for 1–20, but S/D/T, M (miss) and U (undo) help on a computer.
+  document.addEventListener('keydown', function (e) {
+    if ($('game').hidden || document.querySelector('dialog[open]') || e.target.tagName === 'INPUT') return;
+    var k = e.key.toLowerCase();
+    if (k === 's') mult = 1; else if (k === 'd') mult = 2; else if (k === 't') mult = 3;
+    else if (k === 'm') return throwDart(0);
+    else if (k === 'u' || (k === 'z' && (e.metaKey || e.ctrlKey))) return doUndo();
+    else return;
+    render();
+  });
+
+  if (game && game.players && game.players.length) showGame(); else { game = null; openSetup(); }
+})();
+</script>
+</body>
+</html>

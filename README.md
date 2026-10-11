@@ -9,6 +9,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/whichdayworks/` | Find a date that works for everyone (Supabase) |
 | `/poll/` | Group polls (Supabase) |
 | `/score/` | Score Keeper: per-round scores for any game |
+| `/darts/` | Darts Scorer: '01 (301/501/701/901, straight/double/master out, double in) and Cricket (standard or cut-throat) |
 | `/qwixx/` | Qwixx dice roller |
 | `/namegame/` | The Name Game |
 | `/install/` | How to add Pebbly to a phone or computer home screen |
