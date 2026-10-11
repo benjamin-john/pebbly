@@ -131,7 +131,7 @@ input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid v
 .checkout{color:var(--brand);font-weight:600}
 
 /* Pad */
-.pad{padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+.pad{padding:8px 12px calc(10px + env(safe-area-inset-bottom) + var(--sys-bottom, 0px))}
 .mods{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px}
 .mods button{min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--key);font:700 15px/1 var(--body);cursor:pointer;
   -webkit-tap-highlight-color:transparent;touch-action:manipulation}
@@ -172,6 +172,16 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     function fit() {
       var h = window.visualViewport ? Math.min(window.innerHeight, window.visualViewport.height) : window.innerHeight;
       document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+      // Some Android installs draw the app under the navigation buttons without saying how
+      // tall they are. If the app fills the whole screen and no inset is reported, leave room.
+      var probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)';
+      document.documentElement.appendChild(probe);
+      var inset = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+      probe.remove();
+      var standalone = matchMedia('(display-mode: standalone)').matches;
+      var fullScreen = screen.height - window.innerHeight < 12;
+      document.documentElement.style.setProperty('--sys-bottom', standalone && fullScreen && !inset ? '48px' : '0px');
     }
     fit();
     addEventListener('resize', fit);
@@ -287,6 +297,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       <button class="btn plain" type="button" data-close>Keep playing</button>
     </div>
     <ul class="rules" id="menuRules" style="margin-top:14px"></ul>
+    <p class="hint" id="verInfo" style="text-align:center;font-size:12px"></p>
   </div>
 </dialog>
 
@@ -765,6 +776,16 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   if (game && game.players && game.players.length) showGame(); else { game = null; openSetup(); }
 })();
+  // Version + screen numbers, to check a phone has the latest code.
+  (function () {
+    var el = document.getElementById('verInfo'); if (!el) return;
+    function info() {
+      var cs = getComputedStyle(document.documentElement);
+      el.textContent = 'Version 3 · ' + innerWidth + '×' + innerHeight + ' (screen ' + screen.width + '×' + screen.height + ') · pad ' +
+        (cs.getPropertyValue('--sys-bottom') || '0').trim();
+    }
+    info(); addEventListener('resize', info);
+  })();
 </script>
 </body>
 </html>
