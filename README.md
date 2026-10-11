@@ -10,6 +10,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/poll/` | Group polls (Supabase) |
 | `/score/` | Score Keeper: per-round scores for any game |
 | `/darts/` | Darts Scorer: '01 (301/501/701/901, straight/double/master out, double in) and Cricket (standard or cut-throat) |
+| `/farkle/` | Farkle: dice roller and/or scoreboard, 1+ players, standard or continue-play, editable house rules |
 | `/qwixx/` | Qwixx: dice roller and/or score cards, 1+ players, rules enforced |
 | `/namegame/` | The Name Game |
 | `/install/` | How to add Pebbly to a phone or computer home screen |
