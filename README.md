@@ -8,6 +8,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/rsvp/` | Event invites and RSVPs (Supabase) |
 | `/whichdayworks/` | Find a date that works for everyone (Supabase) |
 | `/poll/` | Group polls (Supabase) |
+| `/score/` | Score Keeper: per-round scores for any game |
 | `/qwixx/` | Qwixx dice roller |
 | `/namegame/` | The Name Game |
 | `/install/` | How to add Pebbly to a phone or computer home screen |
