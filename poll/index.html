@@ -1,0 +1,911 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Poll</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4EEE8; --surface:#FFFFFF; --ink:#26190F; --muted:#6B5A4C; --line:#DDD0C4; --brand:#8A3B12;
+  --up:#2E8B57; --up-t:#DCEFE3; --down:#CC423D; --down-t:#F6DAD8; --gold:#E3A918; --gold-t:#FBF0CC;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--head);line-height:1.15;margin:0}
+h1{font-size:32px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:21px;font-weight:600}
+p{margin:0}
+a{color:var(--brand)}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hint{color:var(--muted);font-size:15px}
+.topnav{display:flex;justify-content:space-between;margin-bottom:14px;font-size:15px}
+.banner{background:var(--gold-t);border:1px solid #E5CB6B;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:14px}
+.banner button{margin-top:6px}
+.banner.bad{background:var(--down-t);border-color:#D9908D;font-size:15px}
+.banner[hidden]{display:none}
+.lede{margin:10px 0 22px;font-size:17px;max-width:46ch}
+.desc{margin-top:8px;white-space:pre-wrap;max-width:60ch}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.facts span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:14px}
+.tools{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+.btn{min-height:46px;padding:0 20px;border-radius:10px;border:2px solid var(--brand);background:var(--surface);color:var(--brand);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.small{min-height:38px;padding:0 14px;font-size:14px}
+.btn.danger{border-color:#A12F2B;color:#A12F2B}
+.btn:disabled{opacity:.5;cursor:default}
+.link{background:none;border:0;padding:8px 0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:15px}
+.link.danger{color:#A12F2B}
+.chipbtn{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px;font-weight:500}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.fld{display:block;margin-bottom:16px}
+.fld>span{display:block;font-weight:600;margin-bottom:5px;font-size:15px}
+.fld small{display:block;color:var(--muted);margin-top:4px;font-size:13px}
+input[type=text],textarea{width:100%;min-height:46px;padding:10px 12px;border:1px solid #BBA999;border-radius:10px;background:#fff}
+textarea{resize:vertical}
+.err{color:#A12F2B;font-weight:600;margin-top:12px;min-height:1.4em}
+.checks{display:grid;gap:4px;margin:2px 0 18px}
+.check{display:flex;gap:12px;align-items:flex-start;padding:10px 4px;cursor:pointer;min-height:48px}
+.check input{width:24px;height:24px;margin:1px 0 0;flex:none;accent-color:var(--brand)}
+.check b{display:block;font-weight:600}
+.check small{display:block;color:var(--muted);font-size:14px}
+.linkbox{display:flex;gap:8px;margin:10px 0 0}
+.linkbox input{flex:1;min-width:0}
+.recent{margin-top:28px}
+.recent ul{list-style:none;padding:0;margin:8px 0 0}
+.recent li{padding:10px 0;border-top:1px solid var(--line)}
+.recent .tagq{font-size:12px;font-weight:600;background:var(--gold-t);border-radius:999px;padding:1px 8px;margin-left:6px}
+
+.created{margin-bottom:16px;border-color:var(--up);background:var(--up-t)}
+.created h2{font-size:19px}
+
+.winner{display:flex;gap:14px;align-items:center;margin:16px 0 4px;padding:16px;border-radius:14px;background:var(--gold-t);border:2px solid var(--gold)}
+.winner .tr{font-size:38px;line-height:1}
+.winner small{display:block;color:var(--muted);font-size:14px}
+.winner b{display:block;font-family:var(--head);font-size:26px;line-height:1.15;overflow-wrap:anywhere}
+
+.namebox{margin:18px 0 6px}
+.namebox .fld{margin:0}
+.namebox.nudge{animation:nudge .35s}
+@keyframes nudge{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+.opts{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:8px}
+.opt{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 12px 14px}
+.opt .otxt b{font-family:var(--head);font-size:19px;font-weight:600;overflow-wrap:anywhere}
+.opt .meta,.opt .names{display:block;color:var(--muted);font-size:13px}
+.opt.win{border:2px solid var(--gold);background:var(--gold-t)}
+.opt.hi{outline:4px solid var(--brand);outline-offset:1px;background:#FFF6EC}
+.votes{display:flex;gap:6px}
+.vb{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:58px;min-height:48px;padding:0 12px;border-radius:10px;border:2px solid var(--line);background:var(--surface);cursor:pointer;font-weight:700;font-size:16px;touch-action:manipulation}
+.vb svg{width:22px;height:22px;fill:currentColor;flex:none}
+.vb.dn svg{transform:rotate(180deg)}
+.vb.up{color:var(--up)}
+.vb.dn{color:var(--down)}
+.vb[aria-pressed="true"].up{background:var(--up);border-color:var(--up);color:#fff}
+.vb[aria-pressed="true"].dn{background:var(--down);border-color:var(--down);color:#fff}
+.ownrow{grid-column:1/3;display:flex;gap:14px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:4px;margin-top:2px}
+.ownrow .link{padding:4px 0;font-size:14px}
+.rchk{min-width:96px;min-height:48px;border-radius:10px;border:2px solid var(--line);background:var(--surface);font-weight:600;cursor:pointer}
+.rchk[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:#fff}
+.editf{grid-column:1/3;display:flex;gap:8px;flex-wrap:wrap}
+.editf input{flex:1 1 180px;min-width:0}
+.add{margin-top:16px}
+.add form{display:flex;gap:8px}
+.add input{flex:1;min-width:0}
+.owner{margin-top:26px;border:2px solid var(--brand)}
+.owner h2{font-size:19px}
+.owner .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.admin-list{list-style:none;margin:14px 0 0;padding:0}
+.admin-list li{padding:14px 0;border-top:1px solid var(--line)}
+.admin-list .nm{font-family:var(--head);font-size:19px;font-weight:600;overflow-wrap:anywhere}
+.admin-list .meta{color:var(--muted);font-size:14px;margin:2px 0 10px}
+.foot{margin-top:30px;font-size:14px;text-align:center;color:var(--muted)}
+
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:10;font-size:15px}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){.namebox.nudge{animation:none}#toast{transition:none}}
+</style>
+</head>
+<body>
+<main id="app" class="wrap"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This page needs JavaScript to work.</p></noscript>
+
+<script>
+// Load config.js with a fresh address each time so a phone can't keep serving an old, blank copy.
+document.write('<script src="config.js?t=' + Date.now() + '"><\/script>');
+</script>
+<script>
+(function () {
+'use strict';
+
+/* ------------------------------------------------------------------ setup */
+
+var CFG = window.PICK_CONFIG || {};
+CFG.SUPABASE_KEY = String(CFG.SUPABASE_KEY || '').trim();
+CFG.SUPABASE_URL = String(CFG.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+if (CFG.SUPABASE_URL && !/^https?:\/\//i.test(CFG.SUPABASE_URL)) CFG.SUPABASE_URL = 'https://' + CFG.SUPABASE_URL;
+var REMOTE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_KEY && !/your-project|YOUR_/i.test(CFG.SUPABASE_URL + CFG.SUPABASE_KEY));
+
+var $app = document.getElementById('app');
+var $toast = document.getElementById('toast');
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+var THUMB = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/></svg>';
+
+/* ---------------------------------------------------------------- storage */
+
+var store = {
+  get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+function uuid() {
+  if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+  return 'p' + Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+function getPid() {
+  var id = store.get('pick.pid', null);
+  if (!id) { id = uuid(); store.set('pick.pid', id); }
+  return id;
+}
+function getOwnerToken(code) { return (store.get('pick.owners', {}) || {})[code] || null; }
+function setOwnerToken(code, token) { var o = store.get('pick.owners', {}) || {}; o[code] = token; store.set('pick.owners', o); }
+function rememberPoll(code, name) {
+  var list = store.get('pick.recent', []).filter(function (e) { return e.code !== code; });
+  list.unshift({ code: code, name: name });
+  store.set('pick.recent', list.slice(0, 10));
+}
+function randInt(n) { // unbiased random integer in [0, n)
+  if (window.crypto && window.crypto.getRandomValues) {
+    var lim = Math.floor(4294967296 / n) * n, a = new Uint32Array(1);
+    do { window.crypto.getRandomValues(a); } while (a[0] >= lim);
+    return a[0] % n;
+  }
+  return Math.floor(Math.random() * n);
+}
+
+/* -------------------------------------------------------------------- api */
+
+function ApiError(message, status) { this.message = message; this.status = status; this.name = 'ApiError'; }
+ApiError.prototype = Object.create(Error.prototype);
+
+var remoteApi = {
+  rpc: function (fn, args) {
+    var headers = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY };
+    if (/^eyJ/.test(CFG.SUPABASE_KEY)) headers.Authorization = 'Bearer ' + CFG.SUPABASE_KEY;
+    return fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: headers, body: JSON.stringify(args) })
+      .then(function (res) {
+        return res.text().then(function (text) {
+          var data = null;
+          try { data = text ? JSON.parse(text) : null; } catch (e) {}
+          if (!res.ok) throw new ApiError((data && (data.message || data.error_description || data.msg)) || ('http_' + res.status), res.status);
+          return data;
+        });
+      }, function () { throw new ApiError('network'); });
+  },
+  create: function (a) {
+    return this.rpc('poll_create', { p_name: a.name, p_description: a.description, p_allow_down: a.allow_down,
+      p_anonymous: a.anonymous, p_allow_custom: a.allow_custom, p_options: a.options, p_single_vote: !!a.single_vote });
+  },
+  get: function (code, pid, owner) { return this.rpc('poll_get', { p_code: code, p_participant: pid, p_owner_token: owner }); },
+  vote: function (a) { return this.rpc('poll_vote', { p_code: a.code, p_participant: a.pid, p_name: a.name, p_option: a.option, p_value: a.value }); },
+  addOption: function (a) {
+    return this.rpc('poll_add_option', { p_code: a.code, p_participant: a.pid, p_name: a.name, p_owner_token: a.owner, p_label: a.label });
+  },
+  removeOption: function (a) { return this.rpc('poll_remove_option', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_option: a.option }); },
+  editOption: function (a) { return this.rpc('poll_edit_option', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_option: a.option, p_label: a.label }); },
+  setWinner: function (a) { return this.rpc('poll_set_winner', { p_code: a.code, p_owner_token: a.owner, p_option: a.option, p_method: a.method }); },
+  del: function (a) { return this.rpc('poll_delete', { p_code: a.code, p_owner_token: a.owner }); },
+  // Admin functions report problems as {error: "..."} so failed guesses stay counted server-side.
+  unwrap: function (p, key) {
+    return p.then(function (d) { if (d && d.error) throw new ApiError(d.error); return key ? ((d && d[key]) || (key === 'polls' ? [] : null)) : d; });
+  },
+  adminList: function (pw) { return this.unwrap(this.rpc('poll_admin_list', { p_password: pw }), 'polls'); },
+  adminGrant: function (pw, code) { return this.unwrap(this.rpc('poll_admin_grant', { p_password: pw, p_code: code }), 'owner_token'); },
+  adminDelete: function (pw, code) { return this.unwrap(this.rpc('poll_admin_delete', { p_password: pw, p_code: code })); }
+};
+
+// Preview mode: same behavior, but everything lives in this browser's localStorage.
+var localApi = {
+  db: function () { return store.get('pick.local.db', { polls: {} }); },
+  put: function (db) { store.set('pick.local.db', db); },
+  fail: function (m) { return Promise.reject(new ApiError(m)); },
+  code: function (db) {
+    var A = 'abcdefghjkmnpqrstuvwxyz23456789', c;
+    do { c = ''; for (var i = 0; i < 8; i++) c += A[randInt(A.length)]; } while (db.polls[c]);
+    return c;
+  },
+  clean: function (s) { return String(s || '').replace(/\s+/g, ' ').trim(); },
+  create: function (a) {
+    var db = this.db(), c = this.code(db), self = this, token = uuid() + uuid();
+    var p = { code: c, owner_token: token, name: a.name.trim(), description: (a.description || '').trim(),
+      single_vote: !!a.single_vote, allow_down: !!a.allow_down && !a.single_vote, anonymous: !!a.anonymous, allow_custom: !!a.allow_custom,
+      winner_option_id: null, winner_method: null, options: [], votes: {}, voters: {} };
+    (a.options || []).forEach(function (l) {
+      l = self.clean(l);
+      if (!l || p.options.some(function (o) { return o.label.toLowerCase() === l.toLowerCase(); })) return;
+      p.options.push({ id: uuid(), label: l, by_owner: true, added_by: null });
+    });
+    db.polls[c] = p; this.put(db);
+    return Promise.resolve({ code: c, owner_token: token });
+  },
+  get: function (code, pid, owner) {
+    var p = this.db().polls[code];
+    if (!p) return Promise.resolve(null);
+    return Promise.resolve({
+      poll: { code: p.code, name: p.name, description: p.description, allow_down: p.allow_down, anonymous: p.anonymous,
+        allow_custom: p.allow_custom, single_vote: !!p.single_vote, winner_option_id: p.winner_option_id, winner_method: p.winner_method },
+      is_owner: !!owner && owner === p.owner_token,
+      my_name: p.voters[pid] || null,
+      options: p.options.map(function (o) {
+        var v = p.votes[o.id] || {}, up = [], dn = [];
+        Object.keys(v).forEach(function (k) { (v[k] === 1 ? up : dn).push(p.voters[k] || ''); });
+        return { id: o.id, label: o.label, up: up.length, down: dn.length, mine: v[pid] || 0, by_owner: o.by_owner, mine_added: !!o.pid && o.pid === pid,
+          added_by: p.anonymous ? null : o.added_by,
+          up_names: p.anonymous ? [] : up.filter(Boolean).sort(), down_names: p.anonymous ? [] : dn.filter(Boolean).sort() };
+      })
+    });
+  },
+  vote: function (a) {
+    var db = this.db(), p = db.polls[a.code];
+    if (!p) return this.fail('poll_not_found');
+    if (a.value === -1 && !p.allow_down) return this.fail('downvotes_off');
+    if (!p.options.some(function (o) { return o.id === a.option; })) return this.fail('option_not_found');
+    if (!p.anonymous) {
+      var n = this.clean(a.name);
+      if (!n || n.length > 40) return this.fail('invalid_name');
+      p.voters[a.pid] = n;
+    }
+    var v = p.votes[a.option] || (p.votes[a.option] = {});
+    if (a.value === 1 && p.single_vote) {
+      p.options.forEach(function (o) { if (o.id !== a.option && p.votes[o.id]) delete p.votes[o.id][a.pid]; });
+    }
+    if (a.value === 0) delete v[a.pid]; else v[a.pid] = a.value;
+    this.put(db);
+    return Promise.resolve();
+  },
+  addOption: function (a) {
+    var db = this.db(), p = db.polls[a.code];
+    if (!p) return this.fail('poll_not_found');
+    var owner = !!a.owner && a.owner === p.owner_token;
+    if (!owner && !p.allow_custom) return this.fail('custom_off');
+    var l = this.clean(a.label);
+    if (!l || l.length > 80) return this.fail('invalid_option');
+    if (p.options.some(function (o) { return o.label.toLowerCase() === l.toLowerCase(); })) return this.fail('duplicate_option');
+    if (p.options.length >= 40) return this.fail('too_many_options');
+    var n = this.clean(a.name);
+    if (!p.anonymous && !owner && !n) return this.fail('invalid_name');
+    if (!p.anonymous && n) p.voters[a.pid] = n.slice(0, 40);
+    p.options.push({ id: uuid(), label: l, by_owner: owner, pid: a.pid, added_by: p.anonymous ? null : (n || null) });
+    this.put(db);
+    return Promise.resolve();
+  },
+  owned: function (a) {
+    var db = this.db(), p = db.polls[a.code];
+    return (p && a.owner && a.owner === p.owner_token) ? { db: db, p: p } : null;
+  },
+  canEdit: function (a) {
+    var db = this.db(), p = db.polls[a.code];
+    if (!p) return null;
+    var opt = p.options.filter(function (x) { return x.id === a.option; })[0];
+    if (!opt) return { err: 'option_not_found' };
+    var owner = !!a.owner && a.owner === p.owner_token;
+    if (!owner && !(opt.pid && opt.pid === a.pid)) return { err: 'not_allowed' };
+    return { db: db, p: p, opt: opt };
+  },
+  removeOption: function (a) {
+    var c = this.canEdit(a); if (!c) return this.fail('poll_not_found'); if (c.err) return this.fail(c.err);
+    if (c.p.winner_option_id === a.option) { c.p.winner_option_id = null; c.p.winner_method = null; }
+    c.p.options = c.p.options.filter(function (x) { return x.id !== a.option; });
+    delete c.p.votes[a.option];
+    this.put(c.db); return Promise.resolve();
+  },
+  editOption: function (a) {
+    var c = this.canEdit(a); if (!c) return this.fail('poll_not_found'); if (c.err) return this.fail(c.err);
+    var l = this.clean(a.label);
+    if (!l || l.length > 80) return this.fail('invalid_option');
+    if (c.p.options.some(function (x) { return x.id !== a.option && x.label.toLowerCase() === l.toLowerCase(); })) return this.fail('duplicate_option');
+    c.opt.label = l; this.put(c.db); return Promise.resolve();
+  },
+  setWinner: function (a) {
+    var o = this.owned(a); if (!o) return this.fail('not_owner');
+    if (!a.option) { o.p.winner_option_id = null; o.p.winner_method = null; }
+    else {
+      if (!o.p.options.some(function (x) { return x.id === a.option; })) return this.fail('option_not_found');
+      o.p.winner_option_id = a.option; o.p.winner_method = a.method;
+    }
+    this.put(o.db); return Promise.resolve();
+  },
+  del: function (a) {
+    var o = this.owned(a); if (!o) return this.fail('not_owner');
+    delete o.db.polls[a.code]; this.put(o.db); return Promise.resolve();
+  },
+  adminList: function () { return this.fail('admin_needs_supabase'); },
+  adminGrant: function () { return this.fail('admin_needs_supabase'); },
+  adminDelete: function () { return this.fail('admin_needs_supabase'); }
+};
+
+var api = REMOTE ? remoteApi : localApi;
+
+function friendly(e) {
+  var m = (e && e.message) || '';
+  var map = {
+    network: "Couldn't reach the server. Check your connection and try again.",
+    poll_not_found: 'That poll no longer exists.',
+    option_not_found: 'That choice was removed. The list has been refreshed.',
+    invalid_name: 'Enter your name first (up to 40 characters).',
+    invalid_option: 'A choice needs 1 to 80 characters.',
+    duplicate_option: 'That choice is already on the list.',
+    too_many_options: 'The list is full (40 choices).',
+    downvotes_off: 'Down votes are turned off for this poll.',
+    custom_off: 'Only the organizer can add choices to this poll.',
+    not_owner: 'Only the organizer can do that.',
+    not_allowed: 'You can only change choices you added.',
+    poll_full: 'This poll already has the maximum number of voters.',
+    wrong_password: 'Wrong password.',
+    too_many_attempts: 'Too many wrong attempts. Try again in 15 minutes.',
+    admin_not_configured: 'No admin password is set yet. Follow the steps at the bottom of admin.sql from the Which day works? app.',
+    admin_needs_supabase: 'Admin mode needs the Supabase connection. Preview mode only keeps data in this browser.'
+  };
+  if (map[m]) return map[m];
+  if (/find the function|schema cache/i.test(m)) return 'The database is not set up yet. Run schema.sql in the Supabase SQL Editor.';
+  if (e && (e.status === 401 || e.status === 403 || /api key|jwt/i.test(m))) {
+    return 'Supabase rejected the key in config.js. Copy the publishable key again from Project Settings > API Keys.';
+  }
+  if (e && e.status === 404) return 'Nothing answered at the Supabase URL in config.js. It should look like https://abcdefghijkl.supabase.co';
+  return 'Something went wrong' + (m ? ' (' + m + ')' : '') + '. Please try again.';
+}
+
+/* -------------------------------------------------------------------- state */
+
+var S = { editing: null, editText: '', fromAdmin: false, code: '', pid: '', owner: null, isOwner: false, poll: null, options: [], myName: '', justCreated: false, busy: false };
+var R = { on: false, sel: {}, spinning: false, hi: null };
+
+var toastTimer;
+function toast(msg) {
+  $toast.textContent = msg;
+  $toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { $toast.classList.remove('show'); }, 3400);
+}
+function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
+function shareUrl(code) { return baseUrl() + '?p=' + code; }
+function ownerUrl(code) { return baseUrl() + '?p=' + code + '&o=' + S.owner; }
+function copyText(text, input) {
+  function fallback() {
+    var el = input || document.createElement('textarea');
+    if (!input) { el.value = text; el.style.position = 'fixed'; el.style.opacity = '0'; document.body.appendChild(el); }
+    el.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    if (!input) document.body.removeChild(el);
+    return ok;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return fallback(); });
+  }
+  return Promise.resolve(fallback());
+}
+function optById(id) { return S.options.filter(function (o) { return o.id === id; })[0] || null; }
+// Order of the list. It is worked out from the vote counts only when the page loads or when
+// Refresh is tapped, so a choice doesn't jump around under your finger while you vote.
+function resort() {
+  S.order = S.options.map(function (o, i) { return { o: o, i: i }; }).sort(function (a, b) {
+    return ((b.o.up - b.o.down) - (a.o.up - a.o.down)) || (b.o.up - a.o.up) || (a.i - b.i);
+  }).map(function (x) { return x.o.id; });
+}
+function sorted() {
+  var byId = {};
+  S.options.forEach(function (o) { byId[o.id] = o; });
+  var seen = {}, out = [];
+  (S.order || []).forEach(function (id) { if (byId[id]) { out.push(byId[id]); seen[id] = true; } });
+  S.options.forEach(function (o) { if (!seen[o.id]) out.push(o); }); // new choices go at the end
+  return out;
+}
+
+/* -------------------------------------------------------------------- routes */
+
+function route() {
+  var qs = new URLSearchParams(location.search), code = qs.get('p');
+  S.justCreated = false;
+  if (qs.has('admin') && !code) { renderAdmin(); return; }
+  S.fromAdmin = !!A.polls;
+  if (!code) { renderHome(); return; }
+  code = code.trim().toLowerCase();
+  var tok = qs.get('o');
+  if (tok) { // owner link: remember the key, then tidy the address bar
+    setOwnerToken(code, tok.trim());
+    try { history.replaceState(null, '', baseUrl() + '?p=' + code); } catch (e) {}
+  }
+  loadPoll(code);
+}
+
+function applyData(d) {
+  S.poll = d.poll; S.options = d.options || []; S.isOwner = !!d.is_owner;
+  if (d.my_name && !S.myName) S.myName = d.my_name;
+}
+
+function loadPoll(code) {
+  S.code = code; S.pid = getPid(); S.owner = getOwnerToken(code);
+  S.myName = store.get('pick.name', '') || '';
+  R = { on: false, sel: {}, spinning: false, hi: null };
+  $app.innerHTML = '<p class="hint">Loading poll…</p>';
+  api.get(code, S.pid, S.owner).then(function (d) {
+    if (!d) { renderNotFound(); return; }
+    applyData(d);
+    resort();
+    if (S.isOwner) rememberPoll(code, S.poll.name, true); else rememberPoll(code, S.poll.name);
+    renderPoll();
+  }, function (e) {
+    $app.innerHTML = '<p class="err">' + esc(friendly(e)) + '</p><p><a href="">Try again</a></p>';
+  });
+}
+
+function reload() {
+  return api.get(S.code, S.pid, S.owner).then(function (d) {
+    if (!d) throw new ApiError('poll_not_found');
+    applyData(d);
+  });
+}
+
+function renderNotFound() {
+  $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">New poll</a></nav><h1>Poll not found</h1>' +
+    '<p class="lede">That link doesn’t match a poll. It may have been deleted, or the link was copied incompletely.</p>';
+}
+
+/* -------------------------------------------------------------------- home */
+
+function previewBanner() {
+  if (REMOTE) return '';
+  return '<div class="banner"><strong>Preview mode.</strong> Nothing is shared yet: votes stay in this browser. ' +
+    'Add your Supabase details to config.js to let others vote from their own phones.' +
+    '<br><button type="button" class="chipbtn" data-act="new-person">Act as a new person</button></div>';
+}
+
+function renderHome() {
+  document.title = 'Poll';
+  var recent = store.get('pick.recent', []);
+  var owners = store.get('pick.owners', {}) || {};
+  $app.innerHTML =
+    previewBanner() +
+    '<div class="banner bad" id="conn" role="alert" hidden></div>' +
+    '<h1>Poll</h1>' +
+    '<p class="lede">Make a quick vote, like where to eat. Send the link, everyone gives thumbs up or down, and you decide.</p>' +
+    '<form id="createForm" class="panel" novalidate>' +
+      '<label class="fld"><span>What are you deciding?</span><input type="text" name="name" maxlength="120" placeholder="Where should we eat Friday?" autocomplete="off"></label>' +
+      '<label class="fld"><span>Details (optional)</span><textarea name="description" rows="3" maxlength="2000" placeholder="Time, budget, dietary needs, anything people should know"></textarea></label>' +
+      '<label class="fld"><span>Starting choices (optional)</span><textarea name="options" rows="4" placeholder="One per line&#10;Thai Palace&#10;Tacos El Rey&#10;Pizza Corner"></textarea><small>Up to 40. People can add their own too, if you allow it below.</small></label>' +
+      '<div class="checks">' +
+        '<label class="check"><input type="checkbox" name="allow_down"><span><b>Allow down votes</b><small>Adds a thumbs-down next to each choice.</small></span></label>' +
+        '<label class="check"><input type="checkbox" name="single_vote"><span><b>Only allow one vote per person</b><small>Each person gets a single thumbs-up and can move it. Down votes are turned off.</small></span></label>' +
+        '<label class="check"><input type="checkbox" name="anonymous"><span><b>Anonymous</b><small>Nobody sees who voted for what, and no names are asked for.</small></span></label>' +
+        '<label class="check"><input type="checkbox" name="allow_custom" checked><span><b>Allow custom submissions</b><small>Anyone can add their own choice. Turn off to keep your list as is.</small></span></label>' +
+      '</div>' +
+      '<button class="btn primary" type="submit">Create poll</button>' +
+      '<p class="err" id="formErr" role="alert"></p>' +
+    '</form>' +
+    (recent.length ? '<section class="recent"><h2>Your polls</h2><ul>' +
+      recent.map(function (r) {
+        return '<li><a href="?p=' + esc(r.code) + '">' + esc(r.name) + '</a>' + (owners[r.code] ? '<span class="tagq">organizer</span>' : '') + '</li>';
+      }).join('') + '</ul></section>' : '') +
+    '<p class="foot"><a href="?admin">Admin</a></p>';
+  if (REMOTE) checkConnection();
+}
+
+function checkConnection() {
+  api.get('zzzzzzzz', 'checkcheck', null).then(function () {}, function (e) {
+    var el = $('#conn');
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = (e && e.message === 'network' ? 'Can’t reach the database. ' : '') + friendly(e);
+  });
+}
+
+function submitCreate(form) {
+  var f = form.elements, err = $('#formErr'), btn = form.querySelector('button[type=submit]');
+  err.textContent = '';
+  var name = f.name.value.trim();
+  if (!name) { err.textContent = 'Give your poll a name.'; f.name.focus(); return; }
+  var opts = f.options.value.split('\n').map(function (s) { return s.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+  var seen = {}, list = [];
+  opts.forEach(function (o) { if (!seen[o.toLowerCase()]) { seen[o.toLowerCase()] = 1; list.push(o); } });
+  if (list.some(function (o) { return o.length > 80; })) { err.textContent = 'Each choice can be at most 80 characters.'; return; }
+  if (list.length > 40) { err.textContent = 'Please start with at most 40 choices.'; return; }
+  btn.disabled = true; btn.textContent = 'Creating…';
+  api.create({ name: name, description: f.description.value, allow_down: f.allow_down.checked && !f.single_vote.checked,
+    anonymous: f.anonymous.checked, allow_custom: f.allow_custom.checked, options: list, single_vote: f.single_vote.checked })
+    .then(function (res) {
+      setOwnerToken(res.code, res.owner_token);
+      rememberPoll(res.code, name);
+      store.set('pick.justCreated', res.code);
+      history.pushState(null, '', baseUrl() + '?p=' + res.code);
+      S.justCreated = true;
+      loadPoll(res.code);
+    }, function (e) {
+      btn.disabled = false; btn.textContent = 'Create poll';
+      err.textContent = friendly(e);
+      toast(friendly(e));
+      if (window.console) console.error(e);
+    });
+}
+
+/* -------------------------------------------------------------------- admin */
+
+var A = { pw: '', polls: null }; // the password lives only in memory, never saved
+
+function fmtStamp(ts) {
+  var d = new Date(ts);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function renderAdmin(msg) {
+  document.title = 'Admin | Poll';
+  var nav = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">Home</a></nav>';
+  if (!REMOTE) {
+    $app.innerHTML = previewBanner() + nav + '<h1>Admin</h1><p class="err">' + esc(friendly(new ApiError('admin_needs_supabase'))) + '</p>';
+    return;
+  }
+  if (!A.polls) {
+    $app.innerHTML = nav + '<h1>Admin</h1>' +
+      '<p class="lede">Enter the admin password (the same one as Which day works?) to see every poll and act as its organizer.</p>' +
+      '<form id="adminForm" class="panel" novalidate>' +
+        '<label class="fld"><span>Password</span><input type="password" id="adminPw" name="adminPw" autocomplete="current-password"></label>' +
+        '<button class="btn primary" type="submit">Sign in</button>' +
+        '<p class="err" id="adminErr" role="alert">' + esc(msg || '') + '</p>' +
+      '</form>';
+    return;
+  }
+  var list = A.polls;
+  $app.innerHTML = nav + '<h1>All polls (' + list.length + ')</h1>' +
+    '<div class="tools"><button type="button" class="chipbtn" data-act="admin-refresh">Refresh</button>' +
+    '<button type="button" class="chipbtn" data-act="admin-out">Sign out</button></div>' +
+    (list.length ? '<ul class="admin-list">' + list.map(function (p) {
+      var bits = ['Created ' + fmtStamp(p.created_at) + '.', p.options + (p.options === 1 ? ' choice, ' : ' choices, ') + p.voters + (p.voters === 1 ? ' voter.' : ' voters.')];
+      if (p.winner) bits.push('Winner: ' + p.winner + '.');
+      var tags = [];
+      if (p.single_vote) tags.push('one vote each'); else if (p.allow_down) tags.push('up and down votes');
+      if (p.anonymous) tags.push('anonymous');
+      if (!p.allow_custom) tags.push('organizer adds choices');
+      if (tags.length) bits.push(tags.join(', ') + '.');
+      return '<li><div class="nm">' + esc(p.name) + '</div><div class="meta">' + bits.map(esc).join(' ') + '</div>' +
+        '<div class="tools" style="margin:0"><button type="button" class="btn small" data-act="admin-open" data-code="' + esc(p.code) + '">Open as organizer</button>' +
+        '<button type="button" class="btn small danger" data-act="admin-del" data-code="' + esc(p.code) + '" data-name="' + esc(p.name) + '">Delete</button></div></li>';
+    }).join('') + '</ul>' : '<p class="hint" style="margin-top:14px">No polls yet.</p>');
+}
+
+function submitAdmin(form) {
+  var pw = form.elements.adminPw.value, btn = form.querySelector('button[type=submit]');
+  if (!pw) { $('#adminErr').textContent = 'Enter the password.'; return; }
+  btn.disabled = true; btn.textContent = 'Checking…';
+  api.adminList(pw).then(function (list) { A.pw = pw; A.polls = list; renderAdmin(); },
+    function (e) { A.pw = ''; A.polls = null; renderAdmin(friendly(e)); });
+}
+
+function adminFail(e) {
+  var m = e && e.message;
+  if (m === 'wrong_password' || m === 'too_many_attempts' || m === 'admin_not_configured') { A.pw = ''; A.polls = null; renderAdmin(friendly(e)); }
+  else toast(friendly(e));
+}
+
+function adminRefresh(quiet) {
+  api.adminList(A.pw).then(function (list) { A.polls = list; renderAdmin(); if (!quiet) toast('Updated.'); }, adminFail);
+}
+
+function adminOpen(code) {
+  api.adminGrant(A.pw, code).then(function (token) {
+    setOwnerToken(code, token);
+    history.pushState(null, '', baseUrl() + '?p=' + code);
+    S.fromAdmin = true;
+    loadPoll(code);
+  }, adminFail);
+}
+
+function adminDelete(code, name) {
+  if (!confirm('Delete “' + name + '” for everyone? This can’t be undone.')) return;
+  api.adminDelete(A.pw, code).then(function () {
+    A.polls = A.polls.filter(function (p) { return p.code !== code; });
+    var o = store.get('pick.owners', {}) || {}; delete o[code]; store.set('pick.owners', o);
+    store.set('pick.recent', store.get('pick.recent', []).filter(function (r) { return r.code !== code; }));
+    renderAdmin(); toast('Poll deleted.');
+  }, adminFail);
+}
+
+/* -------------------------------------------------------------------- poll */
+
+function renderPoll() {
+  var p = S.poll;
+  document.title = p.name + ' | Poll';
+  $app.innerHTML =
+    previewBanner() +
+    '<nav class="topnav">' + (S.fromAdmin ? '<button type="button" class="link" data-act="to-admin" style="padding:0">← All polls (admin)</button>' : '<a href="' + esc(baseUrl()) + '">New poll</a>') +
+      (S.isOwner ? '<span class="hint">' + (S.fromAdmin ? 'Admin: organizer view' : 'You’re the organizer') + '</span>' : '') + '</nav>' +
+    (S.justCreated ? '<section class="panel created"><h2>Poll created</h2><p style="margin-top:4px">Send this link to the group:</p>' +
+      '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Poll link">' +
+      '<button type="button" class="btn small" data-act="copy-link">Copy</button></div></section>' : '') +
+    '<header><h1>' + esc(p.name) + '</h1>' +
+      (p.description ? '<p class="desc">' + esc(p.description) + '</p>' : '') +
+      '<div class="tools"><button type="button" class="chipbtn" data-act="share">Share link</button>' +
+      '<button type="button" class="chipbtn" data-act="refresh">Refresh</button></div></header>' +
+    '<section id="winner" aria-live="polite"></section>' +
+    (p.anonymous ? '<p class="hint" style="margin-top:16px">Votes are anonymous. Nobody can see who voted for what.</p>' :
+      '<div class="namebox" id="nameBox"><label class="fld"><span>Your name</span><input type="text" id="myName" maxlength="40" autocomplete="given-name" placeholder="So people know who voted" value="' + esc(S.myName) + '"></label></div>') +
+    (p.single_vote ? '<p class="hint" style="margin-top:14px">You get one vote. Tap another choice to move it, or tap yours again to take it back.</p>' : '') +
+    '<ul id="opts" class="opts"></ul>' +
+    '<section id="add" class="add"></section>' +
+    '<section id="ownerTools"></section>';
+  renderParts();
+}
+
+function renderParts() { renderWinner(); renderOptions(); renderAdd(); renderOwnerTools(); }
+
+function renderWinner() {
+  var el = $('#winner');
+  if (!el) return;
+  var w = S.poll.winner_option_id && optById(S.poll.winner_option_id);
+  if (!w) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="winner"><span class="tr" aria-hidden="true">🏆</span><div><small>Winner</small><b>' + esc(w.label) + '</b><small>' +
+    (S.poll.winner_method === 'roulette' ? 'Chosen by random pick' : 'Picked by the organizer') + '</small></div></div>';
+}
+
+function nameLine(o) {
+  var bits = [];
+  if (o.up_names && o.up_names.length) bits.push('▲ ' + o.up_names.map(esc).join(', '));
+  if (o.down_names && o.down_names.length) bits.push('▼ ' + o.down_names.map(esc).join(', '));
+  return bits.length ? '<span class="names">' + bits.join(' &nbsp; ') + '</span>' : '';
+}
+
+function renderOptions() {
+  var el = $('#opts');
+  if (!el) return;
+  var cur = document.getElementById('editOpt');
+  if (cur) S.editText = cur.value; // keep what's being typed across refreshes
+  var focus = document.activeElement, fa = focus && focus.dataset && focus.dataset.act, fid = focus && focus.dataset && focus.dataset.id, fv = focus && focus.dataset && focus.dataset.v;
+  var list = sorted(), P = S.poll;
+  if (!list.length) {
+    el.innerHTML = '<li class="hint">No choices yet.' + (P.allow_custom || S.isOwner ? ' Add the first one below.' : ' The organizer hasn’t added any.') + '</li>';
+    return;
+  }
+  el.innerHTML = list.map(function (o) {
+    var win = P.winner_option_id === o.id;
+    if (S.editing === o.id && !R.on) {
+      return '<li class="opt" data-id="' + esc(o.id) + '"><form id="editForm" class="editf" data-id="' + esc(o.id) + '" novalidate>' +
+        '<input type="text" id="editOpt" maxlength="80" autocomplete="off" aria-label="Edit choice" value="' + esc(S.editText) + '">' +
+        '<button type="submit" class="btn small primary">Save</button><button type="button" class="btn small" data-act="edit-cancel">Cancel</button></form></li>';
+    }
+    var meta = [];
+    if (win) meta.push('🏆 Winner');
+    if (!P.anonymous) {
+      if (o.added_by) meta.push('suggested by ' + esc(o.added_by));
+      else if (o.by_owner) meta.push('suggested by the organizer');
+    }
+    var right;
+    if (R.on) {
+      right = '<button type="button" class="rchk" data-act="rsel" data-id="' + esc(o.id) + '" aria-pressed="' + !!R.sel[o.id] + '">' + (R.sel[o.id] ? '✓ In' : 'Include') + '</button>';
+    } else {
+      right = '<div class="votes"><button type="button" class="vb up" data-act="vote" data-id="' + esc(o.id) + '" data-v="1" aria-pressed="' + (o.mine === 1) + '" aria-label="Thumbs up for ' + esc(o.label) + ', ' + o.up + ' so far">' + THUMB + '<span>' + o.up + '</span></button>' +
+        (P.allow_down ? '<button type="button" class="vb dn" data-act="vote" data-id="' + esc(o.id) + '" data-v="-1" aria-pressed="' + (o.mine === -1) + '" aria-label="Thumbs down for ' + esc(o.label) + ', ' + o.down + ' so far">' + THUMB + '<span>' + o.down + '</span></button>' : '') + '</div>';
+    }
+    var mayEdit = S.isOwner || o.mine_added;
+    var own = (mayEdit && !R.on) ? '<div class="ownrow">' +
+      (S.isOwner && !win ? '<button type="button" class="link" data-act="winner" data-id="' + esc(o.id) + '">Pick as winner</button>' : '') +
+      '<button type="button" class="link" data-act="edit" data-id="' + esc(o.id) + '">Edit</button>' +
+      '<button type="button" class="link danger" data-act="remove" data-id="' + esc(o.id) + '">Remove</button></div>' : '';
+    return '<li class="opt' + (win ? ' win' : '') + (R.hi === o.id ? ' hi' : '') + '" data-id="' + esc(o.id) + '"><div class="otxt"><b>' + esc(o.label) + '</b>' +
+      (meta.length ? '<span class="meta">' + meta.join(' · ') + '</span>' : '') + nameLine(o) + '</div>' + right + own + '</li>';
+  }).join('');
+  var ed = document.getElementById('editOpt');
+  if (ed && S.focusEdit) { S.focusEdit = false; ed.focus(); ed.setSelectionRange(ed.value.length, ed.value.length); return; }
+  if (fa && fid) {
+    var again = el.querySelector('[data-act="' + fa + '"][data-id="' + fid + '"]' + (fv ? '[data-v="' + fv + '"]' : ''));
+    if (again) again.focus();
+  }
+}
+
+function renderAdd() {
+  var el = $('#add');
+  if (!el) return;
+  if (!(S.poll.allow_custom || S.isOwner)) {
+    el.innerHTML = '<p class="hint">Only the organizer can add choices to this poll.</p>';
+    return;
+  }
+  if (document.getElementById('newOpt')) return; // keep what's being typed
+  el.innerHTML = '<form id="addForm" novalidate><label class="fld" style="margin-bottom:8px"><span>Add your own choice</span>' +
+    '<div style="display:flex;gap:8px"><input type="text" id="newOpt" maxlength="80" autocomplete="off" placeholder="Type a choice"><button type="submit" class="btn">Add</button></div></label></form>';
+}
+
+function renderOwnerTools() {
+  var el = $('#ownerTools');
+  if (!el) return;
+  if (!S.isOwner) { el.innerHTML = ''; return; }
+  var P = S.poll, html = '<div class="panel owner"><h2>Organizer tools</h2><p class="hint" style="margin-top:4px">Only you can see this.</p>';
+  if (R.on) {
+    var n = Object.keys(R.sel).filter(function (k) { return R.sel[k] && optById(k); }).length;
+    html += '<p style="margin-top:10px"><b>Random Pick:</b> choose which choices are in the running, then spin. One is picked at random and becomes the winner.</p>' +
+      '<div class="row"><button type="button" class="btn small" data-act="rall"' + (R.spinning ? ' disabled' : '') + '>Select all</button>' +
+      '<button type="button" class="btn small" data-act="rnone"' + (R.spinning ? ' disabled' : '') + '>Select none</button></div>' +
+      '<div class="row"><button type="button" class="btn primary" data-act="spin"' + (R.spinning || n < 2 ? ' disabled' : '') + '>' + (R.spinning ? 'Spinning…' : '🎲 Spin (' + n + ' in)') + '</button>' +
+      '<button type="button" class="btn" data-act="rcancel"' + (R.spinning ? ' disabled' : '') + '>Cancel</button></div>';
+  } else {
+    html += '<div class="row"><button type="button" class="btn primary" data-act="roulette"' + (S.options.length < 2 ? ' disabled' : '') + '>🎲 Random Pick</button>' +
+      (P.winner_option_id ? '<button type="button" class="btn" data-act="clear-winner">Clear winner</button>' : '') + '</div>' +
+      '<p class="hint" style="margin-top:10px">To choose the winner yourself, tap “Pick as winner” under a choice.</p>' +
+      '<div class="row"><button type="button" class="btn small" data-act="copy-owner">Copy organizer link</button>' +
+      '<button type="button" class="btn small danger" data-act="delete-poll">Delete poll</button></div>' +
+      '<p class="hint" style="margin-top:8px;font-size:13px">The organizer link gives control of this poll on another device. Keep it private.</p>';
+  }
+  el.innerHTML = html + '</div>';
+}
+
+/* ------------------------------------------------------------------ actions */
+
+function needName() {
+  if (S.poll.anonymous) return false;
+  if (S.myName.trim()) return false;
+  var box = $('#nameBox'), inp = $('#myName');
+  if (box) { box.classList.remove('nudge'); void box.offsetWidth; box.classList.add('nudge'); }
+  if (inp) inp.focus();
+  toast('Enter your name first, so people know who voted.');
+  return true;
+}
+
+function doVote(id, v) {
+  if (R.spinning || needName()) return;
+  var o = optById(id); if (!o) return;
+  var next = o.mine === v ? 0 : v;
+  // update the screen at once, then confirm with the server
+  if (next === 1 && S.poll.single_vote) S.options.forEach(function (x) { if (x !== o && x.mine === 1) { x.up--; x.mine = 0; } });
+  if (o.mine === 1) o.up--; if (o.mine === -1) o.down--;
+  if (next === 1) o.up++; if (next === -1) o.down++;
+  o.mine = next;
+  renderOptions();
+  var name = S.myName.trim();
+  if (name) store.set('pick.name', name);
+  api.vote({ code: S.code, pid: S.pid, name: name, option: id, value: next })
+    .then(reload).then(renderParts, function (e) { toast(friendly(e)); reload().then(renderParts, function () {}); });
+}
+
+function doAdd(form) {
+  var inp = $('#newOpt'), label = inp.value.replace(/\s+/g, ' ').trim();
+  if (!label) { inp.focus(); return; }
+  if (!S.isOwner && needName()) return;
+  var name = S.myName.trim();
+  if (name) store.set('pick.name', name);
+  api.addOption({ code: S.code, pid: S.pid, name: name, owner: S.owner, label: label })
+    .then(reload).then(function () { inp.value = ''; renderParts(); toast('Added “' + label + '”.'); inp.focus(); },
+      function (e) { toast(friendly(e)); });
+}
+
+function setWinner(id, method, okMsg) {
+  return api.setWinner({ code: S.code, owner: S.owner, option: id, method: method }).then(reload).then(function () {
+    renderParts(); if (okMsg) toast(okMsg);
+  }, function (e) { toast(friendly(e)); });
+}
+
+function spin() {
+  var ids = S.options.map(function (o) { return o.id; }).filter(function (id) { return R.sel[id]; });
+  if (ids.length < 2) { toast('Include at least two choices to spin.'); return; }
+  var m = ids.length, chosen = randInt(m);
+  var calm = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var N = calm ? 0 : 20 + randInt(m) % 8, k = 0;
+  R.spinning = true; renderParts();
+  function step() {
+    var idx = (((chosen - (N - k)) % m) + m) % m;
+    R.hi = ids[idx];
+    $$('#opts .opt').forEach(function (li) { li.classList.toggle('hi', li.dataset.id === R.hi); });
+    if (k >= N) { finish(); return; }
+    var wait = 70 + k * k * 0.4;
+    k++;
+    setTimeout(step, wait);
+  }
+  function finish() {
+    var pick = optById(ids[chosen]);
+    setTimeout(function () {
+      R.spinning = false; R.on = false; R.hi = null;
+      setWinner(pick.id, 'roulette', '🎲 Random pick: “' + pick.label + '”.');
+    }, 900);
+  }
+  step();
+}
+
+/* ------------------------------------------------------------------- events */
+
+$app.addEventListener('click', function (e) {
+  var t = e.target.closest('[data-act]');
+  if (!t || !$app.contains(t)) return;
+  var id = t.dataset.id;
+  switch (t.dataset.act) {
+    case 'vote': doVote(id, Number(t.dataset.v)); break;
+    case 'copy-link': copyText(shareUrl(S.code), $('#shareUrl')).then(function (ok) { toast(ok ? 'Link copied.' : 'Press and hold the link to copy it.'); }); break;
+    case 'share': copyText(shareUrl(S.code)).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : shareUrl(S.code)); }); break;
+    case 'refresh': reload().then(function () { resort(); renderParts(); toast('Updated.'); }, function (er) { toast(friendly(er)); }); break;
+    case 'winner': if (!R.spinning) setWinner(id, 'picked', '🏆 Winner set.'); break;
+    case 'clear-winner': setWinner(null, null, 'Winner cleared.'); break;
+    case 'remove':
+      var o = optById(id);
+      if (o && confirm('Remove “' + o.label + '” and its votes?')) {
+        api.removeOption({ code: S.code, pid: S.pid, owner: S.owner, option: id }).then(reload).then(renderParts, function (er) { toast(friendly(er)); reload().then(renderParts, function () {}); });
+      }
+      break;
+    case 'edit': var eo = optById(id); if (eo) { S.editing = id; S.editText = eo.label; S.focusEdit = true; renderOptions(); } break;
+    case 'edit-cancel': S.editing = null; renderOptions(); break;
+    case 'roulette': R.on = true; R.sel = {}; S.options.forEach(function (x) { R.sel[x.id] = true; }); renderParts(); break;
+    case 'rcancel': R.on = false; renderParts(); break;
+    case 'rsel': if (!R.spinning) { R.sel[id] = !R.sel[id]; renderParts(); } break;
+    case 'rall': S.options.forEach(function (x) { R.sel[x.id] = true; }); renderParts(); break;
+    case 'rnone': R.sel = {}; renderParts(); break;
+    case 'spin': spin(); break;
+    case 'copy-owner': copyText(ownerUrl(S.code)).then(function (ok) { toast(ok ? 'Organizer link copied. Keep it private.' : 'Could not copy.'); }); break;
+    case 'delete-poll':
+      if (confirm('Delete this poll for everyone? This can’t be undone.')) {
+        api.del({ code: S.code, owner: S.owner }).then(function () {
+          var o = store.get('pick.owners', {}) || {}; delete o[S.code]; store.set('pick.owners', o);
+          store.set('pick.recent', store.get('pick.recent', []).filter(function (r) { return r.code !== S.code; }));
+          history.pushState(null, '', baseUrl()); renderHome(); toast('Poll deleted.');
+        }, function (er) { toast(friendly(er)); });
+      }
+      break;
+    case 'to-admin': history.pushState(null, '', baseUrl() + '?admin'); renderAdmin(); break;
+    case 'admin-refresh': adminRefresh(false); break;
+    case 'admin-out': A.pw = ''; A.polls = null; S.fromAdmin = false; renderAdmin(); break;
+    case 'admin-open': adminOpen(t.dataset.code); break;
+    case 'admin-del': adminDelete(t.dataset.code, t.dataset.name); break;
+    case 'new-person': store.set('pick.pid', uuid()); store.set('pick.name', ''); toast('You are now a new person in this browser.'); route(); break;
+  }
+});
+
+$app.addEventListener('change', function (e) {
+  if (e.target.name !== 'single_vote' || !e.target.form) return;
+  var down = e.target.form.elements.allow_down, on = e.target.checked;
+  if (on) down.checked = false;
+  down.disabled = on;
+  var sm = down.closest('label').querySelector('small');
+  sm.textContent = on ? 'Not available with one vote per person.' : 'Adds a thumbs-down next to each choice.';
+});
+
+$app.addEventListener('input', function (e) {
+  if (e.target.id === 'myName') { S.myName = e.target.value; store.set('pick.name', S.myName.trim()); }
+});
+
+$app.addEventListener('submit', function (e) {
+  if (e.target.id === 'createForm') { e.preventDefault(); submitCreate(e.target); }
+  else if (e.target.id === 'addForm') { e.preventDefault(); doAdd(e.target); }
+  else if (e.target.id === 'editForm') {
+    e.preventDefault();
+    var id = e.target.dataset.id, label = $('#editOpt').value.replace(/\s+/g, ' ').trim();
+    if (!label) { $('#editOpt').focus(); return; }
+    api.editOption({ code: S.code, pid: S.pid, owner: S.owner, option: id, label: label })
+      .then(reload).then(function () { S.editing = null; renderParts(); toast('Saved.'); },
+        function (er) { toast(friendly(er)); });
+  }
+  else if (e.target.id === 'adminForm') { e.preventDefault(); submitAdmin(e.target); }
+});
+
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && S.poll && !R.spinning && $('#opts')) {
+    reload().then(renderParts, function () {});
+  }
+});
+
+window.addEventListener('popstate', route);
+route();
+
+})();
+</script>
+</body>
+</html>

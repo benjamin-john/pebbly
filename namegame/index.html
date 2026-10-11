@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Name Game</title>
+    <style>
+        :root {
+            --primary: #6200ee;
+            --bg: #f5f5f5;
+            --card: #ffffff;
+            --text: #333;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        #game-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .screen { display: none; }
+        .active { display: block; }
+        h1, h2 { color: var(--primary); text-align: center; }
+        p { line-height: 1.5; font-size: 0.95rem; }
+        button {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        button.secondary { background: #03dac6; color: #000; }
+        button.danger { background: #b00020; }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            box-sizing: border-box;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.98);
+            color: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .name-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+            font-size: 1.1rem;
+        }
+        .name-item input { margin-right: 15px; width: 20px; height: 20px; }
+        .checked label { text-decoration: line-through; color: #888; }
+        .instruction-box {
+            background: #eee;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        ul { padding-left: 20px; }
+        li { margin-bottom: 8px; font-size: 1.1rem; }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="overlay" class="overlay">
+        <h2 id="overlay-msg">Pass to next player</h2>
+        <button id="overlay-btn" onclick="hideOverlay()">I have the phone</button>
+    </div>
+
+    <div id="screen-start" class="screen active">
+        <h1>Name Game</h1>
+        <div class="instruction-box">
+            <strong>How to Play:</strong>
+            <ul>
+                <li>One Game Master, many players.</li>
+                <li>Each player enters a secret "random" name.</li>
+                <li>The Master reads the full list out loud twice.</li>
+                <li>Players guess who is who to recruit them.</li>
+            </ul>
+        </div>
+        <button onclick="showScreen('screen-input')">Start New Game</button>
+        <button class="secondary" id="resume-btn" style="display:none;" onclick="resumeGame()">Resume Last Session</button>
+    </div>
+
+    <div id="screen-input" class="screen">
+        <h2>Enter a Name</h2>
+        <div class="instruction-box">Keep your name a secret from others!</div>
+        <input type="text" id="name-input" placeholder="Type name here..." autocomplete="off">
+        <button onclick="submitName()">Submit & Pass Phone</button>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #ddd;">
+        <button class="secondary" onclick="finalizeNames()">Complete Name Gathering</button>
+    </div>
+
+    <div id="screen-memorize" class="screen">
+        <h2>Memorize the List</h2>
+        <p>Game Master: Read these out loud <strong>twice</strong>. Players: Try to remember every name!</p>
+        <ul id="memo-list"></ul>
+        <button onclick="beginGame()">Begin Game</button>
+    </div>
+
+    <div id="screen-play" class="screen">
+        <h2>Game in Progress</h2>
+        <p>Game Master: Check off names as they are correctly guessed.</p>
+        <div id="checklist"></div>
+        <button class="danger" onclick="finishGame()" style="margin-top: 30px;">Finish & Clear Game</button>
+    </div>
+</div>
+
+<script>
+    let names = JSON.parse(localStorage.getItem('nameGame_names')) || [];
+
+    // Initialize: Check for cached data
+    window.onload = () => {
+        if (names.length > 0) {
+            document.getElementById('resume-btn').style.display = 'block';
+        }
+    };
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function showOverlay(msg) {
+        document.getElementById('overlay-msg').innerText = msg;
+        document.getElementById('overlay').style.display = 'flex';
+    }
+
+    function hideOverlay() {
+        document.getElementById('overlay').style.display = 'none';
+    }
+
+    function submitName() {
+        const input = document.getElementById('name-input');
+        const val = input.value.trim();
+        if (!val) return;
+        
+        names.push(val);
+        localStorage.setItem('nameGame_names', JSON.stringify(names));
+        
+        input.value = "";
+        showOverlay("Pass to the next player");
+    }
+
+    function finalizeNames() {
+        if (names.length < 2) {
+            alert("Need at least 2 names to play!");
+            return;
+        }
+
+        // Show overlay FIRST so the last player doesn't see the list render
+        showOverlay("Pass to Game Master");
+        
+        // Prepare the list in the background
+        const shuffled = [...names].sort(() => Math.random() - 0.5);
+        const list = document.getElementById('memo-list');
+        list.innerHTML = "";
+        shuffled.forEach(n => {
+            let li = document.createElement('li');
+            li.innerText = n;
+            list.appendChild(li);
+        });
+
+        showScreen('screen-memorize');
+    }
+
+    function beginGame() {
+        const checklist = document.getElementById('checklist');
+        checklist.innerHTML = "";
+        
+        // Shuffle again for the checklist phase to keep it fresh
+        const gameList = [...names].sort(() => Math.random() - 0.5);
+        
+        gameList.forEach((name, index) => {
+            const div = document.createElement('div');
+            div.className = 'name-item';
+            div.innerHTML = `
+                <input type="checkbox" id="n-${index}" onchange="toggleName(this)">
+                <label for="n-${index}">${name}</label>
+            `;
+            checklist.appendChild(div);
+        });
+
+        showScreen('screen-play');
+    }
+
+    function toggleName(cb) {
+        cb.parentElement.classList.toggle('checked', cb.checked);
+    }
+
+    function finishGame() {
+        if(confirm("This will clear all names. Are you sure?")) {
+            localStorage.removeItem('nameGame_names');
+            names = [];
+            location.reload();
+        }
+    }
+
+    function resumeGame() {
+        showScreen('screen-input');
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<title>Which day works?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EAEFF2; --surface:#FFFFFF; --ink:#16222C; --muted:#566673; --line:#CFD9DF; --brand:#1E4B5C;
+  --preferred:#2E8B57; --second:#3D74C4; --not-ideal:#F2C037; --unavailable:#CC423D;
+  --preferred-t:#DCEFE3; --second-t:#DDE8F7; --not-ideal-t:#FBF0CC; --unavailable-t:#F6DAD8;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--head);line-height:1.15;margin:0}
+h1{font-size:32px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:21px;font-weight:600}
+h3{font-size:18px;font-weight:600}
+p{margin:0}
+a{color:var(--brand)}
+button,input,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hint{color:var(--muted);font-size:15px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+/* page furniture */
+.topnav{display:flex;justify-content:space-between;margin-bottom:14px;font-size:15px}
+.banner{background:var(--not-ideal-t);border:1px solid #E5CB6B;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:14px}
+.banner button{margin-top:6px}
+.banner.bad{background:var(--unavailable-t);border-color:#D9908D;font-size:15px}
+.banner[hidden]{display:none}
+.lede{margin:10px 0 22px;font-size:17px;max-width:46ch}
+.head{margin-bottom:18px}
+.desc{margin-top:8px;white-space:pre-wrap;max-width:60ch}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.facts span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:14px}
+.tools{display:flex;gap:8px;margin-top:12px}
+
+/* controls */
+.btn{min-height:46px;padding:0 20px;border-radius:10px;border:2px solid var(--brand);background:var(--surface);color:var(--brand);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--brand);color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.link{background:none;border:0;padding:8px 0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:15px}
+.link.danger{color:#A12F2B}
+.filter{margin:10px 0 4px}
+.filter .frow{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.filter h2{font-size:15px;margin:0}
+.filter .fall{font-size:14px}
+.filter .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.fchip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px 0 10px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:inherit;cursor:pointer;font-size:15px;font-weight:500}
+.fchip .fck{width:18px;height:18px;border-radius:50%;border:1.5px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:12px;line-height:1}
+.fchip[aria-pressed="true"]{border-color:currentColor;background:color-mix(in srgb,currentColor 10%,var(--surface))}
+.fchip[aria-pressed="false"]{opacity:.55;text-decoration:line-through}
+.chipbtn{min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px;font-weight:500}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:none;min-height:38px;padding:0 18px;border-radius:999px;font-weight:600;font-size:15px;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--brand);color:#fff}
+.seg.small button{min-height:34px;padding:0 14px;font-size:14px}
+
+/* forms */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.fld{display:block;margin-bottom:16px}
+.fld>span{display:block;font-weight:600;margin-bottom:5px;font-size:15px}
+.fld small{display:block;color:var(--muted);margin-top:4px;font-size:13px}
+input[type=text],input[type=number],input[type=date],textarea{width:100%;min-height:46px;padding:10px 12px;border:1px solid #AEBCC5;border-radius:10px;background:#fff}
+textarea{resize:vertical}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.err{color:#A12F2B;font-weight:600;margin-top:12px;min-height:1.4em}
+.linkbox{display:flex;gap:8px;margin:12px 0}
+.linkbox input{flex:1;min-width:0}
+.row-btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.btn.small{min-height:38px;padding:0 14px;font-size:14px;display:inline-flex;align-items:center;text-decoration:none}
+.btn.danger{border-color:#A12F2B;color:#A12F2B}
+.foot{margin-top:36px;font-size:14px;text-align:center}
+.foot a{color:var(--muted)}
+.admin-list{list-style:none;margin:14px 0 0;padding:0}
+.admin-list li{padding:14px 0;border-top:1px solid var(--line)}
+.admin-list .nm{font-family:var(--head);font-size:19px;font-weight:600}
+.admin-list .meta{color:var(--muted);font-size:14px;margin:2px 0 10px}
+.recent{margin-top:28px}
+.recent ul{list-style:none;padding:0;margin:8px 0 0}
+.recent li{padding:10px 0;border-top:1px solid var(--line)}
+
+/* status toggles */
+.edit-top{margin-bottom:16px}
+.tog{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 8px}
+.tog button{display:flex;align-items:center;gap:9px;min-height:48px;padding:0 12px;border:2px solid var(--line);background:var(--surface);border-radius:10px;font-weight:600;font-size:15px;cursor:pointer;text-align:left}
+.sthelp{display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:10px 12px;border-left:7px solid var(--line);border-radius:10px;font-size:15px;background:#fff}
+.sthelp[hidden]{display:none}
+.sthelp[data-s="preferred"]{border-left-color:var(--preferred);background:var(--preferred-t)}
+.sthelp[data-s="second"]{border-left-color:var(--second);background:var(--second-t)}
+.sthelp[data-s="not_ideal"]{border-left-color:var(--not-ideal);background:var(--not-ideal-t)}
+.sthelp[data-s="unavailable"]{border-left-color:var(--unavailable);background:var(--unavailable-t)}
+.tog button:disabled{opacity:.45;cursor:default}
+.sw{display:inline-block;width:14px;height:14px;border-radius:50%;flex:none}
+[data-s="preferred"].sw{background:var(--preferred)}
+[data-s="second"].sw{background:var(--second)}
+[data-s="not_ideal"].sw{background:var(--not-ideal)}
+[data-s="unavailable"].sw{background:var(--unavailable)}
+.tog button[aria-pressed="true"][data-s="preferred"]{background:var(--preferred);border-color:var(--preferred);color:#fff}
+.tog button[aria-pressed="true"][data-s="second"]{background:var(--second);border-color:var(--second);color:#fff}
+.tog button[aria-pressed="true"][data-s="not_ideal"]{background:var(--not-ideal);border-color:#C99A12;color:var(--ink)}
+.tog button[aria-pressed="true"][data-s="unavailable"]{background:var(--unavailable);border-color:var(--unavailable);color:#fff}
+.tog button[aria-pressed="true"] .sw{background:#fff;box-shadow:inset 0 0 0 3px currentColor}
+.tog.nudge{animation:nudge .35s}
+@keyframes nudge{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* calendar */
+.cal{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 12px 12px}
+.cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.nav{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:24px;line-height:1;cursor:pointer}
+.nav:disabled{opacity:.3;cursor:default}
+.dow,.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow span{text-align:center;font-size:13px;font-weight:600;color:var(--muted);padding-bottom:4px}
+.day{position:relative;aspect-ratio:1/1;min-height:44px;padding:0;border:0;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font:600 17px/1 var(--head);cursor:pointer;touch-action:manipulation}
+.day .g{font:700 11px/1 var(--body);height:11px;margin-top:2px}
+.day:disabled{background:transparent;color:#9BA9B3;cursor:default}
+.day.today .n{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:2px}
+.day.sel,.row.sel{outline:3px solid var(--ink);outline-offset:2px}
+.day.hasnote::after{content:"";position:absolute;top:5px;right:5px;width:7px;height:7px;border-radius:50%;background:currentColor;opacity:.8}
+.day[data-s="preferred"]{background:var(--preferred);color:#fff}
+.day[data-s="second"]{background:var(--second);color:#fff}
+.day[data-s="not_ideal"]{background:var(--not-ideal);color:var(--ink)}
+.day[data-s="unavailable"]{background:var(--unavailable);color:#fff}
+.day[data-s="none"]{background:#fff;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.weeklist{display:grid;gap:6px}
+.row{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 10px;text-align:left;width:100%;padding:12px 14px;border:0;border-left:7px solid var(--line);border-radius:10px;cursor:pointer;background:#fff}
+.row:disabled{opacity:.4;cursor:default}
+.row b{font-family:var(--head);font-size:17px;font-weight:600}
+.row .l{font-size:14px;color:var(--muted)}
+.row .g{font-weight:700;font-size:16px}
+.row .sub{grid-column:1/3;font-size:14px}
+.row[data-s="preferred"]{border-left-color:var(--preferred);background:var(--preferred-t)}
+.row[data-s="second"]{border-left-color:var(--second);background:var(--second-t)}
+.row[data-s="not_ideal"]{border-left-color:var(--not-ideal);background:var(--not-ideal-t)}
+.row[data-s="unavailable"]{border-left-color:var(--unavailable);background:var(--unavailable-t)}
+.row[data-s="none"]{background:#fff;border-left-color:var(--line)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;list-style:none;padding:0;margin:12px 2px 0;font-size:14px}
+.legend li{display:flex;align-items:center;gap:6px}
+.cal .small-note{margin:8px 2px 0;color:var(--muted);font-size:13px}
+
+/* day panel, best dates, people */
+.day-panel{margin:16px 0}
+.day-panel .grp{margin-top:12px}
+.day-panel ul,.people ul{list-style:none;margin:6px 0 0;padding:0}
+.day-panel li,.people li{padding:3px 0}
+.tag{display:inline-block;font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px}
+.tag[data-s="preferred"]{background:var(--preferred-t);color:#17582F}
+.tag[data-s="second"]{background:var(--second-t);color:#1E4A8A}
+.tag[data-s="not_ideal"]{background:var(--not-ideal-t);color:#6B4F00}
+.tag[data-s="unavailable"]{background:var(--unavailable-t);color:#8A1F1B}
+.tag[data-s="none"]{background:#E3E9ED;color:var(--muted)}
+.note{color:var(--muted);font-size:14px}
+.day-panel .who{display:grid;gap:6px;margin:10px 0 0}
+.day-panel .who li{display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px 10px;padding:10px 12px;border-left:7px solid var(--line);border-radius:10px;background:#fff}
+.who li[data-s="preferred"]{border-left-color:var(--preferred);background:var(--preferred-t)}
+.who li[data-s="second"]{border-left-color:var(--second);background:var(--second-t)}
+.who li[data-s="not_ideal"]{border-left-color:var(--not-ideal);background:var(--not-ideal-t)}
+.who li[data-s="unavailable"]{border-left-color:var(--unavailable);background:var(--unavailable-t)}
+.who .wn{font-weight:600;overflow-wrap:anywhere}
+.who .tag{background:rgba(255,255,255,.8)}
+.who .wnote{grid-column:1/3;color:var(--ink);font-size:14px}
+.block{margin-top:28px}
+.best{list-style:none;margin:10px 0 0;padding:0}
+.best li{border-top:1px solid var(--line)}
+.bd{display:grid;grid-template-columns:7px 1fr;gap:0 12px;width:100%;text-align:left;border:0;background:none;padding:12px 0;cursor:pointer}
+.bd i{grid-row:1/3;border-radius:4px}
+.bd i[data-s="preferred"]{background:var(--preferred)}
+.bd i[data-s="second"]{background:var(--second)}
+.bd i[data-s="not_ideal"]{background:var(--not-ideal)}
+.bd i[data-s="unavailable"]{background:var(--unavailable)}
+.bd b{font-family:var(--head);font-size:18px;font-weight:600}
+.bd span{font-size:14px;color:var(--muted)}
+.bd .ok{color:var(--ink);font-weight:500}
+.people li b{font-weight:600}
+
+/* edit footer */
+.actions{position:sticky;bottom:0;margin:22px -16px 0;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:rgba(234,239,242,.95);backdrop-filter:blur(6px);border-top:1px solid var(--line);display:flex;gap:10px;flex-wrap:wrap}
+.actions .primary{flex:1;min-width:160px}
+
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:10;font-size:15px}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (min-width:520px){
+  .tog{grid-template-columns:repeat(4,1fr)}
+  .day{font-size:18px}
+}
+@media (prefers-reduced-motion:reduce){
+  .tog.nudge{animation:none}
+  #toast{transition:none}
+}
+</style>
+</head>
+<body>
+<main id="app" class="wrap"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This page needs JavaScript to work.</p></noscript>
+
+<script src="config.js"></script>
+<script>
+(function () {
+'use strict';
+
+/* ------------------------------------------------------------------ setup */
+
+var CFG = window.MEETUP_CONFIG || {};
+// Forgive common copy/paste slips: spaces, missing https://, trailing slash or /rest/v1.
+CFG.SUPABASE_KEY = String(CFG.SUPABASE_KEY || '').trim();
+CFG.SUPABASE_URL = String(CFG.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+if (CFG.SUPABASE_URL && !/^https?:\/\//i.test(CFG.SUPABASE_URL)) CFG.SUPABASE_URL = 'https://' + CFG.SUPABASE_URL;
+var REMOTE =!!(CFG.SUPABASE_URL && CFG.SUPABASE_KEY && !/your-project|YOUR_/i.test(CFG.SUPABASE_URL + CFG.SUPABASE_KEY));
+
+var STATUSES = [
+  { id: 'preferred',   label: 'Preferred',   help: 'These are the days that work best for me.',        glyph: '✓' },
+  { id: 'second',      label: 'Available',   help: 'I can make it on these days.',                     glyph: '' },
+  { id: 'not_ideal',   label: 'Not ideal',   help: 'I could do these days, but only if we have to.',   glyph: '!' },
+  { id: 'unavailable', label: 'Unavailable', help: 'I can’t make it on these days.',              glyph: '✕' }
+];
+var SMAP = {};
+STATUSES.forEach(function (s) { SMAP[s.id] = s; });
+
+// What a calendar day shows when people disagree: the hardest answer wins.
+// Higher number wins. Days nobody marked stay "second" (blue).
+var DISPLAY_RANK = { second: 1, preferred: 2, not_ideal: 3, unavailable: 4 };
+
+var $app = document.getElementById('app');
+var $toast = document.getElementById('toast');
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+/* ---------------------------------------------------------------- storage */
+
+var store = {
+  get: function (k, d) {
+    try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; }
+  },
+  set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+function uuid() {
+  if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+  return 'p' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+function getPid() {
+  var id = store.get('meetup.pid', null);
+  if (!id) { id = uuid(); store.set('meetup.pid', id); }
+  return id;
+}
+function rememberEvent(code, name) {
+  var list = store.get('meetup.recent', []).filter(function (e) { return e.code !== code; });
+  list.unshift({ code: code, name: name });
+  store.set('meetup.recent', list.slice(0, 8));
+}
+
+/* ------------------------------------------------------------------ dates */
+
+function pad(n) { return String(n).padStart(2, '0'); }
+function iso(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function parse(s) { var p = s.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); }
+function addDays(s, n) { var d = parse(s); d.setDate(d.getDate() + n); return iso(d); }
+function todayISO() { return iso(new Date()); }
+function diffDays(a, b) { return Math.round((parse(b) - parse(a)) / 86400000); }
+function fmt(s, o) { return parse(s).toLocaleDateString(undefined, o); }
+function fmtLong(s) { return fmt(s, { weekday: 'long', month: 'long', day: 'numeric' }); }
+function fmtShort(s) { return fmt(s, { weekday: 'short', month: 'short', day: 'numeric' }); }
+function fmtMD(s) { return fmt(s, { month: 'short', day: 'numeric' }); }
+function fmtMonth(s) { return fmt(s, { month: 'long', year: 'numeric' }); }
+function monthStart(s) { return s.slice(0, 8) + '01'; }
+function monthEnd(s) { var d = parse(monthStart(s)); d.setMonth(d.getMonth() + 1); d.setDate(0); return iso(d); }
+function weekStart(s) { return addDays(s, -parse(s).getDay()); }
+
+function eventRange(ev) {
+  var today = todayISO();
+  var over = ev.latest && ev.latest < today;
+  var lo = ev.earliest || (over ? ev.latest : today);
+  if (lo < today && !over) lo = today;
+  var hi = ev.latest || addDays(lo, 365);
+  return { lo: lo, hi: hi };
+}
+
+/* -------------------------------------------------------------------- api */
+
+function ApiError(message, status) { this.message = message; this.status = status; this.name = 'ApiError'; }
+ApiError.prototype = Object.create(Error.prototype);
+
+var remoteApi = {
+  rpc: function (fn, args) {
+    var headers = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY };
+    if (/^eyJ/.test(CFG.SUPABASE_KEY)) headers.Authorization = 'Bearer ' + CFG.SUPABASE_KEY;
+    return fetch(CFG.SUPABASE_URL.replace(/\/+$/, '') + '/rest/v1/rpc/' + fn, {
+      method: 'POST', headers: headers, body: JSON.stringify(args)
+    }).then(function (res) {
+      return res.text().then(function (text) {
+        var data = null;
+        try { data = text ? JSON.parse(text) : null; } catch (e) {}
+        if (!res.ok) throw new ApiError((data && (data.message || data.error_description || data.msg)) || ('http_' + res.status), res.status);
+        return data;
+      });
+    }, function () { throw new ApiError('network'); });
+  },
+  createEvent: function (a) {
+    return this.rpc('create_event', { p_name: a.name, p_description: a.description, p_num_days: a.num_days,
+      p_earliest: a.earliest || null, p_latest: a.latest || null });
+  },
+  getEvent: function (code, pid) { return this.rpc('get_event', { p_code: code, p_participant: pid }); },
+  saveResponse: function (a) {
+    return this.rpc('save_response', { p_code: a.code, p_participant: a.pid, p_name: a.name, p_note: a.note,
+      p_picks: a.picks, p_replace: !!a.replace });
+  },
+  deleteResponse: function (a) { return this.rpc('delete_response', { p_code: a.code, p_participant: a.pid }); },
+  // Admin functions report problems as {error: "..."} so failed guesses stay counted server-side.
+  adminList: function (pw) {
+    return this.rpc('admin_list_events', { p_password: pw }).then(function (d) {
+      if (d && d.error) throw new ApiError(d.error);
+      return (d && d.events) || [];
+    });
+  },
+  adminDelete: function (pw, code) {
+    return this.rpc('admin_delete_event', { p_password: pw, p_code: code }).then(function (d) {
+      if (d && d.error) throw new ApiError(d.error);
+      return d;
+    });
+  }
+};
+
+// Preview mode: same interface, but everything lives in this browser's localStorage.
+var localApi = {
+  db: function () { return store.get('meetup.local.db', { events: {}, responses: {} }); },
+  put: function (db) { store.set('meetup.local.db', db); },
+  code: function (db) {
+    var A = 'abcdefghjkmnpqrstuvwxyz23456789', c;
+    do {
+      c = '';
+      for (var i = 0; i < 8; i++) c += A[Math.floor(Math.random() * A.length)];
+    } while (db.events[c]);
+    return c;
+  },
+  createEvent: function (a) {
+    var db = this.db(), c = this.code(db);
+    db.events[c] = { code: c, name: a.name.trim(), description: (a.description || '').trim(),
+      num_days: a.num_days, earliest: a.earliest || null, latest: a.latest || null };
+    db.responses[c] = [];
+    this.put(db);
+    return Promise.resolve(c);
+  },
+  getEvent: function (code, pid) {
+    var db = this.db(), e = db.events[code];
+    if (!e) return Promise.resolve(null);
+    var rs = (db.responses[code] || []).slice().sort(function (x, y) { return x.updated_at < y.updated_at ? -1 : 1; })
+      .map(function (r) { return { name: r.name, note: r.note, picks: r.picks, mine: r.pid === pid, updated_at: r.updated_at }; });
+    return Promise.resolve({ event: JSON.parse(JSON.stringify(e)), responses: rs });
+  },
+  saveResponse: function (a) {
+    var db = this.db();
+    if (!db.events[a.code]) return Promise.reject(new ApiError('event_not_found'));
+    var list = db.responses[a.code] || (db.responses[a.code] = []);
+    var name = a.name.trim();
+    var clash = list.filter(function (r) { return r.name.toLowerCase() === name.toLowerCase() && r.pid !== a.pid; })[0];
+    if (clash) {
+      if (a.replace) list.splice(list.indexOf(clash), 1);
+      else return Promise.reject(new ApiError('name_taken'));
+    }
+    var rec = { pid: a.pid, name: name, note: a.note || '', picks: a.picks, updated_at: new Date().toISOString() };
+    var mine = list.filter(function (r) { return r.pid === a.pid; })[0];
+    if (mine) Object.assign(mine, rec); else list.push(rec);
+    this.put(db);
+    return Promise.resolve();
+  },
+  deleteResponse: function (a) {
+    var db = this.db();
+    db.responses[a.code] = (db.responses[a.code] || []).filter(function (r) { return r.pid !== a.pid; });
+    this.put(db);
+    return Promise.resolve();
+  },
+  adminList: function () { return Promise.reject(new ApiError('admin_needs_supabase')); },
+  adminDelete: function () { return Promise.reject(new ApiError('admin_needs_supabase')); }
+};
+
+var api = REMOTE ? remoteApi : localApi;
+
+function friendly(e) {
+  var m = (e && e.message) || '';
+  var map = {
+    network: "Couldn't reach the server. Check your connection and try again.",
+    event_not_found: 'That event no longer exists.',
+    event_full: 'This event already has the maximum number of responses.',
+    invalid_name: 'Enter a name (up to 60 characters).',
+    invalid_picks: 'Those days could not be saved. Refresh the page and try again.',
+    range_too_short: 'The date range is shorter than the number of days.',
+    range_too_long: 'The date range can be at most two years.',
+    wrong_password: 'Wrong password.',
+    too_many_attempts: 'Too many wrong attempts. Try again in 15 minutes.',
+    admin_not_configured: 'No admin password is set yet. Follow the steps at the bottom of admin.sql.',
+    admin_needs_supabase: 'Admin mode needs the Supabase connection. Preview mode only keeps data in this browser.'
+  };
+  if (map[m]) return map[m];
+  if (/find the function|schema cache/i.test(m)) return 'The database is not set up yet. Run schema.sql in the Supabase SQL Editor.';
+  if (e && (e.status === 401 || e.status === 403 || /api key|jwt/i.test(m))) {
+    return 'Supabase rejected the key in config.js. Copy the publishable key again from Project Settings > API Keys.';
+  }
+  if (e && e.status === 404) return 'Nothing answered at the Supabase URL in config.js. It should look like https://abcdefghijkl.supabase.co';
+  return 'Something went wrong' + (m ? ' (' + m + ')' : '') + '. Please try again.';
+}
+
+/* -------------------------------------------------------------- aggregation */
+
+function userStatus(resp, day) {
+  var p = resp.picks && resp.picks[day];
+  return p && SMAP[p.s] ? p.s : null;
+}
+
+function dayAgg(day, responses) {
+  var counts = { preferred: 0, second: 0, not_ideal: 0, unavailable: 0, none: 0 };
+  var names = { preferred: [], second: [], not_ideal: [], unavailable: [], none: [] };
+  var top = 'second';
+  responses.forEach(function (r) {
+    var s = userStatus(r, day);
+    if (!s) { counts.none++; names.none.push(r.name); return; }
+    counts[s]++; names[s].push(r.name);
+    if (DISPLAY_RANK[s] > DISPLAY_RANK[top]) top = s;
+  });
+  return { status: top, counts: counts, names: names };
+}
+
+// Candidate start dates, best first. Unmarked days count as "okay".
+function isExpired(ev) { return !!(ev.latest && ev.latest < todayISO()); }
+
+function bestWindows(ev, responses) {
+  var out = [], total = responses.length;
+  if (!total || isExpired(ev)) return out;
+  var n = ev.num_days || 1, r = eventRange(ev);
+  for (var s = r.lo; s <= r.hi && addDays(s, n - 1) <= r.hi; s = addDays(s, 1)) {
+    var days = [];
+    for (var i = 0; i < n; i++) days.push(addDays(s, i));
+    var tally = { preferred: 0, ok: 0, not_ideal: 0, unavailable: 0 };
+    var names = { preferred: [], not_ideal: [], unavailable: [] };
+    responses.forEach(function (resp) {
+      var sts = days.map(function (d) { return userStatus(resp, d); });
+      var w;
+      if (sts.indexOf('unavailable') > -1) w = 'unavailable';
+      else if (sts.indexOf('not_ideal') > -1) w = 'not_ideal';
+      else if (sts.every(function (x) { return x === 'preferred'; })) w = 'preferred';
+      else w = 'ok';
+      tally[w]++;
+      if (names[w]) names[w].push(resp.name);
+    });
+    var available = total - tally.unavailable;
+    if (available * 2 <= total) continue; // needs a majority
+    out.push({ start: s, end: days[n - 1], tally: tally, names: names, available: available, total: total });
+  }
+  out.sort(function (a, b) {
+    return a.tally.unavailable - b.tally.unavailable ||
+      a.tally.not_ideal - b.tally.not_ideal ||
+      b.tally.preferred - a.tally.preferred ||
+      (a.start < b.start ? -1 : 1);
+  });
+  return out;
+}
+
+function cleanPicks(picks) {
+  var out = {};
+  Object.keys(picks).forEach(function (d) {
+    var p = picks[d];
+    if (!p || !SMAP[p.s]) return;
+    var o = { s: p.s };
+    var n = (p.n || '').trim().slice(0, 120);
+    if (n) o.n = n;
+    out[d] = o;
+  });
+  return out;
+}
+
+/* -------------------------------------------------------------------- state */
+
+var S = {
+  view: 'loading', code: '', ev: null, responses: [], pid: '',
+  mode: 'view', calView: 'month', cursor: todayISO(), sel: null,
+  draft: { name: '', note: '', picks: {} }, hidden: {}, active: null, dirty: false, saving: false, showMore: false
+};
+
+function nameKey(r) { return String(r.name).trim().toLowerCase(); }
+// Responses that are switched on in the "Show answers from" chips (everyone by default).
+function vis() { return S.responses.filter(function (r) { return !S.hidden[nameKey(r)]; }); }
+function myResponse() {
+  return S.responses.filter(function (r) { return r.mine; })[0] || null;
+}
+function initDraft() {
+  var mine = myResponse();
+  S.draft = {
+    name: mine ? mine.name : (store.get('meetup.name', '') || ''),
+    note: mine ? (mine.note || '') : '',
+    picks: mine ? JSON.parse(JSON.stringify(mine.picks || {})) : {}
+  };
+  S.active = null;
+  S.dirty = false;
+  S.takeover = '';
+}
+function otherResponseNamed(name) {
+  var n = String(name || '').trim().toLowerCase();
+  if (!n) return null;
+  return S.responses.filter(function (r) { return !r.mine && String(r.name).trim().toLowerCase() === n; })[0] || null;
+}
+// If the typed name already has a saved response from someone else, ask before taking it over.
+// Returns true when it is fine to go on (no clash, or the person agreed to edit that response).
+function confirmTakeover() {
+  var name = S.draft.name.trim(), clash = otherResponseNamed(name);
+  if (!clash || S.takeover === name.toLowerCase()) return true;
+  if (!confirm('There is already a saved response under the name “' + clash.name + '”. Are you sure you want to edit that response?')) return false;
+  S.takeover = name.toLowerCase();
+  S.draft.name = clash.name;
+  S.draft.note = clash.note || '';
+  S.draft.picks = JSON.parse(JSON.stringify(clash.picks || {}));
+  S.dirty = true;
+  S.active = null;
+  return true;
+}
+function validName() { return S.draft.name.trim().length > 0; }
+
+var toastTimer;
+function toast(msg) {
+  $toast.textContent = msg;
+  $toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { $toast.classList.remove('show'); }, 3400);
+}
+
+function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
+function shareUrl(code) { return baseUrl() + '?e=' + code; }
+
+function copyText(text, input) {
+  function fallback() {
+    var el = input || document.createElement('textarea');
+    if (!input) { el.value = text; el.style.position = 'fixed'; el.style.opacity = '0'; document.body.appendChild(el); }
+    el.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    if (!input) document.body.removeChild(el);
+    return ok;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return fallback(); });
+  }
+  return Promise.resolve(fallback());
+}
+
+/* -------------------------------------------------------------------- routes */
+
+function route() {
+  var qs = new URLSearchParams(location.search);
+  if (qs.has('admin') && !qs.get('e')) { renderAdmin(); return; }
+  var code = qs.get('e');
+  if (!code) { renderHome(); return; }
+  loadEvent(code.trim().toLowerCase());
+}
+
+function loadEvent(code) {
+  S.view = 'loading'; S.code = code; S.pid = getPid();
+  $app.innerHTML = '<p class="hint">Loading event…</p>';
+  api.getEvent(code, S.pid).then(function (data) {
+    if (!data) { renderNotFound(); return; }
+    S.ev = data.event; S.responses = data.responses || [];
+    rememberEvent(S.ev.code, S.ev.name);
+    var r = eventRange(S.ev);
+    S.cursor = r.lo <= r.hi ? r.lo : S.ev.earliest;
+    S.sel = null; S.calView = 'month'; S.showMore = false;
+    initDraft();
+    S.mode = 'view'; S.hidden = {};
+    S.view = 'event';
+    renderEvent();
+  }, function (e) {
+    $app.innerHTML = '<p class="err">' + esc(friendly(e)) + '</p><p><a href="">Try again</a></p>';
+  });
+}
+
+function reload() {
+  return api.getEvent(S.code, S.pid).then(function (data) {
+    if (!data) throw new ApiError('event_not_found');
+    S.ev = data.event; S.responses = data.responses || [];
+  });
+}
+
+/* -------------------------------------------------------------------- home */
+
+function previewBanner() {
+  if (REMOTE) return '';
+  return '<div class="banner"><strong>Preview mode.</strong> Nothing is shared yet: answers stay in this browser. ' +
+    'Add your Supabase details to config.js to let family use it from their own phones.' +
+    '<br><button type="button" class="chipbtn" data-act="new-person">Act as a new person</button></div>';
+}
+
+function renderHome() {
+  S.view = 'home';
+  document.title = 'Which day works?';
+  var recent = store.get('meetup.recent', []);
+  $app.innerHTML =
+    previewBanner() +
+    '<div class="banner bad" id="conn" role="alert" hidden></div>' +
+    '<h1>Which day works?</h1>' +
+    '<p class="lede">Create an event, send the link to the group chat, and everyone marks the days they can and can’t do. You get a list of the best dates.</p>' +
+    '<form id="createForm" class="panel" novalidate>' +
+      '<label class="fld"><span>Event name</span><input type="text" name="name" maxlength="120" placeholder="Thanksgiving weekend" autocomplete="off"></label>' +
+      '<label class="fld"><span>Details (optional)</span><textarea name="description" rows="3" maxlength="2000" placeholder="Where, who is hosting, anything people should know"></textarea></label>' +
+      '<label class="fld"><span>Number of days</span><input type="number" name="num_days" min="1" max="14" value="1" inputmode="numeric"><small>How many days in a row the get-together lasts.</small></label>' +
+      '<div class="two">' +
+        '<label class="fld"><span>Earliest start</span><input type="date" name="earliest"><small>Optional</small></label>' +
+        '<label class="fld"><span>Latest end</span><input type="date" name="latest"><small>Optional</small></label>' +
+      '</div>' +
+      '<button class="btn primary" type="submit">Create event</button>' +
+      '<p class="err" id="formErr" role="alert"></p>' +
+    '</form>' +
+    (recent.length ? '<section class="recent"><h2>Your events</h2><ul>' +
+      recent.map(function (r) { return '<li><a href="?e=' + esc(r.code) + '">' + esc(r.name) + '</a></li>'; }).join('') +
+      '</ul></section>' : '') +
+    '<p class="foot"><a href="?admin">Admin</a></p>';
+  if (REMOTE) checkConnection();
+}
+
+/* -------------------------------------------------------------------- admin */
+
+var A = { pw: '', events: null }; // the password lives only in memory, never saved
+
+function fmtStamp(ts) {
+  var d = new Date(ts);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function renderAdmin(msg) {
+  S.view = 'admin';
+  document.title = 'Admin | Which day works?';
+  var nav = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">Home</a></nav>';
+  if (!REMOTE) {
+    $app.innerHTML = previewBanner() + nav + '<h1>Admin</h1><p class="err">' + esc(friendly(new ApiError('admin_needs_supabase'))) + '</p>';
+    return;
+  }
+  if (!A.events) {
+    $app.innerHTML = nav + '<h1>Admin</h1>' +
+      '<p class="lede">Enter the admin password to see every event and delete the ones you don’t need.</p>' +
+      '<form id="adminForm" class="panel" novalidate>' +
+        '<label class="fld"><span>Password</span><input type="password" id="adminPw" name="adminPw" autocomplete="current-password"></label>' +
+        '<button class="btn primary" type="submit">Sign in</button>' +
+        '<p class="err" id="adminErr" role="alert">' + esc(msg || '') + '</p>' +
+      '</form>';
+    return;
+  }
+  var list = A.events;
+  $app.innerHTML = nav + '<h1>All events (' + list.length + ')</h1>' +
+    '<div class="tools"><button type="button" class="chipbtn" data-act="admin-refresh">Refresh</button>' +
+    '<button type="button" class="chipbtn" data-act="admin-out">Sign out</button></div>' +
+    (list.length ? '<ul class="admin-list">' + list.map(function (ev) {
+      var bits = ['Created ' + fmtStamp(ev.created_at) + '.'];
+      bits.push(ev.responses
+        ? ev.responses + (ev.responses === 1 ? ' response' : ' responses') + ', last on ' + fmtStamp(ev.last_response) + '.'
+        : 'No answers yet.');
+      if (ev.num_days > 1) bits.push(ev.num_days + ' days in a row.');
+      if (ev.earliest && ev.latest) bits.push('Between ' + fmtMD(ev.earliest) + ' and ' + fmtMD(ev.latest) + '.');
+      else if (ev.earliest) bits.push('Starting ' + fmtMD(ev.earliest) + ' or later.');
+      else if (ev.latest) bits.push('Ending by ' + fmtMD(ev.latest) + '.');
+      return '<li><div class="nm">' + esc(ev.name) + '</div><p class="meta">' + esc(bits.join(' ')) + '</p>' +
+        '<div class="row-btns"><a class="btn small" href="?e=' + esc(ev.code) + '">Open</a>' +
+        '<button type="button" class="btn small danger" data-act="admin-del" data-code="' + esc(ev.code) + '">Delete</button></div></li>';
+    }).join('') + '</ul>' : '<p class="hint" style="margin-top:14px">There are no events yet.</p>');
+}
+
+function adminFail(e) {
+  var m = e && e.message;
+  if (m === 'wrong_password' || m === 'too_many_attempts' || m === 'admin_not_configured') {
+    A.pw = ''; A.events = null; renderAdmin(friendly(e));
+  } else toast(friendly(e));
+}
+
+function submitAdmin(form) {
+  var pw = form.elements.adminPw.value, err = document.getElementById('adminErr');
+  if (!pw) { err.textContent = 'Enter the password.'; return; }
+  err.textContent = '';
+  var btn = form.querySelector('button[type=submit]');
+  btn.disabled = true; btn.textContent = 'Checking…';
+  api.adminList(pw).then(function (events) {
+    A.pw = pw; A.events = events; renderAdmin();
+  }, function (e) {
+    btn.disabled = false; btn.textContent = 'Sign in';
+    err.textContent = friendly(e);
+    form.elements.adminPw.value = '';
+  });
+}
+
+function adminDelete(code) {
+  var ev = (A.events || []).filter(function (x) { return x.code === code; })[0];
+  if (!ev) return;
+  var n = ev.responses || 0;
+  if (!confirm('Delete “' + ev.name + '”' + (n ? ' and its ' + n + (n === 1 ? ' response' : ' responses') : '') + '? This can’t be undone.')) return;
+  api.adminDelete(A.pw, code).then(function () {
+    A.events = A.events.filter(function (x) { return x.code !== code; });
+    store.set('meetup.recent', store.get('meetup.recent', []).filter(function (r) { return r.code !== code; }));
+    renderAdmin();
+    toast('Deleted “' + ev.name + '”.');
+  }, adminFail);
+}
+
+// Quick self-test on the home page so setup mistakes show up before anyone fills in the form.
+function checkConnection() {
+  api.getEvent('00000000', getPid()).then(function () {}, function (e) {
+    var el = document.getElementById('conn');
+    if (!el) return;
+    el.innerHTML = '<strong>Can’t reach the database.</strong> ' + esc(friendly(e));
+    el.hidden = false;
+  });
+}
+
+function submitCreate(form) {
+  var f = form.elements, err = $('#formErr');
+  var name = f.name.value.trim();
+  var n = parseInt(f.num_days.value, 10);
+  var earliest = f.earliest.value || null, latest = f.latest.value || null;
+  var problem = '';
+  if (!name) problem = 'Give the event a name.';
+  else if (!(n >= 1 && n <= 14)) problem = 'Number of days must be between 1 and 14.';
+  else if (earliest && latest && earliest > latest) problem = 'The earliest start must come before the latest end.';
+  else if (earliest && latest && diffDays(earliest, latest) + 1 < n) problem = 'The date range is shorter than the number of days.';
+  else if (earliest && latest && diffDays(earliest, latest) > 730) problem = 'The date range can be at most two years.';
+  else if (latest && latest < todayISO()) problem = 'The latest end date has already passed.';
+  if (problem) { err.textContent = problem; return; }
+  err.textContent = '';
+  var btn = form.querySelector('button[type=submit]');
+  btn.disabled = true; btn.textContent = 'Creating…';
+  var failed = function (e) {
+    btn.disabled = false; btn.textContent = 'Create event';
+    var msg = friendly(e);
+    err.textContent = msg; toast(msg);
+    if (err.scrollIntoView) err.scrollIntoView({ block: 'nearest' });
+    if (window.console) console.error('Create event failed:', e);
+  };
+  var started;
+  try { started = api.createEvent({ name: name, description: f.description.value, num_days: n, earliest: earliest, latest: latest }); }
+  catch (e) { failed(e); return; }
+  started.then(function (code) {
+    rememberEvent(code, name);
+    renderCreated(code, name);
+  }, failed);
+}
+
+function renderCreated(code, name) {
+  var url = shareUrl(code);
+  var canShare = !!navigator.share;
+  $app.innerHTML =
+    previewBanner() +
+    '<h1>Event created</h1>' +
+    '<p class="lede">Send this link to the group chat. Anyone with it can add their days.</p>' +
+    '<div class="panel">' +
+      '<strong>' + esc(name) + '</strong>' +
+      '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(url) + '" aria-label="Event link"></div>' +
+      '<div class="row-btns">' +
+        '<button class="btn primary" type="button" data-act="copy-new" data-url="' + esc(url) + '">Copy link</button>' +
+        (canShare ? '<button class="btn" type="button" data-act="share-new" data-url="' + esc(url) + '" data-name="' + esc(name) + '">Share</button>' : '') +
+        '<a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="' + esc(url) + '">Open event</a>' +
+      '</div>' +
+    '</div>' +
+    '<p class="hint" style="margin-top:16px">Open the event yourself first and add your own days, then send the link.</p>';
+}
+
+function renderNotFound() {
+  S.view = 'error';
+  $app.innerHTML = '<h1>Event not found</h1><p class="lede">Check that the whole link was copied, or ask whoever sent it for a new one.</p><p><a href="' + esc(baseUrl()) + '">Create a new event</a></p>';
+}
+
+/* --------------------------------------------------------------- event page */
+
+function renderEvent() {
+  var ev = S.ev, editing = S.mode === 'edit';
+  document.title = ev.name + ' | Which day works?';
+  var facts = [];
+  if (ev.num_days > 1) facts.push(ev.num_days + ' days in a row');
+  if (ev.earliest && ev.latest) facts.push('Between ' + fmtMD(ev.earliest) + ' and ' + fmtMD(ev.latest));
+  else if (ev.earliest) facts.push('Starting ' + fmtMD(ev.earliest) + ' or later');
+  else if (ev.latest) facts.push('Ending by ' + fmtMD(ev.latest));
+
+  $app.innerHTML =
+    previewBanner() +
+    '<nav class="topnav"><a href="' + esc(baseUrl()) + '">New event</a></nav>' +
+    '<header class="head"><h1>' + esc(ev.name) + '</h1>' +
+      (ev.description ? '<p class="desc">' + esc(ev.description) + '</p>' : '') +
+      (facts.length ? '<p class="facts">' + facts.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</p>' : '') +
+      '<div class="tools"><button type="button" class="chipbtn" data-act="copy-link">Copy link</button>' +
+      '<button type="button" class="chipbtn" data-act="refresh">Refresh</button></div></header>' +
+    (isExpired(ev) ? '<div class="banner" role="status"><strong>This event’s dates have passed.</strong> You can still look at the answers.</div>' : '') +
+    '<div class="bar">' +
+      '<div class="seg" role="group" aria-label="Mode">' +
+        '<button type="button" data-act="mode" data-mode="view" aria-pressed="' + !editing + '">View</button>' +
+        '<button type="button" data-act="mode" data-mode="edit" aria-pressed="' + editing + '">Edit</button>' +
+      '</div>' +
+      '<div class="seg small" role="group" aria-label="Calendar layout">' +
+        '<button type="button" data-act="calview" data-v="month" aria-pressed="' + (S.calView === 'month') + '">Month</button>' +
+        '<button type="button" data-act="calview" data-v="week" aria-pressed="' + (S.calView === 'week') + '">Week</button>' +
+      '</div>' +
+    '</div>' +
+    (editing ? editTopHTML() : '') +
+    (editing ? '' : '<section id="filter" class="filter" aria-label="Choose whose answers to show"></section>') +
+    '<section class="cal" aria-label="Calendar">' +
+      '<div class="cal-head">' +
+        '<button type="button" class="nav" data-act="prev" aria-label="Previous">‹</button>' +
+        '<h2 id="calTitle"></h2>' +
+        '<button type="button" class="nav" data-act="next" aria-label="Next">›</button>' +
+      '</div>' +
+      '<div id="cal"></div>' +
+      '<ul class="legend">' + STATUSES.map(function (s) {
+        return '<li><span class="sw" data-s="' + s.id + '"></span>' + s.label + '</li>';
+      }).join('') + '</ul>' +
+      '<p class="small-note">' + (editing
+        ? 'Days you leave unmarked count as available.'
+        : 'Each day shows the hardest answer anyone gave: red, then yellow, then green. Blue means nobody marked it as a favorite or a problem.') + '</p>' +
+    '</section>' +
+    '<section id="dayPanel" class="day-panel" aria-live="polite"></section>' +
+    (editing ? editBottomHTML() : '<section id="best" class="block"></section><section id="people" class="block people"></section>');
+
+  renderParts();
+  updateEditControls();
+}
+
+function editTopHTML() {
+  return '<div class="edit-top">' +
+    '<label class="fld"><span>Your name</span><input type="text" id="name" maxlength="60" autocomplete="given-name" placeholder="First name" value="' + esc(S.draft.name) + '"></label>' +
+    '<div class="tog" id="tog" role="group" aria-label="Day status">' +
+      STATUSES.map(function (s) {
+        return '<button type="button" data-act="status" data-s="' + s.id + '"><span class="sw" data-s="' + s.id + '"></span>' + s.label + '</button>';
+      }).join('') +
+    '</div>' +
+    '<p class="sthelp" id="statusHelp" hidden></p>' +
+    '<p class="hint" id="editHint"></p>' +
+  '</div>';
+}
+
+function editBottomHTML() {
+  var mine = myResponse();
+  return '<label class="fld" style="margin-top:18px"><span>Anything else everyone should know? (optional)</span>' +
+      '<textarea id="gnote" rows="2" maxlength="300" placeholder="Example: weekdays only work after 5pm">' + esc(S.draft.note) + '</textarea></label>' +
+    '<div class="actions">' +
+      '<button type="button" class="btn primary" data-act="save">Save preferences</button>' +
+      '<button type="button" class="btn" data-act="cancel">Cancel</button>' +
+    '</div>' +
+    (mine ? '<p style="margin-top:6px"><button type="button" class="link danger" data-act="delete">Delete my response</button></p>' : '');
+}
+
+function renderParts() { renderFilter(); renderCalendar(); renderDayPanel(); renderBest(); renderPeople(); }
+
+/* ----------------------------------------------------------------- calendar */
+
+function renderFilter() {
+  var el = document.getElementById('filter');
+  if (!el) return;
+  if (S.responses.length < 2) { el.innerHTML = ''; return; }
+  var on = vis().length;
+  el.innerHTML = '<div class="frow"><h2>Show answers from</h2><span class="fall">' +
+    '<button type="button" class="link" data-act="filter-all">All</button> · ' +
+    '<button type="button" class="link" data-act="filter-none">None</button></span></div>' +
+    '<div class="chips">' + S.responses.map(function (r) {
+      var isOn = !S.hidden[nameKey(r)];
+      return '<button type="button" class="fchip" data-act="toggle-person" data-key="' + esc(nameKey(r)) + '" aria-pressed="' + isOn + '">' +
+        '<span class="fck" aria-hidden="true">' + (isOn ? '✓' : '') + '</span>' + esc(r.name) + (r.mine ? ' (you)' : '') + '</button>';
+    }).join('') + '</div>' +
+    (on < S.responses.length ? '<p class="small-note">Showing ' + on + ' of ' + S.responses.length + ' people. The calendar and best dates only count them.</p>' : '');
+}
+
+function cellInfo(day) {
+  if (S.mode === 'edit') {
+    var p = S.draft.picks[day];
+    return { status: p ? p.s : 'none', note: p && p.n, label: p ? SMAP[p.s].label : 'Not marked', sub: p && p.n ? p.n : '' };
+  }
+  var V = vis(), agg = dayAgg(day, V), total = V.length, c = agg.counts, label;
+  if (!total) label = S.responses.length ? 'Nobody selected' : 'No answers yet';
+  else if (c.unavailable) label = c.unavailable + ' of ' + total + ' unavailable';
+  else if (c.not_ideal) label = c.not_ideal + ' of ' + total + ' say not ideal';
+  else if (c.preferred) label = c.preferred === total ? 'Everyone prefers this day' : c.preferred + ' of ' + total + ' prefer this day';
+  else label = 'Open for everyone';
+  var sub = [];
+  if (agg.names.unavailable.length) sub.push('Can’t: ' + agg.names.unavailable.join(', '));
+  if (agg.names.not_ideal.length) sub.push('Not ideal: ' + agg.names.not_ideal.join(', '));
+  return { status: agg.status, agg: agg, label: label, sub: sub.join('. ') };
+}
+
+function renderCalendar() {
+  var el = document.getElementById('cal');
+  if (!el) return;
+  var r = eventRange(S.ev), today = todayISO();
+  var prevOff, nextOff, title, html = '';
+
+  if (S.calView === 'month') {
+    var ms = monthStart(S.cursor), me = monthEnd(S.cursor);
+    title = fmtMonth(ms);
+    prevOff = r.lo >= ms; nextOff = r.hi <= me;
+    html += '<div class="dow" aria-hidden="true">' + 'SMTWTFS'.split('').map(function (c) { return '<span>' + c + '</span>'; }).join('') + '</div><div class="grid">';
+    for (var b = 0; b < parse(ms).getDay(); b++) html += '<span></span>';
+    for (var d = ms; d <= me; d = addDays(d, 1)) {
+      var off = d < r.lo || d > r.hi;
+      var info = off ? { status: 'none', label: 'Not available' } : cellInfo(d);
+      var cls = 'day' + (d === today ? ' today' : '') + (d === S.sel ? ' sel' : '') + (info.note ? ' hasnote' : '');
+      html += '<button type="button" class="' + cls + '" data-day="' + d + '"' + (off ? ' disabled' : ' data-s="' + info.status + '"') +
+        ' aria-label="' + esc(fmtLong(d) + ', ' + info.label) + '"' + (d === S.sel ? ' aria-pressed="true"' : '') + '>' +
+        '<span class="n">' + parse(d).getDate() + '</span><span class="g" aria-hidden="true">' + (off ? '' : glyphFor(info.status)) + '</span></button>';
+    }
+    html += '</div>';
+  } else {
+    var ws = weekStart(S.cursor), we = addDays(ws, 6);
+    title = fmtMD(ws) + ' to ' + fmtMD(we);
+    prevOff = r.lo >= ws; nextOff = r.hi <= we;
+    html += '<div class="weeklist">';
+    for (var i = 0; i < 7; i++) {
+      var day = addDays(ws, i), o = day < r.lo || day > r.hi;
+      var inf = o ? { status: 'none', label: 'Not available', sub: '' } : cellInfo(day);
+      html += '<button type="button" class="row' + (day === S.sel ? ' sel' : '') + '" data-day="' + day + '"' + (o ? ' disabled' : ' data-s="' + inf.status + '"') +
+        ' aria-label="' + esc(fmtLong(day) + ', ' + inf.label) + '"' + (day === S.sel ? ' aria-pressed="true"' : '') + '>' +
+        '<b>' + esc(fmtShort(day)) + (day === today ? ' (today)' : '') + '</b>' +
+        '<span class="l">' + esc(inf.label) + ' <span class="g" aria-hidden="true">' + (o ? '' : glyphFor(inf.status)) + '</span></span>' +
+        (inf.sub ? '<span class="sub">' + esc(inf.sub) + '</span>' : '') + '</button>';
+    }
+    html += '</div>';
+  }
+  el.innerHTML = html;
+  document.getElementById('calTitle').textContent = title;
+  document.querySelector('[data-act="prev"]').disabled = prevOff;
+  document.querySelector('[data-act="next"]').disabled = nextOff;
+}
+
+function glyphFor(status) { return status === 'none' ? '' : (SMAP[status] ? SMAP[status].glyph : ''); }
+
+function shiftCursor(dir) {
+  if (S.calView === 'month') {
+    var d = parse(monthStart(S.cursor));
+    d.setMonth(d.getMonth() + dir);
+    S.cursor = iso(d);
+  } else {
+    S.cursor = addDays(S.cursor, 7 * dir);
+  }
+  renderCalendar();
+}
+
+function setCalView(v) {
+  if (v === S.calView) return;
+  var r = eventRange(S.ev), today = todayISO();
+  if (v === 'week') {
+    var inMonth = function (d) { return d >= monthStart(S.cursor) && d <= monthEnd(S.cursor); };
+    var pick = S.sel && inMonth(S.sel) ? S.sel : (inMonth(today) && today >= r.lo && today <= r.hi ? today : (S.cursor < r.lo ? r.lo : S.cursor));
+    S.cursor = pick;
+  }
+  S.calView = v;
+  $$('[data-act="calview"]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.v === v)); });
+  renderCalendar();
+}
+
+function onDay(day) {
+  S.sel = day;
+  if (S.mode === 'edit') {
+    if (!validName()) {
+      toast('Enter your name first.');
+      var nm = document.getElementById('name'); if (nm) nm.focus();
+    } else if (!S.active) {
+      toast('Choose a status above, then tap days.');
+      var t = document.getElementById('tog');
+      if (t) { t.classList.remove('nudge'); void t.offsetWidth; t.classList.add('nudge'); }
+    } else {
+      var cur = S.draft.picks[day];
+      if (cur && cur.s === S.active) delete S.draft.picks[day];
+      else S.draft.picks[day] = { s: S.active, n: cur ? cur.n : undefined };
+      S.dirty = true;
+    }
+  }
+  renderCalendar();
+  renderDayPanel();
+}
+
+/* ------------------------------------------------------------------ panels */
+
+function renderDayPanel() {
+  var el = document.getElementById('dayPanel');
+  if (!el) return;
+  if (!S.sel) {
+    el.innerHTML = S.mode === 'view' ? '<p class="hint">Tap a day to see who said what.</p>' : '';
+    return;
+  }
+  var day = S.sel, html = '<h3>' + esc(fmtLong(day)) + '</h3>';
+  if (S.mode === 'edit') {
+    var p = S.draft.picks[day];
+    if (p) {
+      html += '<p style="margin-top:8px"><span class="tag" data-s="' + p.s + '">' + SMAP[p.s].label + '</span></p>' +
+        '<label class="fld" style="margin-top:10px"><span>Note for this day (optional)</span>' +
+        '<input type="text" id="dayNote" maxlength="120" placeholder="Example: after 5pm" value="' + esc(p.n || '') + '"></label>';
+    } else {
+      html += '<p class="hint" style="margin-top:6px">Not marked. Pick a status above, then tap this day.</p>';
+    }
+    el.innerHTML = html;
+    return;
+  }
+  if (!vis().length) {
+    el.innerHTML = html + '<p class="hint" style="margin-top:6px">' + (S.responses.length ? 'Nobody is switched on above. Turn on a name to see their answers.' : 'No answers yet.') + '</p>';
+    return;
+  }
+  // One row per person, colored by their answer, with the answer spelled out beside their name.
+  var order = ['preferred', 'second', 'not_ideal', 'unavailable', 'none'];
+  var rows = vis().map(function (r) {
+    var p = r.picks && r.picks[day];
+    return { name: r.name, s: userStatus(r, day) || 'none', note: p && p.n };
+  });
+  rows.sort(function (a, b) { return order.indexOf(a.s) - order.indexOf(b.s); });
+  html += '<p class="hint" style="margin-top:4px">' + esc(cellInfo(day).label) + '</p><ul class="who">' +
+    rows.map(function (r) {
+      var label = r.s === 'none' ? 'Didn’t mark' : SMAP[r.s].label;
+      return '<li data-s="' + r.s + '"><span class="wn">' + esc(r.name) + '</span>' +
+        '<span class="tag" data-s="' + r.s + '">' + label + '</span>' +
+        (r.note ? '<span class="wnote">“' + esc(r.note) + '”</span>' : '') + '</li>';
+    }).join('') + '</ul>';
+  el.innerHTML = html;
+}
+
+function whyLines(w) {
+  var t = w.tally, first, rest = [];
+  if (t.unavailable === 0) first = w.total === 1 ? 'No conflicts so far' : 'Everyone can make it';
+  else first = w.available + ' of ' + w.total + ' can make it';
+  if (t.unavailable) rest.push('Can’t: ' + w.names.unavailable.join(', '));
+  if (t.preferred) rest.push(t.preferred === w.total ? 'Everyone prefers it' : t.preferred + ' prefer it');
+  if (t.not_ideal) rest.push('Not ideal for ' + w.names.not_ideal.join(', '));
+  return { first: first, rest: rest.join('. ') };
+}
+
+function renderBest() {
+  var el = document.getElementById('best');
+  if (!el) return;
+  if (isExpired(S.ev)) {
+    el.innerHTML = '<h2>Best dates</h2><p class="hint" style="margin-top:6px">The dates for this event have passed, so there are no dates to recommend.</p>';
+    return;
+  }
+  if (!S.responses.length) {
+    el.innerHTML = '<h2>Best dates</h2><p class="hint" style="margin-top:6px">Nobody has answered yet. Switch to Edit to add your days.</p>';
+    return;
+  }
+  if (!vis().length) {
+    el.innerHTML = '<h2>Best dates</h2><p class="hint" style="margin-top:6px">Nobody is switched on above. Turn on at least one name to see best dates.</p>';
+    return;
+  }
+  var list = bestWindows(S.ev, vis());
+  if (!list.length) {
+    el.innerHTML = '<h2>Best dates</h2><p class="hint" style="margin-top:6px">No date works for most people yet. As more answers come in, this list will update.</p>';
+    return;
+  }
+  var shown = list.slice(0, S.showMore ? 15 : 5);
+  el.innerHTML = '<h2>Best dates</h2><ul class="best">' + shown.map(function (w) {
+    var t = w.tally, bar = t.unavailable ? 'unavailable' : t.not_ideal ? 'not_ideal' : t.preferred ? 'preferred' : 'second';
+    var when = S.ev.num_days > 1 ? fmtShort(w.start) + ' to ' + fmtShort(w.end) : fmtLong(w.start);
+    var y = whyLines(w);
+    return '<li><button type="button" class="bd" data-act="pick-best" data-start="' + w.start + '"><i data-s="' + bar + '"></i>' +
+      '<b>' + esc(when) + '</b><span><span class="ok">' + esc(y.first) + '.</span>' + (y.rest ? ' ' + esc(y.rest) + '.' : '') + '</span></button></li>';
+  }).join('') + '</ul>' +
+  (list.length > shown.length ? '<p style="margin-top:8px"><button type="button" class="link" data-act="more">Show more dates</button></p>' : '');
+}
+
+function renderPeople() {
+  var el = document.getElementById('people');
+  if (!el) return;
+  if (!S.responses.length) { el.innerHTML = ''; return; }
+  el.innerHTML = '<h2>Who has answered (' + S.responses.length + ')</h2><ul>' + S.responses.map(function (r) {
+    return '<li><b>' + esc(r.name) + (r.mine ? ' (you)' : '') + '</b>' + (r.note ? ' <span class="note">' + esc(r.note) + '</span>' : '') + '</li>';
+  }).join('') + '</ul>';
+}
+
+function updateEditControls() {
+  if (S.mode !== 'edit') return;
+  var ok = validName();
+  $$('#tog button').forEach(function (b) {
+    b.disabled = !ok;
+    b.setAttribute('aria-pressed', String(S.active === b.dataset.s));
+  });
+  var sh = document.getElementById('statusHelp');
+  if (sh) {
+    if (ok && S.active) {
+      sh.setAttribute('data-s', S.active);
+      sh.innerHTML = '<span class="sw" data-s="' + S.active + '"></span><span><strong>' + esc(SMAP[S.active].label) + ':</strong> ' + esc(SMAP[S.active].help) + '</span>';
+      sh.hidden = false;
+    } else {
+      sh.hidden = true; sh.innerHTML = '';
+    }
+  }
+  var h = document.getElementById('editHint');
+  if (h) h.textContent = !ok ? 'Enter your name to get started.'
+    : S.active ? 'Now tap days on the calendar. Tap a marked day again to clear it.'
+    : 'Choose a status, then tap days on the calendar.';
+  var sb = document.querySelector('[data-act="save"]');
+  if (sb) sb.disabled = !ok || S.saving;
+}
+
+/* ------------------------------------------------------------------ actions */
+
+function setMode(m) {
+  if (m === S.mode) return;
+  if (S.mode === 'edit' && S.dirty && !confirm('Discard your unsaved changes?')) return;
+  S.mode = m;
+  if (m === 'edit') initDraft();
+  S.dirty = false;
+  renderEvent();
+}
+
+function doSave(replace) {
+  if (!validName()) { updateEditControls(); toast('Enter your name first.'); return; }
+  if (!replace && !confirmTakeover()) { renderEvent(); return; }
+  if (S.takeover === S.draft.name.trim().toLowerCase()) replace = true;
+  S.saving = true; updateEditControls();
+  var name = S.draft.name.trim();
+  api.saveResponse({ code: S.code, pid: S.pid, name: name, note: S.draft.note, picks: cleanPicks(S.draft.picks), replace: replace })
+    .then(function () {
+      store.set('meetup.name', name);
+      return reload();
+    })
+    .then(function () {
+      S.saving = false; S.dirty = false; S.mode = 'view'; S.active = null;
+      renderEvent();
+      toast('Saved. Thanks, ' + name + '!');
+    }, function (e) {
+      S.saving = false; updateEditControls();
+      if (e && e.message === 'name_taken') {
+        if (confirm('Someone has already answered as “' + name + '”. Replace their answers with yours?')) doSave(true);
+      } else toast(friendly(e));
+    });
+}
+
+function doDelete() {
+  if (!confirm('Delete your response from this event?')) return;
+  api.deleteResponse({ code: S.code, pid: S.pid }).then(reload).then(function () {
+    S.dirty = false; S.mode = 'view'; initDraft(); renderEvent(); toast('Your response was deleted.');
+  }, function (e) { toast(friendly(e)); });
+}
+
+function refreshNow(quiet) {
+  return reload().then(function () {
+    if (S.mode === 'view') renderParts(); else renderPeople();
+    if (!quiet) toast('Updated.');
+  }, function (e) { if (!quiet) toast(friendly(e)); });
+}
+
+/* ------------------------------------------------------------ event wiring */
+
+$app.addEventListener('click', function (e) {
+  var t = e.target.closest('[data-day],[data-act]');
+  if (!t || !$app.contains(t)) return;
+  if (t.dataset.day && !t.dataset.act) { onDay(t.dataset.day); return; }
+  switch (t.dataset.act) {
+    case 'mode': setMode(t.dataset.mode); break;
+    case 'calview': setCalView(t.dataset.v); break;
+    case 'prev': shiftCursor(-1); break;
+    case 'next': shiftCursor(1); break;
+    case 'status':
+      S.active = S.active === t.dataset.s ? null : t.dataset.s;
+      updateEditControls();
+      break;
+    case 'save': doSave(false); break;
+    case 'cancel':
+      if (S.dirty && !confirm('Discard your unsaved changes?')) break;
+      S.mode = 'view'; S.dirty = false; initDraft(); renderEvent();
+      break;
+    case 'delete': doDelete(); break;
+    case 'refresh': refreshNow(false); break;
+    case 'toggle-person':
+      if (S.hidden[t.dataset.key]) delete S.hidden[t.dataset.key]; else S.hidden[t.dataset.key] = true;
+      renderParts(); break;
+    case 'filter-all': S.hidden = {}; renderParts(); break;
+    case 'filter-none': S.responses.forEach(function (r) { S.hidden[nameKey(r)] = true; }); renderParts(); break;
+    case 'more': S.showMore = true; renderBest(); break;
+    case 'copy-link':
+      copyText(shareUrl(S.code)).then(function (ok) { toast(ok ? 'Link copied.' : 'Could not copy. Copy the address from your browser instead.'); });
+      break;
+    case 'copy-new':
+      copyText(t.dataset.url, document.getElementById('shareUrl')).then(function (ok) { toast(ok ? 'Link copied.' : 'Press and hold the link to copy it.'); });
+      break;
+    case 'share-new':
+      navigator.share({ title: t.dataset.name, text: 'Which day works for ' + t.dataset.name + '?', url: t.dataset.url }).catch(function () {});
+      break;
+    case 'pick-best':
+      var start = t.dataset.start;
+      S.sel = start; S.cursor = start;
+      renderCalendar(); renderDayPanel();
+      var cal = document.querySelector('.cal'); if (cal && cal.scrollIntoView) cal.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      break;
+    case 'admin-refresh':
+      api.adminList(A.pw).then(function (events) { A.events = events; renderAdmin(); toast('Updated.'); }, adminFail);
+      break;
+    case 'admin-out': A.pw = ''; A.events = null; renderAdmin(); break;
+    case 'admin-del': adminDelete(t.dataset.code); break;
+    case 'new-person':
+      store.set('meetup.pid', uuid()); store.set('meetup.name', '');
+      toast('You are now a new person in this browser.');
+      route();
+      break;
+  }
+});
+
+$app.addEventListener('input', function (e) {
+  var id = e.target.id;
+  if (id === 'name') { S.draft.name = e.target.value; S.dirty = true; updateEditControls(); }
+  else if (id === 'gnote') { S.draft.note = e.target.value; S.dirty = true; }
+  else if (id === 'dayNote' && S.sel && S.draft.picks[S.sel]) {
+    S.draft.picks[S.sel].n = e.target.value; S.dirty = true; renderCalendar();
+  }
+});
+
+// When the name field is left, check whether that name already has a saved response.
+$app.addEventListener('change', function (e) {
+  if (e.target.id !== 'name') return;
+  S.draft.name = e.target.value;
+  var had = S.takeover;
+  if (!confirmTakeover()) { S.draft.name = ''; renderEvent(); setTimeout(function () { var n = document.getElementById('name'); if (n) n.focus(); }, 0); }
+  else if (S.takeover !== had) renderEvent();
+});
+
+$app.addEventListener('submit', function (e) {
+  if (e.target.id === 'createForm') { e.preventDefault(); submitCreate(e.target); }
+  else if (e.target.id === 'adminForm') { e.preventDefault(); submitAdmin(e.target); }
+});
+
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && S.view === 'event' && S.mode === 'view') refreshNow(true);
+});
+window.addEventListener('beforeunload', function (e) {
+  if (S.view === 'event' && S.mode === 'edit' && S.dirty) { e.preventDefault(); e.returnValue = ''; }
+});
+
+route();
+})();
+</script>
+</body>
+</html>

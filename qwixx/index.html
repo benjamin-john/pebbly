@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Qwixx Dice Roller</title>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --card:#111827;
+  --text:#ffffff;
+  --border:rgba(255,255,255,.18);
+  --radius:16px;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  padding:16px;
+}
+
+.app{
+  width:min(720px,100%);
+  display:grid;
+  gap:14px;
+}
+
+h1{
+  margin:0;
+  font-size:20px;
+  font-weight:800;
+}
+
+.panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:14px;
+}
+
+.dice-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+@media (min-width:540px){
+  .dice-grid{ grid-template-columns:repeat(6,1fr); }
+}
+
+/* Fixed-size square dice */
+.die{
+  border-radius:14px;
+  padding:5px;
+  display:grid;
+  grid-template-rows:auto 1fr auto auto;
+  place-items:center;
+  gap:6px;
+
+  aspect-ratio:1 / 1;
+  width:100%;
+  min-width:0;
+
+  font-weight:700;
+  border:1px solid rgba(0,0,0,.15);
+  overflow:hidden;
+}
+
+.die.white{ background:#fff; color:#000; }
+.die.red{ background:#ef4444; color:#fff; }
+.die.yellow{ background:#facc15; color:#fff; }
+.die.green{ background:#22c55e; color:#fff; }
+.die.blue{ background:#3b82f6; color:#fff; }
+
+/* Black outline for white text on colored dice */
+.die.red .label, .die.red .value, .die.red .pipline, .die.red .sumline,
+.die.yellow .label, .die.yellow .value, .die.yellow .pipline, .die.yellow .sumline,
+.die.green .label, .die.green .value, .die.green .pipline, .die.green .sumline,
+.die.blue .label, .die.blue .value, .die.blue .pipline, .die.blue .sumline{
+  text-shadow:
+    -1px -1px 0 #000,
+     1px -1px 0 #000,
+    -1px  1px 0 #000,
+     1px  1px 0 #000;
+}
+
+.die[aria-disabled="true"]{
+  opacity:.25;
+  filter:saturate(.6);
+}
+
+.label{ font-size:12px; }
+
+.value{
+  font-size:36px;
+  font-weight:900;
+  line-height:1;
+}
+
+/* Dots not touching */
+.pipline{
+  font-size:12px;
+  line-height:1;
+  letter-spacing:2px;
+}
+
+/* Reserve consistent height so content length never changes die size */
+.sumline{
+  font-size:12px;
+  font-weight:900;
+  text-align:center;
+  width:100%;
+
+  /* Fixed height for 1 line on all devices */
+  min-height: 14px;
+  line-height:14px;
+
+  /* Prevent wrapping from affecting layout */
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+button{
+  border:none;
+  background:#ffffff;
+  color:#000;
+  padding:14px;
+  border-radius:14px;
+  font-weight:900;
+  font-size:16px;
+  cursor:pointer;
+  width:100%;
+  min-height:52px;
+}
+button:active{ transform:scale(.98); }
+
+.toggles{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  margin-top:12px;
+}
+@media (min-width:540px){
+  .toggles{ grid-template-columns:repeat(4,1fr); }
+}
+
+.toggle{
+  background:#1f2937;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:10px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-height:50px;
+  cursor:pointer;
+  user-select:none;
+}
+
+.toggle input{
+  appearance:none;
+  -webkit-appearance:none;
+  width:24px;
+  height:24px;
+  border-radius:6px;
+  border:2px solid #ffffff;
+  display:grid;
+  place-content:center;
+  background:transparent;
+  flex:0 0 auto;
+}
+.toggle input::before{
+  content:"";
+  width:12px;
+  height:12px;
+  transform:scale(0);
+  transition:0.1s transform ease-in-out;
+  box-shadow:inset 1em 1em #ffffff;
+  transform-origin:center;
+}
+.toggle input:checked::before{ transform:scale(1); }
+
+.swatch{
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  flex:0 0 auto;
+}
+.swatch.red{ background:#ef4444; }
+.swatch.blue{ background:#3b82f6; }
+.swatch.green{ background:#22c55e; }
+.swatch.yellow{ background:#facc15; }
+</style>
+</head>
+
+<body>
+<main class="app">
+  <h1>Qwixx Dice Roller</h1>
+
+  <section class="panel">
+    <div class="dice-grid">
+      <div class="die white" id="die-w1">
+        <div class="label">White 1</div>
+        <div class="value" id="val-w1">-</div>
+        <div class="pipline" id="pip-w1"></div>
+        <div class="sumline" id="sum-w1">Sum: -</div>
+      </div>
+
+      <div class="die white" id="die-w2">
+        <div class="label">White 2</div>
+        <div class="value" id="val-w2">-</div>
+        <div class="pipline" id="pip-w2"></div>
+        <div class="sumline" id="sum-w2">Sum: -</div>
+      </div>
+
+      <div class="die red" id="die-red">
+        <div class="label">Red</div>
+        <div class="value" id="val-red">-</div>
+        <div class="pipline" id="pip-red"></div>
+        <div class="sumline" id="sum-red">Sum: -</div>
+      </div>
+
+      <div class="die yellow" id="die-yellow">
+        <div class="label">Yellow</div>
+        <div class="value" id="val-yellow">-</div>
+        <div class="pipline" id="pip-yellow"></div>
+        <div class="sumline" id="sum-yellow">Sum: -</div>
+      </div>
+
+      <div class="die green" id="die-green">
+        <div class="label">Green</div>
+        <div class="value" id="val-green">-</div>
+        <div class="pipline" id="pip-green"></div>
+        <div class="sumline" id="sum-green">Sum: -</div>
+      </div>
+
+      <div class="die blue" id="die-blue">
+        <div class="label">Blue</div>
+        <div class="value" id="val-blue">-</div>
+        <div class="pipline" id="pip-blue"></div>
+        <div class="sumline" id="sum-blue">Sum: -</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <button id="rollBtn">Roll</button>
+
+    <div class="toggles">
+      <label class="toggle"><input id="toggle-red" type="checkbox" checked><span class="swatch red"></span>Red</label>
+      <label class="toggle"><input id="toggle-blue" type="checkbox" checked><span class="swatch blue"></span>Blue</label>
+      <label class="toggle"><input id="toggle-green" type="checkbox" checked><span class="swatch green"></span>Green</label>
+      <label class="toggle"><input id="toggle-yellow" type="checkbox" checked><span class="swatch yellow"></span>Yellow</label>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  const DICE = [
+    { key:"w1", alwaysOn:true },
+    { key:"w2", alwaysOn:true },
+    { key:"red", toggleId:"toggle-red" },
+    { key:"yellow", toggleId:"toggle-yellow" },
+    { key:"green", toggleId:"toggle-green" },
+    { key:"blue", toggleId:"toggle-blue" }
+  ];
+
+  const state = Object.fromEntries(DICE.map(d => [d.key,null]));
+  const el = id => document.getElementById(id);
+
+  function rand(){ return Math.floor(Math.random()*6)+1; }
+
+  function enabled(key){
+    const def = DICE.find(d=>d.key===key);
+    return def.alwaysOn || el(def.toggleId).checked;
+  }
+
+  function renderDie(key){
+    const val = state[key];
+    el("val-"+key).textContent = val==null ? "-" : String(val);
+    el("pip-"+key).textContent = val==null ? "" : "●".repeat(val);
+    el("die-"+key).setAttribute("aria-disabled", enabled(key) ? "false":"true");
+  }
+
+  function whiteSum(){
+    const w1=state.w1, w2=state.w2;
+    if(w1==null || w2==null) return null;
+    return w1+w2;
+  }
+
+  function colorSumText(colorKey){
+    if(!enabled(colorKey)) return "Sum: -";
+    const w1=state.w1, w2=state.w2, c=state[colorKey];
+    if(w1==null || w2==null || c==null) return "Sum: -";
+    return "Sum: " + (w1+c) + " or " + (w2+c);
+  }
+
+  function renderSums(){
+    const ws = whiteSum();
+    const whiteText = ws==null ? "Sum: -" : ("Sum: " + ws);
+
+    el("sum-w1").textContent = whiteText;
+    el("sum-w2").textContent = whiteText;
+
+    el("sum-red").textContent = colorSumText("red");
+    el("sum-yellow").textContent = colorSumText("yellow");
+    el("sum-green").textContent = colorSumText("green");
+    el("sum-blue").textContent = colorSumText("blue");
+  }
+
+  function renderAll(){
+    DICE.forEach(d=>renderDie(d.key));
+    renderSums();
+  }
+
+  function roll(){
+    state.w1=rand();
+    state.w2=rand();
+    ["red","yellow","green","blue"].forEach(k=>{
+      if(enabled(k)) state[k]=rand();
+    });
+    renderAll();
+  }
+
+  ["toggle-red","toggle-yellow","toggle-green","toggle-blue"]
+    .forEach(id=>el(id).addEventListener("change",renderAll));
+
+  el("rollBtn").addEventListener("click",roll);
+  document.addEventListener("keydown",e=>{
+    if(!e.repeat && (e.key==="r"||e.key==="R")) roll();
+  });
+
+  renderAll();
+})();
+</script>
+</body>
+</html>

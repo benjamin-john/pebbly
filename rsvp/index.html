@@ -1,0 +1,1696 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="color-scheme" content="light">
+<meta name="description" content="You're invited. Tap to RSVP.">
+<title>RSVP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4EEE8; --surface:#FFFFFF; --ink:#26190F; --muted:#6B5A4C; --line:#DDD0C4; --brand:#8A3B12;
+  --go:#2E8B57; --go-t:#DCEFE3; --maybe:#B7860B; --maybe-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8; --gold-t:#FBF0CC;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--head);line-height:1.15;margin:0}
+h1{font-size:32px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:21px;font-weight:600}
+p{margin:0}
+a{color:var(--brand)}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hint{color:var(--muted);font-size:15px}
+.topnav{display:flex;justify-content:space-between;gap:10px;margin-bottom:14px;font-size:15px}
+.banner{background:var(--gold-t);border:1px solid #E5CB6B;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:14px}
+.banner button{margin-top:6px}
+.banner.bad{background:var(--no-t);border-color:#D9908D;font-size:15px}
+.banner[hidden]{display:none}
+.lede{margin:10px 0 22px;font-size:17px;max-width:46ch}
+.tools{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+
+.btn{min-height:46px;padding:0 20px;border-radius:10px;border:2px solid var(--brand);background:var(--surface);color:var(--brand);font-weight:600;cursor:pointer}
+.btn.primary{background:var(--brand);color:#fff}
+.btn.small{min-height:38px;padding:0 14px;font-size:14px}
+.btn.danger{border-color:#A12F2B;color:#A12F2B}
+.btn:disabled{opacity:.5;cursor:default}
+.link{background:none;border:0;padding:8px 0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:15px}
+.link.danger{color:#A12F2B}
+.chipbtn{display:inline-flex;align-items:center;min-height:36px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:14px;font-weight:500;text-decoration:none;color:var(--ink)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px}
+.fld{display:block;margin-bottom:16px}
+.fld>span{display:block;font-weight:600;margin-bottom:5px;font-size:15px}
+.fld small{display:block;color:var(--muted);margin-top:4px;font-size:13px}
+input[type=text],input[type=date],input[type=time],textarea,select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #BBA999;border-radius:10px;background:#fff}
+input[type=date],input[type=time]{-webkit-appearance:none;appearance:none}
+select{-webkit-appearance:none;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236B5A4C' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:36px}
+textarea{resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row2 .fld{min-width:0}
+.err{color:#A12F2B;font-weight:600;margin-top:12px;min-height:1.4em}
+.checks{display:grid;gap:4px;margin:2px 0 18px}
+.check{display:flex;gap:12px;align-items:flex-start;padding:10px 4px;cursor:pointer;min-height:48px}
+.check input{width:24px;height:24px;margin:1px 0 0;flex:none;accent-color:var(--brand)}
+.check b{display:block;font-weight:600}
+.check small{display:block;color:var(--muted);font-size:14px}
+fieldset{border:0;margin:0 0 16px;padding:0;min-width:0}
+legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:46px;height:46px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
+.sw[aria-pressed="true"]{box-shadow:0 0 0 3px var(--ink)}
+.emojis{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.em{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:22px;cursor:pointer;padding:0}
+.em[aria-pressed="true"]{border:2px solid var(--brand);background:#FFF6EC}
+.emoji-in{width:84px !important;text-align:center;font-size:22px}
+.preview{margin-bottom:16px}
+.sect{font-family:var(--head);font-size:17px;font-weight:600;margin:22px 0 10px;padding-top:14px;border-top:1px solid var(--line)}
+.linkbox{display:flex;gap:8px;margin:10px 0 0}
+.linkbox input{flex:1;min-width:0}
+.recent{margin-top:28px}
+.recent ul{list-style:none;padding:0;margin:8px 0 0}
+.recent li{padding:10px 0;border-top:1px solid var(--line)}
+.recent .when{display:block;color:var(--muted);font-size:14px}
+.tagq{font-size:12px;font-weight:600;background:var(--gold-t);border-radius:999px;padding:1px 8px;margin-left:6px}
+.created{margin-bottom:16px;border-color:var(--go);background:var(--go-t)}
+.created h2{font-size:19px}
+
+.hero{border-radius:20px;padding:26px 20px 22px;background:linear-gradient(135deg,var(--ga),var(--gb));color:var(--gi);text-align:center;box-shadow:0 6px 24px rgba(38,25,15,.12)}
+.hero .big{font-size:64px;line-height:1.1}
+.hero h1{font-size:34px;margin-top:6px;overflow-wrap:anywhere}
+.hero .by{margin-top:6px;font-size:16px;opacity:.92}
+.hero.light-ink h1,.hero.light-ink .by{text-shadow:0 1px 8px rgba(0,0,0,.25)}
+.facts{list-style:none;margin:16px 0 0;padding:0;display:grid;gap:10px}
+.facts li{display:flex;gap:12px;align-items:flex-start}
+.facts .ic{font-size:22px;line-height:1.2;flex:none;width:28px;text-align:center}
+.facts b{display:block;font-weight:600}
+.facts .sub{display:block;color:var(--muted);font-size:14px}
+.pill{display:inline-block;margin-top:4px;font-size:13px;font-weight:600;border-radius:999px;padding:2px 10px;background:var(--gold-t)}
+.pill.now{background:var(--go);color:#fff}
+.hero .desc{margin:14px auto 0;max-width:46ch;padding:12px 14px;border-radius:12px;background:rgba(255,255,255,.55);color:#26190F;white-space:pre-wrap;overflow-wrap:anywhere;text-align:left;font-size:16px;line-height:1.45}
+.hero .desc.short{text-align:center}
+.hero.light-ink .desc{background:rgba(255,255,255,.88)}
+.hero .desc a{color:inherit}
+.endtools{justify-content:center;margin-top:28px;padding-top:18px;border-top:1px solid var(--line)}
+.calopts{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.linkbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;justify-content:center}
+.linkbtns a{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 18px;border-radius:999px;background:var(--surface);border:2px solid var(--brand);color:var(--brand);font-weight:600;text-decoration:none;max-width:100%;overflow-wrap:anywhere;text-align:center}
+.linkrow{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,3fr) auto;gap:8px;margin-bottom:8px;align-items:center}
+.linkrow .link{padding:0 4px;font-size:20px;text-decoration:none;min-width:32px;min-height:46px}
+.desc a,.ann a,.cmt a{overflow-wrap:anywhere}
+.stamp{display:block;color:var(--muted);font-size:12px}
+
+.annc{margin-top:18px;display:grid;gap:8px}
+.ann{background:#FFF6EC;border:1px solid #E9C9A8;border-left:5px solid var(--brand);border-radius:12px;padding:12px 14px}
+.ann .top{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
+.ann p{margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
+
+.me{margin-top:22px}
+.me h2{font-size:22px}
+.status3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.sb{min-height:64px;border-radius:12px;border:2px solid var(--line);background:var(--surface);cursor:pointer;font-weight:700;font-size:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 4px;touch-action:manipulation}
+.sb .e{font-size:24px;line-height:1}
+.sb.going[aria-pressed="true"]{background:var(--go);border-color:var(--go);color:#fff}
+.sb.maybe[aria-pressed="true"]{background:var(--maybe);border-color:var(--maybe);color:#fff}
+.sb.no[aria-pressed="true"]{background:var(--no);border-color:var(--no);color:#fff}
+.myans{display:flex;gap:14px;align-items:center;margin-top:10px}
+.myans .e{font-size:40px;line-height:1}
+.myans b{display:block;font-family:var(--head);font-size:22px}
+.myans .sub{color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.me.going{border-color:var(--go);background:var(--go-t)}
+.me.maybe{border-color:#E5CB6B;background:var(--maybe-t)}
+.me.no{border-color:#D9908D;background:var(--no-t)}
+.rform{margin-top:16px}
+.deadline{margin-top:8px;font-size:14px;color:var(--muted)}
+
+.counts{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.counts span{border-radius:999px;padding:3px 11px;font-size:14px;font-weight:600}
+.c-go{background:var(--go-t);color:#1D5E3A}.c-maybe{background:var(--maybe-t);color:#6E5108}.c-no{background:var(--no-t);color:#8A2723}
+.glist{list-style:none;margin:8px 0 0;padding:0}
+.ghead{font-weight:600;font-size:15px;margin-top:14px;color:var(--muted)}
+.g{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.g .nm{font-weight:600;overflow-wrap:anywhere}
+.g .plus{font-size:13px;font-weight:600;color:var(--muted);margin-left:4px}
+.g .note{display:block;color:var(--muted);font-size:14px;font-style:italic;overflow-wrap:anywhere}
+.g .ans{display:block;font-size:14px;overflow-wrap:anywhere}
+.g .ans i{color:var(--muted);font-style:normal}
+.g .grow{flex:1;min-width:0}
+.g .link{display:block;padding:2px 0;font-size:14px}
+
+.items{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
+.item{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 12px 14px}
+.item b{font-family:var(--head);font-size:18px;font-weight:600;overflow-wrap:anywhere}
+.item .meta{display:block;color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.item.full{background:#FAF7F3}
+.cb{min-width:112px;min-height:46px;border-radius:10px;border:2px solid var(--go);background:var(--surface);color:var(--go);font-weight:700;cursor:pointer;font-size:14px;padding:0 10px}
+.cb[aria-pressed="true"]{background:var(--go);color:#fff}
+.cb:disabled{border-color:var(--line);color:var(--muted);cursor:default}
+.ownrow{grid-column:1/3;display:flex;gap:14px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:4px;margin-top:2px}
+.ownrow .link{padding:4px 0;font-size:14px}
+.editf{grid-column:1/3;display:flex;gap:8px;flex-wrap:wrap}
+.editf input{flex:1 1 160px;min-width:0}
+.editf select{width:auto;flex:0 0 auto}
+.addf{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.addf input{flex:1 1 160px;min-width:0}
+.addf select{width:auto}
+
+.cmts{list-style:none;margin:8px 0 0;padding:0}
+.cmt{padding:10px 0;border-top:1px solid var(--line);display:flex;gap:12px}
+.cmt .grow{flex:1;min-width:0}
+.cmt .top{font-size:14px;color:var(--muted)}
+.cmt .top b{color:var(--ink)}
+.cmt p{white-space:pre-wrap;overflow-wrap:anywhere}
+.cmt .link{padding:2px 0;font-size:13px}
+.cform{margin-top:10px}
+.cform .fld{margin-bottom:8px}
+
+.host{margin-top:26px;border:2px solid var(--brand)}
+.host h2{font-size:19px}
+.host .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.admin-list{list-style:none;margin:14px 0 0;padding:0}
+.admin-list li{padding:14px 0;border-top:1px solid var(--line)}
+.admin-list .nm{font-family:var(--head);font-size:19px;font-weight:600;overflow-wrap:anywhere}
+.admin-list .meta{color:var(--muted);font-size:14px;margin:2px 0 10px}
+.texts{list-style:none;margin:10px 0 0;padding:0}
+.texts li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.texts li .who{min-width:0;overflow-wrap:anywhere}
+.texts li .who small{display:block;color:var(--muted);font-size:13px}
+.texts li.done .who b{color:var(--muted)}
+.texts a.btn{display:inline-flex;align-items:center;text-decoration:none;flex:none}
+.texts li.done a.btn{border-color:var(--line);color:var(--muted)}
+.aud{display:flex;flex-wrap:wrap;gap:4px 14px;margin:4px 0 8px}
+.aud label{display:flex;align-items:center;gap:6px;min-height:40px;cursor:pointer}
+.aud input{width:20px;height:20px;accent-color:var(--brand)}
+.foot{margin-top:30px;font-size:14px;text-align:center;color:var(--muted)}
+
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:10;font-size:15px}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<main id="app" class="wrap"></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This page needs JavaScript to work.</p></noscript>
+
+<script>
+// Load config.js with a fresh address each time so a phone can't keep serving an old, blank copy.
+document.write('<script src="config.js?t=' + Date.now() + '"><\/script>');
+</script>
+<script>
+(function () {
+'use strict';
+
+/* ------------------------------------------------------------------ setup */
+
+var CFG = window.RSVP_CONFIG || {};
+CFG.SUPABASE_KEY = String(CFG.SUPABASE_KEY || '').trim();
+CFG.SUPABASE_URL = String(CFG.SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/i, '').replace(/\/+$/, '');
+if (CFG.SUPABASE_URL && !/^https?:\/\//i.test(CFG.SUPABASE_URL)) CFG.SUPABASE_URL = 'https://' + CFG.SUPABASE_URL;
+var REMOTE = !!(CFG.SUPABASE_URL && CFG.SUPABASE_KEY && !/your-project|YOUR_/i.test(CFG.SUPABASE_URL + CFG.SUPABASE_KEY));
+
+var $app = document.getElementById('app');
+var $toast = document.getElementById('toast');
+function $(sel) { return document.querySelector(sel); }
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
+
+// Escapes text and turns web addresses into links that open in a new tab.
+function linkify(text) {
+  var out = '', last = 0, re = /\b(?:https?:\/\/|www\.)[^\s<>"]+/gi, m;
+  text = String(text == null ? '' : text);
+  while ((m = re.exec(text))) {
+    var url = m[0], trail = '';
+    while (/[.,!?;:'")\]]$/.test(url)) {
+      if (url.slice(-1) === ')' && (url.match(/\(/g) || []).length >= (url.match(/\)/g) || []).length) break;
+      trail = url.slice(-1) + trail; url = url.slice(0, -1);
+    }
+    var href = /^www\./i.test(url) ? 'https://' + url : url;
+    out += esc(text.slice(last, m.index)) + '<a href="' + esc(href) + '" target="_blank" rel="noopener noreferrer">' + esc(url) + '</a>' + esc(trail);
+    last = m.index + m[0].length;
+  }
+  return out + esc(text.slice(last));
+}
+
+var THEMES = {
+  sunset:  { a: '#FF7E5F', b: '#FEB47B', ink: '#3A1A0E', name: 'Sunset' },
+  harvest: { a: '#8A3B12', b: '#E3A918', ink: '#FFFFFF', name: 'Harvest' },
+  citrus:  { a: '#F7971E', b: '#FFD200', ink: '#3A2400', name: 'Citrus' },
+  candy:   { a: '#F857A6', b: '#FFB199', ink: '#FFFFFF', name: 'Candy' },
+  berry:   { a: '#7B2FF7', b: '#F107A3', ink: '#FFFFFF', name: 'Berry' },
+  ocean:   { a: '#1C6E8C', b: '#56CCF2', ink: '#FFFFFF', name: 'Ocean' },
+  forest:  { a: '#1E5631', b: '#7BC47F', ink: '#FFFFFF', name: 'Forest' },
+  night:   { a: '#141E30', b: '#35577D', ink: '#FFFFFF', name: 'Night' }
+};
+var EMOJIS = ['🎉', '🎂', '🍔', '🍕', '🌮', '🍽️', '☕', '🍻', '🎄', '🎃', '🦃', '🐣', '🏈', '⚽', '🎶', '🎲', '🏖️', '🏕️', '🔥', '🎁', '👶', '💍', '🎓', '🙏'];
+var STATUS = {
+  going: { e: '👍', label: 'Going', you: 'You’re going', group: 'Going' },
+  maybe: { e: '🤔', label: 'Maybe', you: 'You might come', group: 'Maybe' },
+  no:    { e: '😢', label: 'Can’t go', you: 'You can’t make it', group: 'Can’t go' }
+};
+function theme(id) { return THEMES[id] || THEMES.sunset; }
+
+/* ---------------------------------------------------------------- storage */
+
+var store = {
+  get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+function uuid() {
+  if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID();
+  return 'p' + Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2);
+}
+function randInt(n) {
+  if (window.crypto && window.crypto.getRandomValues) {
+    var lim = Math.floor(4294967296 / n) * n, a = new Uint32Array(1);
+    do { window.crypto.getRandomValues(a); } while (a[0] >= lim);
+    return a[0] % n;
+  }
+  return Math.floor(Math.random() * n);
+}
+function shortId() { var A = 'abcdefghijkmnpqrstuvwxyz23456789', s = ''; for (var i = 0; i < 6; i++) s += A[randInt(A.length)]; return s; }
+function getPid() {
+  var id = store.get('rsvp.pid', null);
+  if (!id) { id = uuid(); store.set('rsvp.pid', id); }
+  return id;
+}
+function getOwnerToken(code) { return (store.get('rsvp.owners', {}) || {})[code] || null; }
+function setOwnerToken(code, token) { var o = store.get('rsvp.owners', {}) || {}; o[code] = token; store.set('rsvp.owners', o); }
+function forgetEvent(code) {
+  var o = store.get('rsvp.owners', {}) || {}; delete o[code]; store.set('rsvp.owners', o);
+  store.set('rsvp.recent', store.get('rsvp.recent', []).filter(function (r) { return r.code !== code; }));
+}
+function rememberEvent(ev) {
+  var list = store.get('rsvp.recent', []).filter(function (e) { return e.code !== ev.code; });
+  list.unshift({ code: ev.code, title: ev.title, date: ev.event_date || null, emoji: ev.emoji });
+  store.set('rsvp.recent', list.slice(0, 12));
+}
+
+/* ------------------------------------------------------------ dates/times */
+
+function viewerTz() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { return 'UTC'; } }
+function partsIn(ms, tz) {
+  var p = {};
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit' }).formatToParts(new Date(ms)).forEach(function (x) { p[x.type] = x.value; });
+  } catch (e) { return partsIn(ms, 'UTC'); }
+  return { y: +p.year, m: +p.month, d: +p.day, h: (+p.hour) % 24, mi: +p.minute, s: +p.second };
+}
+function tzOffset(ms, tz) { var p = partsIn(ms, tz); return Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi, p.s) - Math.floor(ms / 1000) * 1000; }
+// A wall-clock date and time in a time zone -> UTC milliseconds.
+function zonedToUtc(dateStr, timeStr, tz) {
+  var d = dateStr.split('-').map(Number), t = (timeStr || '00:00').split(':').map(Number);
+  var guess = Date.UTC(d[0], d[1] - 1, d[2], t[0], t[1]);
+  var off = tzOffset(guess, tz), ms = guess - off, off2 = tzOffset(ms, tz);
+  return off2 === off ? ms : guess - off2;
+}
+function ymd(p) { return p.y + '-' + String(p.m).padStart(2, '0') + '-' + String(p.d).padStart(2, '0'); }
+function todayIn(tz, now) { return ymd(partsIn(now, tz)); }
+function addDays(dateStr, n) { var d = dateStr.split('-').map(Number), x = new Date(Date.UTC(d[0], d[1] - 1, d[2] + n)); return ymd({ y: x.getUTCFullYear(), m: x.getUTCMonth() + 1, d: x.getUTCDate() }); }
+function dayDiff(a, b) { var x = a.split('-').map(Number), y = b.split('-').map(Number); return Math.round((Date.UTC(y[0], y[1] - 1, y[2]) - Date.UTC(x[0], x[1] - 1, x[2])) / 864e5); }
+function localDate(dateStr) { var d = dateStr.split('-').map(Number); return new Date(d[0], d[1] - 1, d[2]); }
+function fmtDate(dateStr, short) {
+  var dt = localDate(dateStr), o = short ? { weekday: 'short', month: 'short', day: 'numeric' } : { weekday: 'long', month: 'long', day: 'numeric' };
+  if (dt.getFullYear() !== new Date().getFullYear()) o.year = 'numeric';
+  return dt.toLocaleDateString(undefined, o);
+}
+function fmtTime(t) { var x = t.split(':').map(Number); return new Date(2000, 0, 1, x[0], x[1]).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); }
+function tzName(tz, ms) {
+  try {
+    var p = new Intl.DateTimeFormat('en-US', { timeZone: tz, timeZoneName: 'short' }).formatToParts(new Date(ms));
+    for (var i = 0; i < p.length; i++) if (p[i].type === 'timeZoneName') return p[i].value;
+  } catch (e) {}
+  return tz;
+}
+// When the event starts and ends, as UTC milliseconds.
+function span(ev) {
+  if (!ev.event_date) return null;
+  var tz = ev.tz || 'UTC', start, end, last = ev.end_date && ev.end_date > ev.event_date ? ev.end_date : null;
+  if (last) { // multi-day: start time on the first day, end time on the last day
+    start = zonedToUtc(ev.event_date, ev.start_time || '00:00', tz);
+    end = ev.end_time ? zonedToUtc(last, ev.end_time, tz) : zonedToUtc(addDays(last, 1), '00:00', tz);
+    if (end <= start) end = zonedToUtc(addDays(last, 1), '00:00', tz);
+    return { start: start, end: end, multi: true };
+  }
+  if (ev.start_time) {
+    start = zonedToUtc(ev.event_date, ev.start_time, tz);
+    if (ev.end_time) {
+      end = zonedToUtc(ev.event_date, ev.end_time, tz);
+      if (end <= start) end = zonedToUtc(addDays(ev.event_date, 1), ev.end_time, tz);
+    } else end = zonedToUtc(addDays(ev.event_date, 1), '00:00', tz);
+    if (end - start < 3600e3) end = start + 3600e3;
+  } else {
+    start = zonedToUtc(ev.event_date, '00:00', tz);
+    end = zonedToUtc(addDays(ev.event_date, 1), '00:00', tz);
+  }
+  return { start: start, end: end };
+}
+function timing(ev) {
+  var s = span(ev), now = Date.now();
+  if (!s) return { state: 'tbd' };
+  if (now >= s.end) return { state: 'past' };
+  if (now >= s.start) {
+    if (s.multi) {
+      var n = dayDiff(ev.event_date, todayIn(ev.tz || 'UTC', now)) + 1, of = dayDiff(ev.event_date, ev.end_date) + 1;
+      return { state: 'now', label: 'Happening now · day ' + Math.min(n, of) + ' of ' + of };
+    }
+    return { state: 'now', label: 'Happening now' };
+  }
+  var days = dayDiff(todayIn(ev.tz || 'UTC', now), ev.event_date), label;
+  if (days <= 0) {
+    var mins = Math.round((s.start - now) / 60000);
+    label = ev.start_time && mins < 60 ? 'Starts in ' + Math.max(1, mins) + ' min' : ev.start_time && mins < 360 ? 'Starts in ' + Math.round(mins / 60) + (Math.round(mins / 60) === 1 ? ' hour' : ' hours') : 'Today';
+  } else if (days === 1) label = 'Tomorrow';
+  else if (days < 14) label = 'In ' + days + ' days';
+  else if (days < 63) label = 'In ' + Math.floor(days / 7) + ' weeks';
+  else label = 'In ' + Math.round(days / 30.4) + ' months';
+  return { state: 'upcoming', label: label };
+}
+function rsvpClosed(ev) {
+  return ev.rsvp_lock !== false && !!ev.rsvp_by && Date.now() >= zonedToUtc(addDays(ev.rsvp_by, 1), '00:00', ev.tz || 'UTC');
+}
+function whenText(ev) {
+  if (!ev.event_date) return { when: 'Date to be decided', sub: '' };
+  var tzl = viewerTz() !== ev.tz && (ev.start_time || ev.end_time) ? ' ' + tzName(ev.tz, span(ev).start) : '';
+  if (ev.end_date && ev.end_date > ev.event_date) {
+    var bits = [];
+    if (ev.start_time) bits.push('Starts ' + fmtTime(ev.start_time));
+    if (ev.end_time) bits.push('ends ' + fmtTime(ev.end_time));
+    var subm = bits.join(' · ');
+    return { when: fmtDate(ev.event_date, true) + ' – ' + fmtDate(ev.end_date, true), sub: subm ? subm.charAt(0).toUpperCase() + subm.slice(1) + tzl : '' };
+  }
+  return { when: fmtDate(ev.event_date), sub: ev.start_time ? fmtTime(ev.start_time) + (ev.end_time ? ' – ' + fmtTime(ev.end_time) : '') + tzl : 'Time to be decided' };
+}
+function fmtStampTime(ts) {
+  var d = new Date(ts);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+function relTime(ts) {
+  var d = new Date(ts), s = (Date.now() - d.getTime()) / 1000;
+  if (isNaN(s)) return '';
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.floor(s / 60) + ' min ago';
+  if (s < 86400) return Math.floor(s / 3600) + ' h ago';
+  if (s < 6 * 86400) return d.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/* -------------------------------------------------------------------- api */
+
+function ApiError(message, status) { this.message = message; this.status = status; this.name = 'ApiError'; }
+ApiError.prototype = Object.create(Error.prototype);
+
+var remoteApi = {
+  rpc: function (fn, args) {
+    var headers = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY };
+    if (/^eyJ/.test(CFG.SUPABASE_KEY)) headers.Authorization = 'Bearer ' + CFG.SUPABASE_KEY;
+    return fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: headers, body: JSON.stringify(args) })
+      .then(function (res) {
+        return res.text().then(function (text) {
+          var data = null;
+          try { data = text ? JSON.parse(text) : null; } catch (e) {}
+          if (!res.ok) throw new ApiError((data && (data.message || data.error_description || data.msg)) || ('http_' + res.status), res.status);
+          return data;
+        });
+      }, function () { throw new ApiError('network'); });
+  },
+  create: function (ev, items) { return this.rpc('rsvp_create', { p_event: ev, p_items: items }); },
+  get: function (code, pid, owner) { return this.rpc('rsvp_get', { p_code: code, p_participant: pid, p_owner_token: owner }); },
+  respond: function (a) {
+    return this.rpc('rsvp_respond', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_first_name: a.first, p_last_name: a.last, p_phone: a.phone,
+      p_status: a.status, p_plus_ones: a.plus_ones, p_note: a.note, p_answers: a.answers });
+  },
+  update: function (a) { return this.rpc('rsvp_update_event', { p_code: a.code, p_owner_token: a.owner, p_event: a.event }); },
+  del: function (a) { return this.rpc('rsvp_delete_event', { p_code: a.code, p_owner_token: a.owner }); },
+  removeGuest: function (a) { return this.rpc('rsvp_remove_guest', { p_code: a.code, p_owner_token: a.owner, p_guest: a.guest }); },
+  post: function (a) { return this.rpc('rsvp_post', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_name: a.name, p_kind: a.kind, p_body: a.body }); },
+  delPost: function (a) { return this.rpc('rsvp_delete_post', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_post: a.post }); },
+  addItem: function (a) { return this.rpc('rsvp_item_add', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_name: a.name, p_label: a.label, p_needed: a.needed }); },
+  editItem: function (a) { return this.rpc('rsvp_item_edit', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_item: a.item, p_label: a.label, p_needed: a.needed }); },
+  removeItem: function (a) { return this.rpc('rsvp_item_remove', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_item: a.item }); },
+  claim: function (a) { return this.rpc('rsvp_item_claim', { p_code: a.code, p_participant: a.pid, p_name: a.name, p_item: a.item, p_claim: a.claim }); },
+  // Admin functions report problems as {error: "..."} so failed guesses stay counted server-side.
+  unwrap: function (p, key, dflt) {
+    return p.then(function (d) { if (d && d.error) throw new ApiError(d.error); return key ? ((d && d[key]) || dflt) : d; });
+  },
+  adminList: function (pw) { return this.unwrap(this.rpc('rsvp_admin_list', { p_password: pw }), 'events', []); },
+  adminGrant: function (pw, code) { return this.unwrap(this.rpc('rsvp_admin_grant', { p_password: pw, p_code: code }), 'owner_token', null); },
+  adminDelete: function (pw, code) { return this.unwrap(this.rpc('rsvp_admin_delete', { p_password: pw, p_code: code })); }
+};
+
+// Preview mode: same rules as schema.sql, but everything lives in this browser's localStorage.
+var localApi = {
+  db: function () { return store.get('rsvp.local.db', { events: {} }); },
+  put: function (db) { store.set('rsvp.local.db', db); },
+  fail: function (m) { return Promise.reject(new ApiError(m)); },
+  ok: function (v) { return Promise.resolve(v == null ? null : v); },
+  clean: function (s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); },
+  text: function (s) { return String(s == null ? '' : s).replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim(); },
+  len: function (s) { return Array.from(s).length; },
+  fields: function (p) {
+    var f = {
+      title: this.clean(p.title), host_name: this.clean(p.host_name), description: this.text(p.description),
+      location: this.clean(p.location), tz: p.tz || 'UTC', theme: /^[a-z]{1,20}$/.test(p.theme || '') ? p.theme : 'sunset',
+      emoji: String(p.emoji || '').trim() || '🎉', max_plus_ones: Number(p.max_plus_ones || 0),
+      event_date: p.event_date || null, end_date: p.end_date || null, start_time: p.start_time || null, end_time: p.end_time || null, rsvp_by: p.rsvp_by || null,
+      hide_guests: !!p.hide_guests, hide_count: !!p.hide_count, guests_add_items: p.guests_add_items !== false,
+      bring_list: p.bring_list !== false, rsvp_lock: p.rsvp_lock !== false, require_phone: !!p.require_phone, questions: [], links: []
+    };
+    if (!f.title || this.len(f.title) > 120) throw new ApiError('invalid_title');
+    if (this.len(f.host_name) > 40) throw new ApiError('invalid_host');
+    if (this.len(f.description) > 4000) throw new ApiError('description_too_long');
+    if (this.len(f.location) > 200) throw new ApiError('location_too_long');
+    if (this.len(f.emoji) > 16) throw new ApiError('invalid_emoji');
+    if (!(f.max_plus_ones >= 0 && f.max_plus_ones <= 10)) throw new ApiError('invalid_plus_ones');
+    if (!f.event_date) { f.start_time = null; f.end_date = null; }
+    if (f.end_date && f.end_date < f.event_date) throw new ApiError('invalid_end_date');
+    if (f.end_date === f.event_date) f.end_date = null;
+    if (!f.start_time && !f.end_date) f.end_time = null;
+    var self = this;
+    (p.links || []).forEach(function (l) {
+      var lab = self.clean(l.label), u = String(l.url || '').trim();
+      if (!lab && !u) return;
+      if (u && !/^https?:\/\//i.test(u)) u = 'https://' + u;
+      if (!lab || self.len(lab) > 40) throw new ApiError('invalid_link_label');
+      if (!/^https?:\/\/[^\s<>"]+\.[^\s<>"]+$/i.test(u) || u.length > 500) throw new ApiError('invalid_link_url');
+      f.links.push({ label: lab, url: u });
+    });
+    if (f.links.length > 5) throw new ApiError('too_many_links');
+    (p.questions || []).forEach(function (q) { var t = self.clean(q.text); if (t) f.questions.push({ id: q.id, text: t }); });
+    if (f.questions.length > 3) throw new ApiError('too_many_questions');
+    if (f.questions.some(function (q) { return self.len(q.text) > 120; })) throw new ApiError('question_too_long');
+    return f;
+  },
+  isOwner: function (e, tok) { return !!tok && e.owner_tokens.indexOf(tok) >= 0; },
+  find: function (db, code) { return db.events[String(code || '').trim().toLowerCase()] || null; },
+  create: function (p, items) {
+    var db = this.db(), f, self = this;
+    try { f = this.fields(p); } catch (er) { return Promise.reject(er); }
+    var A = 'abcdefghjkmnpqrstuvwxyz23456789', c;
+    do { c = ''; for (var i = 0; i < 8; i++) c += A[randInt(A.length)]; } while (db.events[c]);
+    var tok = (uuid() + uuid()).replace(/-/g, '');
+    f.code = c; f.owner_tokens = [tok]; f.guests = []; f.posts = []; f.items = [];
+    (f.bring_list ? items || [] : []).forEach(function (l) {
+      l = self.clean(l);
+      if (!l || f.items.some(function (x) { return x.label.toLowerCase() === l.toLowerCase(); })) return;
+      f.items.push({ id: uuid(), label: l, needed: 1, by_host: true, pid: null, added_by: null, claims: [] });
+    });
+    if (f.items.length > 40) return this.fail('too_many_items');
+    db.events[c] = f; this.put(db);
+    return this.ok({ code: c, owner_token: tok });
+  },
+  get: function (code, pid, owner) {
+    var e = this.find(this.db(), code);
+    if (!e) return this.ok(null);
+    var own = this.isOwner(e, owner), me = null, counts = null, guests = null;
+    e.guests.forEach(function (g) { if (g.pid === pid) me = { id: g.id, name: g.name, first_name: g.first_name, last_name: g.last_name, phone: g.phone || '', status: g.status, plus_ones: g.plus_ones, note: g.note, answers: g.answers }; });
+    if (own || !e.hide_count) {
+      counts = { going: 0, going_plus: 0, maybe: 0, no: 0 };
+      e.guests.forEach(function (g) {
+        if (g.status === 'going') { counts.going += 1 + g.plus_ones; counts.going_plus += g.plus_ones; }
+        else if (g.status === 'maybe') counts.maybe += 1 + g.plus_ones; else counts.no++;
+      });
+    }
+    if (own || !e.hide_guests) {
+      guests = e.guests.map(function (g) {
+        return { id: g.id, name: g.name, first_name: g.first_name, last_name: g.last_name, status: g.status, plus_ones: g.plus_ones, note: g.note, mine: g.pid === pid, answers: own ? g.answers : null, phone: own ? g.phone || '' : null,
+          replied_at: own ? g.created_at : null, updated_at: own ? g.updated_at : null };
+      });
+    }
+    return this.ok({
+      event: { code: e.code, title: e.title, host_name: e.host_name, description: e.description, location: e.location,
+        event_date: e.event_date, end_date: e.end_date || null, start_time: e.start_time, end_time: e.end_time, tz: e.tz, theme: e.theme, emoji: e.emoji,
+        max_plus_ones: e.max_plus_ones, rsvp_by: e.rsvp_by, rsvp_closed: rsvpClosed(e), hide_guests: e.hide_guests,
+        hide_count: e.hide_count, guests_add_items: e.guests_add_items, bring_list: e.bring_list !== false, rsvp_lock: e.rsvp_lock !== false, require_phone: !!e.require_phone,
+        questions: e.questions, links: e.links || [] },
+      is_owner: own, me: me, counts: counts, guests: guests,
+      posts: e.posts.map(function (p) { return { id: p.id, kind: p.kind, name: p.name, body: p.body, created_at: p.created_at, mine: !!p.pid && p.pid === pid }; }),
+      items: e.items.map(function (i) {
+        return { id: i.id, label: i.label, needed: i.needed, by_host: i.by_host, added_by: i.added_by, mine_added: !!i.pid && i.pid === pid,
+          claims: i.claims.map(function (c) { return { name: c.name, mine: c.pid === pid }; }) };
+      })
+    });
+  },
+  respond: function (a) {
+    var db = this.db(), e = this.find(db, a.code), self = this;
+    if (!e) return this.fail('event_not_found');
+    if (rsvpClosed(e) && !this.isOwner(e, a.owner)) return this.fail('rsvp_closed');
+    var first = this.clean(a.first), last = this.clean(a.last), name = first + ' ' + last, note = this.text(a.note), plus = a.status === 'no' ? 0 : Number(a.plus_ones || 0);
+    if (!first || !last || this.len(first) > 30 || this.len(last) > 30) return this.fail('invalid_full_name');
+    if (!STATUS[a.status]) return this.fail('invalid_status');
+    var phone = normPhone(a.phone);
+    if (!phone && e.require_phone) return this.fail('phone_required');
+    if (phone && !phoneOk(phone)) return this.fail('invalid_phone');
+    if (this.len(note) > 200) return this.fail('note_too_long');
+    if (!(plus >= 0 && plus <= e.max_plus_ones)) return this.fail('too_many_plus_ones');
+    var ans = {}, long = false;
+    e.questions.forEach(function (q) { var v = self.text((a.answers || {})[q.id]); if (self.len(v) > 300) long = true; if (v) ans[q.id] = v; });
+    if (long) return this.fail('answer_too_long');
+    var g = e.guests.filter(function (x) { return x.pid === a.pid; })[0], now = new Date().toISOString();
+    if (!g) {
+      if (e.guests.length >= 300) return this.fail('event_full');
+      g = { id: uuid(), pid: a.pid, created_at: now }; e.guests.push(g);
+    }
+    g.name = name; g.first_name = first; g.last_name = last; g.phone = phone; g.status = a.status; g.plus_ones = plus; g.note = note; g.answers = ans; g.updated_at = now;
+    e.items.forEach(function (i) { i.claims.forEach(function (c) { if (c.pid === a.pid) c.name = name; }); });
+    this.put(db); return this.ok();
+  },
+  update: function (a) {
+    var db = this.db(), e = this.find(db, a.code), f;
+    if (!e) return this.fail('event_not_found');
+    if (!this.isOwner(e, a.owner)) return this.fail('not_owner');
+    try { f = this.fields(a.event); } catch (er) { return Promise.reject(er); }
+    Object.keys(f).forEach(function (k) { e[k] = f[k]; });
+    e.guests.forEach(function (g) { if (g.plus_ones > f.max_plus_ones) g.plus_ones = f.max_plus_ones; });
+    this.put(db); return this.ok();
+  },
+  del: function (a) {
+    var db = this.db(), e = this.find(db, a.code);
+    if (!e) return this.fail('event_not_found');
+    if (!this.isOwner(e, a.owner)) return this.fail('not_owner');
+    delete db.events[e.code]; this.put(db); return this.ok();
+  },
+  removeGuest: function (a) {
+    var db = this.db(), e = this.find(db, a.code);
+    if (!e) return this.fail('event_not_found');
+    if (!this.isOwner(e, a.owner)) return this.fail('not_owner');
+    var g = e.guests.filter(function (x) { return x.id === a.guest; })[0];
+    if (!g) return this.fail('guest_not_found');
+    e.guests = e.guests.filter(function (x) { return x !== g; });
+    e.items.forEach(function (i) { i.claims = i.claims.filter(function (c) { return c.pid !== g.pid; }); });
+    this.put(db); return this.ok();
+  },
+  post: function (a) {
+    var db = this.db(), e = this.find(db, a.code);
+    if (!e) return this.fail('event_not_found');
+    var name = this.clean(a.name), body = this.text(a.body);
+    var n = e.posts.filter(function (p) { return p.kind === a.kind; }).length;
+    if (a.kind === 'announce') {
+      if (!this.isOwner(e, a.owner)) return this.fail('not_owner');
+      if (!body || this.len(body) > 1000) return this.fail('invalid_announcement');
+      if (n >= 50) return this.fail('too_many_posts');
+    } else {
+      if (!name || this.len(name) > 64) return this.fail('invalid_name');
+      if (!body || this.len(body) > 500) return this.fail('invalid_comment');
+      if (n >= 300) return this.fail('too_many_posts');
+    }
+    e.posts.push({ id: uuid(), kind: a.kind, pid: a.pid, name: name, body: body, created_at: new Date().toISOString() });
+    this.put(db); return this.ok();
+  },
+  delPost: function (a) {
+    var db = this.db(), e = this.find(db, a.code);
+    if (!e) return this.fail('event_not_found');
+    var p = e.posts.filter(function (x) { return x.id === a.post; })[0];
+    if (!p) return this.fail('post_not_found');
+    if (!(this.isOwner(e, a.owner) || (p.pid && p.pid === a.pid))) return this.fail('not_allowed');
+    e.posts = e.posts.filter(function (x) { return x !== p; });
+    this.put(db); return this.ok();
+  },
+  addItem: function (a) {
+    var db = this.db(), e = this.find(db, a.code);
+    if (!e) return this.fail('event_not_found');
+    var own = this.isOwner(e, a.owner), label = this.clean(a.label), name = this.clean(a.name), needed = a.needed == null ? 1 : Number(a.needed);
+    if (e.bring_list === false) return this.fail('bring_list_off');
+    if (!own && !e.guests_add_items) return this.fail('items_host_only');
+    if (!label || this.len(label) > 80) return this.fail('invalid_item');
+    if (e.items.some(function (i) { return i.label.toLowerCase() === label.toLowerCase(); })) return this.fail('duplicate_item');
+    if (e.items.length >= 40) return this.fail('too_many_items');
+    if (own) {
+      if (!(needed >= 0 && needed <= 20)) return this.fail('invalid_needed');
+      e.items.push({ id: uuid(), label: label, needed: needed, by_host: true, pid: a.pid, added_by: name || null, claims: [] });
+    } else {
+      if (!name || this.len(name) > 64) return this.fail('invalid_name');
+      e.items.push({ id: uuid(), label: label, needed: 1, by_host: false, pid: a.pid, added_by: name, claims: [{ pid: a.pid, name: name }] });
+    }
+    this.put(db); return this.ok();
+  },
+  itemFor: function (a) {
+    var db = this.db(), e = this.find(db, a.code);
+    if (!e) return { err: 'event_not_found' };
+    var i = e.items.filter(function (x) { return x.id === a.item; })[0];
+    if (!i) return { err: 'item_not_found' };
+    return { db: db, e: e, i: i, own: this.isOwner(e, a.owner) };
+  },
+  editItem: function (a) {
+    var c = this.itemFor(a); if (c.err) return this.fail(c.err);
+    if (!(c.own || (c.i.pid && c.i.pid === a.pid))) return this.fail('not_allowed');
+    var label = this.clean(a.label);
+    if (!label || this.len(label) > 80) return this.fail('invalid_item');
+    if (c.e.items.some(function (x) { return x !== c.i && x.label.toLowerCase() === label.toLowerCase(); })) return this.fail('duplicate_item');
+    if (c.own && a.needed != null && !(a.needed >= 0 && a.needed <= 20)) return this.fail('invalid_needed');
+    c.i.label = label; if (c.own && a.needed != null) c.i.needed = Number(a.needed);
+    this.put(c.db); return this.ok();
+  },
+  removeItem: function (a) {
+    var c = this.itemFor(a); if (c.err) return this.fail(c.err);
+    if (!(c.own || (c.i.pid && c.i.pid === a.pid))) return this.fail('not_allowed');
+    c.e.items = c.e.items.filter(function (x) { return x !== c.i; });
+    this.put(c.db); return this.ok();
+  },
+  claim: function (a) {
+    var c = this.itemFor(a); if (c.err) return this.fail(c.err);
+    var mine = c.i.claims.filter(function (x) { return x.pid === a.pid; })[0], name = this.clean(a.name);
+    if (!a.claim) { c.i.claims = c.i.claims.filter(function (x) { return x.pid !== a.pid; }); this.put(c.db); return this.ok(); }
+    if (!name || this.len(name) > 64) return this.fail('invalid_name');
+    if (c.e.bring_list === false) return this.fail('bring_list_off');
+    if (mine) mine.name = name;
+    else {
+      if (c.i.needed > 0 && c.i.claims.length >= c.i.needed) return this.fail('item_taken');
+      c.i.claims.push({ pid: a.pid, name: name });
+    }
+    this.put(c.db); return this.ok();
+  },
+  adminList: function () { return this.fail('admin_needs_supabase'); },
+  adminGrant: function () { return this.fail('admin_needs_supabase'); },
+  adminDelete: function () { return this.fail('admin_needs_supabase'); }
+};
+
+var api = REMOTE ? remoteApi : localApi;
+
+function friendly(e) {
+  var m = (e && e.message) || '';
+  var map = {
+    network: "Couldn't reach the server. Check your connection and try again.",
+    event_not_found: 'That event no longer exists.',
+    invalid_title: 'Give your event a name (up to 120 characters).',
+    invalid_host: 'The host name can be at most 40 characters.',
+    description_too_long: 'The details are too long (4,000 characters at most).',
+    location_too_long: 'The location is too long (200 characters at most).',
+    invalid_emoji: 'Pick a single emoji.',
+    invalid_date: 'One of the dates or times isn’t valid.',
+    invalid_plus_ones: 'Plus-ones can be 0 to 10.',
+    too_many_questions: 'You can ask at most 3 questions.',
+    question_too_long: 'Each question can be at most 120 characters.',
+    invalid_question: 'One of the questions couldn’t be saved. Please try again.',
+    invalid_participant: 'This browser’s identity is missing. Reload the page and try again.',
+    rsvp_closed: 'RSVPs for this event are closed.',
+    invalid_name: 'Enter your name first.',
+    phone_required: 'Enter your phone number. The host asked for one.',
+    invalid_phone: 'That phone number doesn’t look right.',
+    invalid_full_name: 'Enter your first and last name (up to 30 characters each).',
+    invalid_end_date: 'The end date can’t be before the start date.',
+    invalid_link_label: 'Each link button needs a label (up to 40 characters).',
+    invalid_link_url: 'One of the link addresses doesn’t look right. It should look like https://example.com',
+    too_many_links: 'You can add up to 5 link buttons.',
+    bring_list_off: 'This event doesn’t have a bring list.',
+    invalid_status: 'Choose Going, Maybe or Can’t go.',
+    note_too_long: 'Your note can be at most 200 characters.',
+    too_many_plus_ones: 'That’s more guests than the host allows.',
+    answer_too_long: 'Each answer can be at most 300 characters.',
+    event_full: 'This event already has the maximum number of replies (300).',
+    not_owner: 'Only the host can do that.',
+    not_allowed: 'You can only change things you added.',
+    guest_not_found: 'That guest was already removed.',
+    invalid_announcement: 'An announcement needs 1 to 1,000 characters.',
+    invalid_comment: 'A comment needs 1 to 500 characters.',
+    too_many_posts: 'This event has reached the maximum number of posts.',
+    post_not_found: 'That post was already deleted.',
+    items_host_only: 'Only the host can add to the bring list.',
+    invalid_item: 'An item needs 1 to 80 characters.',
+    duplicate_item: 'That’s already on the bring list.',
+    too_many_items: 'The bring list is full (40 items).',
+    invalid_needed: 'Choose how many people should bring it.',
+    item_not_found: 'That item was removed. The list has been refreshed.',
+    item_taken: 'Someone already has that covered.',
+    wrong_password: 'Wrong password.',
+    too_many_attempts: 'Too many wrong attempts. Try again in 15 minutes.',
+    admin_not_configured: 'No admin password is set yet. Follow the steps at the bottom of admin.sql from the Which day works? app.',
+    admin_needs_supabase: 'Admin mode needs the Supabase connection. Preview mode only keeps data in this browser.'
+  };
+  if (map[m]) return map[m];
+  if (/find the function|schema cache/i.test(m)) return 'The database is not set up yet. Run rsvp/schema.sql in the Supabase SQL Editor.';
+  if (e && (e.status === 401 || e.status === 403 || /api key|jwt/i.test(m))) {
+    return 'Supabase rejected the key in config.js. Copy the publishable key again from Project Settings > API Keys.';
+  }
+  if (e && e.status === 404) return 'Nothing answered at the Supabase URL in config.js. It should look like https://abcdefghijkl.supabase.co';
+  return 'Something went wrong' + (m ? ' (' + m + ')' : '') + '. Please try again.';
+}
+
+/* -------------------------------------------------------------------- state */
+
+var S = {};
+function resetState() {
+  S = { code: '', pid: '', owner: null, isOwner: false, ev: null, me: null, counts: null, guests: null, posts: [], items: [],
+    justCreated: false, fromAdmin: !!A.events, rsvpOpen: false, form: null, editingItem: null, editItemText: '', editItemNeeded: 1,
+    draft: { comment: '', ann: '', item: '', needed: 1, cfirst: '', clast: '', sms: '' },
+    aud: { going: true, maybe: true, no: false }, smsLink: true, texted: {}, calOpen: false, mode: 'view' };
+}
+var A = { pw: '', events: null }; // the admin password lives only in memory, never saved
+
+var toastTimer;
+function toast(msg) {
+  $toast.textContent = msg;
+  $toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { $toast.classList.remove('show'); }, 3400);
+}
+function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
+function shareUrl(code) { return baseUrl() + '?e=' + code; }
+function hostUrl(code) { return baseUrl() + '?e=' + code + '&o=' + S.owner; }
+function copyText(text, input) {
+  function fallback() {
+    var el = input || document.createElement('textarea');
+    if (!input) { el.value = text; el.style.position = 'fixed'; el.style.opacity = '0'; document.body.appendChild(el); }
+    el.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    if (!input) document.body.removeChild(el);
+    return ok;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text).then(function () { return true; }, function () { return fallback(); });
+  }
+  return Promise.resolve(fallback());
+}
+function savedNames() {
+  var f = store.get('rsvp.first', '') || '', l = store.get('rsvp.last', '') || '';
+  if (!f && !l) { // older versions saved one name
+    var old = String(store.get('rsvp.name', '') || '').trim(), i = old.indexOf(' ');
+    if (old) { f = i < 0 ? old : old.slice(0, i); l = i < 0 ? '' : old.slice(i + 1); }
+  }
+  return { first: f, last: l };
+}
+function saveNames(f, l) { store.set('rsvp.first', f); store.set('rsvp.last', l); store.set('rsvp.name', (f + ' ' + l).trim()); }
+// Same rules as _rsvp_phone in schema.sql: +digits, 10 digits taken as a US number.
+function normPhone(v) {
+  var t = String(v || '').trim(), d = t.replace(/\D/g, '');
+  if (!d) return '';
+  if (t.charAt(0) === '+') return '+' + d;
+  if (d.length === 10) return '+1' + d;
+  if (d.length === 11 && d.charAt(0) === '1') return '+' + d;
+  return d;
+}
+function phoneOk(p) { var n = p.replace(/\D/g, '').length; return n >= 7 && n <= 15; }
+function fmtPhone(p) {
+  var m = /^\+1(\d{3})(\d{3})(\d{4})$/.exec(p || '');
+  return m ? '(' + m[1] + ') ' + m[2] + '-' + m[3] : (p || '');
+}
+function cleanName(v) { return String(v || '').replace(/\s+/g, ' ').trim(); }
+function myName() {
+  if (S.me && S.me.name) return S.me.name;
+  var n = savedNames();
+  return n.first && n.last ? n.first + ' ' + n.last : '';
+}
+/* -------------------------------------------------------------------- routes */
+
+function route() {
+  var qs = new URLSearchParams(location.search), code = qs.get('e');
+  if (qs.has('admin') && !code) { renderAdmin(); return; }
+  if (!code) { renderHome(); return; }
+  code = code.trim().toLowerCase();
+  var tok = qs.get('o');
+  if (tok) { // host link: remember the key, then tidy the address bar
+    setOwnerToken(code, tok.trim());
+    try { history.replaceState(null, '', baseUrl() + '?e=' + code); } catch (e) {}
+  }
+  loadEvent(code, false);
+}
+
+function applyData(d) {
+  S.ev = d.event; S.isOwner = !!d.is_owner; S.me = d.me || null; S.counts = d.counts || null;
+  S.guests = d.guests || null; S.posts = d.posts || []; S.items = d.items || [];
+}
+
+function loadEvent(code, justCreated) {
+  resetState();
+  S.code = code; S.pid = getPid(); S.owner = getOwnerToken(code); S.justCreated = !!justCreated;
+  $app.innerHTML = '<p class="hint">Loading…</p>';
+  api.get(code, S.pid, S.owner).then(function (d) {
+    if (!d) { renderNotFound(); return; }
+    applyData(d);
+    rememberEvent(S.ev);
+    renderEvent();
+  }, function (e) {
+    $app.innerHTML = '<p class="err">' + esc(friendly(e)) + '</p><p><a href="">Try again</a></p>';
+  });
+}
+
+function reload() {
+  return api.get(S.code, S.pid, S.owner).then(function (d) {
+    if (!d) throw new ApiError('event_not_found');
+    applyData(d);
+  });
+}
+function after(p, okMsg) {
+  return p.then(reload).then(function () { renderParts(); if (okMsg) toast(okMsg); return true; },
+    function (e) { toast(friendly(e)); if (e && /not_found|taken/.test(e.message)) reload().then(renderParts, function () {}); return false; });
+}
+
+function renderNotFound() {
+  $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">New event</a></nav><h1>Event not found</h1>' +
+    '<p class="lede">That link doesn’t match an event. It may have been deleted, or the link was copied incompletely.</p>';
+}
+
+function previewBanner() {
+  if (REMOTE) return '';
+  return '<div class="banner"><strong>Preview mode.</strong> Nothing is shared yet: RSVPs stay in this browser. ' +
+    'Add your Supabase details to config.js to let others reply from their own phones.' +
+    '<br><button type="button" class="chipbtn" data-act="new-person">Act as a new person</button></div>';
+}
+
+/* -------------------------------------------------------------------- home */
+
+function renderHome() {
+  document.title = 'RSVP';
+  var recent = store.get('rsvp.recent', []), owners = store.get('rsvp.owners', {}) || {};
+  F = newFormState(null);
+  $app.innerHTML =
+    previewBanner() +
+    '<div class="banner bad" id="conn" role="alert" hidden></div>' +
+    '<h1>RSVP</h1>' +
+    '<p class="lede">Make an invite page for a party, dinner or get-together. Send the link and everyone can say if they’re coming.</p>' +
+    eventFormHtml(null) +
+    (recent.length ? '<section class="recent"><h2>Your events</h2><ul>' +
+      recent.map(function (r) {
+        return '<li><a href="?e=' + esc(r.code) + '">' + esc((r.emoji ? r.emoji + ' ' : '') + r.title) + '</a>' + (owners[r.code] ? '<span class="tagq">host</span>' : '') +
+          (r.date ? '<span class="when">' + esc(fmtDate(r.date, true)) + '</span>' : '') + '</li>';
+      }).join('') + '</ul></section>' : '') +
+    '<p class="foot"><a href="?admin">Admin</a></p>';
+  syncFormUi();
+  if (REMOTE) checkConnection();
+}
+
+function checkConnection() {
+  api.get('zzzzzzzz', 'checkcheck', null).then(function () {}, function (e) {
+    var el = $('#conn');
+    if (!el) return;
+    el.hidden = false;
+    el.textContent = (e && e.message === 'network' ? 'Can’t reach the database. ' : '') + friendly(e);
+  });
+}
+
+/* --------------------------------------------------------- create/edit form */
+
+var F = null; // theme/emoji picked in the form
+function newFormState(ev) {
+  var links = ev && ev.links && ev.links.length ? ev.links.map(function (l) { return { label: l.label, url: l.url }; }) : [{ label: '', url: '' }];
+  return { theme: ev ? ev.theme : 'sunset', emoji: ev ? ev.emoji : '🎉', links: links };
+}
+function linkRowsHtml() {
+  return F.links.map(function (l, i) {
+    return '<div class="linkrow"><input type="text" data-link="label" data-i="' + i + '" maxlength="40" autocomplete="off" placeholder="Label, e.g. Registry" aria-label="Button label ' + (i + 1) + '" value="' + esc(l.label) + '">' +
+      '<input type="text" data-link="url" data-i="' + i + '" maxlength="500" autocomplete="off" inputmode="url" placeholder="https://…" aria-label="Button link ' + (i + 1) + '" value="' + esc(l.url) + '">' +
+      '<button type="button" class="link danger" data-act="link-rm" data-i="' + i + '" aria-label="Remove link ' + (i + 1) + '">×</button></div>';
+  }).join('') + (F.links.length < 5 ? '<button type="button" class="chipbtn" data-act="link-add">＋ Add another link</button>' : '');
+}
+
+function eventFormHtml(ev) {
+  var e = ev || {}, qs = (e.questions || []).slice();
+  while (qs.length < 3) qs.push({ id: '', text: '' });
+  var plusOpts = [0, 1, 2, 3, 4, 5, 10];
+  if (e.max_plus_ones && plusOpts.indexOf(e.max_plus_ones) < 0) plusOpts.push(e.max_plus_ones);
+  return '<form id="eventForm" class="panel" novalidate>' +
+    '<div class="preview" id="formPreview"></div>' +
+    '<label class="fld"><span>Event name</span><input type="text" name="title" maxlength="120" placeholder="Fall cookout" autocomplete="off" value="' + esc(e.title) + '"></label>' +
+    '<fieldset><legend>Look</legend><div class="swatches" role="group" aria-label="Color theme">' +
+      Object.keys(THEMES).map(function (k) {
+        return '<button type="button" class="sw" data-act="theme" data-id="' + k + '" aria-label="' + THEMES[k].name + '" aria-pressed="false" style="background:linear-gradient(135deg,' + THEMES[k].a + ',' + THEMES[k].b + ')"></button>';
+      }).join('') + '</div>' +
+      '<div class="emojis" role="group" aria-label="Emoji">' + EMOJIS.map(function (x) {
+        return '<button type="button" class="em" data-act="emoji" data-id="' + x + '" aria-pressed="false">' + x + '</button>';
+      }).join('') + '</div>' +
+      '<label class="fld" style="margin:10px 0 0"><span style="font-weight:500;font-size:14px">Or type any emoji</span><input type="text" class="emoji-in" name="emoji" maxlength="8" autocomplete="off" value="' + esc(F.emoji) + '"></label>' +
+    '</fieldset>' +
+    '<div class="row2"><label class="fld"><span>Date</span><input type="date" name="event_date" value="' + esc(e.event_date || '') + '"></label>' +
+      '<label class="fld"><span>Last day (optional)</span><input type="date" name="end_date" value="' + esc(e.end_date || '') + '"></label></div>' +
+    '<p class="hint" style="font-size:13px;margin:-10px 0 14px">Leave the date empty if it isn’t set yet. Add a last day for a multi-day event.</p>' +
+    '<div class="row2"><label class="fld"><span>Start time</span><input type="time" name="start_time" value="' + esc(e.start_time || '') + '"></label>' +
+      '<label class="fld"><span>End time (optional)</span><input type="time" name="end_time" value="' + esc(e.end_time || '') + '"></label></div>' +
+    '<p class="hint" id="multiHint" style="font-size:13px;margin:-10px 0 14px"' + (e.end_date ? '' : ' hidden') + '>Multi-day: the start time is on the first day and the end time on the last day.</p>' +
+    '<label class="fld"><span>Location (optional)</span><input type="text" name="location" maxlength="200" placeholder="Address or place name" autocomplete="off" value="' + esc(e.location) + '"></label>' +
+    '<label class="fld"><span>Hosted by</span><input type="text" name="host_name" maxlength="40" placeholder="Your name" autocomplete="name" value="' + esc(ev ? e.host_name : myName()) + '"></label>' +
+    '<label class="fld"><span>Details (optional)</span><textarea name="description" rows="4" maxlength="4000" placeholder="What to expect, parking, what to wear…">' + esc(e.description) + '</textarea><small>Web addresses become tappable links.</small></label>' +
+    '<fieldset><legend>Link buttons (optional)</legend><p class="hint" style="font-size:13px;margin:-2px 0 8px">Shown as buttons at the top, e.g. a registry or a sign-up sheet.</p><div id="linkRows">' + linkRowsHtml() + '</div></fieldset>' +
+
+    '<h3 class="sect">Guests</h3>' +
+    '<label class="fld"><span>Plus-ones</span><select name="max_plus_ones">' + plusOpts.map(function (n) {
+      return '<option value="' + n + '"' + ((e.max_plus_ones || 0) === n ? ' selected' : '') + '>' + (n === 0 ? 'No plus-ones' : 'Each guest can bring up to ' + n) + '</option>';
+    }).join('') + '</select></label>' +
+    '<label class="fld"><span>RSVP by (optional)</span><input type="date" name="rsvp_by" value="' + esc(e.rsvp_by || '') + '"></label>' +
+    '<div class="checks" style="margin-top:-10px"><label class="check"><input type="checkbox" name="rsvp_lock"' + (ev && e.rsvp_lock === false ? '' : ' checked') + '><span><b>Close RSVPs after this date</b><small>Guests can’t reply or change their answer after the end of that day. You still can. Untick to make the date just a reminder.</small></span></label></div>' +
+    '<fieldset><legend>Questions for guests (optional)</legend>' +
+      qs.slice(0, 3).map(function (q, i) {
+        return '<input type="text" name="q" data-qid="' + esc(q.id) + '" maxlength="120" autocomplete="off" style="margin-bottom:8px" aria-label="Question ' + (i + 1) + '" placeholder="' +
+          ['Any food allergies?', 'Need a ride?', 'Anything else?'][i] + '" value="' + esc(q.text) + '">';
+      }).join('') + '<small class="hint" style="font-size:13px">Only you see the answers.</small></fieldset>' +
+    '<div class="checks">' +
+      '<label class="check"><input type="checkbox" name="hide_guests"' + (e.hide_guests ? ' checked' : '') + '><span><b>Hide guest list</b><small>Guests don’t see who else replied. You always do.</small></span></label>' +
+      '<label class="check"><input type="checkbox" name="hide_count"' + (e.hide_count ? ' checked' : '') + '><span><b>Hide guest count</b><small>Guests don’t see how many are going.</small></span></label>' +
+      '<label class="check"><input type="checkbox" name="require_phone"' + (e.require_phone ? ' checked' : '') + '><span><b>Require a phone number</b><small>So you can text guests from your phone. Only you see the numbers. Without this, it’s optional.</small></span></label>' +
+    '</div>' +
+
+    '<h3 class="sect">Bring list</h3>' +
+    '<div class="checks" style="margin-bottom:6px"><label class="check"><input type="checkbox" name="bring_list"' + (ev && e.bring_list !== false ? ' checked' : '') + '><span><b>Add a bring list</b><small>Guests tap “I’ll bring it” so nobody doubles up.</small></span></label></div>' +
+    '<div id="bringOpts"' + (ev && e.bring_list !== false ? '' : ' hidden') + '>' +
+    (ev ? '' : '<label class="fld"><span>Things to bring (optional)</span><textarea name="items" rows="4" placeholder="One per line&#10;Chips&#10;Dessert&#10;Folding chairs"></textarea><small>You can set how many people each item needs after creating the event.</small></label>') +
+    '<div class="checks"><label class="check"><input type="checkbox" name="guests_add_items"' + (ev && !e.guests_add_items ? '' : ' checked') + '><span><b>Guests can add to the bring list</b><small>Lets people say “I’ll bring…” for things you didn’t list.</small></span></label></div></div>' +
+
+    '<div class="tools"><button class="btn primary" type="submit">' + (ev ? 'Save changes' : 'Create event') + '</button>' +
+      (ev ? '<button class="btn" type="button" data-act="edit-cancel">Cancel</button>' : '') + '</div>' +
+    '<p class="err" id="formErr" role="alert"></p>' +
+  '</form>';
+}
+
+function syncFormUi() {
+  document.querySelectorAll('#eventForm .sw').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === F.theme)); });
+  document.querySelectorAll('#eventForm .em').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.id === F.emoji)); });
+  var prev = $('#formPreview'), form = $('#eventForm');
+  if (!prev || !form) return;
+  var t = theme(F.theme), title = form.elements.title.value.trim();
+  prev.innerHTML = '<div class="hero' + (t.ink === '#FFFFFF' ? ' light-ink' : '') + '" style="--ga:' + t.a + ';--gb:' + t.b + ';--gi:' + t.ink + ';padding:18px 16px">' +
+    '<div class="big" style="font-size:44px">' + esc(F.emoji || '🎉') + '</div><h1 style="font-size:24px">' + esc(title || 'Your event') + '</h1></div>';
+}
+
+function readEventForm(form, ev) {
+  var f = form.elements, qs = [];
+  Array.prototype.forEach.call(form.querySelectorAll('input[name=q]'), function (inp) {
+    var t = inp.value.replace(/\s+/g, ' ').trim();
+    if (t) qs.push({ id: inp.dataset.qid || shortId(), text: t });
+  });
+  return {
+    title: f.title.value, host_name: f.host_name.value, description: f.description.value, location: f.location.value,
+    event_date: f.event_date.value || null, end_date: f.end_date.value || null, start_time: f.start_time.value || null, end_time: f.end_time.value || null,
+    tz: ev ? ev.tz : viewerTz(), theme: F.theme, emoji: (f.emoji.value || '').trim() || F.emoji || '🎉',
+    max_plus_ones: Number(f.max_plus_ones.value || 0), rsvp_by: f.rsvp_by.value || null,
+    hide_guests: f.hide_guests.checked, hide_count: f.hide_count.checked, guests_add_items: f.guests_add_items.checked,
+    bring_list: f.bring_list.checked, rsvp_lock: f.rsvp_lock.checked, require_phone: f.require_phone.checked, questions: qs,
+    links: F.links.map(function (l) { return { label: l.label.replace(/\s+/g, ' ').trim(), url: l.url.trim() }; }).filter(function (l) { return l.label || l.url; })
+  };
+}
+
+function validateEvent(p, err) {
+  if (!p.title.trim()) return 'Give your event a name.';
+  if (p.end_time && !p.start_time && !p.end_date) return 'Add a start time, or clear the end time.';
+  if ((p.start_time || p.end_date) && !p.event_date) return 'Add a date first.';
+  if (p.end_date && p.end_date < p.event_date) return 'The last day can’t be before the first day.';
+  if (p.links.some(function (l) { return !l.label; })) return 'Give each link button a label.';
+  if (p.links.some(function (l) { return !l.url; })) return 'Add the web address for each link button.';
+  if (p.rsvp_by && p.event_date && p.rsvp_by > p.event_date) return 'The RSVP date should be on or before the event.';
+  return '';
+}
+
+function submitEvent(form) {
+  var err = $('#formErr'), btn = form.querySelector('button[type=submit]'), editing = S.mode === 'edit';
+  err.textContent = '';
+  var p = readEventForm(form, editing ? S.ev : null), msg = validateEvent(p);
+  if (msg) { err.textContent = msg; return; }
+  var items = null;
+  if (!editing && form.elements.items && p.bring_list) {
+    var seen = {};
+    items = form.elements.items.value.split('\n').map(function (s) { return s.replace(/\s+/g, ' ').trim(); })
+      .filter(function (s) { if (!s || seen[s.toLowerCase()]) return false; seen[s.toLowerCase()] = 1; return true; });
+    if (items.some(function (s) { return s.length > 80; })) { err.textContent = 'Each bring-list item can be at most 80 characters.'; return; }
+    if (items.length > 40) { err.textContent = 'Please start with at most 40 bring-list items.'; return; }
+  }
+  btn.disabled = true; btn.textContent = editing ? 'Saving…' : 'Creating…';
+  var done = function (e) { btn.disabled = false; btn.textContent = editing ? 'Save changes' : 'Create event'; err.textContent = friendly(e); toast(friendly(e)); };
+  if (editing) {
+    api.update({ code: S.code, owner: S.owner, event: p }).then(reload).then(function () {
+      S.mode = 'view'; rememberEvent(S.ev); renderEvent(); toast('Saved.'); window.scrollTo(0, 0);
+    }, done);
+  } else {
+    api.create(p, items).then(function (res) {
+      setOwnerToken(res.code, res.owner_token);
+      history.pushState(null, '', baseUrl() + '?e=' + res.code);
+      loadEvent(res.code, true);
+      window.scrollTo(0, 0);
+    }, done);
+  }
+}
+
+/* -------------------------------------------------------------------- admin */
+
+function fmtStamp(ts) {
+  var d = new Date(ts);
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function renderAdmin(msg) {
+  document.title = 'Admin | RSVP';
+  var nav = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">Home</a></nav>';
+  if (!REMOTE) {
+    $app.innerHTML = previewBanner() + nav + '<h1>Admin</h1><p class="err">' + esc(friendly(new ApiError('admin_needs_supabase'))) + '</p>';
+    return;
+  }
+  if (!A.events) {
+    $app.innerHTML = nav + '<h1>Admin</h1>' +
+      '<p class="lede">Enter the admin password (the same one as Which day works? and Poll) to see every event and act as its host.</p>' +
+      '<form id="adminForm" class="panel" novalidate>' +
+        '<label class="fld"><span>Password</span><input type="password" id="adminPw" name="adminPw" autocomplete="current-password"></label>' +
+        '<button class="btn primary" type="submit">Sign in</button>' +
+        '<p class="err" id="adminErr" role="alert">' + esc(msg || '') + '</p>' +
+      '</form>';
+    return;
+  }
+  var list = A.events;
+  $app.innerHTML = nav + '<h1>All events (' + list.length + ')</h1>' +
+    '<div class="tools"><button type="button" class="chipbtn" data-act="admin-refresh">Refresh</button>' +
+    '<button type="button" class="chipbtn" data-act="admin-out">Sign out</button></div>' +
+    (list.length ? '<ul class="admin-list">' + list.map(function (e) {
+      var bits = [e.event_date ? fmtDate(e.event_date, true) + (e.start_time ? ' at ' + fmtTime(e.start_time) : '') + '.' : 'Date not set.',
+        (e.host_name ? 'Host: ' + e.host_name + '.' : ''), e.going + ' going, ' + e.replies + (e.replies === 1 ? ' reply' : ' replies') + ', ' + e.comments + (e.comments === 1 ? ' comment.' : ' comments.'),
+        'Created ' + fmtStamp(e.created_at) + '.'];
+      return '<li><div class="nm">' + esc(e.title) + '</div><div class="meta">' + bits.filter(Boolean).map(esc).join(' ') + '</div>' +
+        '<div class="tools" style="margin:0"><button type="button" class="btn small" data-act="admin-open" data-code="' + esc(e.code) + '">Open as host</button>' +
+        '<button type="button" class="btn small danger" data-act="admin-del" data-code="' + esc(e.code) + '" data-name="' + esc(e.title) + '">Delete</button></div></li>';
+    }).join('') + '</ul>' : '<p class="hint" style="margin-top:14px">No events yet.</p>');
+}
+
+function submitAdmin(form) {
+  var pw = form.elements.adminPw.value, btn = form.querySelector('button[type=submit]');
+  if (!pw) { $('#adminErr').textContent = 'Enter the password.'; return; }
+  btn.disabled = true; btn.textContent = 'Checking…';
+  api.adminList(pw).then(function (list) { A.pw = pw; A.events = list; renderAdmin(); },
+    function (e) { A.pw = ''; A.events = null; renderAdmin(friendly(e)); });
+}
+function adminFail(e) {
+  var m = e && e.message;
+  if (m === 'wrong_password' || m === 'too_many_attempts' || m === 'admin_not_configured') { A.pw = ''; A.events = null; renderAdmin(friendly(e)); }
+  else toast(friendly(e));
+}
+function adminOpen(code) {
+  api.adminGrant(A.pw, code).then(function (token) {
+    setOwnerToken(code, token);
+    history.pushState(null, '', baseUrl() + '?e=' + code);
+    loadEvent(code, false);
+  }, adminFail);
+}
+function adminDelete(code, name) {
+  if (!confirm('Delete “' + name + '” for everyone? This can’t be undone.')) return;
+  api.adminDelete(A.pw, code).then(function () {
+    A.events = A.events.filter(function (e) { return e.code !== code; });
+    forgetEvent(code); renderAdmin(); toast('Event deleted.');
+  }, adminFail);
+}
+
+/* -------------------------------------------------------------------- event */
+
+function renderEvent() {
+  var ev = S.ev, t = theme(ev.theme);
+  document.title = ev.title + ' | RSVP';
+  if (S.mode === 'edit') {
+    F = newFormState(ev);
+    $app.innerHTML = '<nav class="topnav"><span></span><span class="hint">Editing as host</span></nav><h1 style="margin-bottom:14px">Edit event</h1>' + eventFormHtml(ev);
+    syncFormUi();
+    return;
+  }
+  $app.innerHTML =
+    previewBanner() +
+    '<nav class="topnav">' + (S.fromAdmin ? '<button type="button" class="link" data-act="to-admin" style="padding:0">← All events (admin)</button>' : '<a href="' + esc(baseUrl()) + '">New event</a>') +
+      (S.isOwner ? '<span class="hint">' + (S.fromAdmin ? 'Admin: host view' : 'You’re the host') + '</span>' : '') + '</nav>' +
+    (S.justCreated ? '<section class="panel created"><h2>Your event is ready 🎉</h2><p style="margin-top:4px">Send this link to your guests:</p>' +
+      '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Event link">' +
+      '<button type="button" class="btn small" data-act="copy-link">Copy</button></div></section>' : '') +
+    '<header class="hero' + (t.ink === '#FFFFFF' ? ' light-ink' : '') + '" style="--ga:' + t.a + ';--gb:' + t.b + ';--gi:' + t.ink + '">' +
+      '<div class="big" aria-hidden="true">' + esc(ev.emoji) + '</div>' +
+      '<h1>' + esc(ev.title) + '</h1>' +
+      (ev.description ? '<p class="desc' + (ev.description.length <= 140 && ev.description.indexOf('\n') < 0 ? ' short' : '') + '">' + linkify(ev.description) + '</p>' : '') +
+      (ev.host_name ? '<p class="by">Hosted by ' + esc(ev.host_name) + '</p>' : '') +
+    '</header>' +
+    ((ev.links || []).length ? '<nav class="linkbtns" aria-label="Links">' + ev.links.map(function (l) {
+      return '<a href="' + esc(l.url) + '" target="_blank" rel="noopener noreferrer">' + esc(l.label) + '</a>';
+    }).join('') + '</nav>' : '') +
+    '<section id="facts"></section>' +
+    '<section id="annc" class="annc" aria-label="Announcements"></section>' +
+    '<section id="me" class="panel me"></section>' +
+    '<section id="guests"></section>' +
+    '<section id="bring"></section>' +
+    '<section id="comments"></section>' +
+    '<section id="host"></section>' +
+    '<div class="tools endtools"><button type="button" class="chipbtn" data-act="share">🔗 Share link</button>' +
+      '<button type="button" class="chipbtn" data-act="share-details">📋 Share details</button>' +
+      '<button type="button" class="chipbtn" data-act="refresh">Refresh</button></div>';
+  renderParts();
+}
+
+function renderParts() {
+  if (S.mode !== 'view' || !$('#me')) return;
+  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderBring(); renderComments(); renderHost();
+}
+
+function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function mapsUrl(q) { return (isIOS() ? 'https://maps.apple.com/?q=' : 'https://www.google.com/maps/search/?api=1&query=') + encodeURIComponent(q); }
+
+function renderFacts() {
+  var ev = S.ev, tm = timing(ev), w = whenText(ev), when = w.when, sub = w.sub;
+  var html = (tm.state === 'past' ? '<div class="banner" style="margin:16px 0 0">This event has passed. Thanks for coming!</div>' : '') +
+    '<ul class="facts"><li><span class="ic" aria-hidden="true">📅</span><div><b>' + esc(when) + '</b>' + (sub ? '<span class="sub">' + esc(sub) + '</span>' : '') +
+      (tm.label ? '<span class="pill' + (tm.state === 'now' ? ' now' : '') + '">' + esc(tm.label) + '</span>' : '') +
+      (ev.event_date ? '<div class="calopts">' + (S.calOpen
+        ? '<button type="button" class="chipbtn" data-act="ics">Apple / Outlook (.ics)</button><a class="chipbtn" target="_blank" rel="noopener" href="' + esc(googleCalUrl()) + '">Google Calendar</a>'
+        : '<button type="button" class="chipbtn" data-act="cal">＋ Add to calendar</button>') + '</div>' : '') +
+    '</div></li>' +
+    (ev.location ? '<li><span class="ic" aria-hidden="true">📍</span><div><b>' + esc(ev.location) + '</b>' +
+      '<div class="calopts"><a class="chipbtn" target="_blank" rel="noopener" href="' + esc(mapsUrl(ev.location)) + '">Directions</a></div></div></li>' : '') +
+    '</ul>';
+  $('#facts').innerHTML = html;
+}
+
+/* calendar */
+function utcStamp(ms) { return new Date(ms).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
+function calDates() {
+  var ev = S.ev, s = span(ev), last = s.multi ? ev.end_date : ev.event_date;
+  if (!ev.start_time) return { allDay: true, start: ev.event_date.replace(/-/g, ''), end: addDays(last, 1).replace(/-/g, '') };
+  var end = ev.end_time || s.multi ? s.end : s.start + 2 * 3600e3;
+  return { allDay: false, start: utcStamp(s.start), end: utcStamp(end) };
+}
+function calDetails() { return (S.ev.description ? S.ev.description + '\n\n' : '') + shareUrl(S.code); }
+function googleCalUrl() {
+  var d = calDates();
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(S.ev.title) +
+    '&dates=' + d.start + '/' + d.end + '&details=' + encodeURIComponent(calDetails()) + '&location=' + encodeURIComponent(S.ev.location || '');
+}
+function detailsText() {
+  var ev = S.ev, w = whenText(ev), lines = [(ev.emoji ? ev.emoji + ' ' : '') + ev.title];
+  lines.push('📅 ' + w.when + (w.sub ? ' · ' + w.sub : ''));
+  if (ev.location) lines.push('📍 ' + ev.location);
+  if (ev.host_name) lines.push('Hosted by ' + ev.host_name);
+  if (ev.rsvp_by) lines.push('Please RSVP by ' + fmtDate(ev.rsvp_by, true));
+  if (ev.description) lines.push('', ev.description);
+  if ((ev.links || []).length) { lines.push(''); ev.links.forEach(function (l) { lines.push(l.label + ': ' + l.url); }); }
+  lines.push('', 'RSVP here: ' + shareUrl(S.code));
+  return lines.join('\n');
+}
+function icsEsc(s) { return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+function icsFold(line) { var out = [], s = line; while (s.length > 74) { out.push(s.slice(0, 74)); s = ' ' + s.slice(74); } out.push(s); return out.join('\r\n'); }
+function downloadIcs() {
+  var d = calDates(), ev = S.ev;
+  var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//pebbly.dev//RSVP//EN', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+    'UID:' + ev.code + '@pebbly.dev', 'DTSTAMP:' + utcStamp(Date.now()),
+    d.allDay ? 'DTSTART;VALUE=DATE:' + d.start : 'DTSTART:' + d.start,
+    d.allDay ? 'DTEND;VALUE=DATE:' + d.end : 'DTEND:' + d.end,
+    'SUMMARY:' + icsEsc(ev.title), 'DESCRIPTION:' + icsEsc(calDetails()), 'URL:' + shareUrl(S.code)];
+  if (ev.location) lines.push('LOCATION:' + icsEsc(ev.location));
+  lines.push('END:VEVENT', 'END:VCALENDAR');
+  var text = lines.map(icsFold).join('\r\n') + '\r\n';
+  var a = document.createElement('a');
+  a.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(text);
+  a.download = (ev.title.replace(/[^\w\- ]+/g, '').trim() || 'event') + '.ics';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+}
+
+function renderAnnc() {
+  var list = S.posts.filter(function (p) { return p.kind === 'announce'; }).reverse();
+  $('#annc').innerHTML = list.map(function (p) {
+    return '<article class="ann"><div class="top"><span>📣 From the host · ' + esc(relTime(p.created_at)) + '</span>' +
+      (S.isOwner ? '<button type="button" class="link danger" style="padding:0;font-size:13px" data-act="del-post" data-id="' + esc(p.id) + '">Delete</button>' : '') +
+      '</div><p>' + linkify(p.body) + '</p></article>';
+  }).join('');
+}
+
+/* your RSVP */
+function startForm(status) {
+  var m = S.me;
+  var sn = savedNames();
+  S.form = { phone: m && m.phone ? m.phone : store.get('rsvp.phone', '') || '', status: status || (m && m.status) || 'going', first: m && m.first_name ? m.first_name : sn.first, last: m && m.first_name ? (m.last_name || '') : sn.last, plus: m ? m.plus_ones : 0, note: m ? m.note : '', answers: m ? Object.assign({}, m.answers || {}) : {} };
+  S.rsvpOpen = true;
+}
+
+function renderMe() {
+  var el = $('#me'), ev = S.ev, m = S.me, closed = ev.rsvp_closed || rsvpClosed(ev), canEdit = !closed || S.isOwner;
+  el.className = 'panel me' + (m && !S.rsvpOpen ? ' ' + m.status : '');
+  var deadline = ev.rsvp_by ? '<p class="deadline">' + (closed ? 'RSVPs closed on ' + esc(fmtDate(ev.rsvp_by, true)) + '.' + (S.isOwner ? ' As the host you can still change replies.' : '')
+    : 'Please reply by ' + esc(fmtDate(ev.rsvp_by, true)) + '.') + '</p>' : '';
+  if (S.rsvpOpen && canEdit) {
+    var f = S.form, qs = ev.questions || [];
+    el.innerHTML = '<h2>' + (m ? 'Change your RSVP' : 'Will you be there?') + '</h2>' +
+      statusButtons(f.status) +
+      '<form id="rsvpForm" class="rform" novalidate>' +
+        '<div class="row2"><label class="fld"><span>First name</span><input type="text" id="rFirst" maxlength="30" autocomplete="given-name" value="' + esc(f.first) + '"></label>' +
+          '<label class="fld"><span>Last name</span><input type="text" id="rLast" maxlength="30" autocomplete="family-name" value="' + esc(f.last) + '"></label></div>' +
+        '<label class="fld"><span>Mobile number' + (ev.require_phone ? '' : ' (optional)') + '</span><input type="tel" id="rPhone" maxlength="25" autocomplete="tel" inputmode="tel" placeholder="(612) 555-0123" value="' + esc(fmtPhone(f.phone)) + '">' +
+          '<small>Only the host sees it, for event texts.</small></label>' +
+        (ev.max_plus_ones > 0 && f.status !== 'no' ? '<label class="fld"><span>Bringing anyone?</span><select id="rPlus">' +
+          Array.apply(null, { length: ev.max_plus_ones + 1 }).map(function (_, i) {
+            return '<option value="' + i + '"' + (Math.min(f.plus, ev.max_plus_ones) === i ? ' selected' : '') + '>' + (i === 0 ? 'Just me' : '+' + i + (i === 1 ? ' guest' : ' guests')) + '</option>';
+          }).join('') + '</select></label>' : '') +
+        '<label class="fld"><span>Note (optional)</span><input type="text" id="rNote" maxlength="200" autocomplete="off" placeholder="' +
+          (f.status === 'no' ? 'Sorry I’ll miss it!' : 'Can’t wait!') + '" value="' + esc(f.note) + '">' +
+          '<small>' + (ev.hide_guests ? 'Only the host sees this.' : 'Shown next to your name on the guest list.') + '</small></label>' +
+        qs.map(function (q) {
+          return '<label class="fld"><span>' + esc(q.text) + '</span><input type="text" data-q="' + esc(q.id) + '" maxlength="300" autocomplete="off" value="' + esc(f.answers[q.id] || '') + '"><small>Only the host sees your answer.</small></label>';
+        }).join('') +
+        '<div class="tools"><button type="submit" class="btn primary">' + (m ? 'Update RSVP' : 'Send RSVP') + '</button>' +
+          '<button type="button" class="btn" data-act="rsvp-cancel">Cancel</button></div>' +
+      '</form>' + deadline;
+    return;
+  }
+  S.rsvpOpen = false;
+  if (m) {
+    var st = STATUS[m.status], ansHtml = (ev.questions || []).filter(function (q) { return m.answers && m.answers[q.id]; }).map(function (q) {
+      return '<span class="sub" style="display:block">' + esc(q.text) + ' ' + esc(m.answers[q.id]) + '</span>';
+    }).join('');
+    el.innerHTML = '<div class="myans"><span class="e" aria-hidden="true">' + st.e + '</span><div><b>' + esc(st.you) + (m.status !== 'no' && m.plus_ones ? ' +' + m.plus_ones : '') + '</b>' +
+      '<span class="sub" style="display:block">as ' + esc(m.name) + (m.note ? ' · “' + esc(m.note) + '”' : '') + '</span>' + ansHtml + '</div></div>' +
+      (canEdit ? '<div class="tools"><button type="button" class="btn small" data-act="rsvp-change">Change RSVP</button></div>' : '') + deadline;
+    return;
+  }
+  if (!canEdit) { el.innerHTML = '<h2>RSVPs are closed</h2>' + deadline + '<p class="hint" style="margin-top:6px">Contact the host if your plans change.</p>'; return; }
+  el.innerHTML = '<h2>Will you be there?</h2>' + statusButtons(null) + deadline;
+}
+
+function statusButtons(cur) {
+  return '<div class="status3" role="group" aria-label="Your answer">' + ['going', 'maybe', 'no'].map(function (k) {
+    return '<button type="button" class="sb ' + k + '" data-act="status" data-id="' + k + '" aria-pressed="' + (cur === k) + '"><span class="e" aria-hidden="true">' + STATUS[k].e + '</span>' + STATUS[k].label + '</button>';
+  }).join('') + '</div>';
+}
+
+function submitRsvp() {
+  var f = S.form, btn = $('#rsvpForm button[type=submit]');
+  f.first = cleanName($('#rFirst').value); f.last = cleanName($('#rLast').value);
+  if (!f.first) { toast('Enter your first name.'); $('#rFirst').focus(); return; }
+  if (!f.last) { toast('Enter your last name.'); $('#rLast').focus(); return; }
+  f.phone = normPhone($('#rPhone').value);
+  if (!f.phone && S.ev.require_phone) { toast(friendly(new ApiError('phone_required'))); $('#rPhone').focus(); return; }
+  if (f.phone && !phoneOk(f.phone)) { toast(friendly(new ApiError('invalid_phone'))); $('#rPhone').focus(); return; }
+  saveNames(f.first, f.last);
+  if (f.phone) store.set('rsvp.phone', f.phone);
+  btn.disabled = true;
+  api.respond({ code: S.code, pid: S.pid, owner: S.owner, first: f.first, last: f.last, phone: f.phone, status: f.status, plus_ones: f.status === 'no' ? 0 : Number(f.plus || 0), note: f.note, answers: f.answers })
+    .then(reload).then(function () {
+      S.rsvpOpen = false; renderParts();
+      toast(f.status === 'going' ? 'See you there! 🎉' : f.status === 'maybe' ? 'Got it. Hope you can make it.' : 'Thanks for letting the host know.');
+    }, function (e) { btn.disabled = false; toast(friendly(e)); });
+}
+
+/* guest list */
+function renderGuests() {
+  var el = $('#guests'), ev = S.ev, c = S.counts, g = S.guests;
+  if (!c && !g) { el.innerHTML = '<h3 class="sect">Guest list</h3><p class="hint">The host is keeping the guest list private.</p>'; return; }
+  var html = '<h3 class="sect">Guest list</h3>';
+  if (c) {
+    html += '<div class="counts"><span class="c-go">' + c.going + ' going' + (c.going_plus ? ' (incl. ' + c.going_plus + ' plus-one' + (c.going_plus === 1 ? '' : 's') + ')' : '') + '</span>' +
+      '<span class="c-maybe">' + c.maybe + ' maybe</span><span class="c-no">' + c.no + ' can’t go</span></div>';
+  }
+  if (S.isOwner && (ev.hide_guests || ev.hide_count)) {
+    html += '<p class="hint" style="margin-top:6px;font-size:14px">' + (ev.hide_guests && ev.hide_count ? 'Only you can see this list and the count.' : ev.hide_guests ? 'Only you can see who’s on this list.' : 'Only you can see the count.') + '</p>';
+  }
+  if (!g) { html += '<p class="hint" style="margin-top:8px">The host is keeping the guest list private.</p>'; el.innerHTML = html; return; }
+  if (!g.length) { html += '<p class="hint" style="margin-top:8px">No replies yet. Be the first!</p>'; el.innerHTML = html; return; }
+  var qs = ev.questions || [];
+  ['going', 'maybe', 'no'].forEach(function (k) {
+    var list = g.filter(function (x) { return x.status === k; });
+    if (!list.length) return;
+    html += '<div class="ghead">' + STATUS[k].e + ' ' + STATUS[k].group + ' (' + list.length + ')</div><ul class="glist">' + list.map(function (x) {
+      var ans = S.isOwner && x.answers ? qs.filter(function (q) { return x.answers[q.id]; }).map(function (q) {
+        return '<span class="ans"><i>' + esc(q.text) + '</i> ' + esc(x.answers[q.id]) + '</span>';
+      }).join('') : '';
+      return '<li class="g"><div class="grow"><span class="nm">' + esc(x.name) + '</span>' +
+        (x.plus_ones && x.status !== 'no' ? '<span class="plus">+' + x.plus_ones + '</span>' : '') + (x.mine ? ' <span class="hint" style="font-size:13px">(you)</span>' : '') +
+        (x.note ? '<span class="note">“' + esc(x.note) + '”</span>' : '') + ans +
+        (S.isOwner && x.phone ? '<span class="stamp">📱 ' + esc(fmtPhone(x.phone)) + '</span>' : '') +
+        (S.isOwner && x.replied_at ? '<span class="stamp">Replied ' + esc(fmtStampTime(x.replied_at)) +
+          (x.updated_at && new Date(x.updated_at) - new Date(x.replied_at) > 60000 ? ' · changed ' + esc(fmtStampTime(x.updated_at)) : '') + '</span>' : '') +
+        (S.isOwner ? '<button type="button" class="link danger" data-act="rm-guest" data-id="' + esc(x.id) + '" data-name="' + esc(x.name) + '">Remove</button>' : '') +
+        '</div></li>';
+    }).join('') + '</ul>';
+  });
+  el.innerHTML = html;
+}
+
+/* bring list */
+function itemById(id) { return S.items.filter(function (i) { return i.id === id; })[0] || null; }
+function needSelect(id, cur) {
+  var html = '<select id="' + id + '" aria-label="How many people"><option value="0"' + (Number(cur) === 0 ? ' selected' : '') + '>Unlimited</option>';
+  for (var n = 1; n <= 10; n++) html += '<option value="' + n + '"' + (n === Number(cur) ? ' selected' : '') + '>' + (n === 1 ? '1 person' : n + ' people') + '</option>';
+  if (cur > 10) html += '<option value="' + cur + '" selected>' + cur + ' people</option>';
+  return html + '</select>';
+}
+function renderBring() {
+  var el = $('#bring'), ev = S.ev, canAdd = S.isOwner || ev.guests_add_items;
+  if (ev.bring_list === false || (!S.items.length && !canAdd)) { el.innerHTML = ''; return; }
+  var html = '<h3 class="sect">Bring list</h3>';
+  html += S.items.length ? '<p class="hint" style="font-size:14px">Tap “I’ll bring it” so nobody doubles up.</p><ul class="items">' + S.items.map(function (i) {
+    if (S.editingItem === i.id) {
+      return '<li class="item"><form id="itemEditForm" class="editf" data-id="' + esc(i.id) + '" novalidate>' +
+        '<input type="text" id="itemEdit" maxlength="80" autocomplete="off" aria-label="Edit item" value="' + esc(S.editItemText) + '">' +
+        (S.isOwner ? needSelect('itemEditNeeded', S.editItemNeeded) : '') +
+        '<button type="submit" class="btn small primary">Save</button><button type="button" class="btn small" data-act="item-edit-cancel">Cancel</button></form></li>';
+    }
+    var mine = i.claims.some(function (c) { return c.mine; }), full = i.needed > 0 && i.claims.length >= i.needed;
+    var names = i.claims.map(function (c) { return c.mine ? 'You' : c.name; });
+    var meta = names.length ? names.map(esc).join(', ') + (i.needed > 1 ? ' · ' + i.claims.length + ' of ' + i.needed : i.needed === 0 ? ' · more welcome' : '')
+      : (i.needed === 0 ? 'Anyone can bring this · nobody yet' : i.needed > 1 ? 'Needs ' + i.needed + ' people' : 'Nobody yet');
+    var btn = mine ? '<button type="button" class="cb" data-act="claim" data-id="' + esc(i.id) + '" aria-pressed="true" aria-label="You are bringing ' + esc(i.label) + '. Tap to undo.">✓ You’re bringing it</button>'
+      : full ? '<button type="button" class="cb" disabled>Covered</button>'
+      : '<button type="button" class="cb" data-act="claim" data-id="' + esc(i.id) + '" aria-pressed="false">I’ll bring it</button>';
+    var own = (S.isOwner || i.mine_added) ? '<div class="ownrow"><button type="button" class="link" data-act="item-edit" data-id="' + esc(i.id) + '">Edit</button>' +
+      '<button type="button" class="link danger" data-act="item-rm" data-id="' + esc(i.id) + '">Remove</button></div>' : '';
+    return '<li class="item' + (full && !mine ? ' full' : '') + '"><div><b>' + esc(i.label) + '</b><span class="meta">' + meta + '</span></div>' + btn + own + '</li>';
+  }).join('') + '</ul>' : '<p class="hint">Nothing on the list yet.</p>';
+  if (canAdd) {
+    html += '<form id="itemForm" class="addf" novalidate><input type="text" id="newItem" maxlength="80" autocomplete="off" aria-label="' +
+      (S.isOwner ? 'Add an item' : 'Something you’ll bring') + '" placeholder="' + (S.isOwner ? 'Add an item' : 'I’ll bring something else…') + '" value="' + esc(S.draft.item) + '">' +
+      (S.isOwner ? needSelect('newItemNeeded', S.draft.needed) : '') + '<button type="submit" class="btn">Add</button></form>';
+  }
+  el.innerHTML = html;
+}
+
+function needName(what) {
+  if (myName()) return false;
+  toast('RSVP first so people know who’s ' + what + '.');
+  if (!S.rsvpOpen) { startForm(null); renderMe(); }
+  var me = $('#me'); if (me && me.scrollIntoView) me.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  var n = $('#rFirst'); if (n) n.focus({ preventScroll: true });
+  return true;
+}
+
+function doClaim(id) {
+  var i = itemById(id); if (!i) return;
+  var mine = i.claims.some(function (c) { return c.mine; });
+  if (!mine && needName('bringing it')) return;
+  after(api.claim({ code: S.code, pid: S.pid, name: myName(), item: id, claim: !mine }), mine ? 'Okay, you’re not bringing “' + i.label + '”.' : 'Thanks! You’re bringing “' + i.label + '”.');
+}
+
+function doAddItem() {
+  var inp = $('#newItem'), label = inp.value.replace(/\s+/g, ' ').trim();
+  if (!label) { inp.focus(); return; }
+  if (!S.isOwner && needName('bringing it')) return;
+  var needed = S.isOwner && $('#newItemNeeded') ? Number($('#newItemNeeded').value) : 1;
+  after(api.addItem({ code: S.code, pid: S.pid, owner: S.owner, name: myName(), label: label, needed: needed }), S.isOwner ? 'Added “' + label + '”.' : 'Thanks! You’re bringing “' + label + '”.')
+    .then(function (ok) { if (ok) { S.draft.item = ''; S.draft.needed = 1; renderBring(); var n = $('#newItem'); if (n) n.focus(); } });
+}
+
+/* comments */
+function renderComments() {
+  var el = $('#comments'), list = S.posts.filter(function (p) { return p.kind === 'comment'; }), named = !!myName();
+  el.innerHTML = '<h3 class="sect">Comments' + (list.length ? ' (' + list.length + ')' : '') + '</h3>' +
+    (list.length ? '<ul class="cmts">' + list.map(function (p) {
+      return '<li class="cmt"><div class="grow"><div class="top"><b>' + esc(p.name) + '</b> · ' + esc(relTime(p.created_at)) + '</div><p>' + linkify(p.body) + '</p>' +
+        (p.mine || S.isOwner ? '<button type="button" class="link danger" data-act="del-post" data-id="' + esc(p.id) + '">Delete</button>' : '') + '</div></li>';
+    }).join('') + '</ul>' : '<p class="hint">No comments yet.</p>') +
+    '<form id="cmtForm" class="cform" novalidate>' +
+      (named ? '' : '<div class="row2"><label class="fld"><span>First name</span><input type="text" id="cFirst" maxlength="30" autocomplete="given-name" value="' + esc(S.draft.cfirst) + '"></label>' +
+        '<label class="fld"><span>Last name</span><input type="text" id="cLast" maxlength="30" autocomplete="family-name" value="' + esc(S.draft.clast) + '"></label></div>') +
+      '<label class="fld"><span>' + (named ? 'Add a comment as ' + esc(myName()) : 'Comment') + '</span><textarea id="cBody" rows="2" maxlength="500" placeholder="Say something to everyone">' + esc(S.draft.comment) + '</textarea></label>' +
+      '<button type="submit" class="btn">Post</button></form>';
+}
+
+function doComment() {
+  var body = S.draft.comment.trim(), name = myName();
+  if (!name) {
+    var cf = cleanName(S.draft.cfirst), cl = cleanName(S.draft.clast);
+    if (!cf || !cl) { toast('Enter your first and last name.'); var n = $(cf ? '#cLast' : '#cFirst'); if (n) n.focus(); return; }
+    saveNames(cf, cl); name = cf + ' ' + cl;
+  }
+  if (!body) { $('#cBody').focus(); return; }
+  after(api.post({ code: S.code, pid: S.pid, owner: S.owner, name: name, kind: 'comment', body: body }), 'Posted.')
+    .then(function (ok) { if (ok) { S.draft.comment = ''; renderComments(); } });
+}
+
+/* host tools */
+function renderHost() {
+  var el = $('#host');
+  if (!S.isOwner) { el.innerHTML = ''; return; }
+  el.innerHTML = '<div class="panel host"><h2>Host tools</h2><p class="hint" style="margin-top:4px">Only you can see this.</p>' +
+    '<form id="annForm" style="margin-top:14px" novalidate><label class="fld" style="margin-bottom:8px"><span>Post an announcement</span>' +
+      '<textarea id="annBody" rows="3" maxlength="1000" placeholder="Shown at the top of the page for everyone">' + esc(S.draft.ann) + '</textarea></label>' +
+      '<button type="submit" class="btn primary small">Post announcement</button></form>' +
+    '<div class="row"><button type="button" class="btn small" data-act="edit-event">Edit event</button>' +
+      '<button type="button" class="btn small" data-act="copy-host">Copy host link</button>' +
+      '<button type="button" class="btn small danger" data-act="delete-event">Delete event</button></div>' +
+    '<p class="hint" style="margin-top:8px;font-size:13px">The host link gives control of this event on another device. Keep it private.</p>' +
+    '<h3 style="font-size:16px;margin-top:20px">Text guests</h3>' +
+    '<p class="hint" style="font-size:13px;margin-top:2px">Each “Text” button opens Messages on your phone with the message ready. Tap Send, come back, and do the next one. Texts come from your number.</p>' +
+    '<div class="aud" role="group" aria-label="Who to text">' + ['going', 'maybe', 'no'].map(function (k) {
+      return '<label><input type="checkbox" data-aud="' + k + '"' + (S.aud[k] ? ' checked' : '') + '>' + STATUS[k].label + '</label>';
+    }).join('') + '</div>' +
+    '<label class="fld" style="margin-bottom:6px"><span>Message</span><textarea id="smsBody" rows="3" maxlength="600" placeholder="Hi! Quick reminder…">' + esc(S.draft.sms) + '</textarea></label>' +
+    '<label class="check" style="min-height:0;padding:4px"><input type="checkbox" id="smsLink"' + (S.smsLink ? ' checked' : '') + '><span>Add the event link at the end</span></label>' +
+    '<div id="textList"></div>' +
+    '<h3 style="font-size:16px;margin-top:20px">Download</h3>' +
+    '<p class="hint" style="font-size:13px;margin-top:2px">Spreadsheet files (CSV) that open in Excel, Numbers or Google Sheets.</p>' +
+    '<div class="row"><button type="button" class="btn small primary" data-act="dl" data-id="all">Everything (.zip)</button>' +
+      '<button type="button" class="btn small" data-act="dl" data-id="guests">Responses</button>' +
+      (S.ev.bring_list !== false ? '<button type="button" class="btn small" data-act="dl" data-id="bring">Bring list</button>' : '') +
+      '<button type="button" class="btn small" data-act="dl" data-id="comments">Comments</button>' +
+      '<button type="button" class="btn small" data-act="dl" data-id="announcements">Announcements</button>' +
+      '<button type="button" class="btn small" data-act="dl" data-id="event">Event details</button></div></div>';
+  renderTextList();
+}
+
+/* texting (host) */
+function smsBody() {
+  var msg = S.draft.sms.trim(), link = S.smsLink ? shareUrl(S.code) : '';
+  return msg + (msg && link ? '\n\n' : '') + link;
+}
+function renderTextList() {
+  var el = $('#textList');
+  if (!el) return;
+  var list = (S.guests || []).filter(function (g) { return S.aud[g.status]; });
+  var withPhone = list.filter(function (g) { return g.phone; }), without = list.length - withPhone.length, body = smsBody();
+  if (!list.length) { el.innerHTML = '<p class="hint" style="margin-top:8px">Nobody to text yet.</p>'; return; }
+  var sent = withPhone.filter(function (g) { return S.texted[g.id]; }).length;
+  el.innerHTML = (withPhone.length ? '<p class="hint" style="margin-top:8px;font-size:14px">' + sent + ' of ' + withPhone.length + ' opened' +
+      (sent ? ' · <button type="button" class="link" style="padding:0;font-size:14px" data-act="texts-reset">Start over</button>' : '') + '</p>' : '') +
+    '<ul class="texts">' + withPhone.map(function (g) {
+      var href = 'sms:' + g.phone + '?body=' + encodeURIComponent(body);
+      return '<li' + (S.texted[g.id] ? ' class="done"' : '') + '><span class="who"><b>' + (S.texted[g.id] ? '✓ ' : '') + esc(g.name) + '</b><small>' + esc(fmtPhone(g.phone)) + ' · ' + STATUS[g.status].label + '</small></span>' +
+        (body ? '<a class="btn small" href="' + esc(href) + '" data-text="' + esc(g.id) + '">' + (S.texted[g.id] ? 'Again' : 'Text') + '</a>' : '') + '</li>';
+    }).join('') + '</ul>' +
+    (!body && withPhone.length ? '<p class="hint" style="font-size:14px;margin-top:6px">Write a message to get the Text buttons.</p>' : '') +
+    (without ? '<p class="hint" style="font-size:14px;margin-top:6px">' + without + (without === 1 ? ' person' : ' people') + ' didn’t give a number: ' +
+      list.filter(function (g) { return !g.phone; }).map(function (g) { return esc(g.name); }).join(', ') + '.</p>' : '');
+}
+
+/* downloads (host) */
+function csvCell(v) {
+  var t = v == null ? '' : String(v);
+  if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; // stop spreadsheets treating text as a formula
+  return '"' + t.replace(/"/g, '""') + '"';
+}
+function toCsv(rows) { return '\ufeff' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n'; }
+function csvStamp(ts) {
+  if (!ts) return '';
+  var d = new Date(ts); if (isNaN(d.getTime())) return '';
+  function two(n) { return String(n).padStart(2, '0'); }
+  return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate()) + ' ' + two(d.getHours()) + ':' + two(d.getMinutes());
+}
+function exportFiles() {
+  var ev = S.ev, qs = ev.questions || [], files = {};
+  var guests = [['First name', 'Last name', 'Phone', 'Response', 'Plus-ones', 'Party size', 'Note'].concat(qs.map(function (q) { return q.text; })).concat(['Replied', 'Last changed'])];
+  (S.guests || []).forEach(function (g) {
+    guests.push([g.first_name || g.name, g.last_name || '', fmtPhone(g.phone || ''), STATUS[g.status].label.replace('’', "'"), g.status === 'no' ? 0 : g.plus_ones,
+      g.status === 'no' ? 0 : 1 + g.plus_ones, g.note].concat(qs.map(function (q) { return (g.answers || {})[q.id] || ''; }))
+      .concat([csvStamp(g.replied_at), csvStamp(g.updated_at)]));
+  });
+  files.guests = toCsv(guests);
+  var bring = [['Item', 'People needed', 'People bringing', 'Who', 'Added by']];
+  S.items.forEach(function (i) {
+    bring.push([i.label, i.needed === 0 ? 'Unlimited' : i.needed, i.claims.length, i.claims.map(function (c) { return c.name; }).join('; '), i.by_host ? 'Host' : (i.added_by || '')]);
+  });
+  files.bring = toCsv(bring);
+  var cm = [['Name', 'Posted', 'Comment']], an = [['Posted', 'Announcement']];
+  S.posts.forEach(function (p) { if (p.kind === 'comment') cm.push([p.name, csvStamp(p.created_at), p.body]); else an.push([csvStamp(p.created_at), p.body]); });
+  files.comments = toCsv(cm); files.announcements = toCsv(an);
+  var w = whenText(ev), c = S.counts || {};
+  var info = [['Field', 'Value'], ['Event', ev.title], ['When', w.when + (w.sub ? ' · ' + w.sub : '')], ['Location', ev.location], ['Hosted by', ev.host_name],
+    ['RSVP by', ev.rsvp_by || ''], ['Details', ev.description], ['Link', shareUrl(S.code)],
+    ['Going (incl. plus-ones)', c.going], ['Maybe', c.maybe], ["Can't go", c.no], ['Exported', csvStamp(Date.now())]];
+  (ev.links || []).forEach(function (l) { info.push(['Link button: ' + l.label, l.url]); });
+  files.event = toCsv(info);
+  return files;
+}
+function fileBase() { return (S.ev.title.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'event').slice(0, 40); }
+function saveBlob(blob, name) {
+  var a = document.createElement('a'), url = URL.createObjectURL(blob);
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+}
+// Minimal ZIP writer (files stored without compression), so all CSVs come as one download.
+var CRC_TABLE = null;
+function crc32(bytes) {
+  if (!CRC_TABLE) { CRC_TABLE = []; for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; CRC_TABLE[n] = c >>> 0; } }
+  var crc = 0xFFFFFFFF;
+  for (var i = 0; i < bytes.length; i++) crc = CRC_TABLE[(crc ^ bytes[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+function makeZip(files) {
+  var enc = new TextEncoder(), parts = [], central = [], offset = 0, d = new Date();
+  var time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  var date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  function hdr(size) { var b = new DataView(new ArrayBuffer(size)); return b; }
+  files.forEach(function (f) {
+    var data = enc.encode(f.text), name = enc.encode(f.name), crc = crc32(data);
+    var h = hdr(30);
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true);
+    h.setUint16(10, time, true); h.setUint16(12, date, true); h.setUint32(14, crc, true);
+    h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true); h.setUint16(28, 0, true);
+    parts.push(h.buffer, name, data);
+    var c = hdr(46);
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, time, true); c.setUint16(14, date, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true);
+    c.setUint16(28, name.length, true); c.setUint32(42, offset, true);
+    central.push(c.buffer, name);
+    offset += 30 + name.length + data.length;
+  });
+  var size = central.reduce(function (n, x) { return n + x.byteLength; }, 0), e = hdr(22);
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true);
+  e.setUint32(12, size, true); e.setUint32(16, offset, true);
+  return new Blob(parts.concat(central, [e.buffer]), { type: 'application/zip' });
+}
+function doDownload(which) {
+  reload().then(function () {
+    renderParts();
+    var f = exportFiles(), base = fileBase();
+    var names = { guests: 'responses', bring: 'bring-list', comments: 'comments', announcements: 'announcements', event: 'event-details' };
+    if (which === 'all') {
+      var list = Object.keys(names).filter(function (k) { return k !== 'bring' || S.ev.bring_list !== false; })
+        .map(function (k) { return { name: base + '-' + names[k] + '.csv', text: f[k] }; });
+      saveBlob(makeZip(list), base + '-rsvp.zip');
+    } else {
+      saveBlob(new Blob([f[which]], { type: 'text/csv;charset=utf-8' }), base + '-' + names[which] + '.csv');
+    }
+  }, function (e) { toast(friendly(e)); });
+}
+
+/* ------------------------------------------------------------------- events */
+
+$app.addEventListener('click', function (e) {
+  var tx = e.target.closest('[data-text]');
+  if (tx) { // let Messages open, then tick the person off
+    var gid = tx.dataset.text;
+    setTimeout(function () { S.texted[gid] = true; renderTextList(); }, 400);
+    return;
+  }
+  var t = e.target.closest('[data-act]');
+  if (!t || !$app.contains(t)) return;
+  var id = t.dataset.id;
+  switch (t.dataset.act) {
+    case 'theme': F.theme = id; syncFormUi(); break;
+    case 'emoji': F.emoji = id; var ei = $('#eventForm input[name=emoji]'); if (ei) ei.value = id; syncFormUi(); break;
+    case 'edit-cancel': S.mode = 'view'; renderEvent(); break;
+    case 'link-add': if (F.links.length < 5) { F.links.push({ label: '', url: '' }); $('#linkRows').innerHTML = linkRowsHtml(); var li = document.querySelector('#linkRows .linkrow:last-of-type input'); if (li) li.focus(); } break;
+    case 'link-rm': F.links.splice(Number(t.dataset.i), 1); if (!F.links.length) F.links.push({ label: '', url: '' }); $('#linkRows').innerHTML = linkRowsHtml(); break;
+    case 'dl': doDownload(id); break;
+    case 'texts-reset': S.texted = {}; renderTextList(); break;
+    case 'share-details': copyText(detailsText()).then(function (ok) { toast(ok ? 'Event details copied. Paste them into a text or email.' : 'Could not copy.'); }); break;
+    case 'copy-link': copyText(shareUrl(S.code), $('#shareUrl')).then(function (ok) { toast(ok ? 'Link copied.' : 'Press and hold the link to copy it.'); }); break;
+    case 'share': copyText(shareUrl(S.code)).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : shareUrl(S.code)); }); break;
+    case 'refresh': reload().then(function () { renderParts(); toast('Updated.'); }, function (er) { toast(friendly(er)); }); break;
+    case 'cal': S.calOpen = true; renderFacts(); break;
+    case 'ics': downloadIcs(); break;
+    case 'status':
+      if (!S.rsvpOpen) startForm(id); else S.form.status = id;
+      renderMe();
+      var rn = $('#rFirst'); if (rn && !rn.value) rn.focus();
+      break;
+    case 'rsvp-change': startForm(null); renderMe(); break;
+    case 'rsvp-cancel': S.rsvpOpen = false; renderMe(); break;
+    case 'rm-guest':
+      if (confirm('Remove ' + t.dataset.name + ' from the guest list? Their bring-list claims are removed too.')) {
+        after(api.removeGuest({ code: S.code, owner: S.owner, guest: id }), 'Removed.');
+      }
+      break;
+    case 'del-post':
+      if (confirm('Delete this post?')) after(api.delPost({ code: S.code, pid: S.pid, owner: S.owner, post: id }), 'Deleted.');
+      break;
+    case 'claim': doClaim(id); break;
+    case 'item-edit': var it = itemById(id); if (it) { S.editingItem = id; S.editItemText = it.label; S.editItemNeeded = it.needed; renderBring(); var ie = $('#itemEdit'); if (ie) ie.focus(); } break;
+    case 'item-edit-cancel': S.editingItem = null; renderBring(); break;
+    case 'item-rm':
+      var ri = itemById(id);
+      if (ri && confirm('Remove “' + ri.label + '” from the bring list?')) after(api.removeItem({ code: S.code, pid: S.pid, owner: S.owner, item: id }), 'Removed.');
+      break;
+    case 'edit-event': S.mode = 'edit'; renderEvent(); window.scrollTo(0, 0); break;
+    case 'copy-host': copyText(hostUrl(S.code)).then(function (ok) { toast(ok ? 'Host link copied. Keep it private.' : 'Could not copy.'); }); break;
+    case 'delete-event':
+      if (confirm('Delete this event for everyone? This can’t be undone.')) {
+        api.del({ code: S.code, owner: S.owner }).then(function () {
+          forgetEvent(S.code); history.pushState(null, '', baseUrl()); renderHome(); toast('Event deleted.');
+        }, function (er) { toast(friendly(er)); });
+      }
+      break;
+    case 'to-admin': history.pushState(null, '', baseUrl() + '?admin'); renderAdmin(); break;
+    case 'admin-refresh': api.adminList(A.pw).then(function (list) { A.events = list; renderAdmin(); toast('Updated.'); }, adminFail); break;
+    case 'admin-out': A.pw = ''; A.events = null; renderAdmin(); break;
+    case 'admin-open': adminOpen(t.dataset.code); break;
+    case 'admin-del': adminDelete(t.dataset.code, t.dataset.name); break;
+    case 'new-person': store.set('rsvp.pid', uuid()); saveNames('', ''); toast('You are now a new person in this browser.'); route(); break;
+  }
+});
+
+$app.addEventListener('input', function (e) {
+  var t = e.target;
+  if (t.closest('#eventForm')) {
+    if (t.dataset.link) { F.links[Number(t.dataset.i)][t.dataset.link] = t.value; return; }
+    if (t.name === 'emoji') { F.emoji = t.value.trim(); syncFormUi(); }
+    else if (t.name === 'title') syncFormUi();
+    return;
+  }
+  if (S.form) {
+    if (t.id === 'rFirst') S.form.first = t.value;
+    else if (t.id === 'rLast') S.form.last = t.value;
+    else if (t.id === 'rPhone') S.form.phone = t.value;
+    else if (t.id === 'rNote') S.form.note = t.value;
+    else if (t.dataset.q) S.form.answers[t.dataset.q] = t.value;
+  }
+  if (t.id === 'cBody') S.draft.comment = t.value;
+  else if (t.id === 'cFirst') S.draft.cfirst = t.value;
+  else if (t.id === 'cLast') S.draft.clast = t.value;
+  else if (t.id === 'annBody') S.draft.ann = t.value;
+  else if (t.id === 'smsBody') { S.draft.sms = t.value; renderTextList(); }
+  else if (t.id === 'newItem') S.draft.item = t.value;
+  else if (t.id === 'itemEdit') S.editItemText = t.value;
+});
+
+$app.addEventListener('change', function (e) {
+  var t = e.target;
+  if (t.dataset.aud) { S.aud[t.dataset.aud] = t.checked; renderTextList(); return; }
+  if (t.id === 'smsLink') { S.smsLink = t.checked; renderTextList(); return; }
+  if (t.name === 'bring_list' && t.form) { $('#bringOpts').hidden = !t.checked; return; }
+  if (t.name === 'end_date' && t.form) { $('#multiHint').hidden = !t.value; return; }
+  if (t.id === 'rPlus' && S.form) S.form.plus = Number(t.value);
+  else if (t.id === 'newItemNeeded') S.draft.needed = Number(t.value);
+  else if (t.id === 'itemEditNeeded') S.editItemNeeded = Number(t.value);
+});
+
+$app.addEventListener('submit', function (e) {
+  var id = e.target.id;
+  e.preventDefault();
+  if (id === 'eventForm') submitEvent(e.target);
+  else if (id === 'rsvpForm') submitRsvp();
+  else if (id === 'itemForm') doAddItem();
+  else if (id === 'cmtForm') doComment();
+  else if (id === 'annForm') {
+    var body = S.draft.ann.trim();
+    if (!body) { $('#annBody').focus(); return; }
+    after(api.post({ code: S.code, pid: S.pid, owner: S.owner, name: '', kind: 'announce', body: body }), 'Announcement posted.')
+      .then(function (ok) { if (ok) { S.draft.ann = ''; renderHost(); } });
+  }
+  else if (id === 'itemEditForm') {
+    var label = S.editItemText.replace(/\s+/g, ' ').trim();
+    if (!label) { $('#itemEdit').focus(); return; }
+    after(api.editItem({ code: S.code, pid: S.pid, owner: S.owner, item: e.target.dataset.id, label: label, needed: S.isOwner ? S.editItemNeeded : null }), 'Saved.')
+      .then(function (ok) { if (ok) { S.editingItem = null; renderBring(); } });
+  }
+  else if (id === 'adminForm') submitAdmin(e.target);
+});
+
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'visible' && S.ev && S.mode === 'view' && $('#me')) {
+    reload().then(renderParts, function () {});
+  }
+});
+
+window.addEventListener('popstate', route);
+resetState();
+route();
+
+})();
+</script>
+</body>
+</html>
