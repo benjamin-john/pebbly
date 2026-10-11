@@ -11,7 +11,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/score/` | Score Keeper: per-round scores for any game |
 | `/darts/` | Darts Scorer: '01 (301/501/701/901, straight/double/master out, double in) and Cricket (standard or cut-throat) |
 | `/farkle/` | Farkle: dice roller and/or scoreboard, 1+ players, standard or continue-play, editable house rules |
-| `/qwixx/` | Qwixx: dice roller and/or score cards, 1+ players, rules enforced |
+| `/kwiks/` | Kwiks: color-row dice game, dice roller and/or score cards, 1+ players, rules enforced |
 | `/namegame/` | The Name Game |
 | `/install/` | How to add Pebbly to a phone or computer home screen |
 
@@ -23,7 +23,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 - **Play together** (`play/`): any game can be shared between phones with a 5-letter code.
   `play/play.sql` (run once in Supabase) stores each shared game as one JSON document with a
   version number; `play/sync.js` pushes changes, polls every 1.5 s, and merges when two phones
-  change things at once. A game page hooks in with `PebblySync.wire(kind, {...})` (see Qwixx).
+  change things at once. A game page hooks in with `PebblySync.wire(kind, {...})` (see Kwiks).
 - `keepawake.js` keeps the screen on during games: call `keepAwake(true)` / `keepAwake(false)`.
 - `CNAME` holds the custom domain. Don't delete it.
 - `.nojekyll` tells Pages to serve files as-is (no Jekyll build).

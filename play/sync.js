@@ -10,7 +10,10 @@
   'use strict';
   var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
   if (window.PEBBLY_SYNC_CONFIG) { URL_ = window.PEBBLY_SYNC_CONFIG.url; KEY_ = window.PEBBLY_SYNC_CONFIG.key; }
-  var KINDS = { qwixx: 'Qwixx', farkle: 'Farkle', score: 'Score Keeper', darts: 'Darts', namegame: 'Name Game' };
+  var KINDS = { qwixx: 'Kwiks', farkle: 'Farkle', score: 'Score Keeper', darts: 'Darts', namegame: 'Name Game' };
+  // Web folder for each kind (internal names stay the same so saved and shared games keep working).
+  var PATHS = { qwixx: 'kwiks' };
+  function pathOf(kind) { return PATHS[kind] || kind; }
   var POLL_MS = 1500;
 
   function rpc(fn, args) {
@@ -277,7 +280,7 @@
       peek(c).then(function (r) {
         if (!r) { err.textContent = friendly({ message: 'game_not_found' }); return; }
         if (r.kind !== kind) {
-          err.innerHTML = 'That code is for a ' + esc(KINDS[r.kind] || r.kind) + ' game. <a href="/' + esc(r.kind) + '/?join=' + esc(c) + '">Open it there</a>.'; return;
+          err.innerHTML = 'That code is for a ' + esc(KINDS[r.kind] || r.kind) + ' game. <a href="/' + esc(pathOf(r.kind)) + '/?join=' + esc(c) + '">Open it there</a>.'; return;
         }
         d.close(); pickWho(kind, opts, c, r);
       }, function (e) { err.textContent = friendly(e); });
@@ -331,7 +334,7 @@
       (S.status === 'live' ? '' : 'off') + '"></i>👥 <code>' + esc(S.code) + '</code> · ' + n + (n === 1 ? ' phone' : ' phones') + (S.status === 'live' ? '' : ' · reconnecting') + '</button>';
     badgeEl.firstChild.onclick = showCode;
   }
-  function joinUrl() { return location.origin + '/' + S.kind + '/?join=' + S.code; }
+  function joinUrl() { return location.origin + '/' + pathOf(S.kind) + '/?join=' + S.code; }
   function showCode() {
     if (!S) return;
     var d = dialog('<div class="ps-head"><h3>Playing together</h3>' + closeBtn() + '</div>' +

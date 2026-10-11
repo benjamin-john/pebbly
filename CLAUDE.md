@@ -74,7 +74,8 @@ sync = PebblySync.wire('<kind>', { setupEl, joinEl, badgeEl, names, getGame, set
 // in save():                          if (sync) sync.push();
 ```
 
-New kinds must be added to the list in `_play_check` (in a new migration). Keep per-phone UI state
+New kinds must be added to the list in `_play_check` (in a new migration). Kwiks (`/kwiks/`) keeps the internal kind and storage names `qwixx` / `pebbly_qwixx2*` so saved and
+shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI state
 (e.g. which card is shown) out of the shared game object. `PebblySync.canAct(pid)` / `hasPhone(pid)` /
 `me()` / `isHost()` drive turn guards ("Waiting for Amy…" with a "play for them" override).
 

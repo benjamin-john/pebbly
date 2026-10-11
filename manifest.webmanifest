@@ -19,6 +19,6 @@
     { "name": "Which Day Works?", "url": "/whichdayworks/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Poll", "url": "/poll/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Score Keeper", "url": "/score/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Qwixx", "url": "/qwixx/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Kwiks", "url": "/kwiks/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }
