@@ -48,6 +48,8 @@ database for the apps that share data between people. See README.md for the app 
 - `<meta name="theme-color" content="#2F7A63">`, favicon `/icons/favicon.png`, and
   `<meta name="robots" content="noindex, nofollow">` on every page: Pebbly is for friends and family,
   not search engines (don't add a robots.txt that blocks crawling, or Google can't see the tag).
+- Every page ends with the Cloudflare Web Analytics snippet just before `</body>` (copy it from any
+  page; free, no cookies, dashboard in Ben's Cloudflare account under Web Analytics).
 - Cards: white surface, 1px `--line` border, 14–16px radius. Buttons: 52px tall green primary, ghost
   (outlined) and plain variants. Tap targets ≥ 44px. Always include `[hidden]{display:none !important}`
   (button `display` rules otherwise override `hidden`).
