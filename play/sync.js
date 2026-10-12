@@ -10,7 +10,7 @@
   'use strict';
   var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
   if (window.PEBBLY_SYNC_CONFIG) { URL_ = window.PEBBLY_SYNC_CONFIG.url; KEY_ = window.PEBBLY_SYNC_CONFIG.key; }
-  var KINDS = { qwixx: 'Kwiks', farkle: 'Farkle', score: 'Score Keeper', darts: 'Darts', namegame: 'Name Game' };
+  var KINDS = { qwixx: 'Kwiks', farkle: 'Farkle', score: 'Score Keeper', darts: 'Darts', namegame: 'Name Game', trivia: 'Trivia', bracket: 'Bracket' };
   // Web folder for each kind (internal names stay the same so saved and shared games keep working).
   var PATHS = { qwixx: 'kwiks' };
   function pathOf(kind) { return PATHS[kind] || kind; }

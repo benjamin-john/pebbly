@@ -1,6 +1,7 @@
 // Optional passwords for the Plan apps (RSVP, Poll, Which Day Works?). See
 // supabase/migrations/20261012000000_plan_passwords.sql for the database side.
 //
+// Apps: 'rsvp', 'poll', 'wdw', 'doc' (Split the Bill, Sign-up Sheet, Shared List; doc.js) and 'santa'.
 // A guest trades the password for a key once (lock_open); this phone keeps the key in localStorage
 // and PebblyLock.call adds it to every guest call (gated_<name>). The host's phone gets the key with
 // its host link (lock_owner), so hosts never type the password.
@@ -14,7 +15,9 @@
   var GATED = {
     rsvp: ['rsvp_get', 'rsvp_respond', 'rsvp_post', 'rsvp_delete_post', 'rsvp_item_add', 'rsvp_item_edit', 'rsvp_item_remove', 'rsvp_item_claim'],
     poll: ['poll_get', 'poll_vote', 'poll_add_option', 'poll_edit_option', 'poll_remove_option'],
-    wdw: ['wdw_get', 'get_event', 'save_response', 'delete_response']
+    wdw: ['wdw_get', 'get_event', 'save_response', 'delete_response'],
+    doc: ['doc_get', 'doc_push'],
+    santa: ['santa_get', 'santa_claim', 'santa_unclaim', 'santa_join', 'santa_set_wish']
   };
   var KEYS = 'pebbly_lock_keys', PWS = 'pebbly_lock_pw', noGate = false;
   var MSG = {
@@ -58,7 +61,8 @@
     }, function (e) { throw new Error(missingFn(e) ? 'lock_unavailable' : (e && e.message) || 'network'); });
   }
 
-  function words(what) { return what === 'poll' ? { a: 'poll', who: 'the person who made it' } : { a: 'event', who: 'the host' }; }
+  // what: the noun shown to people ('event', 'poll', 'list', 'sheet', 'bill', 'group', …).
+  function words(what) { what = what || 'event'; return { a: what, who: what === 'event' ? 'the host' : 'the person who shared it' }; }
 
   function gate(o) {
     var w = words(o.what);
