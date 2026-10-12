@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Join a quiz</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D;
+  --good:#2E9B5A; --good-t:#DDF1E5; --good-i:#1E7344; --bad-t:#FBE3E2; --bad-i:#B32B27; --track:#E7ECEA;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75;
+    --good:#5CC98A; --good-t:#1B3326; --good-i:#7FD6A2; --bad-t:#3A2120; --bad-i:#FF9C98; --track:#27322E; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75;
+    --good:#5CC98A; --good-t:#1B3326; --good-i:#7FD6A2; --bad-t:#3A2120; --bad-i:#FF9C98; --track:#27322E; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;line-height:1.2;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--no);border:1.5px solid var(--no)}
+.btn.sm{width:auto;min-height:44px;padding:0 14px;font-size:16px}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text],textarea,select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:500 17px/1.3 var(--body)}
+textarea{resize:vertical;display:block}
+label.lbl{display:block;font-weight:600;margin:0 0 6px}
+label.lbl small{font-weight:400;color:var(--muted)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.err{color:var(--no);font-size:15px;margin:8px 0 0;font-weight:600}
+.err:empty{display:none}
+.stack{display:grid;gap:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:5px 0}
+.topbar{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+.empty{color:var(--muted);text-align:center;padding:8px 0;margin:0}
+.check{display:flex;gap:12px;align-items:flex-start;padding:8px 0;cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--brand);flex:none;margin-top:1px}
+.check small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+.note{padding:12px;border-radius:12px;background:var(--brand-t);margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;cursor:pointer}
+.chip::before{content:"+ ";color:var(--brand);font-weight:700;margin-right:4px}
+
+/* ---------- Start screen ---------- */
+.codebox{display:flex;gap:10px}
+.codebox input{flex:1;min-width:0;min-height:60px;text-align:center;font:800 30px/1 var(--head) !important;letter-spacing:.2em;text-transform:uppercase;padding:0 6px}
+.codebox input::placeholder{letter-spacing:.12em;color:var(--field)}
+.codebox .btn{width:auto;min-height:60px;padding:0 22px;font-size:18px}
+/* ---------- Choice colors (same as Trivia) ---------- */
+.c0{--c:#D93F3B;--ci:#fff}.c1{--c:#3570C9;--ci:#fff}.c2{--c:#F2C230;--ci:#33290A}.c3{--c:#7B4FC4;--ci:#fff}.c4{--c:#178585;--ci:#fff}.c5{--c:#E8833A;--ci:#33200A}
+
+/* ---------- Audience ---------- */
+.ahead{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+.ahead b{flex:1;min-width:0;font:800 20px/1.2 var(--head);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ahead .pill{flex:none;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font:800 14px/1 var(--head);letter-spacing:.1em}
+.big-msg{text-align:center;padding:26px 16px}
+.big-msg .em{font-size:52px;line-height:1}
+.big-msg h1{font-size:30px;margin:10px 0 6px}
+.big-msg p{margin:0;color:var(--muted)}
+.qnum{font:600 13px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.qtext{font:600 clamp(20px,5.6vw,26px)/1.28 var(--head);margin:0;overflow-wrap:anywhere;text-transform:none;letter-spacing:0;color:var(--ink)}
+.choices{display:grid;gap:10px;margin:14px 0}
+.ch{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 12px 10px 10px;border:0;border-radius:14px;
+  text-align:left;font:600 18px/1.25 var(--body);color:var(--ci);background:var(--c);box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);
+  cursor:pointer;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.ch:active{transform:scale(.98)}
+.ch .lt{flex:none;width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:rgba(255,255,255,.26);font:800 19px/1 var(--head)}
+.c2 .lt,.c5 .lt{background:rgba(255,255,255,.45)}
+.ch .tx{flex:1;min-width:0;overflow-wrap:anywhere}
+.ch .mk{flex:none;width:32px;height:32px;border-radius:999px;display:grid;place-items:center;background:#fff;color:#1F2A27;font:800 17px/1 var(--body)}
+.choices.picked .ch:not(.sel){opacity:.45}
+.ch.sel{outline:4px solid var(--ink);outline-offset:3px;opacity:1}
+.status{font-weight:600;text-align:center;margin:4px 0 12px}
+.status small{display:block;font-weight:400;color:var(--muted)}
+.result{border-radius:14px;padding:14px;text-align:center;margin:0 0 12px}
+.result b{display:block;font:800 24px/1.2 var(--head)}
+.result.ok{background:var(--good-t);color:var(--good-i)}
+.result.no{background:var(--bad-t);color:var(--bad-i)}
+.result.none{background:var(--surface);border:1px solid var(--line)}
+.scoreline{text-align:center;font-weight:600;margin:12px 0 0}
+.offline{position:sticky;top:0;z-index:3;text-align:center;background:var(--lead-t);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:600;margin-bottom:8px}
+
+/* ---------- Percentage bars (phones, presenter, results) ---------- */
+.bars{display:grid;gap:10px;margin:12px 0}
+.bar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px}
+.bar .lt{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--c);color:var(--ci);font:800 17px/1 var(--head)}
+.bar .bm{min-width:0}
+.bar .bt{font-weight:600;line-height:1.25;overflow-wrap:anywhere;margin-bottom:4px}
+.bar .tr{height:14px;border-radius:999px;background:var(--track);overflow:hidden}
+.bar .tr i{display:block;height:100%;border-radius:999px;background:var(--c);transform-origin:left;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
+.bar .bp{text-align:right;min-width:52px}
+.bar .bp b{display:block;font:800 20px/1.1 var(--head);font-variant-numeric:tabular-nums}
+.bar .bp small{color:var(--muted);font-size:13px;white-space:nowrap}
+.bar .ok{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--good);color:#fff;font:800 14px/1 var(--body);margin-left:6px;vertical-align:2px}
+.bars.scored .bar:not(.right){opacity:.55}
+.bars.scored .bar.right .bt{color:var(--good-i)}
+.bars.scored .bar.right{background:var(--good-t);border-radius:12px;padding:6px 8px;margin:-6px -8px;outline:2px solid var(--good)}
+.bar.mine .bt::after{content:" · you";color:var(--muted);font-weight:500}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.bar .tr i{animation:none}}
+
+.jhead{text-align:center;margin:18px 0 18px}
+.jhead .em{font-size:44px;line-height:1}
+.jhead h1{font-size:32px;margin:8px 0 4px}
+.jhead p{margin:0;color:var(--muted)}
+.jcard .codebox input{min-height:72px;font-size:36px !important}
+.jcard .btn.go{min-height:60px;font-size:19px;margin-top:12px}
+</style>
+<script src="/keepawake.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Code box ================= -->
+<main class="wrap" id="home" hidden>
+  <div class="jhead"><div class="em" aria-hidden="true">🙋</div><h1>Join a quiz</h1><p>Type the code shown on the screen.</p></div>
+  <section class="card jcard">
+    <form id="joinForm" autocomplete="off">
+      <div class="codebox"><input type="text" id="joinCode" maxlength="7" placeholder="CODE" inputmode="text" autocapitalize="characters" spellcheck="false" aria-label="Quiz code" enterkeyhint="go"></div>
+      <p class="err" id="joinErr" role="alert"></p>
+      <button class="btn go" type="submit">Join</button>
+    </form>
+  </section>
+  <p class="hint" style="text-align:center">The code has 5 letters and numbers, like <b>K7PQ2</b>.</p>
+</main>
+
+<!-- ================= Audience ================= -->
+<main class="wrap" id="aud" hidden>
+  <div class="offline" id="aOffline" hidden>Connection lost – retrying…</div>
+  <div id="aBody"><p class="empty">Loading…</p></div>
+</main>
+
+<script>
+// Join (/join/): the page people open on their phones to answer a Live Quiz. Only a code box, then the
+// quiz itself (name if asked, waiting, questions, reveal, done). Making and running quizzes is in /live/.
+(function () {
+  'use strict';
+  var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
+  var K_PID = 'pebbly_live_pid', K_NAME = 'pebbly_live_name', K_MEM = 'pebbly_score_memory';
+  var LETTERS = 'ABCDEF';
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' '); }
+  function clip(s, n) { s = tidy(s); return s.length > n ? s.slice(0, n) : s; }
+  function clone(x) { return x == null ? x : JSON.parse(JSON.stringify(x)); }
+  function buzz(ms) { if (navigator.vibrate) try { navigator.vibrate(ms || 8); } catch (e) {} }
+  function randInt(n) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  function people(n) { return n + (n === 1 ? ' person' : ' people'); }
+  function pct(n, t) { return t ? Math.round(n * 100 / t) : 0; }
+  function sum(a) { return (a || []).reduce(function (s, x) { return s + (+x || 0); }, 0); }
+  function isScored(q) { return q && typeof q.answer === 'number' && q.answer >= 0; }
+
+  // ================= Database =================
+  function rpc(fn, args) {
+    var headers = { 'Content-Type': 'application/json', apikey: KEY_ };
+    if (/^eyJ/.test(KEY_)) headers.Authorization = 'Bearer ' + KEY_;
+    return fetch(URL_ + '/rest/v1/rpc/' + fn, { method: 'POST', headers: headers, body: JSON.stringify(args) })
+      .then(function (res) {
+        return res.text().then(function (t) {
+          var d = null; try { d = t ? JSON.parse(t) : null; } catch (e) {}
+          if (!res.ok) { var err = new Error((d && (d.message || d.error_description)) || ('http_' + res.status)); err.status = res.status; throw err; }
+          return d;
+        });
+      }, function () { throw new Error('network'); });
+  }
+  var ERRS = {
+    session_not_found: 'There’s no quiz with that code. Check the code on the screen and try again.',
+    not_owner: 'This organizer link doesn’t work for this quiz.',
+    name_required: 'Please type your name.',
+    voting_closed: 'Too late – answers for this question are closed.',
+    not_joined: 'You’re not in this quiz yet. Reload the page to join.',
+    invalid_choice: 'That answer isn’t one of the choices.',
+    invalid_questions: 'A quiz needs 1 to 100 questions.',
+    invalid_question: 'Every question needs text (300 characters at most).',
+    invalid_choices: 'Every question needs 2 to 6 different answers (120 characters at most each).',
+    invalid_answer: 'One question has a right answer that isn’t one of its answers.',
+    invalid_title: 'Give the quiz a title.',
+    quiz_running: 'Questions can’t be changed while the quiz is running.',
+    not_open: 'The answer is already showing.',
+    session_full: 'This quiz is full (1,000 people have joined).',
+    invalid_participant: 'This phone couldn’t join. Reload the page and try again.',
+    invalid_qindex: 'That question doesn’t exist.',
+    invalid_action: 'Something went wrong. Try again.',
+    network: 'No connection. Check your internet and try again.'
+  };
+  function errText(e) {
+    var m = (e && e.message) || '';
+    if (ERRS[m]) return ERRS[m];
+    if (/^http_/.test(m)) return ERRS.network;
+    return 'Something went wrong. Try again.';
+  }
+
+
+  var toastT;
+  function toast(msg) {
+    var t = $('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status');
+      t.style.cssText = 'position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;font-size:15px;width:max-content;max-width:calc(100% - 32px);transition:opacity .2s;pointer-events:none';
+      document.body.appendChild(t); }
+    t.textContent = msg; t.style.opacity = '1'; clearTimeout(toastT); toastT = setTimeout(function () { t.style.opacity = '0'; }, 3200);
+  }
+  // Bars: "A ▬▬▬▬ 40% · 10" for each choice.
+  function barsHtml(choices, counts, answer, opts) {
+    opts = opts || {};
+    var total = sum(counts), scored = typeof answer === 'number' && answer >= 0;
+    return '<div class="bars' + (scored ? ' scored' : '') + (opts.big ? ' big' : '') + '">' + choices.map(function (c, i) {
+      var n = (counts && counts[i]) || 0, p = pct(n, total);
+      return '<div class="bar c' + i + (scored && i === answer ? ' right' : '') + (opts.mine === i ? ' mine' : '') + '">' +
+        '<span class="lt">' + LETTERS[i] + '</span><div class="bm"><div class="bt">' + esc(c) + (scored && i === answer ? '<span class="ok" aria-label="right answer">✓</span>' : '') + '</div>' +
+        '<div class="tr"><i style="width:' + p + '%"></i></div></div>' +
+        '<div class="bp"><b>' + p + '%</b><small>' + (opts.big ? plural(n, 'vote') : n) + '</small></div></div>';
+    }).join('') + '</div>';
+  }
+  var mem = load(K_MEM, { players: [], games: [] }); if (!mem || typeof mem !== 'object') mem = { players: [], games: [] }; if (!Array.isArray(mem.players)) mem.players = [];
+  function rememberName(name) {
+    mem = load(K_MEM, mem); if (!Array.isArray(mem.players)) mem.players = [];
+    var v = tidy(name); if (!v) return;
+    var i = mem.players.findIndex(function (x) { return x.toLowerCase() === v.toLowerCase(); });
+    if (i > -1) mem.players.splice(i, 1);
+    mem.players.unshift(v); if (mem.players.length > 40) mem.players.length = 40;
+    store(K_MEM, mem);
+  }
+
+  // ================= Audience (phones) =================
+  var aud = null;   // { code, st, key, timer, pending, joining }
+  function myPid() {
+    var p = load(K_PID, '');
+    if (typeof p !== 'string' || !/^[A-Za-z0-9_-]{8,80}$/.test(p)) {
+      var a = new Uint8Array(16); crypto.getRandomValues(a);
+      p = 'p' + Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+      store(K_PID, p);
+    }
+    return p;
+  }
+  function startAud(code) {
+    stopAud();
+    aud = { code: code, pid: myPid(), st: null, key: '', pending: null };
+    $('home').hidden = true; $('aud').hidden = false; scrollTo(0, 0);
+    $('aBody').innerHTML = '<p class="empty">Loading…</p>';
+    document.title = 'Join a quiz';
+    audPoll();
+  }
+  function stopAud() { if (aud) { clearTimeout(aud.timer); } aud = null; }
+  function audPoll() {
+    if (!aud) return;
+    var me = aud; clearTimeout(me.timer);
+    rpc('live_state', { p_code: me.code, p_participant: me.pid }).then(function (st) {
+      if (aud !== me) return;
+      $('aOffline').hidden = true;
+      if (!st) { stopAud(); keepAwake(false); go('', { replace: true, joinErr: 'There’s no quiz with the code ' + me.code + '. Check the code on the screen and try again.', code: me.code }); return; }
+      me.st = st;
+      if (!st.joined) {
+        if (!st.require_name) { if (!me.joining) audJoin(''); }
+        else if (!me.asking) { me.key = ''; renderName(); }
+        return;
+      }
+      me.asking = false;
+      renderAud();
+      if (!document.hidden) me.timer = setTimeout(audPoll, 2000);
+    }, function () {
+      if (aud !== me) return;
+      $('aOffline').hidden = false;
+      if (!document.hidden) me.timer = setTimeout(audPoll, 3000);
+    });
+  }
+  function audJoin(name) {
+    var me = aud; me.joining = true;
+    return rpc('live_join', { p_code: me.code, p_participant: me.pid, p_name: name }).then(function () {
+      me.joining = false; if (aud === me) { me.asking = false; me.key = ''; audPoll(); }
+    }, function (e) {
+      me.joining = false; if (aud !== me) return;
+      if (e.message === 'session_not_found') { audPoll(); return; }
+      if (me.asking) { $('nmErr').textContent = errText(e); var b = $('nmGo'); if (b) b.disabled = false; }
+      else { $('aBody').innerHTML = '<div class="big-msg"><div class="em">😕</div><h1>Couldn’t join</h1><p>' + esc(errText(e)) + '</p></div>'; me.timer = setTimeout(audPoll, 4000); }
+    });
+  }
+  function headHtml(st) { return '<div class="ahead"><b>' + esc(st.title) + '</b><span class="pill">' + esc(st.code) + '</span></div>'; }
+  function renderName(change) {
+    var st = aud.st; aud.asking = true; clearTimeout(aud.timer);
+    var last = load(K_NAME, '') || '';
+    mem = load(K_MEM, mem);
+    var chips = (mem.players || []).filter(function (n) { return n && n.toLowerCase() !== String(last).toLowerCase(); }).slice(0, 8);
+    $('aBody').innerHTML = headHtml(st) + '<section class="card"><h1 style="margin-top:0">' + (change ? 'Change your name' : 'What’s your name?') + '</h1>' +
+      '<p class="hint" style="margin:0 0 12px">The organizer asked for names. They can see everyone’s answers at the end.</p>' +
+      '<form id="nmForm" autocomplete="off"><label class="lbl" for="nmIn">Your name</label>' +
+      '<input type="text" id="nmIn" maxlength="40" value="' + esc(change ? (st.name || last) : last) + '" autocomplete="given-name" enterkeyhint="go">' +
+      '<div class="chips" id="nmChips">' + chips.map(function (n) { return '<button type="button" class="chip" data-nm="' + esc(n) + '">' + esc(n) + '</button>'; }).join('') + '</div>' +
+      '<p class="err" id="nmErr" role="alert"></p><button class="btn" id="nmGo" type="submit" style="margin-top:12px">' + (change ? 'Save' : 'Join the quiz') + '</button>' +
+      (change ? '<button class="btn plain" type="button" data-aud="cancel" style="margin-top:10px">Cancel</button>' : '') + '</form></section>';
+    $('nmChips').addEventListener('click', function (e) { var c = e.target.closest('[data-nm]'); if (c) { $('nmIn').value = c.dataset.nm; $('nmErr').textContent = ''; } });
+    $('nmForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var n = clip($('nmIn').value, 40);
+      if (!n) { $('nmErr').textContent = 'Please type your name.'; $('nmIn').focus(); return; }
+      store(K_NAME, n); rememberName(n);
+      $('nmGo').disabled = true;
+      audJoin(n);
+    });
+    if (!last && !change) setTimeout(function () { var i = $('nmIn'); if (i) i.focus(); }, 50);
+  }
+  function shownMine(st) {
+    if (aud.pending && aud.pending.q === st.qindex && aud.pending.v === st.version && st.phase === 'question') return aud.pending.c;
+    return typeof st.mine === 'number' ? st.mine : null;
+  }
+  function renderAud() {
+    var st = aud.st, mine = shownMine(st);
+    var key = [st.version, st.phase, st.qindex, mine, st.joined, st.score, st.scored, st.name].join('|');
+    if (key === aud.key) return;
+    aud.key = key;
+    document.title = st.title + ' · Live Quiz';
+    keepAwake(st.phase !== 'done');
+    var h = headHtml(st), q = st.question;
+    var scoreLine = st.scored > 0 ? '<p class="scoreline">Your score: ' + (st.score || 0) + ' of ' + st.scored + '</p>' : '';
+    if (st.phase === 'lobby') {
+      h += '<div class="card big-msg"><div class="em">🎉</div><h1>You’re in!</h1><p>Watch the screen. The quiz starts soon.</p>' +
+        (st.require_name && st.name ? '<p style="margin-top:14px">Playing as <b>' + esc(st.name) + '</b> · <button type="button" class="btn plain sm" data-aud="rename" style="display:inline-flex;margin-top:6px">Change name</button></p>' : '') + '</div>';
+    } else if (st.phase === 'question' && q) {
+      h += '<p class="qnum">Question ' + (st.qindex + 1) + ' of ' + st.total + (st.poll ? ' · Poll' : '') + '</p><h2 class="qtext">' + esc(q.q) + '</h2>' +
+        '<div class="choices' + (mine != null ? ' picked' : '') + '">' + q.choices.map(function (c, i) {
+          return '<button type="button" class="ch c' + i + (mine === i ? ' sel' : '') + '" data-ch="' + i + '" aria-pressed="' + (mine === i) + '"><span class="lt">' + LETTERS[i] + '</span><span class="tx">' + esc(c) + '</span>' +
+            (mine === i ? '<span class="mk" aria-hidden="true">✓</span>' : '') + '</button>';
+        }).join('') + '</div>' +
+        '<p class="status" id="aStatus">' + (mine != null ? '🔒 Locked in<small>You can change it until the answer is shown.</small>' : 'Tap your answer') + '</p>';
+    } else if (st.phase === 'reveal' && q) {
+      var ans = st.answer, res;
+      if (st.poll) res = mine != null ? '<div class="result none"><b>Thanks for voting!</b>Here’s how everyone voted.</div>' : '<div class="result none"><b>You didn’t vote</b>Here’s how everyone voted.</div>';
+      else if (mine == null) res = '<div class="result none"><b>You didn’t answer</b>The answer was ' + LETTERS[ans] + ': ' + esc(q.choices[ans]) + '</div>';
+      else if (mine === ans) res = '<div class="result ok"><b>✓ Correct!</b>' + esc(q.choices[ans]) + '</div>';
+      else res = '<div class="result no"><b>Not quite</b>The answer was ' + LETTERS[ans] + ': ' + esc(q.choices[ans]) + '</div>';
+      h += '<p class="qnum">Question ' + (st.qindex + 1) + ' of ' + st.total + '</p>' + res + '<h2 class="qtext" style="font-size:19px">' + esc(q.q) + '</h2>' +
+        barsHtml(q.choices, st.counts, st.poll ? null : ans, { mine: mine }) + scoreLine;
+    } else if (st.phase === 'done') {
+      h += '<div class="card big-msg"><div class="em">🏁</div><h1>Thanks for playing!</h1>' +
+        (st.scored > 0 ? '<p style="font:800 24px/1.3 var(--head);color:var(--ink);margin-top:8px">You got ' + (st.score || 0) + ' of ' + st.scored + ' right</p>' : '<p>Thanks for taking part.</p>') +
+        '<p style="margin-top:10px">The results are on the big screen.</p></div>';
+    } else h += '<p class="empty">Watch the screen…</p>';
+    $('aBody').innerHTML = h;
+  }
+  $('aBody').addEventListener('click', function (e) {
+    if (!aud || !aud.st) return;
+    if (e.target.closest('[data-aud=rename]')) { renderName(true); return; }
+    if (e.target.closest('[data-aud=cancel]')) { aud.asking = false; aud.key = ''; renderAud(); audPoll(); return; }
+    var b = e.target.closest('[data-ch]'); if (!b) return;
+    var st = aud.st; if (st.phase !== 'question') return;
+    var c = +b.dataset.ch, me = aud, ver = st.version;
+    buzz(12);
+    me.pending = { q: st.qindex, v: ver, c: c };
+    renderAud();
+    rpc('live_vote', { p_code: me.code, p_participant: me.pid, p_qindex: st.qindex, p_choice: c }).then(function () {
+      if (aud !== me) return;
+      if (me.st && me.st.version === ver) me.st.mine = c;
+      if (me.pending && me.pending.c === c) me.pending = null;
+      me.key = ''; renderAud();
+    }, function (e) {
+      if (aud !== me) return;
+      me.pending = null; me.key = '';
+      toast(errText(e));
+      if (e.message === 'not_joined') { me.st.joined = false; }
+      audPoll();
+    });
+  });
+
+  document.addEventListener('visibilitychange', function () {
+    if (aud) { if (document.hidden) clearTimeout(aud.timer); else audPoll(); }
+  });
+
+  // ================= Code box + routing =================
+  function cleanCode(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); }
+  $('joinCode').addEventListener('input', function () {
+    var el = $('joinCode'), v = cleanCode(el.value); if (el.value !== v) el.value = v; $('joinErr').textContent = '';
+  });
+  $('joinForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var c = cleanCode($('joinCode').value);
+    if (c.length !== 5) { $('joinErr').textContent = 'The code has 5 letters and numbers. You’ll find it on the big screen.'; $('joinCode').focus(); return; }
+    go('?c=' + c);
+  });
+  function go(search, opts) {
+    opts = opts || {};
+    var url = location.pathname + (search || '');
+    if (opts.replace) history.replaceState(null, '', url); else history.pushState(null, '', url);
+    route(opts);
+  }
+  function route(opts) {
+    opts = opts || {};
+    var code = cleanCode(new URLSearchParams(location.search).get('c'));
+    if (code) { startAud(code); return; }
+    stopAud(); keepAwake(false);
+    $('aud').hidden = true; $('home').hidden = false;
+    document.title = 'Join a quiz';
+    $('joinErr').textContent = opts.joinErr || '';
+    if (opts.code) $('joinCode').value = opts.code;
+    if (!opts.joinErr && matchMedia('(pointer:fine)').matches) $('joinCode').focus();
+  }
+  addEventListener('popstate', function () { route(); });
+  route();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

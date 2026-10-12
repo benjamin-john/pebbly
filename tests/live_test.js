@@ -2,7 +2,10 @@
 // encoder (decoded with OpenCV), and full sessions: a presenter page (1280×720) with 3 audience phones
 // (names on: joining in the lobby, one joining mid-quiz with the code box, answering and changing an
 // answer, progress counts, reveal percentages, right/wrong feedback, a poll question, Back, results,
-// CSV download), a phone remote staying in sync, Restart, and an anonymous quiz.
+// CSV download), a phone remote staying in sync, Restart, and an anonymous quiz. Round 2: the audience page
+// /join/ (and old /live/?c= links forwarding to it), "Open on another device" (display-only screen link and
+// organizer link), a display screen following a quiz run from a phone, "Save questions to this device",
+// and the admin list (wrong / right password, open as organizer, delete).
 // Setup: sh tests/setup_db.sh live; serve the repo root on port 8785 (python3 -m http.server 8785), then:
 //   NODE_PATH=$(npm root -g) node tests/live_test.js
 // Optional: DB=<name> PORT=<port> SHOTS=<folder for screenshots>
@@ -10,7 +13,7 @@ const { chromium, devices } = require('playwright');
 const { phone } = require('./pg_bridge');
 const { execFileSync } = require('child_process');
 const fs = require('fs'), os = require('os'), path = require('path');
-const DB = process.env.DB || 'live', PORT = process.env.PORT || 8785, ORIGIN = 'http://localhost:' + PORT, BASE = ORIGIN + '/live/', SHOTS = process.env.SHOTS;
+const DB = process.env.DB || 'live', PORT = process.env.PORT || 8785, ORIGIN = 'http://localhost:' + PORT, BASE = ORIGIN + '/live/', JOIN = ORIGIN + '/join/', JLINK = ORIGIN + '/join?c=', SHOTS = process.env.SHOTS;
 let pass = 0, fail = 0;
 const check = (ok, m) => { if (ok) pass++; else { fail++; console.log('FAIL', m); } };
 const shot = async (p, name, full) => { if (SHOTS) await p.screenshot({ path: SHOTS + '/' + name + '.png', fullPage: full !== false }); };
@@ -19,16 +22,25 @@ async function waitText(p, sel, t, ms) {
   try { await p.waitForFunction(([s, t]) => { const e = document.querySelector(s); return !!e && e.getClientRects().length > 0 && e.innerText.includes(t); }, [sel, t], { timeout: ms || 8000 }); return true; }
   catch (e) { return false; }
 }
-const DEC = 'import cv2,sys\nimg=cv2.imread(sys.argv[1]);out=""\n' +
-  'for s in [1.0,0.5,0.75,0.35,1.5]:\n' +
-  ' im=cv2.resize(img,None,fx=s,fy=s,interpolation=cv2.INTER_AREA if s<1 else cv2.INTER_NEAREST)\n' +
-  ' v,_,_=cv2.QRCodeDetector().detectAndDecode(im)\n' +
-  ' if v:\n  out=v;break\nsys.stdout.buffer.write(out.encode())';
+const DEC = 'import cv2,sys\nimg=cv2.imread(sys.argv[1]);g=cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)\n' +
+  '_,bw=cv2.threshold(g,128,255,cv2.THRESH_BINARY);bw=cv2.copyMakeBorder(bw,40,40,40,40,cv2.BORDER_CONSTANT,value=255)\nout=""\n' +
+  'for src in [img,bw]:\n' +
+  ' for s in [1.0,0.5,0.75,0.35,0.25,1.5]:\n' +
+  '  im=cv2.resize(src,None,fx=s,fy=s,interpolation=cv2.INTER_AREA if s<1 else cv2.INTER_NEAREST)\n' +
+  '  v,_,_=cv2.QRCodeDetector().detectAndDecode(im)\n' +
+  '  if v:\n   out=v;break\n' +
+  ' if out: break\n' +
+  'sys.stdout.buffer.write(out.encode())';
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'liveqr-'));
 async function decodeQr(p, sel) {
-  const f = path.join(tmp, 'qr' + Date.now() + '.png');
-  await p.locator(sel).first().screenshot({ path: f });
-  return execFileSync('python3', ['-I', '-c', DEC, f]).toString();
+  for (let i = 0; i < 3; i++) {   // OpenCV's detector now and then misses a good code; try a fresh screenshot
+    const f = path.join(tmp, 'qr' + Date.now() + '.png');
+    await p.locator(sel).first().screenshot({ path: f });
+    const out = execFileSync('python3', ['-I', '-c', DEC, f]).toString();
+    if (out) return out;
+    await p.waitForTimeout(200);
+  }
+  return '';
 }
 
 const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questions": [\n' +
@@ -154,20 +166,21 @@ const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questi
   const orgUrl = host.url();
   const token = new URL(orgUrl).searchParams.get('o');
   check(/^[A-Z0-9]{5}$/.test(code) && /^[0-9a-f]{64}$/.test(token), 'session created: ' + code);
-  check((await text(host, '#pMain')).includes('localhost:' + PORT + '/live') && (await text(host, '#pMain')).includes(code), 'lobby shows the address and code');
-  check(await decodeQr(host, '#pQr svg') === BASE + '?c=' + code, 'lobby QR scans to the join link');
+  check((await text(host, '#pMain')).includes('go to localhost:' + PORT + '/join and enter') && (await text(host, '#pMain')).includes(code), 'lobby shows the address and code');
+  check(await decodeQr(host, '#pQr svg') === JLINK + code, 'lobby QR scans to the join link');
   const sessions = await host.evaluate(() => JSON.parse(localStorage.pebbly_live_sessions));
   check(sessions[0].code === code && sessions[0].token === token && sessions[0].title === 'Team Quiz Night', 'session remembered on this device');
 
   const amy = await mk(), ben = await mk(), cat = await mk();
-  await amy.goto(BASE + '?c=' + code);
+  await amy.goto(BASE + '?c=' + code);   // an old /live/?c= link forwards to /join/
   await amy.waitForSelector('#nmIn');
+  check(amy.url() === JOIN + '?c=' + code, 'old /live/?c= link forwards to /join/: ' + amy.url());
   await amy.click('#nmGo');
   check((await text(amy, '#nmErr')).includes('type your name'), 'name required');
   await amy.fill('#nmIn', 'Amy'); await amy.click('#nmGo');
   check(await waitText(amy, '#aBody', 'You’re in!'), 'Amy joined');
   await shot(amy, 'phone-name-joined');
-  await ben.goto(BASE + '?c=' + code.toLowerCase());
+  await ben.goto(JLINK + code.toLowerCase());
   await ben.waitForSelector('#nmIn');
   await ben.fill('#nmIn', 'Ben'); await ben.press('#nmIn', 'Enter');
   check(await waitText(ben, '#aBody', 'You’re in!'), 'Ben joined (lower-case code in the link)');
@@ -192,7 +205,7 @@ const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questi
   await host.keyboard.press('Space');
   check(await waitText(host, '.qbig', 'Red Planet'), 'Space starts the quiz');
   check(await waitText(host, '#pProg', '0 of 2 answered'), 'progress 0 of 2');
-  check(await decodeQr(host, '#pCorner svg') === BASE + '?c=' + code, 'corner QR scans to the join link');
+  check(await decodeQr(host, '#pCorner svg') === JLINK + code, 'corner QR scans to the join link');
   check(await waitText(amy, '.qtext', 'Red Planet') && await waitText(ben, '.qtext', 'Red Planet'), 'phones show question 1');
   check(await waitText(rem, '#rBody', 'Question 1 of 3') && (await text(rem, '#rBody')).includes('B · Mars'), 'remote in sync, shows right answer to organizer');
   await amy.click('[data-ch="0"]');
@@ -203,7 +216,11 @@ const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questi
   check(await waitText(host, '#pProg', '2 of 2 answered'), 'presenter counts Ben');
   check(await amy.locator('.ch.sel').getAttribute('data-ch') === '1', 'changed answer shown');
   // Cat joins mid-quiz with the code box (spaces, lower case)
-  await cat.goto(BASE);
+  await cat.goto(JOIN);
+  check(await cat.locator('a[href^="/live"], #newQuizBtn').count() === 0, 'join page has no way to make quizzes');
+  await cat.fill('#joinCode', 'AB1'); await cat.click('#joinForm .btn');
+  check(await waitText(cat, '#joinErr', '5 letters'), 'short code → hint');
+  await shot(cat, 'join-pixel7');
   await cat.fill('#joinCode', 'zzzzz'); await cat.click('#joinForm .btn');
   check(await waitText(cat, '#joinErr', 'no quiz with the code ZZZZZ'), 'unknown code → friendly error');
   await cat.fill('#joinCode', '');
@@ -285,11 +302,20 @@ const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questi
   const lines = csv.split('\r\n');
   check(csv.startsWith('\uFEFF') && lines[0] === '\uFEFFName,Score (out of 2),Q1. Which planet is known as the Red Planet?,Q1 right?,Q2. Coffee or tea?,Q3. How many continents are there?,Q3 right?', 'csv header: ' + lines[0]);
   check(lines[1] === 'Amy L,2,Mars,Correct,Coffee,7,Correct' && lines[2] === 'Ben,1,Venus,Incorrect,Tea,7,Correct' && lines[3] === 'Cat,0,,No answer,Tea,5,Incorrect', 'csv rows: ' + JSON.stringify(lines.slice(1, 4)));
-  // Organizer link QR (phone remote)
-  await host.click('#pRemoteBtn');
-  const orgQr = await decodeQr(host, '#rQr svg'); check(orgQr === orgUrl, 'remote QR scans to the organizer link: ' + orgQr + ' vs ' + orgUrl); if (SHOTS) await host.locator('#rQr svg').screenshot({ path: SHOTS + '/orgqr.png' });
-  check((await text(host, '#rDlg')).includes('don’t show it to the room'), 'organizer link warning');
-  await host.click('#rDlg [data-close]');
+  // Open on another device: organizer link + display-screen link
+  await host.click('#pLinksBtn');
+  const orgQr = await decodeQr(host, '#lOrgQr svg'); check(orgQr === orgUrl, 'organizer QR scans to the organizer link: ' + orgQr + ' vs ' + orgUrl);
+  await host.waitForSelector('#lDispQr svg');
+  const dispQr = await decodeQr(host, '#lDispQr svg');
+  check(new RegExp('^' + BASE.replace(/[.?]/g, '\\$&') + '\\?c=' + code + '&d=[0-9a-f]{64}$').test(dispQr), 'display QR scans to a display link: ' + dispQr);
+  check((await text(host, '#lDlg')).includes('Keep it private') && (await text(host, '#lDlg')).includes('no controls'), 'dialog explains both links');
+  await shot(host, 'presenter-links-dialog', false);
+  await host.click('#lDlg [data-close]');
+  // The display link shows the results too, without any buttons
+  const scr = await mk(BIG);
+  await scr.goto(dispQr);
+  check(await waitText(scr, '.results', 'Everyone’s answers') && await scr.locator('.results button').count() === 0, 'display screen: results without buttons');
+  await scr.close();
   // Back from the results goes to the last question, revealed
   await host.click('.results [data-res=back]');
   check(await waitText(host, '#pStep', 'Question 3 of 3') && await waitText(host, '.bar.right', '7'), 'Back from results → last question revealed');
@@ -322,7 +348,7 @@ const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questi
   const code2 = (await text(host, '#pCode')).trim();
   check(await host.locator('.lnames').count() === 0, 'anonymous: no names shown');
   const dan = await mk();
-  await dan.goto(BASE + '?c=' + code2);
+  await dan.goto(JLINK + code2);
   check(await waitText(dan, '#aBody', 'You’re in!') && await dan.locator('#nmIn').count() === 0, 'anonymous: joined without a name');
   check(await waitText(host, '.lppl', '1 person has joined'), 'anonymous: count');
   await shot(dan, 'phone-waiting');
@@ -345,7 +371,9 @@ const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questi
 
   /* ---------------- Narrow phones + presenter on a phone */
   const small = await mk({ viewport: { width: 320, height: 640 } });
-  await small.goto(BASE + '?c=' + code);
+  await small.goto(JOIN);
+  await shot(small, 'join-320');
+  await small.goto(JOIN + '?c=' + code);
   await small.waitForSelector('#nmIn');
   await shot(small, 'phone320-name');
   await small.fill('#nmIn', 'Sam'); await small.click('#nmGo');
@@ -359,7 +387,7 @@ const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questi
   const darkHome = await mk({ colorScheme: 'dark' });
   await darkHome.goto(BASE); await darkHome.evaluate(q => localStorage.pebbly_live_quizzes = JSON.stringify([q]), QUIZ); await darkHome.reload();
   await shot(darkHome, 'phone-home-dark');
-  await darkHome.goto(BASE + '?c=' + code);
+  await darkHome.goto(JOIN + '?c=' + code);
   await darkHome.waitForSelector('#nmIn'); await darkHome.fill('#nmIn', 'Dee'); await darkHome.click('#nmGo');
   await waitText(darkHome, '.qtext', 'Red Planet'); await darkHome.click('[data-ch="2"]');
   await waitText(darkHome, '#aStatus', 'Locked in');
@@ -370,6 +398,94 @@ const MESSY = 'Sure! Here is your quiz:\n```json\n{"title": "Space Mix", "questi
   await ph.click('#rMenuBtn'); await ph.click('#mBig');
   check(await waitText(ph, '.qbig', 'Red Planet') && await ph.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'big-screen view on a phone, no sideways scroll');
   await shot(ph, 'phone-presenter');
+
+  /* ---------------- Made on a phone, shown on a laptop (display screen), controlled from the phone */
+  const op = await mk();
+  await op.goto(BASE);
+  await op.evaluate(q => localStorage.pebbly_live_quizzes = JSON.stringify([q]), QUIZ); await op.reload();
+  await op.click('#quizList [data-act=present]');
+  await op.waitForSelector('#pCode');
+  const code3 = (await text(op, '#pCode')).trim();
+  check(await op.locator('#pToRemote').isVisible() && await op.locator('#pLinksBtn').isVisible(), 'organizer view has visible “remote view” and “other devices” buttons');
+  await op.click('#pToRemote');
+  check(await waitText(op, '#rBody', 'Waiting for people') && await op.locator('.viewseg').isVisible(), 'switched to the phone remote, with a visible view switch');
+  await op.click('#rBody [data-ctl=links]');
+  await op.waitForSelector('#lDispQr svg');
+  await shot(op, 'phone-links-dialog');
+  const dUrl = await decodeQr(op, '#lDispQr svg');
+  check(dUrl.includes('&d='), 'display link from the phone QR: ' + dUrl);
+  await op.click('#lDlg [data-close]');
+  const lap = await mk(BIG);
+  await lap.goto(dUrl);
+  check(await waitText(lap, '#pCode', code3), 'laptop display: lobby with code');
+  check(await decodeQr(lap, '#pQr svg') === JLINK + code3, 'laptop display: QR scans to the join link');
+  const visibleButtons = async () => lap.evaluate(() => [...document.querySelectorAll('#present button')].filter(b => b.getClientRects().length && b.id !== 'pFullBtn').length);
+  check(await visibleButtons() === 0 && await lap.locator('#pFullBtn').isVisible(), 'display: no controls except full screen');
+  await lap.keyboard.press('Space'); await lap.keyboard.press('ArrowRight');
+  await lap.waitForTimeout(1500);
+  check(await lap.locator('#pCode').isVisible(), 'display: keys don’t move the quiz');
+  const eve = await mk();
+  await eve.goto(JLINK + code3); await eve.waitForSelector('#nmIn'); await eve.fill('#nmIn', 'Eve'); await eve.click('#nmGo');
+  check(await waitText(lap, '.lnames', 'Eve'), 'display shows who joined');
+  await shot(lap, 'display-lobby-light', false);
+  await op.click('[data-ctl=next]');
+  const t0 = Date.now();
+  check(await waitText(lap, '.qbig', 'Red Planet'), 'display follows the phone: question 1');
+  check(Date.now() - t0 < 3000, 'display followed within 3 s (' + (Date.now() - t0) + ' ms)');
+  check(await lap.locator('.bar.right').count() === 0 && !(await lap.evaluate(() => document.body.innerText)).includes('✓'), 'display: no right answer before the reveal');
+  await waitText(eve, '.qtext', 'Red Planet'); await eve.click('[data-ch="1"]');
+  check(await waitText(lap, '#pProg', '1 of 1 answered'), 'display: progress bar');
+  check(await visibleButtons() === 0, 'display question: still no controls');
+  await shot(lap, 'display-question-light', false);
+  await lap.emulateMedia({ colorScheme: 'dark' }); await shot(lap, 'display-question-dark', false); await lap.emulateMedia({ colorScheme: 'light' });
+  await op.click('[data-ctl=next]');
+  check(await waitText(lap, '.bar.right', 'Mars') && (await text(lap, '.bar.right')).includes('100%'), 'display: reveal with the right answer and %');
+  await shot(lap, 'display-reveal-light', false);
+  await lap.emulateMedia({ colorScheme: 'dark' }); await shot(lap, 'display-reveal-dark', false); await lap.emulateMedia({ colorScheme: 'light' });
+  // Save questions to this device (from the phone's menu)
+  await op.click('#rMenuBtn'); await op.click('#mSave');
+  const opQuizzes = await op.evaluate(() => JSON.parse(localStorage.pebbly_live_quizzes));
+  check(opQuizzes.length === 2 && opQuizzes[0].title === 'Team Quiz Night' && opQuizzes[0].questions.length === 3 && opQuizzes[0].questions[1].answer === null && opQuizzes[0].questions[0].answer === 1, 'save questions to this device');
+  for (let i = 0; i < 5; i++) { await op.click('[data-ctl=next]'); await op.waitForTimeout(400); }
+  check(await waitText(lap, '.results', 'Question by question') && await lap.locator('.results button').count() === 0, 'display: results at the end, no buttons');
+  check(await waitText(op, '#rBody', 'The quiz is over'), 'phone: quiz over');
+  await shot(lap, 'display-results-light');
+  await lap.goto(BASE);
+  check((await text(lap, '#sessList')).includes('display screen') && (await text(lap, '#sessList')).includes('Team Quiz Night'), 'laptop lists the display screen under Running on this device');
+  await lap.click('#sessList [data-sact=open]');
+  check(await waitText(lap, '.results', 'Question by question') && await visibleButtons() === 0, 'reopened as a display (no controls)');
+  // a wrong display token
+  await lap.goto(BASE + '?c=' + code3 + '&d=' + 'f'.repeat(64));
+  check(await waitText(lap, '#pMain', 'display link doesn’t work'), 'bad display link → friendly message');
+
+  /* ---------------- Admin */
+  const ad = await mk();
+  await ad.goto(BASE);
+  check(await ad.locator('.foot a[href="?admin"]').isVisible() && (await text(ad, '.herejoin')).includes('localhost:' + PORT + '/join'), 'start screen: Admin link and “Here to answer” line');
+  await ad.click('.foot a');
+  await ad.fill('#adPw', 'nope'); await ad.click('#adForm [type=submit]');
+  check(await waitText(ad, '#adErr', 'Wrong password'), 'admin: wrong password');
+  await ad.fill('#adPw', 'secret'); await ad.click('#adForm [type=submit]');
+  check(await waitText(ad, '#adItems', code3), 'admin: list of quizzes');
+  const items = await text(ad, '#adItems');
+  check(items.includes('Finished') && items.includes('Quick Poll') && items.includes(code2) && items.includes('1 person joined'), 'admin: phase, people: ' + items.slice(0, 300));
+  check(await ad.evaluate(() => sessionStorage.pebbly_live_admin === 'secret' && !JSON.stringify(localStorage).includes('secret')), 'admin password kept only in sessionStorage');
+  await shot(ad, 'admin-list');
+  await ad.click(`#adItems [data-adm=open][data-code="${code2}"]`);
+  check(await waitText(ad, '#rBody', 'The quiz is over') && /[?&]o=[0-9a-f]{64}/.test(ad.url()), 'admin: opened as organizer (remote on a phone)');
+  const adSess = await ad.evaluate(() => JSON.parse(localStorage.pebbly_live_sessions));
+  check(adSess.some(x => x.code === code2 && x.kind === 'owner'), 'admin: session added to Running on this device');
+  await ad.click('[data-res=restart]');
+  check(await waitText(ad, '#rBody', 'Waiting for people'), 'admin can control the quiz');
+  await ad.goto(BASE + '?admin');
+  check(await waitText(ad, '#adItems', code2), 'admin: still signed in in this tab');
+  await ad.click(`#adItems [data-adm=del][data-code="${code2}"]`);
+  await ad.waitForTimeout(800);
+  check(!(await text(ad, '#adItems')).includes(code2), 'admin: deleted');
+  await dan.goto(JLINK + code2);
+  check(await waitText(dan, '#joinErr', 'no quiz with the code'), 'deleted quiz → join page says so');
+  await ad.click('#adOut');
+  check(await ad.locator('#adForm').isVisible(), 'admin: sign out');
 
   for (const p of all) for (const e of p.errs) { fail++; console.log('PAGE ERROR', e); }
   console.log(`live_test: ${pass} passed, ${fail} failed`);

@@ -16,6 +16,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/timer/` | Game Timer: turn clock (time bank or per turn) and countdown with buzzer |
 | `/bracket/` | Bracket: knockout tournament (2–64, seeded byes, scores), shareable live with a code |
 | `/live/` | Live Quiz: Kahoot/Slido-style quiz or poll for a room; projector view with QR join, phones answer, live percentages, optional names and CSV results (Supabase `live_*`) |
+| `/join/` | Join page for Live Quiz: attendees enter the 5-letter code (or scan the QR) and answer; nothing else |
 | `/trivia/` | Trivia: family quiz; sets made by hand or imported from AI-written JSON; one phone or everyone's phones |
 | `/score/` | Score Keeper: per-round scores for any game |
 | `/darts/` | Darts Scorer: '01 (301/501/701/901, straight/double/master out, double in) and Cricket (standard or cut-throat) |

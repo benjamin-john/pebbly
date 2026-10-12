@@ -123,6 +123,9 @@ shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI s
   `live_votes` (no shared document). Phones poll `live_state` (~2 s), the presenter `live_host` (~1 s);
   the right answer and counts reach phones only after reveal. `live_control` takes `p_version` so two
   screens pressing Next at once count once.
+  Attendees use `/join/` (code box + answering only; old `/live/?c=` links forward there). Organizer
+  link `?c=&o=`, display-only screen `?c=&d=` (`live_display`, answer only after reveal), admin at
+  `/live/?admin` (shared admin password; `live_admin_*`). Extra organizer/display keys live in `live_keys`.
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)
