@@ -52,7 +52,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .fld{display:block;margin-bottom:16px}
 .fld>span{display:block;font-weight:600;margin-bottom:5px;font-size:15px}
 .fld small{display:block;color:var(--muted);margin-top:4px;font-size:13px}
-input[type=text],input[type=date],input[type=time],textarea,select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #B4C2BC;border-radius:10px;background:#fff}
+input[type=text],input[type=password],input[type=tel],input[type=email],input[type=date],input[type=time],textarea,select{width:100%;min-height:46px;padding:10px 12px;border:1px solid #B4C2BC;border-radius:10px;background:#fff}
 input[type=date],input[type=time]{-webkit-appearance:none;appearance:none}
 select{-webkit-appearance:none;appearance:none;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%236B5A4C' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center;padding-right:36px}
 textarea{resize:vertical}
@@ -958,8 +958,8 @@ function eventFormHtml(ev) {
     '<p class="hint" id="multiHint" style="font-size:13px;margin:-10px 0 14px"' + (e.end_date ? '' : ' hidden') + '>Multi-day: the start time is on the first day and the end time on the last day.</p>' +
     '<label class="fld"><span>Location (optional)</span><input type="text" name="location" maxlength="200" placeholder="Address or place name" autocomplete="off" value="' + esc(e.location) + '"></label>' +
     '<label class="fld"><span>Hosted by</span><input type="text" name="host_name" maxlength="40" placeholder="Your name" autocomplete="name" value="' + esc(ev ? e.host_name : myName()) + '"></label>' +
-    '<div class="row2"><label class="fld"><span>Your phone (optional)</span><input type="tel" name="host_phone" maxlength="30" placeholder="(612) 555-0134" autocomplete="tel" value="' + esc(ev ? e.host_phone || '' : store.get('rsvp.hostPhone', '')) + '"></label>' +
-      '<label class="fld"><span>Your email (optional)</span><input type="email" name="host_email" maxlength="120" placeholder="you@example.com" autocomplete="email" value="' + esc(ev ? e.host_email || '' : store.get('rsvp.hostEmail', '')) + '"></label></div>' +
+    '<label class="fld"><span>Your phone (optional)</span><input type="tel" name="host_phone" maxlength="30" placeholder="(612) 555-0134" autocomplete="tel" value="' + esc(ev ? e.host_phone || '' : store.get('rsvp.hostPhone', '')) + '"></label>' +
+    '<label class="fld"><span>Your email (optional)</span><input type="email" name="host_email" maxlength="120" placeholder="you@example.com" autocomplete="email" value="' + esc(ev ? e.host_email || '' : store.get('rsvp.hostEmail', '')) + '"></label>' +
     '<p class="hint" style="font-size:13px;margin:-10px 0 14px">If you add either, guests see it under “Contact the host” so they can reach you.</p>' +
     '<label class="fld"><span>Details (optional)</span><textarea name="description" rows="4" maxlength="4000" placeholder="What to expect, parking, what to wear…">' + esc(e.description) + '</textarea><small>Web addresses become tappable links.</small></label>' +
     '<fieldset><legend>Link buttons (optional)</legend><p class="hint" style="font-size:13px;margin:-2px 0 8px">Shown as buttons at the top, e.g. a registry or a sign-up sheet.</p><div id="linkRows">' + linkRowsHtml() + '</div></fieldset>' +
