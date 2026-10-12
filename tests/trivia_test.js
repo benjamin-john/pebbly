@@ -77,7 +77,7 @@ const MESSY = 'Sure! Here are your questions:\n```json\n{"title": "Messy Mix", "
   await a.click('#imCopy');
   const prompt = await a.evaluate(() => navigator.clipboard.readText());
   check(prompt.startsWith('Write 10 multiple-choice trivia questions about 80s movies, medium difficulty') &&
-    prompt.includes('"answer": "Steven Spielberg"') && prompt.includes('ONLY the JSON') && prompt.includes('1 means the first choice'), 'AI prompt copied');
+    prompt.includes('"answer": "Steven Spielberg"') && prompt.includes('copy it to my clipboard with one click') && prompt.includes('1 means the first choice'), 'AI prompt copied');
   await shot(a, 'import-empty');
 
   /* ---------------- Import UI: fix path */

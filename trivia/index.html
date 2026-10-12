@@ -229,14 +229,14 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <ul class="sets" id="setList"></ul>
     <div class="row2">
       <button class="btn plain" id="newSetBtn" type="button">✎ Make a set</button>
-      <button class="btn plain" id="importBtn" type="button">✨ Import / AI</button>
+      <button class="btn plain" id="importBtn" type="button">✨ Make with AI</button>
     </div>
   </section>
 
   <section class="card">
     <h2>How it works</h2>
     <ul class="rules">
-      <li>Pick a question set, or make your own. <b>Import / AI</b> gives you a prompt to paste into ChatGPT, Gemini or Claude, which writes a whole quiz on any topic.</li>
+      <li>Pick a question set, or make your own. <b>Make with AI</b>: choose a topic, how many questions and how hard, copy the prompt, and ChatGPT, Gemini or Claude writes the whole quiz.</li>
       <li><b>This phone:</b> the quizmaster reads each question, reveals the answer and taps who got it right.</li>
       <li><b>Everyone’s phones:</b> others join with a code and tap their answers. This phone runs the quiz.</li>
       <li>One point for each right answer. Most points wins.</li>
@@ -276,7 +276,8 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     <div class="title"><h1>Import questions</h1></div>
   </div>
   <section class="card">
-    <h2>1 · Ask an AI (optional)</h2>
+    <h2>1 · Make questions with AI</h2>
+    <p class="hint" style="margin:-4px 0 12px">Pick a topic, how many and how hard. Pebbly writes the request for you.</p>
     <label class="lbl" for="imCat">Topic</label>
     <input type="text" id="imCat" maxlength="80" placeholder="e.g. 80s movies" autocomplete="off">
     <div class="opts2">
@@ -286,12 +287,12 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
         <select id="imDiff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option><option value="mixed">Mixed</option><option value="kids">For kids</option></select></div>
     </div>
     <p class="err" id="imCatErr"></p>
-    <button class="btn" id="imCopy" type="button">📋 Copy AI prompt</button>
-    <p class="hint">Paste it into ChatGPT, Gemini, Claude or any AI chat. Then copy its whole reply and paste it below.</p>
+    <button class="btn primary" id="imCopy" type="button">📋 Copy prompt for AI</button>
+    <p class="hint">Paste it into ChatGPT, Gemini, Claude or any AI chat. The AI puts the questions in a box with a copy button: tap it, then paste below.</p>
     <details><summary>Show the prompt</summary><pre class="prompt" id="imPrompt"></pre></details>
   </section>
   <section class="card">
-    <h2>2 · Paste the questions</h2>
+    <h2>2 · Paste the AI’s reply</h2>
     <div class="pastebar"><label class="lbl" for="imText">The AI’s reply, or a copied set</label>
       <button class="btn plain sm" id="imPaste" type="button">Paste</button></div>
     <textarea id="imText" rows="6" placeholder='{"title": "…", "questions": [ … ]}' spellcheck="false" autocomplete="off"></textarea>
@@ -675,7 +676,8 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   function aiPrompt(cat, n, diff) {
     var d = diff === 'mixed' ? 'a mix of easy, medium and hard' : diff === 'kids' ? 'easy, suitable for children aged 7 to 12,' : diff;
     return 'Write ' + n + ' multiple-choice trivia questions about ' + cat + ', ' + d + ' difficulty, for a fun family quiz night.\n\n' +
-      'Reply with ONLY the JSON: no other text, no explanation, no code fences. Use exactly this format:\n' +
+      'Return the result as JSON inside one single code block, so I can copy it to my clipboard with one click. ' +
+      'Put nothing else inside the code block, and keep any other text short. Use exactly this format:\n' +
       '{"title": "80s Movies", "questions": [{"q": "Who directed E.T.?", "choices": ["Steven Spielberg", "George Lucas", "James Cameron", "Ron Howard"], "answer": "Steven Spielberg", "explain": "optional one-line fact"}]}\n\n' +
       'Rules:\n' +
       '- "title": a short title for this quiz (2 to 4 words).\n' +
