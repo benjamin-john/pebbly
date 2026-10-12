@@ -24,6 +24,7 @@ database for the apps that share data between people. See README.md for the app 
 | `index.html` | Homepage: "Plan" and "Play" lists of app cards. Add new apps here. |
 | `<app>/index.html` | Each app is one self-contained HTML file (inline CSS and JS, no build step). |
 | `nav.js` | In the installed app, adds the "← Pebbly" home bar; also asks for persistent storage. Include in every app's `<head>`. |
+| `theme.js` | Applies the homepage's Theme switch (Auto/Light/Dark) before the page draws. |
 | `keepawake.js` | `keepAwake(true/false)`: Screen Wake Lock while a game is on screen. |
 | `play/sync.js`, `play/play.sql` | "Play together": share any game between phones with a 5-letter code. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
@@ -38,8 +39,12 @@ database for the apps that share data between people. See README.md for the app 
 - Fonts: Bricolage Grotesque (headings, 800) + Figtree (body), from Google Fonts.
 - Colors (CSS variables on `:root`): `--bg #F4F6F5`, `--surface #FFF`, `--ink #1F2A27`,
   `--muted #5D6B66`, `--line #DDE4E1`, `--brand #2F7A63` (green), `--brand-ink #FFF`, `--brand-t #E6F2ED`.
-  Dark mode under `@media (prefers-color-scheme: dark)` (`--bg #141A18`, `--surface #1D2522`,
-  `--brand #6CC4A4`, …). The games and homepage support dark mode; RSVP/Poll/Which Day Works? are light only.
+  Dark mode (`--bg #141A18`, `--surface #1D2522`, `--brand #6CC4A4`, …) follows the phone unless the
+  Theme switch at the bottom of the homepage says Light or Dark (`theme.js`, first script after the
+  charset meta, sets `<html data-theme>` from localStorage `pebbly_theme`). So the dark colors go in
+  `@media (prefers-color-scheme:dark){ :root:not([data-theme=light]){… color-scheme:dark} }` and again in
+  `:root[data-theme=dark]{… color-scheme:dark}`, plus `:root[data-theme=light]{color-scheme:light}`.
+  The games, homepage and install page support dark mode; RSVP/Poll/Which Day Works? are light only.
 - `<meta name="theme-color" content="#2F7A63">`, favicon `/icons/favicon.png`, and
   `<meta name="robots" content="noindex, nofollow">` on every page: Pebbly is for friends and family,
   not search engines (don't add a robots.txt that blocks crawling, or Google can't see the tag).
@@ -54,6 +59,7 @@ database for the apps that share data between people. See README.md for the app 
 ### Adding a new app
 
 1. `<name>/index.html`, self-contained, using the conventions above. In `<head>`:
+   `<script src="/theme.js"></script>` (right after the charset meta, if it has dark mode),
    `<script src="/keepawake.js"></script>` (games), `<script src="/play/sync.js"></script>` (if it
    supports playing together), `<script src="/nav.js"></script>`.
 2. Add a card to `index.html` (Plan or Play), a row to README.md, and optionally a manifest shortcut

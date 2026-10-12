@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="/theme.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="description" content="Small, free tools for planning get-togethers and playing games.">
@@ -20,8 +21,10 @@
     --line: #dde4e1; --accent: #2f7a63;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #141a18; --card: #1d2522; --text: #e3ebe8; --muted: #9aaba5; --line: #2c3833; --accent: #6cc4a4; }
+    :root:not([data-theme=light]) { --bg: #141a18; --card: #1d2522; --text: #e3ebe8; --muted: #9aaba5; --line: #2c3833; --accent: #6cc4a4; color-scheme: dark; }
   }
+  :root[data-theme=dark] { --bg: #141a18; --card: #1d2522; --text: #e3ebe8; --muted: #9aaba5; --line: #2c3833; --accent: #6cc4a4; color-scheme: dark; }
+  :root[data-theme=light] { color-scheme: light; }
   * { box-sizing: border-box; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
@@ -44,6 +47,11 @@
   .desc { color: var(--muted); font-size: .95rem; }
   .install { margin: 32px 0 0; text-align: center; font-size: .95rem; }
   .install a { color: var(--accent); }
+  .theme { margin: 28px 0 0; display: flex; justify-content: center; align-items: center; gap: 2px; font-size: .85rem; color: var(--muted); }
+  .theme span { margin-right: 6px; }
+  .theme button { font: inherit; color: inherit; background: none; border: 1px solid transparent; border-radius: 999px;
+    padding: 6px 12px; min-height: 32px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .theme button[aria-pressed="true"] { border-color: var(--line); color: var(--text); font-weight: 600; }
   @media (display-mode: standalone) { .install { display: none; } }
 </style>
 </head>
@@ -103,8 +111,19 @@
   </ul>
 
   <p class="install"><a href="install/">Install Pebbly</a></p>
+  <div class="theme" role="group" aria-label="Appearance"><span>Theme</span>
+    <button type="button" data-theme="auto">Auto</button><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button>
+  </div>
 </main>
 <script>
+  // Theme switch: Auto follows the phone; Light/Dark apply to every Pebbly app that has a dark look.
+  (function () {
+    var btns = document.querySelectorAll('.theme button');
+    function show() { var t = pebblyTheme.get(); btns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.theme === t)); }); }
+    btns.forEach(function (b) { b.addEventListener('click', function () { pebblyTheme.set(b.dataset.theme); show(); }); });
+    addEventListener('pageshow', show);
+    show();
+  })();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
   // Ask the browser to keep Pebbly's saved data (see nav.js).
   (function () {

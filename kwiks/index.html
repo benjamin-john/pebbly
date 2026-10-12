@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script src="/theme.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#2F7A63">
@@ -22,11 +23,16 @@
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){
-  :root{ --bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
     --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead-t:#3A3218; --no:#F07A75;
     --red-t:#3A2120; --yellow-t:#3A3219; --green-t:#1B3326; --blue-t:#1C2840;
-    --red-i:#FF9C98; --yellow-i:#F5D46B; --green-i:#7FD6A2; --blue-i:#9DBDF2; }
+    --red-i:#FF9C98; --yellow-i:#F5D46B; --green-i:#7FD6A2; --blue-i:#9DBDF2; color-scheme:dark; }
 }
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead-t:#3A3218; --no:#F07A75;
+    --red-t:#3A2120; --yellow-t:#3A3219; --green-t:#1B3326; --blue-t:#1C2840;
+    --red-i:#FF9C98; --yellow-i:#F5D46B; --green-i:#7FD6A2; --blue-i:#9DBDF2; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
