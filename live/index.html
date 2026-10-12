@@ -1,0 +1,1783 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Live Quiz</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D;
+  --good:#2E9B5A; --good-t:#DDF1E5; --good-i:#1E7344; --bad-t:#FBE3E2; --bad-i:#B32B27; --track:#E7ECEA;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75;
+    --good:#5CC98A; --good-t:#1B3326; --good-i:#7FD6A2; --bad-t:#3A2120; --bad-i:#FF9C98; --track:#27322E; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75;
+    --good:#5CC98A; --good-t:#1B3326; --good-i:#7FD6A2; --bad-t:#3A2120; --bad-i:#FF9C98; --track:#27322E; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;line-height:1.2;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--no);border:1.5px solid var(--no)}
+.btn.sm{width:auto;min-height:44px;padding:0 14px;font-size:16px}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text],textarea,select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:500 17px/1.3 var(--body)}
+textarea{resize:vertical;display:block}
+label.lbl{display:block;font-weight:600;margin:0 0 6px}
+label.lbl small{font-weight:400;color:var(--muted)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.err{color:var(--no);font-size:15px;margin:8px 0 0;font-weight:600}
+.err:empty{display:none}
+.stack{display:grid;gap:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:5px 0}
+.topbar{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+.empty{color:var(--muted);text-align:center;padding:8px 0;margin:0}
+.check{display:flex;gap:12px;align-items:flex-start;padding:8px 0;cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--brand);flex:none;margin-top:1px}
+.check small{display:block;color:var(--muted);font-size:13.5px;margin-top:2px}
+.note{padding:12px;border-radius:12px;background:var(--brand-t);margin-bottom:12px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;cursor:pointer}
+.chip::before{content:"+ ";color:var(--brand);font-weight:700;margin-right:4px}
+
+/* ---------- Start screen ---------- */
+.codebox{display:flex;gap:10px}
+.codebox input{flex:1;min-width:0;min-height:60px;text-align:center;font:800 30px/1 var(--head) !important;letter-spacing:.2em;text-transform:uppercase;padding:0 6px}
+.codebox input::placeholder{letter-spacing:.12em;color:var(--field)}
+.codebox .btn{width:auto;min-height:60px;padding:0 22px;font-size:18px}
+.items{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.item{padding:10px 10px 10px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.item .it{display:flex;align-items:center;gap:8px}
+.item .ii{flex:1;min-width:0}
+.item .ii b{display:block;font-weight:600;font-size:16.5px;line-height:1.25;overflow-wrap:anywhere}
+.item .ii small{color:var(--muted);font-size:13.5px}
+.item .acts{display:flex;gap:8px;margin-top:8px}
+.item .acts .btn.sm{flex:1;padding:0 8px;white-space:nowrap}
+.tag{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--brand-t);color:var(--ink);font-size:12.5px;font-weight:600;margin-left:4px;vertical-align:1px}
+.code-sm{font:800 15px/1 var(--head);letter-spacing:.1em}
+
+/* ---------- Editor ---------- */
+.qlist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.eq{display:flex;gap:8px;align-items:stretch;border:1px solid var(--line);border-radius:14px;background:var(--bg);overflow:hidden}
+.eq.bad{border-color:var(--no);border-width:1.5px}
+.eq .eqb{flex:1;min-width:0;display:block;text-align:left;border:0;background:none;padding:10px 4px 10px 12px;cursor:pointer}
+.eq .eqq{font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.eq .eqq .n{color:var(--muted);font-weight:600;margin-right:4px}
+.eq .eqa{color:var(--good-i);font-size:14px;margin-top:3px;overflow-wrap:anywhere}
+.eq .eqa.poll{color:var(--muted)}
+.eq .eqp{color:var(--no);font-size:14px;margin-top:3px;font-weight:600}
+.eq .eqm{display:flex;flex-direction:column;justify-content:center;gap:4px;padding:6px 6px 6px 0}
+.chedit{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.chedit li{display:flex;gap:8px;align-items:center}
+.chedit input{flex:1;min-width:0}
+.chedit li.ok input{border-color:var(--good);background:var(--good-t)}
+.chedit .lt{flex:none;width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:#fff;background:var(--c);font:800 14px/1 var(--head)}
+.chedit .c2 .lt,.chedit .c5 .lt{color:#33290A}
+.mark{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid var(--field);background:var(--surface);color:transparent;font:800 20px/1 var(--head);cursor:pointer;padding:0}
+.mark[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:#fff}
+.nomark .mark{display:none}
+.field{margin-bottom:14px}
+
+/* ---------- Import ---------- */
+.opts2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.prompt{white-space:pre-wrap;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0 0;overflow-wrap:anywhere;max-height:260px;overflow:auto}
+details summary{cursor:pointer;color:var(--brand);font-weight:600;padding:10px 0 2px;min-height:44px}
+.pastebar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:0 0 6px}
+.pastebar label{margin:0}
+.res{border-radius:12px;padding:12px;margin:12px 0}
+.res.ok{background:var(--good-t);color:var(--good-i)}
+.res.warn{background:var(--lead-t)}
+.res.no{background:var(--bad-t);color:var(--bad-i)}
+.res b.big{display:block;font:800 20px/1.2 var(--head);margin-bottom:4px}
+.res ul{margin:6px 0 0;padding-left:20px}
+.pv{list-style:none;margin:8px 0 0;padding:0;font-size:14.5px}
+.pv li{padding:7px 0;border-bottom:1px solid var(--line)}
+.pv li .a{color:var(--good-i);display:block}
+.pv li .p{color:var(--no);display:block;font-weight:600}
+
+/* ---------- Choice colors (same as Trivia) ---------- */
+.c0{--c:#D93F3B;--ci:#fff}.c1{--c:#3570C9;--ci:#fff}.c2{--c:#F2C230;--ci:#33290A}.c3{--c:#7B4FC4;--ci:#fff}.c4{--c:#178585;--ci:#fff}.c5{--c:#E8833A;--ci:#33200A}
+
+/* ---------- Audience ---------- */
+.ahead{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
+.ahead b{flex:1;min-width:0;font:800 20px/1.2 var(--head);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ahead .pill{flex:none;padding:5px 10px;border-radius:999px;border:1px solid var(--line);background:var(--surface);font:800 14px/1 var(--head);letter-spacing:.1em}
+.big-msg{text-align:center;padding:26px 16px}
+.big-msg .em{font-size:52px;line-height:1}
+.big-msg h1{font-size:30px;margin:10px 0 6px}
+.big-msg p{margin:0;color:var(--muted)}
+.qnum{font:600 13px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.qtext{font:600 clamp(20px,5.6vw,26px)/1.28 var(--head);margin:0;overflow-wrap:anywhere;text-transform:none;letter-spacing:0;color:var(--ink)}
+.choices{display:grid;gap:10px;margin:14px 0}
+.ch{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:64px;padding:10px 12px 10px 10px;border:0;border-radius:14px;
+  text-align:left;font:600 18px/1.25 var(--body);color:var(--ci);background:var(--c);box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);
+  cursor:pointer;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.ch:active{transform:scale(.98)}
+.ch .lt{flex:none;width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:rgba(255,255,255,.26);font:800 19px/1 var(--head)}
+.c2 .lt,.c5 .lt{background:rgba(255,255,255,.45)}
+.ch .tx{flex:1;min-width:0;overflow-wrap:anywhere}
+.ch .mk{flex:none;width:32px;height:32px;border-radius:999px;display:grid;place-items:center;background:#fff;color:#1F2A27;font:800 17px/1 var(--body)}
+.choices.picked .ch:not(.sel){opacity:.45}
+.ch.sel{outline:4px solid var(--ink);outline-offset:3px;opacity:1}
+.status{font-weight:600;text-align:center;margin:4px 0 12px}
+.status small{display:block;font-weight:400;color:var(--muted)}
+.result{border-radius:14px;padding:14px;text-align:center;margin:0 0 12px}
+.result b{display:block;font:800 24px/1.2 var(--head)}
+.result.ok{background:var(--good-t);color:var(--good-i)}
+.result.no{background:var(--bad-t);color:var(--bad-i)}
+.result.none{background:var(--surface);border:1px solid var(--line)}
+.scoreline{text-align:center;font-weight:600;margin:12px 0 0}
+.offline{position:sticky;top:0;z-index:3;text-align:center;background:var(--lead-t);border-radius:10px;padding:6px 10px;font-size:14px;font-weight:600;margin-bottom:8px}
+
+/* ---------- Percentage bars (phones, presenter, results) ---------- */
+.bars{display:grid;gap:10px;margin:12px 0}
+.bar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px}
+.bar .lt{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;background:var(--c);color:var(--ci);font:800 17px/1 var(--head)}
+.bar .bm{min-width:0}
+.bar .bt{font-weight:600;line-height:1.25;overflow-wrap:anywhere;margin-bottom:4px}
+.bar .tr{height:14px;border-radius:999px;background:var(--track);overflow:hidden}
+.bar .tr i{display:block;height:100%;border-radius:999px;background:var(--c);transform-origin:left;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
+.bar .bp{text-align:right;min-width:52px}
+.bar .bp b{display:block;font:800 20px/1.1 var(--head);font-variant-numeric:tabular-nums}
+.bar .bp small{color:var(--muted);font-size:13px;white-space:nowrap}
+.bar .ok{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--good);color:#fff;font:800 14px/1 var(--body);margin-left:6px;vertical-align:2px}
+.bars.scored .bar:not(.right){opacity:.55}
+.bars.scored .bar.right .bt{color:var(--good-i)}
+.bars.scored .bar.right{background:var(--good-t);border-radius:12px;padding:6px 8px;margin:-6px -8px;outline:2px solid var(--good)}
+.bar.mine .bt::after{content:" · you";color:var(--muted);font-weight:500}
+@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.bar .tr i{animation:none}}
+
+/* ---------- Presenter (big screen) ---------- */
+body.on-stage{overflow-x:hidden}
+.stage{display:flex;flex-direction:column;min-height:var(--app-h,100vh);padding:14px clamp(16px,2.4vw,44px) 16px}
+.sbar{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.stitle{flex:1;min-width:0;display:flex;align-items:baseline;gap:14px}
+.stitle b{font:800 clamp(18px,1.7vw,30px)/1.2 var(--head);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.stitle span{color:var(--muted);font-weight:600;white-space:nowrap;font-size:clamp(14px,1.2vw,20px)}
+.sbtn{flex:none;min-height:44px;min-width:44px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;font-weight:600;font-size:15px;white-space:nowrap}
+.sbody{flex:1;display:flex;gap:clamp(16px,2vw,36px);align-items:flex-start}
+.smain{flex:1;min-width:0;align-self:stretch;display:flex;flex-direction:column}
+.corner{flex:none;width:clamp(150px,15vw,250px);background:#fff;color:#1F2A27;border-radius:16px;padding:10px 10px 12px;text-align:center;border:1px solid var(--line)}
+.corner svg{display:block;width:100%;height:auto}
+.corner .cj{font:600 clamp(12px,1vw,16px)/1.3 var(--body);margin-top:4px;overflow-wrap:anywhere}
+.corner .cc{font:800 clamp(24px,2.3vw,40px)/1.1 var(--head);letter-spacing:.08em}
+.sfoot{display:flex;align-items:center;gap:14px;margin-top:16px}
+.sfoot .grow{flex:1;min-width:0}
+.sfoot .btn{width:auto;min-width:clamp(150px,15vw,240px);font-size:clamp(17px,1.4vw,22px);min-height:clamp(52px,6vh,64px);padding:0 22px}
+.skeys{color:var(--muted);font-size:14px}
+.pbar{display:flex;align-items:center;gap:14px}
+.pbar .ptr{flex:1;height:clamp(14px,1.8vh,22px);border-radius:999px;background:var(--track);overflow:hidden}
+.pbar .ptr i{display:block;height:100%;background:var(--brand);border-radius:999px;transition:width .4s}
+.pbar span{font:800 clamp(18px,1.7vw,30px)/1 var(--head);white-space:nowrap;font-variant-numeric:tabular-nums}
+.pbar span small{font:600 clamp(14px,1.1vw,18px)/1 var(--body);color:var(--muted)}
+/* lobby */
+.lobby{flex:1;display:flex;gap:clamp(20px,4vw,72px);align-items:center;justify-content:center}
+.lobl{flex:1;min-width:0;max-width:720px}
+.ltitle{font:800 clamp(30px,4.2vw,72px)/1.08 var(--head);margin:0 0 clamp(12px,2.5vh,30px);overflow-wrap:anywhere}
+.lgo{font:600 clamp(20px,2.2vw,38px)/1.3 var(--body);margin:0}
+.lgo b{color:var(--brand)}
+.lcode{display:inline-block;font:800 clamp(56px,8.5vw,150px)/1 var(--head);letter-spacing:.1em;margin:clamp(6px,1.2vh,16px) 0;padding:clamp(6px,1vh,14px) clamp(14px,1.6vw,28px);border-radius:18px;background:var(--surface);border:2px solid var(--line)}
+.lor{color:var(--muted);font-size:clamp(15px,1.3vw,22px);margin:0 0 clamp(14px,3vh,34px)}
+.lppl{font:800 clamp(22px,2.3vw,40px)/1.2 var(--head)}
+.lppl small{font:600 clamp(15px,1.3vw,22px)/1 var(--body);color:var(--muted);margin-left:4px}
+.lnames{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;max-height:calc(var(--app-h,100vh) * .22);overflow:hidden}
+.lnames span{padding:6px 14px;border-radius:999px;background:var(--brand-t);font-weight:600;font-size:clamp(15px,1.2vw,20px)}
+.lnames span.more{background:transparent;color:var(--muted)}
+.lqr{flex:none;width:min(calc(var(--app-h,100vh) - 190px),42vw,620px);min-width:200px;background:#fff;border-radius:22px;padding:clamp(8px,1.2vw,18px);box-shadow:0 10px 40px rgba(0,0,0,.12)}
+.lqr svg{display:block;width:100%;height:auto}
+/* question */
+.qn{font:700 clamp(14px,1.3vw,22px)/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:4px 0 clamp(8px,1.4vh,16px)}
+.qn .tag{font-size:.8em;letter-spacing:.04em;text-transform:none;vertical-align:.1em}
+.qbig{font:800 clamp(26px,3.5vw,62px)/1.15 var(--head);margin:0 0 clamp(14px,3vh,34px);overflow-wrap:anywhere;text-transform:none;letter-spacing:0;color:var(--ink)}
+.qbig.long{font-size:clamp(22px,2.5vw,44px)}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:clamp(10px,1.2vw,18px);flex:1;grid-auto-rows:minmax(clamp(64px,13vh,150px),1fr);max-height:calc(var(--app-h,100vh) * .62)}
+.tiles.n5,.tiles.n6{grid-template-columns:1fr 1fr 1fr}
+.tile{display:flex;align-items:center;gap:clamp(10px,1vw,18px);padding:clamp(10px,1.2vw,20px);border-radius:18px;background:var(--c);color:var(--ci);box-shadow:inset 0 -6px 0 rgba(0,0,0,.18);
+  font:700 clamp(18px,2.4vw,44px)/1.2 var(--body);overflow-wrap:anywhere}
+.tile .lt{flex:none;width:clamp(38px,3.4vw,62px);height:clamp(38px,3.4vw,62px);display:grid;place-items:center;border-radius:12px;background:rgba(255,255,255,.26);font:800 clamp(20px,2vw,36px)/1 var(--head)}
+.c2 .tile .lt,.tile.c2 .lt,.tile.c5 .lt{background:rgba(255,255,255,.45)}
+.tile .tx{min-width:0}
+.bars.big{gap:clamp(10px,2vh,22px);margin:0}
+.bars.big .bar{gap:clamp(12px,1.2vw,22px)}
+.bars.big .bar .lt{width:clamp(40px,3.4vw,62px);height:clamp(40px,3.4vw,62px);border-radius:12px;font-size:clamp(20px,2vw,34px)}
+.bars.big .bar .bt{font-size:clamp(18px,1.9vw,34px);margin-bottom:6px}
+.bars.big .bar .tr{height:clamp(16px,2.6vh,30px)}
+.bars.big .bar .bp{min-width:clamp(80px,7vw,130px)}
+.bars.big .bar .bp b{font-size:clamp(24px,2.6vw,48px)}
+.bars.big .bar .bp small{font-size:clamp(13px,1.1vw,18px)}
+.bars.big .bar .ok{width:clamp(26px,2.2vw,40px);height:clamp(26px,2.2vw,40px);font-size:clamp(15px,1.3vw,24px)}
+.bars.big.scored .bar.right{padding:clamp(6px,1vh,12px) clamp(8px,.8vw,14px);margin:calc(-1 * clamp(6px,1vh,12px)) calc(-1 * clamp(8px,.8vw,14px));outline-width:3px}
+.rsum{font:700 clamp(16px,1.4vw,24px)/1.3 var(--body);color:var(--muted);margin:clamp(12px,2.4vh,26px) 0 0}
+/* results */
+.results{max-width:1200px;width:100%;margin:0 auto}
+.rhead{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.rhead h2{flex:1;font:800 clamp(28px,3vw,52px)/1.1 var(--head);color:var(--ink);text-transform:none;letter-spacing:0;margin:0;min-width:200px}
+.rbtns{display:flex;gap:10px;flex-wrap:wrap}
+.rbtns .btn{width:auto}
+.podium{display:flex;justify-content:center;align-items:flex-end;gap:clamp(8px,1.5vw,24px);margin:6px 0 18px}
+.pod{flex:1;max-width:260px;text-align:center;min-width:0}
+.pod .pn{font:800 clamp(17px,1.8vw,30px)/1.2 var(--head);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 4px}
+.pod .ps{color:var(--muted);font-weight:600;margin-bottom:6px;font-size:clamp(14px,1.2vw,19px)}
+.pod .pb{border-radius:14px 14px 0 0;display:grid;place-items:center;font:800 clamp(28px,3vw,52px)/1 var(--head);color:#33290A}
+.pod.p1 .pb{height:clamp(90px,16vh,170px);background:linear-gradient(160deg,#FCE38A,#F2C230)}
+.pod.p2 .pb{height:clamp(66px,11vh,120px);background:linear-gradient(160deg,#E9EEF0,#B9C4C9)}
+.pod.p3 .pb{height:clamp(50px,8vh,90px);background:linear-gradient(160deg,#F2C9A6,#D59562)}
+.tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);margin-bottom:14px}
+table.rt{border-collapse:collapse;width:100%;font-size:15px}
+.rt th,.rt td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+.rt th{font-size:13px;color:var(--muted);font-weight:600;position:sticky;top:0;background:var(--surface)}
+.rt tr:last-child td{border-bottom:0}
+.rt td.nm{font-weight:600;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+.rt td.sc{font:800 17px/1 var(--head);font-variant-numeric:tabular-nums}
+.rt .a{display:inline-flex;align-items:center;gap:4px}
+.rt .a i{font-style:normal;display:inline-grid;place-items:center;width:22px;height:22px;border-radius:6px;background:var(--c);color:var(--ci);font:800 12px/1 var(--head)}
+.rt .y{color:var(--good-i);font-weight:800}
+.rt .n{color:var(--no);font-weight:800}
+.rt .dash{color:var(--muted)}
+.qsum{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:12px}
+.qsum .card{margin:0}
+.qsum h3{font:700 16.5px/1.3 var(--body);margin:0 0 4px;overflow-wrap:anywhere}
+.qsum .got{color:var(--good-i);font-weight:700;font-size:14.5px}
+.qsum .bars{gap:8px;margin:10px 0 0}
+.qsum .bar .lt{width:26px;height:26px;font-size:13px;border-radius:7px}
+.qsum .bar .bt{font-size:14.5px;margin-bottom:3px}
+.qsum .bar .tr{height:9px}
+.qsum .bar .bp b{font-size:16px}
+.qsum .bars.scored .bar.right{padding:4px 6px;margin:-4px -6px}
+.sec-h{font:800 clamp(20px,1.8vw,28px)/1.2 var(--head);margin:18px 0 10px}
+.serr{flex:1;display:grid;place-items:center;text-align:center}
+@media (max-width:760px){
+  .stage{padding:12px 16px 16px}
+  .sbtn .lbtx{display:none}
+  .sbody{flex-direction:column-reverse;align-items:stretch}
+  .corner{width:auto;display:flex;align-items:center;gap:12px;text-align:left;padding:8px}
+  .corner svg{width:84px;flex:none}
+  .lobby{flex-direction:column;align-items:stretch}
+  .lqr{width:min(100%,360px);min-width:0;margin:0 auto}
+  .tiles,.tiles.n5,.tiles.n6{grid-template-columns:1fr;flex:none;grid-auto-rows:minmax(64px,auto);max-height:none}
+  .stitle span{display:none}
+  .sfoot{flex-wrap:wrap}
+  .sfoot .grow{flex-basis:100%}
+  .sfoot .btn{flex:1;min-width:0}
+}
+html:fullscreen #pebbly-nav{display:none}
+html:fullscreen body{padding-top:0 !important}
+
+/* ---------- Remote ---------- */
+.rbig{min-height:76px !important;font-size:21px !important}
+.rstep{font:800 22px/1.2 var(--head);margin:0 0 6px}
+.rq{margin:0 0 10px;font-weight:600;overflow-wrap:anywhere}
+
+/* ---------- Dialogs ---------- */
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+.qrbox{background:#fff;border-radius:14px;padding:10px;width:min(280px,100%);margin:0 auto 12px}
+.qrbox svg{display:block;width:100%;height:auto}
+.warn{padding:10px 12px;border-radius:12px;background:var(--lead-t);font-size:14.5px;margin:0 0 12px}
+</style>
+<script src="/keepawake.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Start ================= -->
+<main class="wrap" id="home" hidden>
+  <h1>Live Quiz</h1>
+  <p class="lead">Quiz or poll a room. Questions show on the big screen; everyone answers on their phone.</p>
+
+  <section class="card" id="joinCard">
+    <h2>Join a quiz</h2>
+    <form class="codebox" id="joinForm" autocomplete="off">
+      <input type="text" id="joinCode" maxlength="7" placeholder="CODE" inputmode="text" autocapitalize="characters" spellcheck="false" aria-label="Quiz code" enterkeyhint="go">
+      <button class="btn" type="submit">Join</button>
+    </form>
+    <p class="err" id="joinErr" role="alert"></p>
+    <p class="hint">Type the 5-letter code shown on the screen.</p>
+  </section>
+
+  <section class="card" id="sessCard" hidden>
+    <h2>Running on this device</h2>
+    <ul class="items" id="sessList"></ul>
+  </section>
+
+  <section class="card">
+    <h2>Your quizzes</h2>
+    <ul class="items" id="quizList"></ul>
+    <div class="stack">
+      <button class="btn plain" id="newQuizBtn" type="button">✎ New quiz</button>
+      <div class="row2">
+        <button class="btn plain" id="aiBtn" type="button">✨ Make with AI</button>
+        <button class="btn plain" id="triviaBtn" type="button">🧠 Use a Trivia set</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>How it works</h2>
+    <ul class="rules">
+      <li>Make a quiz: questions with 2 to 6 answers. Mark the right one, or leave it as a poll.</li>
+      <li>Tap <b>Present</b> on a laptop connected to a projector or TV. A QR code and a short code let everyone join from their phone.</li>
+      <li>Show each question, watch the answers come in, then reveal the answer and how everyone voted.</li>
+      <li>Turn on names to see everyone’s scores at the end and download them.</li>
+    </ul>
+  </section>
+</main>
+
+<!-- ================= Quiz editor ================= -->
+<main class="wrap" id="editor" hidden>
+  <div class="topbar">
+    <button class="icon-btn" id="edBack" type="button" aria-label="Back">←</button>
+    <div class="title"><h1 id="edHead">New quiz</h1></div>
+  </div>
+  <section class="card">
+    <label class="lbl" for="edTitle">Title</label>
+    <input type="text" id="edTitle" maxlength="80" placeholder="e.g. Team Quiz Night" autocomplete="off">
+    <label class="check" style="margin-top:8px"><input type="checkbox" id="edNames"><span><b>Ask people for their name</b>
+      <small>Off: everyone answers anonymously. On: people type their name when they join, and at the end you can see and download everyone’s answers and scores.</small></span></label>
+  </section>
+  <section class="card">
+    <h2 id="edCount">Questions</h2>
+    <ol class="qlist" id="edList"></ol>
+    <button class="btn ghost" id="edAdd" type="button">+ Add a question</button>
+  </section>
+  <p class="err" id="edErr" role="alert"></p>
+  <div class="stack" style="margin-top:12px">
+    <button class="btn" id="edSave" type="button">Save quiz</button>
+    <button class="btn plain" id="edCancel" type="button">Cancel</button>
+  </div>
+</main>
+
+<!-- ================= Make with AI ================= -->
+<main class="wrap" id="import" hidden>
+  <div class="topbar">
+    <button class="icon-btn" id="imBack" type="button" aria-label="Back">←</button>
+    <div class="title"><h1>Make with AI</h1></div>
+  </div>
+  <section class="card">
+    <h2>1 · Ask an AI for questions</h2>
+    <label class="lbl" for="imCat">Topic</label>
+    <input type="text" id="imCat" maxlength="80" placeholder="e.g. Our company’s history" autocomplete="off">
+    <div class="opts2">
+      <div><label class="lbl" for="imNum">Questions</label>
+        <select id="imNum"><option>5</option><option selected>10</option><option>15</option><option>20</option><option>25</option><option>30</option></select></div>
+      <div><label class="lbl" for="imDiff">Difficulty</label>
+        <select id="imDiff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option><option value="mixed">Mixed</option><option value="kids">For kids</option></select></div>
+    </div>
+    <p class="err" id="imCatErr"></p>
+    <button class="btn" id="imCopy" type="button">📋 Copy prompt for AI</button>
+    <p class="hint">Paste it into ChatGPT, Gemini, Claude or any AI chat. The AI puts the questions in a box with a copy button: tap it, then paste below.</p>
+    <details><summary>Show the prompt</summary><pre class="prompt" id="imPrompt"></pre></details>
+  </section>
+  <section class="card">
+    <h2>2 · Paste the AI’s reply</h2>
+    <div class="pastebar"><label class="lbl" for="imText">The AI’s reply</label>
+      <button class="btn plain sm" id="imPaste" type="button">Paste</button></div>
+    <textarea id="imText" rows="6" placeholder='{"title": "…", "questions": [ … ]}' spellcheck="false" autocomplete="off"></textarea>
+    <div id="imResult" aria-live="polite"></div>
+    <div id="imSaveBox" hidden>
+      <label class="lbl" for="imTitle">Title</label>
+      <input type="text" id="imTitle" maxlength="80" autocomplete="off">
+      <div class="stack" style="margin-top:12px">
+        <button class="btn" id="imSave" type="button">Save quiz</button>
+        <button class="btn plain" id="imFix" type="button">Edit before saving</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= Presenter (big screen) ================= -->
+<section class="stage" id="present" hidden>
+  <header class="sbar">
+    <div class="stitle"><b id="pTitle"></b><span id="pStep"></span></div>
+    <button class="sbtn" id="pRemoteBtn" type="button" title="Use your phone as a remote">📱<span class="lbtx"> Phone remote</span></button>
+    <button class="sbtn" id="pFullBtn" type="button" title="Full screen (F)">⛶<span class="lbtx" id="pFullTx"> Full screen</span></button>
+    <button class="sbtn" id="pMenuBtn" type="button" aria-label="More">⋯</button>
+  </header>
+  <div class="offline" id="pOffline" hidden>Connection lost – retrying…</div>
+  <div class="sbody">
+    <div class="smain" id="pMain"><p class="empty">Loading…</p></div>
+    <aside class="corner" id="pCorner" hidden></aside>
+  </div>
+  <footer class="sfoot" id="pFoot" hidden>
+    <div class="grow" id="pProg"></div>
+    <button class="btn plain" id="pBack" type="button">← Back</button>
+    <button class="btn" id="pNext" type="button">Next</button>
+  </footer>
+</section>
+
+<!-- ================= Phone remote ================= -->
+<main class="wrap" id="remote" hidden>
+  <div class="topbar">
+    <div class="title"><h1 id="rTitle">Live Quiz</h1><div class="sub" id="rSub"></div></div>
+    <button class="icon-btn" id="rMenuBtn" type="button" aria-label="More">⋯</button>
+  </div>
+  <div class="offline" id="rOffline" hidden>Connection lost – retrying…</div>
+  <div id="rBody"><p class="empty">Loading…</p></div>
+</main>
+
+<!-- ================= Audience ================= -->
+<main class="wrap" id="aud" hidden>
+  <div class="offline" id="aOffline" hidden>Connection lost – retrying…</div>
+  <div id="aBody"><p class="empty">Loading…</p></div>
+</main>
+
+<!-- ================= Question dialog ================= -->
+<dialog id="qDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="qHead">Question</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="field">
+      <label class="lbl" for="qText">Question</label>
+      <textarea id="qText" rows="3" maxlength="300" placeholder="e.g. What year was the company founded?"></textarea>
+    </div>
+    <div class="field" id="qChoicesBox">
+      <label class="lbl">Answers <small id="qMarkHint">· tap ✓ next to the right one</small></label>
+      <ul class="chedit" id="qChoices"></ul>
+      <button class="btn ghost sm" id="qAddChoice" type="button" style="margin-top:10px">+ Add an answer</button>
+    </div>
+    <label class="check"><input type="checkbox" id="qPoll"><span><b>No right answer (just a poll)</b><small>Shows how everyone voted, without scoring.</small></span></label>
+    <p class="err" id="qErr" role="alert"></p>
+    <div class="stack" style="margin-top:12px">
+      <button class="btn" id="qSave" type="button">Done</button>
+      <button class="btn danger" id="qDel" type="button">Delete this question</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ================= Trivia sets ================= -->
+<dialog id="tDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Use a Trivia set</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <ul class="items" id="tList"></ul>
+    <p class="hint">These are the question sets saved in Pebbly’s Trivia app on this device. You can edit the copy before presenting.</p>
+  </div>
+</dialog>
+
+<!-- ================= Presenter menu ================= -->
+<dialog id="mDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Quiz</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mRemote">📱 Use your phone as a remote</button>
+      <button class="btn plain" type="button" id="mBig">🖥 Show the big-screen view here</button>
+      <button class="btn plain" type="button" id="mSmall">📱 Show phone controls here</button>
+      <button class="btn plain" type="button" id="mCopy">📋 Copy the join link</button>
+      <button class="btn plain" type="button" id="mEnd">⏹ End the quiz now</button>
+      <button class="btn plain" type="button" id="mRestart">↺ Restart (clears all answers)</button>
+      <button class="btn plain" type="button" id="mHome">← Back to start</button>
+    </div>
+    <p class="hint">Keys: Space, → or Enter for the next step · ← back · F full screen.</p>
+  </div>
+</dialog>
+
+<!-- ================= Phone remote QR ================= -->
+<dialog id="rDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Use your phone as a remote</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <p style="margin:0 0 12px">Scan this with your own phone to get Reveal / Next / Back buttons that control this screen.</p>
+    <div class="qrbox" id="rQr"></div>
+    <p class="warn">🔒 This is the organizer link. Anyone who has it can run your quiz, so don’t show it to the room.</p>
+    <button class="btn plain" type="button" id="rCopy">📋 Copy the organizer link</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
+  var K_QUIZ = 'pebbly_live_quizzes', K_SESS = 'pebbly_live_sessions', K_PID = 'pebbly_live_pid', K_NAME = 'pebbly_live_name',
+      K_MEM = 'pebbly_score_memory', K_TRIVIA = 'pebbly_trivia_sets';
+  var LETTERS = 'ABCDEF', MAXQ = 100, QLEN = 300, CLEN = 120, TLEN = 80;
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' '); }
+  function clip(s, n) { s = tidy(s); return s.length > n ? s.slice(0, n) : s; }
+  function clone(x) { return x == null ? x : JSON.parse(JSON.stringify(x)); }
+  function buzz(ms) { if (navigator.vibrate) try { navigator.vibrate(ms || 8); } catch (e) {} }
+  function randInt(n) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  function people(n) { return n + (n === 1 ? ' person' : ' people'); }
+  function pct(n, t) { return t ? Math.round(n * 100 / t) : 0; }
+  function sum(a) { return (a || []).reduce(function (s, x) { return s + (+x || 0); }, 0); }
+  function isScored(q) { return q && typeof q.answer === 'number' && q.answer >= 0; }
+
+  // ================= Database =================
+  function rpc(fn, args) {
+    var headers = { 'Content-Type': 'application/json', apikey: KEY_ };
+    if (/^eyJ/.test(KEY_)) headers.Authorization = 'Bearer ' + KEY_;
+    return fetch(URL_ + '/rest/v1/rpc/' + fn, { method: 'POST', headers: headers, body: JSON.stringify(args) })
+      .then(function (res) {
+        return res.text().then(function (t) {
+          var d = null; try { d = t ? JSON.parse(t) : null; } catch (e) {}
+          if (!res.ok) { var err = new Error((d && (d.message || d.error_description)) || ('http_' + res.status)); err.status = res.status; throw err; }
+          return d;
+        });
+      }, function () { throw new Error('network'); });
+  }
+  var ERRS = {
+    session_not_found: 'There’s no quiz with that code. Check the code on the screen and try again.',
+    not_owner: 'This organizer link doesn’t work for this quiz.',
+    name_required: 'Please type your name.',
+    voting_closed: 'Too late – answers for this question are closed.',
+    not_joined: 'You’re not in this quiz yet. Reload the page to join.',
+    invalid_choice: 'That answer isn’t one of the choices.',
+    invalid_questions: 'A quiz needs 1 to 100 questions.',
+    invalid_question: 'Every question needs text (300 characters at most).',
+    invalid_choices: 'Every question needs 2 to 6 different answers (120 characters at most each).',
+    invalid_answer: 'One question has a right answer that isn’t one of its answers.',
+    invalid_title: 'Give the quiz a title.',
+    quiz_running: 'Questions can’t be changed while the quiz is running.',
+    not_open: 'The answer is already showing.',
+    session_full: 'This quiz is full (1,000 people have joined).',
+    invalid_participant: 'This phone couldn’t join. Reload the page and try again.',
+    invalid_qindex: 'That question doesn’t exist.',
+    invalid_action: 'Something went wrong. Try again.',
+    network: 'No connection. Check your internet and try again.'
+  };
+  function errText(e) {
+    var m = (e && e.message) || '';
+    if (ERRS[m]) return ERRS[m];
+    if (/^http_/.test(m)) return ERRS.network;
+    return 'Something went wrong. Try again.';
+  }
+
+  // ================= QR code (byte mode, UTF-8, error correction M) =================
+  var QR = (function () {
+    var ECC = [-1, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26, 30, 22, 22, 24, 24, 28, 28, 26, 26, 26, 26, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28, 28];
+    var BLK = [-1, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5, 5, 8, 9, 9, 10, 10, 11, 13, 14, 16, 17, 17, 18, 20, 21, 23, 25, 26, 28, 29, 31, 33, 35, 37, 38, 40, 43, 45, 47, 49];
+    function rawModules(v) { var r = (16 * v + 128) * v + 64; if (v >= 2) { var na = Math.floor(v / 7) + 2; r -= (25 * na - 10) * na - 55; if (v >= 7) r -= 36; } return r; }
+    function dataCw(v) { return Math.floor(rawModules(v) / 8) - ECC[v] * BLK[v]; }
+    function mul(x, y) { var z = 0; for (var i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; } return z & 0xFF; }
+    function rsDiv(d) {
+      var r = []; for (var i = 0; i < d - 1; i++) r.push(0); r.push(1);
+      var root = 1;
+      for (i = 0; i < d; i++) { for (var j = 0; j < r.length; j++) { r[j] = mul(r[j], root); if (j + 1 < r.length) r[j] ^= r[j + 1]; } root = mul(root, 2); }
+      return r;
+    }
+    function rsRem(data, div) {
+      var r = div.map(function () { return 0; });
+      data.forEach(function (b) { var f = b ^ r.shift(); r.push(0); div.forEach(function (c, i) { r[i] ^= mul(c, f); }); });
+      return r;
+    }
+    function encode(text) {
+      var bytes = Array.prototype.slice.call(new TextEncoder().encode(text)), v, cap;
+      for (v = 1; v <= 40; v++) { cap = dataCw(v) * 8; if (4 + (v < 10 ? 8 : 16) + bytes.length * 8 <= cap) break; }
+      if (v > 40) throw new Error('too_long');
+      var bits = [];
+      function put(val, n) { for (var i = n - 1; i >= 0; i--) bits.push((val >>> i) & 1); }
+      put(4, 4); put(bytes.length, v < 10 ? 8 : 16); bytes.forEach(function (b) { put(b, 8); });
+      put(0, Math.min(4, cap - bits.length)); put(0, (8 - bits.length % 8) % 8);
+      for (var pad = 0xEC; bits.length < cap; pad ^= 0xEC ^ 0x11) put(pad, 8);
+      var data = [], i, j;
+      for (i = 0; i < bits.length; i += 8) { var b = 0; for (j = 0; j < 8; j++) b = (b << 1) | bits[i + j]; data.push(b); }
+      // Error correction blocks, then interleave.
+      var nb = BLK[v], el = ECC[v], raw = Math.floor(rawModules(v) / 8), nShort = nb - raw % nb, shortLen = Math.floor(raw / nb), div = rsDiv(el), blocks = [], k = 0;
+      for (i = 0; i < nb; i++) {
+        var dat = data.slice(k, k + shortLen - el + (i < nShort ? 0 : 1)); k += dat.length;
+        var ecc = rsRem(dat, div); if (i < nShort) dat.push(0); blocks.push(dat.concat(ecc));
+      }
+      var cw = [];
+      for (i = 0; i < blocks[0].length; i++) for (j = 0; j < nb; j++) if (i !== shortLen - el || j >= nShort) cw.push(blocks[j][i]);
+      // Matrix with function patterns.
+      var size = v * 4 + 17, m = [], fn = [];
+      for (i = 0; i < size; i++) { m.push(new Array(size).fill(false)); fn.push(new Array(size).fill(false)); }
+      function set(x, y, d) { m[y][x] = d; fn[y][x] = true; }
+      for (i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+      function finder(cx, cy) {
+        for (var dy = -4; dy <= 4; dy++) for (var dx = -4; dx <= 4; dx++) {
+          var d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy;
+          if (x >= 0 && x < size && y >= 0 && y < size) set(x, y, d !== 2 && d !== 4);
+        }
+      }
+      finder(3, 3); finder(size - 4, 3); finder(3, size - 4);
+      var al = [];
+      if (v > 1) {
+        var na = Math.floor(v / 7) + 2, step = v === 32 ? 26 : Math.ceil((v * 4 + 4) / (na * 2 - 2)) * 2;
+        al = [6]; for (var p = size - 7; al.length < na; p -= step) al.splice(1, 0, p);
+      }
+      for (i = 0; i < al.length; i++) for (j = 0; j < al.length; j++) {
+        if ((i === 0 && j === 0) || (i === 0 && j === al.length - 1) || (i === al.length - 1 && j === 0)) continue;
+        for (var dy = -2; dy <= 2; dy++) for (var dx = -2; dx <= 2; dx++) set(al[i] + dx, al[j] + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+      }
+      function format(mask) {
+        var d = (0 << 3) | mask, r = d, i;   // error correction level M = 0b00
+        for (i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+        var fb = ((d << 10) | r) ^ 0x5412;
+        function g(i) { return ((fb >>> i) & 1) !== 0; }
+        for (i = 0; i <= 5; i++) set(8, i, g(i));
+        set(8, 7, g(6)); set(8, 8, g(7)); set(7, 8, g(8));
+        for (i = 9; i < 15; i++) set(14 - i, 8, g(i));
+        for (i = 0; i < 8; i++) set(size - 1 - i, 8, g(i));
+        for (i = 8; i < 15; i++) set(8, size - 15 + i, g(i));
+        set(8, size - 8, true);
+      }
+      format(0);
+      if (v >= 7) {
+        var vr = v; for (i = 0; i < 12; i++) vr = (vr << 1) ^ ((vr >>> 11) * 0x1F25);
+        var vb = (v << 12) | vr;
+        for (i = 0; i < 18; i++) { var c = ((vb >>> i) & 1) !== 0, a = size - 11 + i % 3, bb = Math.floor(i / 3); set(a, bb, c); set(bb, a, c); }
+      }
+      // Data in the zigzag.
+      var bi = 0;
+      for (var right = size - 1; right >= 1; right -= 2) {
+        if (right === 6) right = 5;
+        for (var vert = 0; vert < size; vert++) for (j = 0; j < 2; j++) {
+          var x = right - j, up = ((right + 1) & 2) === 0, y = up ? size - 1 - vert : vert;
+          if (!fn[y][x] && bi < cw.length * 8) { m[y][x] = ((cw[bi >>> 3] >>> (7 - (bi & 7))) & 1) !== 0; bi++; }
+        }
+      }
+      // Pick the mask with the lowest penalty.
+      function maskAt(k, x, y) {
+        switch (k) {
+          case 0: return (x + y) % 2 === 0; case 1: return y % 2 === 0; case 2: return x % 3 === 0; case 3: return (x + y) % 3 === 0;
+          case 4: return (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0; case 5: return x * y % 2 + x * y % 3 === 0;
+          case 6: return (x * y % 2 + x * y % 3) % 2 === 0; default: return ((x + y) % 2 + x * y % 3) % 2 === 0;
+        }
+      }
+      function applyMask(k) { for (var y = 0; y < size; y++) for (var x = 0; x < size; x++) if (!fn[y][x] && maskAt(k, x, y)) m[y][x] = !m[y][x]; }
+      var F1 = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0], F2 = [0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1];
+      function lineScore(get) {
+        var s = 0, run = 0, prev = -1, i, t;
+        for (i = 0; i < size; i++) { var c = get(i) ? 1 : 0; if (c === prev) { run++; if (run === 5) s += 3; else if (run > 5) s++; } else { prev = c; run = 1; } }
+        function at(i) { return i < 0 || i >= size ? 0 : (get(i) ? 1 : 0); }
+        for (i = -10; i < size; i++) {
+          var a1 = true, a2 = true;
+          for (t = 0; t < 11 && (a1 || a2); t++) { var c2 = at(i + t); if (c2 !== F1[t]) a1 = false; if (c2 !== F2[t]) a2 = false; }
+          if (a1) s += 40; if (a2) s += 40;
+        }
+        return s;
+      }
+      function penalty() {
+        var s = 0, dark = 0, x, y;
+        for (y = 0; y < size; y++) s += lineScore(function (i) { return m[y][i]; });
+        for (x = 0; x < size; x++) s += lineScore(function (i) { return m[i][x]; });
+        for (y = 0; y < size - 1; y++) for (x = 0; x < size - 1; x++) { var c = m[y][x]; if (c === m[y][x + 1] && c === m[y + 1][x] && c === m[y + 1][x + 1]) s += 3; }
+        for (y = 0; y < size; y++) for (x = 0; x < size; x++) if (m[y][x]) dark++;
+        return s + Math.floor(Math.abs(dark * 100 / (size * size) - 50) / 5) * 10;
+      }
+      var best = 0, bestScore = Infinity;
+      for (var mk = 0; mk < 8; mk++) { applyMask(mk); format(mk); var sc = penalty(); if (sc < bestScore) { bestScore = sc; best = mk; } applyMask(mk); }
+      applyMask(best); format(best);
+      return { size: size, modules: m, version: v, mask: best };
+    }
+    function svg(text, label) {
+      var q = encode(text), n = q.size + 8, d = '';
+      for (var y = 0; y < q.size; y++) for (var x = 0; x < q.size; x++) if (q.modules[y][x]) d += 'M' + (x + 4) + ' ' + (y + 4) + 'h1v1h-1z';
+      return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + n + ' ' + n + '" shape-rendering="crispEdges" role="img" aria-label="' + esc(label || 'QR code') + '">' +
+        '<rect width="' + n + '" height="' + n + '" fill="#fff"/><path d="' + d + '" fill="#000"/></svg>';
+    }
+    return { encode: encode, svg: svg };
+  })();
+
+  // ================= Small UI helpers =================
+  var toastT;
+  function toast(msg) {
+    var t = $('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status');
+      t.style.cssText = 'position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;font-size:15px;width:max-content;max-width:calc(100% - 32px);transition:opacity .2s;pointer-events:none';
+      document.body.appendChild(t); }
+    t.textContent = msg; t.style.opacity = '1'; clearTimeout(toastT); toastT = setTimeout(function () { t.style.opacity = '0'; }, 3200);
+  }
+  function copyText(text) {
+    function fallback() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); return ok;
+    }
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text).then(function () { return true; }, fallback);
+    return Promise.resolve(fallback());
+  }
+  function saveFile(text, name, type) {
+    var url = URL.createObjectURL(new Blob([text], { type: type }));
+    var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+  function slug(s) { return (String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'quiz').slice(0, 40); }
+  document.addEventListener('click', function (e) { var c = e.target.closest('[data-close]'); if (c) c.closest('dialog').close(); });
+
+  var SCREENS = ['home', 'editor', 'import', 'present', 'remote', 'aud'];
+  function show(id) {
+    SCREENS.forEach(function (s) { $(s).hidden = s !== id; });
+    document.body.classList.toggle('on-stage', id === 'present');
+    scrollTo(0, 0);
+  }
+  function setAppH() {
+    var pad = parseFloat(getComputedStyle(document.body).paddingTop) || 0;
+    var h = (window.visualViewport ? visualViewport.height : innerHeight) - pad;
+    document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+  }
+  addEventListener('resize', setAppH);
+  if (window.visualViewport) visualViewport.addEventListener('resize', setAppH);
+
+  // Bars: "A ▬▬▬▬ 40% · 10" for each choice.
+  function barsHtml(choices, counts, answer, opts) {
+    opts = opts || {};
+    var total = sum(counts), scored = typeof answer === 'number' && answer >= 0;
+    return '<div class="bars' + (scored ? ' scored' : '') + (opts.big ? ' big' : '') + '">' + choices.map(function (c, i) {
+      var n = (counts && counts[i]) || 0, p = pct(n, total);
+      return '<div class="bar c' + i + (scored && i === answer ? ' right' : '') + (opts.mine === i ? ' mine' : '') + '">' +
+        '<span class="lt">' + LETTERS[i] + '</span><div class="bm"><div class="bt">' + esc(c) + (scored && i === answer ? '<span class="ok" aria-label="right answer">✓</span>' : '') + '</div>' +
+        '<div class="tr"><i style="width:' + p + '%"></i></div></div>' +
+        '<div class="bp"><b>' + p + '%</b><small>' + (opts.big ? plural(n, 'vote') : n) + '</small></div></div>';
+    }).join('') + '</div>';
+  }
+
+  // ================= Saved quizzes =================
+  var quizzes = load(K_QUIZ, []); if (!Array.isArray(quizzes)) quizzes = [];
+  var sessions = load(K_SESS, []); if (!Array.isArray(sessions)) sessions = [];
+  var mem = load(K_MEM, { players: [], games: [] }); if (!mem || typeof mem !== 'object') mem = { players: [], games: [] }; if (!Array.isArray(mem.players)) mem.players = [];
+  function saveQuizzes() { store(K_QUIZ, quizzes); }
+  function saveSessions() { store(K_SESS, sessions); }
+  function findQuiz(id) { return quizzes.filter(function (q) { return q.id === id; })[0] || null; }
+  function rememberName(name) {
+    mem = load(K_MEM, mem); if (!Array.isArray(mem.players)) mem.players = [];
+    var v = tidy(name); if (!v) return;
+    var i = mem.players.findIndex(function (x) { return x.toLowerCase() === v.toLowerCase(); });
+    if (i > -1) mem.players.splice(i, 1);
+    mem.players.unshift(v); if (mem.players.length > 40) mem.players.length = 40;
+    store(K_MEM, mem);
+  }
+  var SAMPLE = { title: 'Get to know the room', requireName: false, questions: [
+    { q: 'How are you feeling today?', choices: ['Great', 'Good', 'Okay', 'Tired'], answer: null },
+    { q: 'Which planet is known as the Red Planet?', choices: ['Venus', 'Mars', 'Jupiter', 'Mercury'], answer: 1 },
+    { q: 'How many continents are there?', choices: ['5', '6', '7', '8'], answer: 2 },
+    { q: 'Coffee or tea?', choices: ['Coffee', 'Tea', 'Both', 'Neither'], answer: null }
+  ] };
+
+  function ago(t) {
+    var s = (Date.now() - t) / 1000;
+    if (s < 90) return 'just now'; if (s < 3600) return Math.round(s / 60) + ' min ago';
+    if (s < 86400 * 1.5) return Math.round(s / 3600) + ' h ago'; return Math.round(s / 86400) + ' days ago';
+  }
+  function renderHome() {
+    sessions = load(K_SESS, []); if (!Array.isArray(sessions)) sessions = [];
+    $('sessCard').hidden = !sessions.length;
+    $('sessList').innerHTML = sessions.map(function (s) {
+      return '<li class="item"><div class="it"><div class="ii"><b>' + esc(s.title) + '</b><small>Code <span class="code-sm">' + esc(s.code) + '</span> · started ' + ago(s.at) + '</small></div>' +
+        '<button type="button" class="btn sm" data-sact="open" data-code="' + esc(s.code) + '">Open</button>' +
+        '<button type="button" class="icon-btn x" data-sact="del" data-code="' + esc(s.code) + '" aria-label="End and delete ' + esc(s.title) + '">✕</button></div></li>';
+    }).join('');
+    $('quizList').innerHTML = quizzes.length ? quizzes.map(function (q) {
+      return '<li class="item"><div class="it"><div class="ii"><b>' + esc(q.title) + '</b><small>' + plural(q.questions.length, 'question') +
+        ' · ' + (q.requireName ? 'names on' : 'anonymous') + '</small></div>' +
+        '<button type="button" class="btn sm" data-act="present" data-id="' + esc(q.id) + '">▶ Present</button></div>' +
+        '<div class="acts"><button type="button" class="btn plain sm" data-act="edit" data-id="' + esc(q.id) + '">Edit</button>' +
+        '<button type="button" class="btn plain sm" data-act="dup" data-id="' + esc(q.id) + '">Duplicate</button>' +
+        '<button type="button" class="icon-btn x" data-act="del" data-id="' + esc(q.id) + '" aria-label="Delete ' + esc(q.title) + '">🗑</button></div></li>';
+    }).join('') : '<li class="empty">No quizzes yet. Make one, or <button type="button" class="btn plain sm" id="sampleBtn" style="display:inline-flex;margin-top:8px">try a sample quiz</button></li>';
+    var sb = $('sampleBtn');
+    if (sb) sb.addEventListener('click', function () {
+      quizzes.unshift({ id: uid(), title: SAMPLE.title, requireName: false, questions: clone(SAMPLE.questions), created: Date.now() });
+      saveQuizzes(); renderHome();
+    });
+  }
+  $('quizList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var q = findQuiz(b.dataset.id); if (!q) return;
+    var act = b.dataset.act;
+    if (act === 'present') presentQuiz(q, b);
+    else if (act === 'edit') openEditor(q.id);
+    else if (act === 'dup') {
+      var c = clone(q); c.id = uid(); c.title = clip(q.title + ' (copy)', TLEN); c.created = Date.now();
+      quizzes.splice(quizzes.indexOf(q) + 1, 0, c); saveQuizzes(); renderHome(); toast('Made a copy of “' + q.title + '”.');
+    } else if (act === 'del') {
+      if (!confirm('Delete “' + q.title + '”? This can’t be undone.')) return;
+      quizzes = quizzes.filter(function (x) { return x !== q; }); saveQuizzes(); renderHome(); toast('Deleted “' + q.title + '”.');
+    }
+  });
+  $('sessList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-sact]'); if (!b) return;
+    var s = sessions.filter(function (x) { return x.code === b.dataset.code; })[0]; if (!s) return;
+    if (b.dataset.sact === 'open') go('?c=' + s.code + '&o=' + s.token);
+    else {
+      if (!confirm('End “' + s.title + '” and delete its answers? People can’t join it any more.')) return;
+      rpc('live_delete', { p_code: s.code, p_owner_token: s.token }).catch(function () {});
+      forgetSession(s.code); renderHome();
+    }
+  });
+  function forgetSession(code) { sessions = load(K_SESS, []).filter(function (x) { return x.code !== code; }); saveSessions(); }
+  function rememberSession(code, token, title) {
+    sessions = load(K_SESS, []).filter(function (x) { return x.code !== code; });
+    var old = load(K_SESS, []).filter(function (x) { return x.code === code; })[0];
+    sessions.unshift({ code: code, token: token, title: title, at: old ? old.at : Date.now() });
+    if (sessions.length > 20) sessions.length = 20;
+    saveSessions();
+  }
+  function presentQuiz(q, btn) {
+    if (btn) { btn.disabled = true; btn.textContent = 'Starting…'; }
+    rpc('live_create', { p_title: q.title, p_questions: q.questions.map(function (x) { return { q: x.q, choices: x.choices, answer: isScored(x) ? x.answer : null }; }), p_require_name: !!q.requireName })
+      .then(function (r) {
+        rememberSession(r.code, r.owner_token, q.title);
+        go('?c=' + r.code + '&o=' + r.owner_token, { view: 'big' });
+      }, function (e) { toast(errText(e)); renderHome(); });
+  }
+  $('newQuizBtn').addEventListener('click', function () { openEditor(null); });
+  $('aiBtn').addEventListener('click', openImport);
+  $('triviaBtn').addEventListener('click', openTrivia);
+
+  // ---- Join box ----
+  function cleanCode(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 5); }
+  $('joinCode').addEventListener('input', function () {
+    var el = $('joinCode'), v = cleanCode(el.value); if (el.value !== v) el.value = v; $('joinErr').textContent = '';
+  });
+  $('joinForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var c = cleanCode($('joinCode').value);
+    if (c.length !== 5) { $('joinErr').textContent = 'The code has 5 letters and numbers. You’ll find it on the big screen.'; $('joinCode').focus(); return; }
+    go('?c=' + c);
+  });
+
+  // ================= Trivia sets =================
+  function openTrivia() {
+    var sets = load(K_TRIVIA, []); if (!Array.isArray(sets)) sets = [];
+    sets = sets.filter(function (s) { return s && Array.isArray(s.questions) && s.questions.length; });
+    $('tList').innerHTML = sets.length ? sets.map(function (s, i) {
+      return '<li class="item"><div class="it"><div class="ii"><b>' + esc(s.title || 'Untitled') + '</b><small>' + plural(s.questions.length, 'question') + '</small></div>' +
+        '<button type="button" class="btn sm" data-ti="' + i + '">Use</button></div></li>';
+    }).join('') : '<li class="empty">No Trivia sets on this device yet. Make one in <a href="/trivia/">Trivia</a>, or use ✨ Make with AI here.</li>';
+    $('tList').onclick = function (e) {
+      var b = e.target.closest('[data-ti]'); if (!b) return;
+      var s = sets[+b.dataset.ti];
+      var qs = s.questions.slice(0, MAXQ).map(function (q) {
+        var ch = (Array.isArray(q.choices) ? q.choices : []).map(function (c) { return clip(c, CLEN); }).slice(0, 6);
+        var a = typeof q.answer === 'number' && q.answer >= 0 && q.answer < ch.length ? q.answer : -1;
+        return { q: clip(q.q, QLEN), choices: ch, answer: a };
+      });
+      $('tDlg').close();
+      openEditor(null, { title: clip(s.title, TLEN), qs: qs });
+      if (s.questions.length > MAXQ) toast('Only the first ' + MAXQ + ' questions were copied.');
+    };
+    $('tDlg').showModal();
+  }
+
+  // ================= Editor =================
+  var ed = null;   // { id, title, names, qs, dirty }
+  function openEditor(id, preset) {
+    var q = id ? findQuiz(id) : null;
+    ed = { id: q ? q.id : null, title: q ? q.title : '', names: q ? !!q.requireName : false, qs: q ? clone(q.questions) : [], dirty: false };
+    if (preset) { ed.title = preset.title || ''; ed.qs = preset.qs; ed.dirty = true; }
+    $('edHead').textContent = ed.id ? 'Edit quiz' : 'New quiz';
+    $('edTitle').value = ed.title; $('edNames').checked = ed.names; $('edErr').textContent = '';
+    show('editor'); renderEditor();
+  }
+  // Same checks as the database (live_create): text ≤ 300, 2–6 answers ≤ 120, right answer marked or a poll.
+  function qProblem(q) {
+    if (!tidy(q.q)) return 'the question text is missing';
+    if (tidy(q.q).length > QLEN) return 'the question is too long (' + QLEN + ' characters at most)';
+    var ch = (q.choices || []).map(tidy);
+    if (ch.some(function (c) { return !c; })) return 'one of the answers is empty';
+    if (ch.length < 2) return 'needs at least 2 answers';
+    if (ch.length > 6) return 'has more than 6 answers (6 is the most)';
+    if (ch.some(function (c) { return c.length > CLEN; })) return 'an answer is too long (' + CLEN + ' characters at most)';
+    var seen = {};
+    for (var i = 0; i < ch.length; i++) { var k = ch[i].toLowerCase(); if (seen[k]) return 'two of the answers are the same'; seen[k] = 1; }
+    if (q.answer === null) return null;
+    if (!(typeof q.answer === 'number' && q.answer >= 0 && q.answer < ch.length)) return 'no right answer is marked';
+    return null;
+  }
+  function renderEditor() {
+    $('edErr').textContent = '';
+    $('edCount').textContent = ed.qs.length ? plural(ed.qs.length, 'question') : 'Questions';
+    $('edList').innerHTML = ed.qs.length ? ed.qs.map(function (q, i) {
+      var p = qProblem(q);
+      return '<li class="eq' + (p ? ' bad' : '') + '"><button type="button" class="eqb" data-act="open" data-i="' + i + '">' +
+        '<div class="eqq"><span class="n">' + (i + 1) + '.</span>' + (tidy(q.q) ? esc(q.q) : '<i>(no question text)</i>') + '</div>' +
+        (q.answer === null ? '<div class="eqa poll">📊 Poll · ' + plural(q.choices.length, 'answer') + '</div>' :
+          isScored(q) && q.choices[q.answer] ? '<div class="eqa">✓ ' + esc(q.choices[q.answer]) + ' · ' + plural(q.choices.length, 'answer') + '</div>' : '') +
+        (p ? '<div class="eqp">⚠ ' + esc(p.charAt(0).toUpperCase() + p.slice(1)) + '. Tap to fix.</div>' : '') + '</button>' +
+        '<div class="eqm"><button type="button" class="icon-btn" data-act="up" data-i="' + i + '" aria-label="Move question ' + (i + 1) + ' up"' + (i ? '' : ' disabled') + '>↑</button>' +
+        '<button type="button" class="icon-btn" data-act="down" data-i="' + i + '" aria-label="Move question ' + (i + 1) + ' down"' + (i < ed.qs.length - 1 ? '' : ' disabled') + '>↓</button></div></li>';
+    }).join('') : '<li class="empty">No questions yet.</li>';
+  }
+  $('edTitle').addEventListener('input', function () { ed.title = $('edTitle').value; ed.dirty = true; });
+  $('edNames').addEventListener('change', function () { ed.names = $('edNames').checked; ed.dirty = true; });
+  $('edList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var i = +b.dataset.i;
+    if (b.dataset.act === 'open') openQ(i);
+    else {
+      var j = b.dataset.act === 'up' ? i - 1 : i + 1; if (j < 0 || j >= ed.qs.length) return;
+      ed.qs.splice(j, 0, ed.qs.splice(i, 1)[0]); ed.dirty = true; renderEditor();
+      var again = $('edList').children[j] && $('edList').children[j].querySelector('[data-act="' + b.dataset.act + '"]'); if (again && !again.disabled) again.focus();
+    }
+  });
+  $('edAdd').addEventListener('click', function () { if (ed.qs.length >= MAXQ) { toast('A quiz can have ' + MAXQ + ' questions at most.'); return; } openQ(-1); });
+  function leaveEditor() { if (ed && ed.dirty && !confirm('Leave without saving your changes?')) return; ed = null; showHome(); }
+  $('edBack').addEventListener('click', leaveEditor);
+  $('edCancel').addEventListener('click', leaveEditor);
+  function cleanQ(q) {
+    var out = { q: clip(q.q, QLEN), choices: [], answer: q.answer === null ? null : -1 };
+    q.choices.forEach(function (c, i) { c = clip(c, CLEN); if (!c) return; if (i === q.answer) out.answer = out.choices.length; out.choices.push(c); });
+    return out;
+  }
+  $('edSave').addEventListener('click', function () {
+    var title = clip($('edTitle').value, TLEN), err = $('edErr');
+    if (!title) { err.textContent = 'Give the quiz a title.'; $('edTitle').focus(); return; }
+    if (!ed.qs.length) { err.textContent = 'Add at least one question.'; return; }
+    if (ed.qs.length > MAXQ) { err.textContent = 'A quiz can have ' + MAXQ + ' questions at most.'; return; }
+    var bad = [];
+    ed.qs.forEach(function (q, i) { var p = qProblem(q); if (p) bad.push('Question ' + (i + 1) + ': ' + p + '.'); });
+    if (bad.length) { err.innerHTML = bad.slice(0, 4).map(esc).join('<br>') + (bad.length > 4 ? '<br>…and ' + (bad.length - 4) + ' more.' : '') + '<br>Tap a question to fix it.'; return; }
+    var qs = ed.qs.map(cleanQ), names = $('edNames').checked;
+    var q = ed.id && findQuiz(ed.id);
+    if (q) { q.title = title; q.questions = qs; q.requireName = names; q.updated = Date.now(); }
+    else quizzes.unshift({ id: uid(), title: title, requireName: names, questions: qs, created: Date.now() });
+    saveQuizzes(); ed = null; showHome(); toast('Saved “' + title + '” (' + plural(qs.length, 'question') + ').');
+  });
+
+  // ---- Question dialog ----
+  var qd = null, qdi = -1;
+  function openQ(i) {
+    qdi = i;
+    qd = i < 0 ? { q: '', choices: ['', '', '', ''], answer: -1 } : clone(ed.qs[i]);
+    if (!Array.isArray(qd.choices)) qd.choices = [];
+    while (qd.choices.length < 2) qd.choices.push('');
+    qd.poll = qd.answer === null;
+    if (!(qd.answer >= 0 && qd.answer < qd.choices.length)) qd.answer = -1;
+    $('qHead').textContent = i < 0 ? 'New question' : 'Question ' + (i + 1);
+    $('qText').value = qd.q || ''; $('qPoll').checked = qd.poll;
+    $('qDel').hidden = i < 0; $('qErr').textContent = '';
+    renderQChoices(); $('qDlg').showModal();
+    if (i < 0) setTimeout(function () { $('qText').focus(); }, 50);
+  }
+  function renderQChoices() {
+    $('qChoicesBox').classList.toggle('nomark', qd.poll);
+    $('qMarkHint').hidden = qd.poll;
+    $('qChoices').innerHTML = qd.choices.map(function (c, i) {
+      var on = !qd.poll && qd.answer === i;
+      return '<li class="c' + i + (on ? ' ok' : '') + '"><span class="lt" aria-hidden="true">' + LETTERS[i] + '</span>' +
+        '<input type="text" data-ci="' + i + '" maxlength="120" placeholder="Answer ' + LETTERS[i] + '" value="' + esc(c) + '" autocomplete="off" aria-label="Answer ' + LETTERS[i] + '">' +
+        '<button type="button" class="mark" data-mark="' + i + '" aria-pressed="' + on + '" aria-label="Mark answer ' + LETTERS[i] + ' as the right one">✓</button>' +
+        '<button type="button" class="icon-btn x" data-rm="' + i + '" aria-label="Remove answer ' + LETTERS[i] + '"' + (qd.choices.length <= 2 ? ' disabled' : '') + '>✕</button></li>';
+    }).join('');
+    $('qAddChoice').hidden = qd.choices.length >= 6;
+  }
+  $('qChoices').addEventListener('input', function (e) { var i = e.target.dataset.ci; if (i != null) qd.choices[+i] = e.target.value; });
+  function syncChoices() { $('qChoices').querySelectorAll('input[data-ci]').forEach(function (i) { qd.choices[+i.dataset.ci] = i.value; }); }
+  $('qChoices').addEventListener('click', function (e) {
+    var m = e.target.closest('[data-mark]'), r = e.target.closest('[data-rm]');
+    if (m || r) syncChoices();
+    if (m) { qd.answer = +m.dataset.mark; $('qErr').textContent = ''; renderQChoices(); buzz(); }
+    if (r && !r.disabled) { var i = +r.dataset.rm; qd.choices.splice(i, 1); if (qd.answer === i) qd.answer = -1; else if (qd.answer > i) qd.answer--; renderQChoices(); }
+  });
+  $('qPoll').addEventListener('change', function () { syncChoices(); qd.poll = $('qPoll').checked; $('qErr').textContent = ''; renderQChoices(); });
+  $('qAddChoice').addEventListener('click', function () {
+    if (qd.choices.length >= 6) return; syncChoices(); qd.choices.push(''); renderQChoices();
+    var ins = $('qChoices').querySelectorAll('input'); ins[ins.length - 1].focus();
+  });
+  $('qSave').addEventListener('click', function () {
+    syncChoices(); qd.q = $('qText').value;
+    var c = { q: tidy(qd.q), choices: qd.choices.map(tidy).filter(Boolean), answer: null };
+    if (!qd.poll) { var picked = qd.answer >= 0 ? tidy(qd.choices[qd.answer]) : ''; c.answer = picked ? c.choices.indexOf(picked) : -1; }
+    var p = qProblem(c);
+    if (p === 'no right answer is marked') p = 'tap ✓ next to the right answer, or tick “No right answer”';
+    if (p) { $('qErr').textContent = p.charAt(0).toUpperCase() + p.slice(1) + '.'; return; }
+    c = cleanQ(c);
+    if (qdi < 0) ed.qs.push(c); else ed.qs[qdi] = c;
+    ed.dirty = true; $('qDlg').close(); renderEditor();
+  });
+  $('qDel').addEventListener('click', function () {
+    if (!confirm('Delete this question?')) return;
+    ed.qs.splice(qdi, 1); ed.dirty = true; $('qDlg').close(); renderEditor();
+  });
+
+  // ================= Importing (forgiving JSON reader, from Trivia) =================
+  // Finds the JSON in whatever was pasted (code fences, chatty text before or after), then reads
+  // questions from common shapes. Answers can be the choice text (any case/spacing), a letter (B),
+  // or a number counting from 1 (if any numeric answer in the set is 0, numbers count from 0).
+  function matchEnd(t, i) {
+    var depth = 0, inStr = false, bs = false;
+    for (var j = i; j < t.length; j++) {
+      var c = t[j];
+      if (inStr) { if (bs) bs = false; else if (c === '\\') bs = true; else if (c === '"') inStr = false; continue; }
+      if (c === '"') inStr = true;
+      else if (c === '{' || c === '[') depth++;
+      else if (c === '}' || c === ']') { depth--; if (depth === 0) return j; }
+    }
+    return -1;
+  }
+  function balance(x) {
+    var out = '', stack = [], inStr = false, bs = false, pair = { '{': '}', '[': ']' };
+    for (var i = 0; i < x.length; i++) {
+      var c = x[i];
+      if (inStr) { out += c; if (bs) bs = false; else if (c === '\\') bs = true; else if (c === '"') inStr = false; continue; }
+      if (c === '"') { inStr = true; out += c; continue; }
+      if (c === '{' || c === '[') { stack.push(c); out += c; continue; }
+      if (c === '}' || c === ']') {
+        var at = -1;
+        for (var j = stack.length - 1; j >= 0; j--) if (pair[stack[j]] === c) { at = j; break; }
+        if (at < 0) continue;
+        while (stack.length - 1 > at) out += pair[stack.pop()];
+        stack.pop(); out += c; continue;
+      }
+      out += c;
+    }
+    if (inStr) out += '"';
+    while (stack.length) out += pair[stack.pop()];
+    return out;
+  }
+  function tryParse(s) {
+    var fixes = [function (x) { return x; },
+      function (x) { return x.replace(/,\s*([}\]])/g, '$1'); },
+      function (x) { return x.replace(/[“”„‟″]/g, '"').replace(/,\s*([}\]])/g, '$1'); },
+      function (x) { return balance(x.replace(/[“”„‟″]/g, '"')).replace(/,\s*([}\]])/g, '$1'); }];
+    for (var i = 0; i < fixes.length; i++) { try { return JSON.parse(fixes[i](s)); } catch (e) {} }
+    return undefined;
+  }
+  function keyMap(o) { var m = {}; Object.keys(o).forEach(function (k) { m[k.toLowerCase().replace(/[\s_-]/g, '')] = o[k]; }); return m; }
+  function pick(o, keys) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return undefined;
+    var m = keyMap(o);
+    for (var i = 0; i < keys.length; i++) { var v = m[keys[i]]; if (v !== undefined && v !== null && v !== '') return v; }
+    return undefined;
+  }
+  var K_Q = ['q', 'question', 'questiontext', 'text', 'prompt', 'query'];
+  var K_CH = ['choices', 'options', 'answers', 'answerchoices', 'answeroptions', 'alternatives', 'possibleanswers'];
+  var K_ANS = ['answer', 'correct', 'correctanswer', 'correctchoice', 'correctoption', 'answerindex', 'correctindex', 'rightanswer', 'solution', 'answerkey', 'key'];
+  var K_LIST = ['questions', 'quiz', 'items', 'data', 'trivia', 'results', 'questionlist', 'list'];
+  var K_TITLE = ['title', 'name', 'quiztitle', 'category', 'topic'];
+  function looksLikeQ(o) { return !!o && typeof o === 'object' && !Array.isArray(o) && pick(o, K_Q) !== undefined; }
+  function topOf(v, depth) {
+    if (Array.isArray(v)) return { title: '', items: v };
+    if (!v || typeof v !== 'object') return { title: '', items: [] };
+    var title = pick(v, K_TITLE), list = pick(v, K_LIST);
+    if (typeof title !== 'string') title = '';
+    if (Array.isArray(list)) return { title: title, items: list };
+    if (list && typeof list === 'object' && (depth || 0) < 2) { var inner = topOf(list, (depth || 0) + 1); if (!inner.title) inner.title = title; if (inner.items.length) return inner; }
+    if (looksLikeQ(v)) return { title: '', items: [v] };
+    return { title: title, items: [] };
+  }
+  function openAtEnd(x) {
+    var stack = [], inStr = false, bs = false;
+    for (var i = 0; i < x.length; i++) {
+      var c = x[i];
+      if (inStr) { if (bs) bs = false; else if (c === '\\') bs = true; else if (c === '"') inStr = false; continue; }
+      if (c === '"') inStr = true;
+      else if (c === '{' || c === '[') stack.push(c === '{' ? '}' : ']');
+      else if ((c === '}' || c === ']') && stack.lastIndexOf(c) >= 0) stack.length = stack.lastIndexOf(c);
+    }
+    return inStr || stack.length > 0;
+  }
+  function useful(v) { var t = topOf(v); return t.items.some(function (x) { return x && typeof x === 'object'; }); }
+  function extractJson(text) {
+    var t = String(text || '').replace(/^﻿/, '').replace(/```[A-Za-z]*[ \t]*/g, '').replace(/~~~[A-Za-z]*/g, '');
+    if (!/[{[]/.test(t)) return { error: 'That doesn’t look like quiz questions. Copy the AI’s whole reply (it starts with { ) and paste it here.' };
+    var tries = 0, firstFailed = null;
+    var variants = [t, t.replace(/[“”„‟]/g, '"')];
+    for (var vi = 0; vi < variants.length; vi++) {
+      var s = variants[vi];
+      for (var i = 0; i < s.length && tries < 60; i++) {
+        var c = s[i]; if (c !== '{' && c !== '[') continue;
+        tries++;
+        var end = matchEnd(s, i);
+        var cands = end > i ? [s.slice(i, end + 1)] : [];
+        var last = s.lastIndexOf(c === '{' ? '}' : ']'); if (last > i && last !== end) cands.push(s.slice(i, last + 1));
+        var okHere = false;
+        for (var k = 0; k < cands.length; k++) {
+          var v = tryParse(cands[k]);
+          if (v !== undefined && v && typeof v === 'object') {
+            okHere = true;
+            if (useful(v)) {
+              var a0 = s.search(/[{[]/), a1 = Math.max(s.lastIndexOf('}'), s.lastIndexOf(']'));
+              return { value: v, partial: cands[k].length < 0.6 * (a1 - a0 + 1) || openAtEnd(s.slice(a0)) };
+            }
+          }
+        }
+        if (firstFailed === null) firstFailed = !okHere;
+      }
+    }
+    return { error: !firstFailed ? 'Couldn’t find any questions in that text. Check you copied the AI’s whole reply.'
+                              : 'The questions look broken or cut off. Copy the AI’s whole reply again, or ask it for fewer questions.' };
+  }
+  function norm(s) { return String(s).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[.!]+$/, ''); }
+  function loose(s) { return String(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ''); }
+  function rawQ(it) {
+    if (!it || typeof it !== 'object' || Array.isArray(it)) return { q: typeof it === 'string' ? clip(it, QLEN) : '', choices: [], flagged: -1 };
+    var q = pick(it, K_Q); q = typeof q === 'string' || typeof q === 'number' ? clip(q, QLEN) : '';
+    var ch = pick(it, K_CH), flagged = -1, ans = pick(it, K_ANS);
+    if (ch && !Array.isArray(ch) && typeof ch === 'object') ch = Object.keys(ch).sort().map(function (k) { return ch[k]; });
+    if (!Array.isArray(ch)) ch = [];
+    var wrong = pick(it, ['incorrectanswers', 'wronganswers', 'incorrect', 'distractors']);
+    if (!ch.length && Array.isArray(wrong) && (typeof ans === 'string' || typeof ans === 'number')) {
+      ch = wrong.slice(); ch.splice(randInt(ch.length + 1), 0, ans);
+    }
+    var choices = [];
+    ch.forEach(function (c) {
+      var text = c, ok = false;
+      if (c && typeof c === 'object') { text = pick(c, ['text', 'answer', 'option', 'label', 'value', 'choice']);
+        ok = c.correct === true || c.isCorrect === true || c.is_correct === true || c.right === true; }
+      text = typeof text === 'string' || typeof text === 'number' ? clip(text, CLEN) : '';
+      if (!text) return;
+      if (ok) flagged = choices.length;
+      choices.push(text);
+    });
+    if (choices.length > 1 && choices.every(function (c, i) { var m = /^\(?([A-Fa-f1-6])[).:\]]\s+/.exec(c); return m && (m[1].toUpperCase() === LETTERS[i] || m[1] === String(i + 1)); }))
+      choices = choices.map(function (c) { return c.replace(/^\(?[A-Fa-f1-6][).:\]]\s+/, ''); });
+    var r = { q: q, choices: choices, ans: ans, flagged: flagged, num: null };
+    if (Array.isArray(ans) && ans.length === 1) r.ans = ans = ans[0];
+    if (typeof ans === 'number') r.num = ans;
+    else if (typeof ans === 'string' && /^\s*\d+\s*$/.test(ans) && !choices.some(function (c) { return norm(c) === norm(ans); })) r.num = parseInt(ans, 10);
+    return r;
+  }
+  function resolveAnswer(r, zero) {
+    var a = r.ans, ch = r.choices, n = ch.length, i, m;
+    if (a === undefined) return r.flagged > -1 ? r.flagged : -2;
+    if (r.num != null) { var k = zero ? r.num : r.num - 1; return Number.isInteger(r.num) && k >= 0 && k < n ? k : -1; }
+    if (a && typeof a === 'object' && !Array.isArray(a)) { var at = pick(a, ['text', 'answer', 'value', 'choice']); if (typeof at !== 'string') return -1; a = at; }
+    if (typeof a !== 'string') return -1;
+    var na = norm(a);
+    for (i = 0; i < n; i++) if (norm(ch[i]) === na) return i;
+    if ((m = /^(?:option|choice|answer)?\s*\(?([a-f])\)?[.):]?$/i.exec(a.trim()))) { i = LETTERS.indexOf(m[1].toUpperCase()); return i < n ? i : -1; }
+    if ((m = /^\(?(?:[a-f]|\d)[).:\]-]\s*(.+)$/i.exec(a.trim()))) { var rest = norm(m[1]); for (i = 0; i < n; i++) if (norm(ch[i]) === rest) return i; }
+    var la = loose(a);
+    if (la) for (i = 0; i < n; i++) if (loose(ch[i]) === la) return i;
+    return -1;
+  }
+  function importProblem(q) {
+    if (!tidy(q.q)) return 'the question text is missing';
+    if (!q.choices.length) return 'the answers are missing';
+    if (q.choices.length < 2) return 'needs at least 2 answers';
+    if (q.choices.length > 6) return 'has more than 6 answers (6 is the most)';
+    var seenC = {};
+    for (var i = 0; i < q.choices.length; i++) { var k = norm(q.choices[i]); if (seenC[k]) return 'two of the answers are the same'; seenC[k] = 1; }
+    if (q.answer === -2) return 'no right answer is given';
+    if (!(q.answer >= 0 && q.answer < q.choices.length)) return 'the right answer isn’t one of the answers';
+    return null;
+  }
+  function parseImport(text) {
+    var x = extractJson(text);
+    if (x.error) return { error: x.error };
+    var top = topOf(x.value), items = top.items;
+    if (!items.length) return { error: 'Couldn’t find any questions in that text.' };
+    var raws = items.slice(0, MAXQ).map(rawQ);
+    var nums = raws.filter(function (r) { return r.num != null; });
+    var zero = nums.some(function (r) { return r.num === 0; }) && !nums.some(function (r) { return r.num === r.choices.length; });
+    var qs = raws.map(function (r) {
+      var q = { q: r.q, choices: r.choices, answer: resolveAnswer(r, zero) };
+      var p = importProblem(q); if (p) q.problem = p;
+      return q;
+    });
+    return { title: clip(top.title, TLEN), qs: qs, zero: zero && nums.length > 0, cut: items.length > MAXQ, partial: !!x.partial };
+  }
+  function aiPrompt(cat, n, diff) {
+    var d = diff === 'mixed' ? 'a mix of easy, medium and hard' : diff === 'kids' ? 'easy, suitable for children aged 7 to 12,' : diff;
+    return 'Write ' + n + ' multiple-choice quiz questions about ' + cat + ', ' + d + ' difficulty, for a live quiz shown on a big screen while everyone answers on their phone.\n\n' +
+      'Return the result as JSON inside one single code block, so I can copy it to my clipboard with one click. ' +
+      'Put nothing else inside the code block, and keep any other text short. Use exactly this format:\n' +
+      '{"title": "80s Movies", "questions": [{"q": "Who directed E.T.?", "choices": ["Steven Spielberg", "George Lucas", "James Cameron", "Ron Howard"], "answer": "Steven Spielberg", "explain": "optional one-line fact"}]}\n\n' +
+      'Rules:\n' +
+      '- "title": a short title for this quiz (2 to 4 words).\n' +
+      '- Exactly ' + n + ' questions.\n' +
+      '- Each question has 4 different choices (2 to 6 are allowed) and exactly one right answer.\n' +
+      '- "answer" must be the full text of the right choice, copied exactly from "choices". Not a letter. (If you must use a number, 1 means the first choice.)\n' +
+      '- Put the right answer in a different position from question to question.\n' +
+      '- Keep questions short (under 150 characters) and choices very short (a few words), so they are easy to read from across a room.\n' +
+      '- "explain" is optional: one short, interesting sentence about the answer.\n' +
+      '- Double-check every fact. No trick questions.';
+  }
+  var im = null, imTimer = null, imTitleAuto = true;
+  function openImport() {
+    im = null; imTitleAuto = true;
+    $('imText').value = ''; $('imTitle').value = ''; $('imCatErr').textContent = '';
+    updatePrompt(); renderImport(); show('import');
+  }
+  function updatePrompt() { $('imPrompt').textContent = aiPrompt(tidy($('imCat').value) || '[your topic]', $('imNum').value, $('imDiff').value); }
+  ['imCat', 'imNum', 'imDiff'].forEach(function (id) { $(id).addEventListener('input', function () { $('imCatErr').textContent = ''; updatePrompt(); }); });
+  $('imCopy').addEventListener('click', function () {
+    var cat = tidy($('imCat').value);
+    if (!cat) { $('imCatErr').textContent = 'Type a topic first, e.g. “80s movies” or “Our team”.'; $('imCat').focus(); return; }
+    updatePrompt();
+    copyText(aiPrompt(cat, $('imNum').value, $('imDiff').value)).then(function (ok) {
+      toast(ok ? 'Prompt copied. Paste it into your AI app, then copy its whole reply back here.' : 'Couldn’t copy. Tap “Show the prompt” and copy it by hand.');
+      if (!ok) $('imPrompt').parentNode.open = true;
+    });
+  });
+  $('imPaste').addEventListener('click', function () {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { toast('Long-press the box below and choose Paste.'); $('imText').focus(); return; }
+    navigator.clipboard.readText().then(function (t) { $('imText').value = t; checkImport(); },
+      function () { toast('Long-press the box below and choose Paste.'); $('imText').focus(); });
+  });
+  $('imText').addEventListener('input', function () { clearTimeout(imTimer); imTimer = setTimeout(checkImport, 250); });
+  $('imTitle').addEventListener('input', function () { imTitleAuto = false; });
+  function checkImport() {
+    var t = $('imText').value;
+    im = tidy(t) ? parseImport(t) : null;
+    if (im && !im.error && imTitleAuto) $('imTitle').value = im.title || clip($('imCat').value.replace(/^./, function (c) { return c.toUpperCase(); }), TLEN);
+    renderImport();
+  }
+  function renderImport() {
+    var box = $('imResult'), sb = $('imSaveBox');
+    if (!im) { box.innerHTML = ''; sb.hidden = true; return; }
+    if (im.error) { box.innerHTML = '<div class="res no">' + esc(im.error) + '</div>'; sb.hidden = true; return; }
+    var good = im.qs.filter(function (q) { return !q.problem; }), bad = im.qs.length - good.length;
+    var h = '<div class="res ' + (bad || im.partial ? (good.length ? 'warn' : 'no') : 'ok') + '"><b class="big">' +
+      (good.length ? '✓ ' + plural(good.length, 'question') + ' ready' : 'No questions ready yet') + '</b>';
+    if (bad) h += plural(bad, 'question') + (bad === 1 ? ' needs' : ' need') + ' fixing:<ul>' + im.qs.map(function (q, i) {
+      return q.problem ? '<li>Question ' + (i + 1) + ': ' + esc(q.problem) + '</li>' : ''; }).join('') + '</ul>';
+    if (im.partial) h += '<div class="hint">⚠ Part of the reply couldn’t be read, so some questions may be missing. Ask the AI to send the JSON again.</div>';
+    if (im.zero) h += '<div class="hint">Answers given as numbers were read as 0 = first choice.</div>';
+    if (im.cut) h += '<div class="hint">Only the first ' + MAXQ + ' questions are used.</div>';
+    h += '</div><details><summary>Preview the questions</summary><ol class="pv">' + im.qs.map(function (q, i) {
+      return '<li>' + (i + 1) + '. ' + esc(q.q || '(no question text)') +
+        (q.problem ? '<span class="p">⚠ ' + esc(q.problem) + '</span>' : '<span class="a">✓ ' + esc(q.choices[q.answer]) + '</span>') + '</li>';
+    }).join('') + '</ol></details>';
+    box.innerHTML = h;
+    sb.hidden = false;
+    $('imSave').hidden = !good.length;
+    $('imSave').textContent = bad ? 'Skip ' + (bad === 1 ? 'that one' : 'those ' + bad) + ', save ' + plural(good.length, 'question') : 'Save quiz';
+    $('imFix').textContent = bad ? 'Fix ' + (bad === 1 ? 'it' : 'them') + ' in the editor' : 'Edit before saving';
+  }
+  $('imSave').addEventListener('click', function () {
+    var qs = im.qs.filter(function (q) { return !q.problem; }).map(cleanQ);
+    if (!qs.length) return;
+    var title = clip($('imTitle').value, TLEN) || 'AI quiz';
+    quizzes.unshift({ id: uid(), title: title, requireName: false, questions: qs, created: Date.now() }); saveQuizzes();
+    showHome(); toast('Saved “' + title + '” (' + plural(qs.length, 'question') + ').');
+  });
+  $('imFix').addEventListener('click', function () {
+    var qs = im.qs.map(function (q) { var c = { q: q.q, choices: q.choices.slice(), answer: q.answer >= 0 ? q.answer : -1 }; return c; });
+    openEditor(null, { title: clip($('imTitle').value, TLEN), qs: qs });
+  });
+  $('imBack').addEventListener('click', showHome);
+  function showHome() { show('home'); renderHome(); }
+
+  // ================= Organizer: presenter + phone remote =================
+  var org = null;   // { code, token, view: 'big'|'remote', h, key, timer, busy, res, resVer, gone }
+  function joinLink(code) { return location.origin + '/live/?c=' + code; }
+  function orgLink() { return location.origin + '/live/?c=' + org.code + '&o=' + org.token; }
+  function startOrg(code, token, view) {
+    stopAud();
+    if (org && org.code === code) { org.view = view; org.key = ''; }
+    else { stopOrg(); org = { code: code, token: token, view: view, h: null, key: '', busy: false, res: null, resVer: -1 }; }
+    show(view === 'big' ? 'present' : 'remote');
+    if (view === 'big') { setAppH(); $('pMain').innerHTML = '<p class="empty">Loading…</p>'; $('pCorner').hidden = true; $('pFoot').hidden = true; }
+    else $('rBody').innerHTML = '<p class="empty">Loading…</p>';
+    keepAwake(true);
+    orgPoll();
+  }
+  function stopOrg() { if (org) { clearTimeout(org.timer); org.stopped = true; } org = null; keepAwake(false); }
+  function orgPoll() {
+    if (!org) return;
+    var me = org; clearTimeout(me.timer);
+    rpc('live_host', { p_code: me.code, p_owner_token: me.token }).then(function (h) {
+      if (org !== me) return;
+      $('pOffline').hidden = true; $('rOffline').hidden = true;
+      if (!h) { orgGone('This quiz has ended and was deleted. Quizzes are removed 7 days after they were last used.'); forgetSession(me.code); return; }
+      me.h = h;
+      if (h.phase === 'done' && me.resVer !== h.version) { me.resVer = h.version; loadResults(); }
+      renderOrg();
+      me.timer = setTimeout(orgPoll, document.hidden ? 5000 : 1000);
+    }, function (e) {
+      if (org !== me) return;
+      if (e.message === 'not_owner') { orgGone(ERRS.not_owner + ' Ask whoever started it for the organizer link.'); return; }
+      $('pOffline').hidden = false; $('rOffline').hidden = false;
+      me.timer = setTimeout(orgPoll, 3000);
+    });
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && org) orgPoll();
+    if (aud) { if (document.hidden) clearTimeout(aud.timer); else audPoll(); }
+  });
+  function orgGone(msg) {
+    var html = '<div class="serr"><div class="big-msg"><div class="em">🫥</div><h1>Quiz not found</h1><p>' + esc(msg) + '</p>' +
+      '<p style="margin-top:16px"><button class="btn sm" type="button" data-go-home>← Back to start</button></p></div></div>';
+    if (org.view === 'big') { $('pMain').innerHTML = html; $('pCorner').hidden = true; $('pFoot').hidden = true; $('pTitle').textContent = 'Live Quiz'; $('pStep').textContent = ''; }
+    else $('rBody').innerHTML = html;
+    org.gone = true; keepAwake(false);
+  }
+  document.addEventListener('click', function (e) { if (e.target.closest('[data-go-home]')) go(''); });
+  function loadResults() {
+    var me = org;
+    rpc('live_results', { p_code: me.code, p_owner_token: me.token }).then(function (r) {
+      if (org !== me) return; me.res = r; me.key = ''; renderOrg();
+    }, function (e) { toast(errText(e)); });
+  }
+  function nextStep(h) {
+    if (!h) return null;
+    if (h.phase === 'lobby') return { act: 'start', label: 'Start quiz →' };
+    if (h.phase === 'question') return { act: 'reveal', label: 'Reveal answer' };
+    if (h.phase === 'reveal') return { act: 'next', label: h.qindex + 1 >= h.total ? 'See results →' : 'Next question →' };
+    return null;
+  }
+  function canBack(h) { return !!h && (h.phase === 'done' || (h.phase !== 'lobby' && h.qindex > 0)); }
+  function control(act, qi) {
+    if (!org || org.busy || org.gone) return Promise.resolve();
+    var me = org; me.busy = true; setBusy(true);
+    var args = { p_code: me.code, p_owner_token: me.token, p_action: act };
+    if (qi != null) args.p_qindex = qi;
+    if (me.h && me.h.version != null && !org.noVersion) args.p_version = me.h.version;   // a second screen's press at the same moment is ignored
+    return rpc('live_control', args).catch(function (e) {
+      if (args.p_version == null || !/could not find the function|does not exist/i.test(e.message || '')) throw e;
+      org.noVersion = true; delete args.p_version; return rpc('live_control', args);       // database not updated yet
+    }).then(function (r) {
+      if (me.h && r) { me.h.phase = r.phase; me.h.qindex = r.qindex; me.h.version = r.version; }
+    }, function (e) { if (e.message !== 'not_open' && e.message !== 'stale') toast(errText(e)); })
+      .then(function () { me.busy = false; setBusy(false); if (org === me) orgPoll(); });
+  }
+  function setBusy(on) { ['pNext', 'pBack'].forEach(function (id) { $(id).disabled = on || $(id).dataset.off === '1'; }); document.querySelectorAll('[data-ctl]').forEach(function (b) { b.disabled = on || b.dataset.off === '1'; }); }
+  function doNext() { var s = nextStep(org && org.h); if (s) { buzz(); control(s.act); } }
+  function doBack() {
+    var h = org && org.h; if (!canBack(h)) return;
+    buzz();
+    control('back');
+  }
+  $('pNext').addEventListener('click', function () { this.blur(); doNext(); });
+  $('pBack').addEventListener('click', function () { this.blur(); doBack(); });
+  document.addEventListener('keydown', function (e) {
+    if (!org || org.view !== 'big' || $('present').hidden || org.gone) return;
+    if (document.querySelector('dialog[open]') || e.ctrlKey || e.metaKey || e.altKey) return;
+    var t = e.target, tag = t && t.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if ((e.key === ' ' || e.key === 'Enter') && tag === 'BUTTON') return;   // let the focused button do its own thing
+    if (e.key === ' ' || e.key === 'ArrowRight' || e.key === 'Enter' || e.key === 'PageDown') { e.preventDefault(); doNext(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); doBack(); }
+    else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFull(); }
+  });
+  function toggleFull() {
+    var d = document;
+    if (d.fullscreenElement) { if (d.exitFullscreen) d.exitFullscreen().catch(function () {}); }
+    else if (d.documentElement.requestFullscreen) d.documentElement.requestFullscreen().catch(function () { toast('Full screen isn’t available here.'); });
+    else toast('Full screen isn’t available here.');
+  }
+  $('pFullBtn').addEventListener('click', function () { this.blur(); toggleFull(); });
+  document.addEventListener('fullscreenchange', function () { $('pFullTx').textContent = document.fullscreenElement ? ' Exit full screen' : ' Full screen'; setTimeout(setAppH, 50); });
+  function openRemoteDlg() {
+    $('mDlg').close();
+    $('rQr').innerHTML = QR.svg(orgLink(), 'QR code for the organizer link');
+    $('rDlg').showModal();
+  }
+  $('pRemoteBtn').addEventListener('click', openRemoteDlg);
+  $('mRemote').addEventListener('click', openRemoteDlg);
+  $('rCopy').addEventListener('click', function () { copyText(orgLink()).then(function (ok) { toast(ok ? 'Organizer link copied. Keep it private.' : 'Couldn’t copy on this device.'); }); });
+  function openMenu() {
+    var h = org && org.h;
+    $('mBig').hidden = org.view === 'big'; $('mSmall').hidden = org.view !== 'big'; $('mRemote').hidden = org.view !== 'big';
+    $('mEnd').hidden = !h || h.phase === 'done' || h.phase === 'lobby';
+    $('mRestart').hidden = !h || h.phase === 'lobby';
+    $('mDlg').showModal();
+  }
+  $('pMenuBtn').addEventListener('click', openMenu);
+  $('rMenuBtn').addEventListener('click', openMenu);
+  $('mBig').addEventListener('click', function () { $('mDlg').close(); go('?c=' + org.code + '&o=' + org.token, { view: 'big', replace: true }); });
+  $('mSmall').addEventListener('click', function () { $('mDlg').close(); go('?c=' + org.code + '&o=' + org.token, { view: 'remote', replace: true }); });
+  $('mCopy').addEventListener('click', function () { $('mDlg').close(); copyText(joinLink(org.code)).then(function (ok) { toast(ok ? 'Join link copied.' : 'Couldn’t copy on this device.'); }); });
+  $('mEnd').addEventListener('click', function () { $('mDlg').close(); if (confirm('End the quiz now and show the results?')) control('end'); });
+  $('mRestart').addEventListener('click', function () { $('mDlg').close(); doRestart(); });
+  $('mHome').addEventListener('click', function () { $('mDlg').close(); go(''); });
+  function doRestart() {
+    if (!confirm('Restart the quiz? Everyone’s answers are cleared and it goes back to the start. People who joined stay in.')) return;
+    org.res = null; control('restart');
+  }
+
+  function renderOrg() {
+    if (!org || !org.h || org.gone) return;
+    if (org.view === 'big') renderBig(); else renderRemote();
+  }
+  function stepText(h) {
+    if (h.phase === 'lobby') return 'Waiting for people to join';
+    if (h.phase === 'done') return 'Results';
+    return 'Question ' + (h.qindex + 1) + ' of ' + h.total;
+  }
+  function cornerHtml(code) {
+    return QR.svg(joinLink(code), 'QR code to join') + '<div><div class="cj">' + esc(location.host) + '/live</div><div class="cc">' + esc(code) + '</div></div>';
+  }
+  function progressHtml(h) {
+    var ppl = Math.max(h.people, h.voted);
+    return '<div class="pbar"><div class="ptr"><i style="width:' + pct(h.voted, ppl) + '%"></i></div><span>' + h.voted + ' <small>of ' + ppl + ' answered</small></span></div>';
+  }
+  function peopleHtml(h) {
+    var names = h.names || [];
+    return '<div class="lppl">' + h.people + ' <small>' + (h.people === 1 ? 'person has' : 'people have') + ' joined</small></div>' +
+      (h.require_name && names.length ? '<div class="lnames">' + names.map(function (n) { return '<span>' + esc(n) + '</span>'; }).join('') +
+        (h.people > names.length ? '<span class="more">+' + (h.people - names.length) + ' more</span>' : '') + '</div>' : '');
+  }
+  function renderBig() {
+    var h = org.h, q = h.questions[h.qindex] || { q: '', choices: [] };
+    $('pTitle').textContent = h.title; $('pStep').textContent = stepText(h);
+    document.title = h.title + ' · Live Quiz';
+    var key = [h.version, h.phase, h.qindex, h.phase === 'reveal' ? JSON.stringify(h.counts) : '', org.res ? 'r' : ''].join('|');
+    if (key !== org.key) {
+      org.key = key;
+      var main = '';
+      if (h.phase === 'lobby') {
+        main = '<div class="lobby"><div class="lobl"><h1 class="ltitle">' + esc(h.title) + '</h1>' +
+          '<p class="lgo">Join on your phone: go to <b>' + esc(location.host) + '/live</b> and enter</p>' +
+          '<div class="lcode" id="pCode">' + esc(h.code) + '</div>' +
+          '<p class="lor">or scan the QR code with your phone’s camera</p><div id="pPeople"></div></div>' +
+          '<div class="lqr" id="pQr">' + QR.svg(joinLink(h.code), 'QR code to join') + '</div></div>';
+      } else if (h.phase === 'question') {
+        main = '<div class="qn">Question ' + (h.qindex + 1) + ' of ' + h.total + (isScored(q) ? '' : ' <span class="tag">📊 Poll</span>') + '</div>' +
+          '<h2 class="qbig' + (q.q.length > 140 ? ' long' : '') + '">' + esc(q.q) + '</h2>' +
+          '<div class="tiles n' + q.choices.length + '">' + q.choices.map(function (c, i) {
+            return '<div class="tile c' + i + '"><span class="lt">' + LETTERS[i] + '</span><span class="tx">' + esc(c) + '</span></div>';
+          }).join('') + '</div>';
+      } else if (h.phase === 'reveal') {
+        var tot = sum(h.counts);
+        main = '<div class="qn">Question ' + (h.qindex + 1) + ' of ' + h.total + (isScored(q) ? '' : ' <span class="tag">📊 Poll</span>') + '</div>' +
+          '<h2 class="qbig' + (q.q.length > 140 ? ' long' : '') + '">' + esc(q.q) + '</h2>' +
+          barsHtml(q.choices, h.counts, isScored(q) ? q.answer : null, { big: true }) +
+          '<p class="rsum">' + (isScored(q) ? (tot ? pct(h.counts[q.answer], tot) + '% got it right · ' : '') : '') + plural(tot, 'answer') + '</p>';
+      } else {
+        main = resultsHtml();
+      }
+      $('pMain').innerHTML = main;
+      $('pCorner').hidden = h.phase === 'lobby' || h.phase === 'done';
+      if (!$('pCorner').hidden && $('pCorner').dataset.code !== h.code) { $('pCorner').innerHTML = cornerHtml(h.code); $('pCorner').dataset.code = h.code; }
+      // Footer buttons
+      var s = nextStep(h);
+      $('pFoot').hidden = h.phase === 'done';
+      $('pNext').hidden = !s; if (s) $('pNext').textContent = s.label;
+      $('pBack').hidden = h.phase === 'lobby';
+      $('pBack').dataset.off = canBack(h) ? '0' : '1';
+      setBusy(org.busy);
+    }
+    // Live parts
+    if (h.phase === 'lobby') {
+      var pp = $('pPeople'), ph = peopleHtml(h);
+      if (pp && pp.dataset.h !== ph) { pp.innerHTML = ph; pp.dataset.h = ph; }
+      $('pProg').innerHTML = '<span class="skeys">Press Space or → to start · F for full screen</span>';
+    } else if (h.phase === 'question') {
+      var pr = progressHtml(h);
+      if ($('pProg').dataset.h !== pr) { $('pProg').innerHTML = pr; $('pProg').dataset.h = pr; }
+    } else { $('pProg').innerHTML = ''; $('pProg').dataset.h = ''; }
+  }
+
+  // ---- Results (end of quiz) ----
+  function scoreOf(p, qs) { var s = 0; qs.forEach(function (q, i) { if (isScored(q) && p.answers[i] === q.answer) s++; }); return s; }
+  function resultRows(r) {
+    var qs = r.questions;
+    return (r.people || []).map(function (p, i) { return { name: p.name, answers: p.answers || {}, score: scoreOf({ answers: p.answers || {} }, qs), n: i }; })
+      .sort(function (a, b) { return b.score - a.score || a.n - b.n; });
+  }
+  function resultsHtml() {
+    var r = org.res, h = org.h;
+    if (!r) return '<p class="empty">Loading the results…</p>';
+    var qs = r.questions, nScored = qs.filter(isScored).length, rows = resultRows(r), html = '';
+    html += '<div class="results"><div class="rhead"><h2>Results</h2><div class="rbtns">' +
+      '<button class="btn" type="button" data-res="csv">⬇ Download results (CSV)</button>' +
+      '<button class="btn plain" type="button" data-res="back">← Last question</button>' +
+      '<button class="btn plain" type="button" data-res="restart">↺ Restart</button>' +
+      '<button class="btn plain" type="button" data-res="new">New quiz</button></div></div>';
+    html += '<p class="hint" style="margin:-6px 0 14px">' + people(rows.length) + ' took part' + (r.require_name ? '' : ' (anonymous)') + '.</p>';
+    if (r.require_name && nScored && rows.length) {
+      var top = rows.slice(0, 3), order = [1, 0, 2];
+      html += '<div class="podium">' + order.map(function (k) {
+        var p = top[k]; if (!p) return '';
+        return '<div class="pod p' + (k + 1) + '"><div class="pn">' + esc(p.name) + '</div><div class="ps">' + p.score + ' of ' + nScored + '</div><div class="pb">' + (k + 1) + '</div></div>';
+      }).join('') + '</div>';
+    }
+    var table = '';
+    if (rows.length) {
+      table = '<div class="tblwrap"><table class="rt"><thead><tr><th>#</th><th>Name</th>' + (nScored ? '<th>Score</th>' : '') +
+        qs.map(function (q, i) { return '<th title="' + esc(q.q) + '">Q' + (i + 1) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.map(function (p, k) {
+          return '<tr><td>' + (k + 1) + '</td><td class="nm">' + esc(p.name) + '</td>' + (nScored ? '<td class="sc">' + p.score + '/' + nScored + '</td>' : '') +
+            qs.map(function (q, i) {
+              var a = p.answers[i];
+              if (typeof a !== 'number') return '<td class="dash">–</td>';
+              return '<td title="' + esc(q.choices[a] || '') + '"><span class="a c' + a + '"><i>' + LETTERS[a] + '</i>' +
+                (isScored(q) ? (a === q.answer ? '<span class="y">✓</span>' : '<span class="n">✗</span>') : '') + '</span></td>';
+            }).join('') + '</tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    if (table && r.require_name) html += '<h3 class="sec-h">Everyone’s answers</h3>' + table;
+    html += '<h3 class="sec-h">Question by question</h3><div class="qsum">' + qs.map(function (q, i) {
+      var c = r.counts[i] || [], tot = sum(c);
+      return '<div class="card"><h3>' + (i + 1) + '. ' + esc(q.q) + '</h3>' +
+        (isScored(q) ? '<div class="got">' + (tot ? pct(c[q.answer], tot) + '% got it right' : 'No answers') + ' · ' + plural(tot, 'answer') + '</div>'
+          : '<div class="hint" style="margin:0">📊 Poll · ' + plural(tot, 'answer') + '</div>') +
+        barsHtml(q.choices, c, isScored(q) ? q.answer : null) + '</div>';
+    }).join('') + '</div>';
+    if (table && !r.require_name) html += '<details style="margin-top:14px"><summary>Everyone’s answers (anonymous)</summary>' + table + '</details>';
+    return html + '</div>';
+  }
+  function csvCell(v) { v = v == null ? '' : String(v); return /[",\r\n]/.test(v) || /^[=+\-@]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+  function csvOf(rows) { return '﻿' + rows.map(function (r) { return r.map(csvCell).join(','); }).join('\r\n') + '\r\n'; }
+  function resultsCsv(r) {
+    var qs = r.questions, nScored = qs.filter(isScored).length;
+    if (r.require_name) {
+      var head = ['Name', 'Score (out of ' + nScored + ')'];
+      qs.forEach(function (q, i) { head.push('Q' + (i + 1) + '. ' + q.q); if (isScored(q)) head.push('Q' + (i + 1) + ' right?'); });
+      var out = [head];
+      resultRows(r).forEach(function (p) {
+        var row = [p.name, p.score];
+        qs.forEach(function (q, i) {
+          var a = p.answers[i], has = typeof a === 'number';
+          row.push(has ? q.choices[a] : '');
+          if (isScored(q)) row.push(has ? (a === q.answer ? 'Correct' : 'Incorrect') : 'No answer');
+        });
+        out.push(row);
+      });
+      return csvOf(out);
+    }
+    var rows = [['Question number', 'Question', 'Answer', 'Votes', 'Percent', 'Right answer?']];
+    qs.forEach(function (q, i) {
+      var c = r.counts[i] || [], tot = sum(c);
+      q.choices.forEach(function (ch, k) { rows.push([i + 1, q.q, ch, c[k] || 0, pct(c[k] || 0, tot) + '%', isScored(q) ? (k === q.answer ? 'Yes' : '') : 'Poll']); });
+    });
+    return csvOf(rows);
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-res]'); if (!b || !org) return;
+    var a = b.dataset.res;
+    if (a === 'csv' && org.res) { saveFile(resultsCsv(org.res), slug(org.res.title) + '-results.csv', 'text/csv;charset=utf-8'); toast('Results downloaded.'); }
+    else if (a === 'back') doBack();
+    else if (a === 'restart') doRestart();
+    else if (a === 'new') go('');
+  });
+
+  // ---- Phone remote ----
+  function renderRemote() {
+    var h = org.h, q = h.questions[h.qindex] || { q: '', choices: [] }, s = nextStep(h);
+    $('rTitle').textContent = h.title;
+    $('rSub').innerHTML = 'Code <span class="code-sm">' + esc(h.code) + '</span> · ' + people(h.people) + ' joined';
+    document.title = h.title + ' · Live Quiz';
+    var key = [h.version, h.phase, h.qindex, h.voted, h.people, JSON.stringify(h.counts), org.res ? 'r' : ''].join('|');
+    if (key === org.key) return;
+    org.key = key;
+    var body = '<section class="card">';
+    if (h.phase === 'lobby') body += '<p class="rstep">Waiting for people to join</p><p class="rq">' + people(h.people) + ' joined so far. Join code: <b class="code-sm">' + esc(h.code) + '</b></p>';
+    else if (h.phase === 'question') body += '<p class="rstep">Question ' + (h.qindex + 1) + ' of ' + h.total + ' · answers open</p><p class="rq">' + esc(q.q) + '</p>' + progressHtml(h) +
+      (isScored(q) ? '<p class="hint">Right answer (only you can see this): <b>' + LETTERS[q.answer] + ' · ' + esc(q.choices[q.answer]) + '</b></p>' : '<p class="hint">📊 Poll</p>');
+    else if (h.phase === 'reveal') body += '<p class="rstep">Question ' + (h.qindex + 1) + ' of ' + h.total + ' · answer shown</p><p class="rq">' + esc(q.q) + '</p>' + barsHtml(q.choices, h.counts, isScored(q) ? q.answer : null);
+    else {
+      var r = org.res, nScored = r ? r.questions.filter(isScored).length : 0;
+      body += '<p class="rstep">The quiz is over</p>';
+      if (r) {
+        var rows = resultRows(r);
+        body += '<p class="rq">' + people(rows.length) + ' took part.</p>' +
+          (r.require_name && nScored && rows.length ? '<ol style="margin:0;padding-left:22px">' + rows.slice(0, 3).map(function (p) { return '<li><b>' + esc(p.name) + '</b> · ' + p.score + ' of ' + nScored + '</li>'; }).join('') + '</ol>' : '') +
+          '<div class="stack" style="margin-top:12px"><button class="btn plain" type="button" data-res="csv">⬇ Download results (CSV)</button></div>';
+      }
+    }
+    body += '</section><div class="stack">';
+    if (s) body += '<button class="btn rbig" type="button" data-ctl="next">' + esc(s.label) + '</button>';
+    if (h.phase !== 'lobby') body += '<button class="btn plain" type="button" data-ctl="back"' + (canBack(h) ? '' : ' data-off="1" disabled') + '>← Back</button>';
+    if (h.phase === 'done') body += '<button class="btn plain" type="button" data-res="restart">↺ Restart</button>';
+    body += '</div><p class="hint">This phone controls the big screen. Keep this page’s link private: anyone with it can run the quiz.</p>';
+    $('rBody').innerHTML = body;
+    setBusy(org.busy);
+  }
+  $('rBody').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-ctl]'); if (!b || b.disabled) return;
+    if (b.dataset.ctl === 'next') doNext(); else doBack();
+  });
+
+  // ================= Audience (phones) =================
+  var aud = null;   // { code, st, key, timer, pending, joining }
+  function myPid() {
+    var p = load(K_PID, '');
+    if (typeof p !== 'string' || !/^[A-Za-z0-9_-]{8,80}$/.test(p)) {
+      var a = new Uint8Array(16); crypto.getRandomValues(a);
+      p = 'p' + Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+      store(K_PID, p);
+    }
+    return p;
+  }
+  function startAud(code) {
+    stopOrg(); stopAud();
+    aud = { code: code, pid: myPid(), st: null, key: '', pending: null };
+    show('aud');
+    $('aBody').innerHTML = '<p class="empty">Loading…</p>';
+    document.title = 'Live Quiz';
+    audPoll();
+  }
+  function stopAud() { if (aud) { clearTimeout(aud.timer); } aud = null; }
+  function audPoll() {
+    if (!aud) return;
+    var me = aud; clearTimeout(me.timer);
+    rpc('live_state', { p_code: me.code, p_participant: me.pid }).then(function (st) {
+      if (aud !== me) return;
+      $('aOffline').hidden = true;
+      if (!st) { stopAud(); keepAwake(false); go('', { replace: true, joinErr: 'There’s no quiz with the code ' + me.code + '. Check the code on the screen and try again.', code: me.code }); return; }
+      me.st = st;
+      if (!st.joined) {
+        if (!st.require_name) { if (!me.joining) audJoin(''); }
+        else if (!me.asking) { me.key = ''; renderName(); }
+        return;
+      }
+      me.asking = false;
+      renderAud();
+      if (!document.hidden) me.timer = setTimeout(audPoll, 2000);
+    }, function () {
+      if (aud !== me) return;
+      $('aOffline').hidden = false;
+      if (!document.hidden) me.timer = setTimeout(audPoll, 3000);
+    });
+  }
+  function audJoin(name) {
+    var me = aud; me.joining = true;
+    return rpc('live_join', { p_code: me.code, p_participant: me.pid, p_name: name }).then(function () {
+      me.joining = false; if (aud === me) { me.asking = false; me.key = ''; audPoll(); }
+    }, function (e) {
+      me.joining = false; if (aud !== me) return;
+      if (e.message === 'session_not_found') { audPoll(); return; }
+      if (me.asking) { $('nmErr').textContent = errText(e); var b = $('nmGo'); if (b) b.disabled = false; }
+      else { $('aBody').innerHTML = '<div class="big-msg"><div class="em">😕</div><h1>Couldn’t join</h1><p>' + esc(errText(e)) + '</p></div>'; me.timer = setTimeout(audPoll, 4000); }
+    });
+  }
+  function headHtml(st) { return '<div class="ahead"><b>' + esc(st.title) + '</b><span class="pill">' + esc(st.code) + '</span></div>'; }
+  function renderName(change) {
+    var st = aud.st; aud.asking = true; clearTimeout(aud.timer);
+    var last = load(K_NAME, '') || '';
+    mem = load(K_MEM, mem);
+    var chips = (mem.players || []).filter(function (n) { return n && n.toLowerCase() !== String(last).toLowerCase(); }).slice(0, 8);
+    $('aBody').innerHTML = headHtml(st) + '<section class="card"><h1 style="margin-top:0">' + (change ? 'Change your name' : 'What’s your name?') + '</h1>' +
+      '<p class="hint" style="margin:0 0 12px">The organizer asked for names. They can see everyone’s answers at the end.</p>' +
+      '<form id="nmForm" autocomplete="off"><label class="lbl" for="nmIn">Your name</label>' +
+      '<input type="text" id="nmIn" maxlength="40" value="' + esc(change ? (st.name || last) : last) + '" autocomplete="given-name" enterkeyhint="go">' +
+      '<div class="chips" id="nmChips">' + chips.map(function (n) { return '<button type="button" class="chip" data-nm="' + esc(n) + '">' + esc(n) + '</button>'; }).join('') + '</div>' +
+      '<p class="err" id="nmErr" role="alert"></p><button class="btn" id="nmGo" type="submit" style="margin-top:12px">' + (change ? 'Save' : 'Join the quiz') + '</button>' +
+      (change ? '<button class="btn plain" type="button" data-aud="cancel" style="margin-top:10px">Cancel</button>' : '') + '</form></section>';
+    $('nmChips').addEventListener('click', function (e) { var c = e.target.closest('[data-nm]'); if (c) { $('nmIn').value = c.dataset.nm; $('nmErr').textContent = ''; } });
+    $('nmForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var n = clip($('nmIn').value, 40);
+      if (!n) { $('nmErr').textContent = 'Please type your name.'; $('nmIn').focus(); return; }
+      store(K_NAME, n); rememberName(n);
+      $('nmGo').disabled = true;
+      audJoin(n);
+    });
+    if (!last && !change) setTimeout(function () { var i = $('nmIn'); if (i) i.focus(); }, 50);
+  }
+  function shownMine(st) {
+    if (aud.pending && aud.pending.q === st.qindex && aud.pending.v === st.version && st.phase === 'question') return aud.pending.c;
+    return typeof st.mine === 'number' ? st.mine : null;
+  }
+  function renderAud() {
+    var st = aud.st, mine = shownMine(st);
+    var key = [st.version, st.phase, st.qindex, mine, st.joined, st.score, st.scored, st.name].join('|');
+    if (key === aud.key) return;
+    aud.key = key;
+    document.title = st.title + ' · Live Quiz';
+    keepAwake(st.phase !== 'done');
+    var h = headHtml(st), q = st.question;
+    var scoreLine = st.scored > 0 ? '<p class="scoreline">Your score: ' + (st.score || 0) + ' of ' + st.scored + '</p>' : '';
+    if (st.phase === 'lobby') {
+      h += '<div class="card big-msg"><div class="em">🎉</div><h1>You’re in!</h1><p>Watch the screen. The quiz starts soon.</p>' +
+        (st.require_name && st.name ? '<p style="margin-top:14px">Playing as <b>' + esc(st.name) + '</b> · <button type="button" class="btn plain sm" data-aud="rename" style="display:inline-flex;margin-top:6px">Change name</button></p>' : '') + '</div>';
+    } else if (st.phase === 'question' && q) {
+      h += '<p class="qnum">Question ' + (st.qindex + 1) + ' of ' + st.total + (st.poll ? ' · Poll' : '') + '</p><h2 class="qtext">' + esc(q.q) + '</h2>' +
+        '<div class="choices' + (mine != null ? ' picked' : '') + '">' + q.choices.map(function (c, i) {
+          return '<button type="button" class="ch c' + i + (mine === i ? ' sel' : '') + '" data-ch="' + i + '" aria-pressed="' + (mine === i) + '"><span class="lt">' + LETTERS[i] + '</span><span class="tx">' + esc(c) + '</span>' +
+            (mine === i ? '<span class="mk" aria-hidden="true">✓</span>' : '') + '</button>';
+        }).join('') + '</div>' +
+        '<p class="status" id="aStatus">' + (mine != null ? '🔒 Locked in<small>You can change it until the answer is shown.</small>' : 'Tap your answer') + '</p>';
+    } else if (st.phase === 'reveal' && q) {
+      var ans = st.answer, res;
+      if (st.poll) res = mine != null ? '<div class="result none"><b>Thanks for voting!</b>Here’s how everyone voted.</div>' : '<div class="result none"><b>You didn’t vote</b>Here’s how everyone voted.</div>';
+      else if (mine == null) res = '<div class="result none"><b>You didn’t answer</b>The answer was ' + LETTERS[ans] + ': ' + esc(q.choices[ans]) + '</div>';
+      else if (mine === ans) res = '<div class="result ok"><b>✓ Correct!</b>' + esc(q.choices[ans]) + '</div>';
+      else res = '<div class="result no"><b>Not quite</b>The answer was ' + LETTERS[ans] + ': ' + esc(q.choices[ans]) + '</div>';
+      h += '<p class="qnum">Question ' + (st.qindex + 1) + ' of ' + st.total + '</p>' + res + '<h2 class="qtext" style="font-size:19px">' + esc(q.q) + '</h2>' +
+        barsHtml(q.choices, st.counts, st.poll ? null : ans, { mine: mine }) + scoreLine;
+    } else if (st.phase === 'done') {
+      h += '<div class="card big-msg"><div class="em">🏁</div><h1>Thanks for playing!</h1>' +
+        (st.scored > 0 ? '<p style="font:800 24px/1.3 var(--head);color:var(--ink);margin-top:8px">You got ' + (st.score || 0) + ' of ' + st.scored + ' right</p>' : '<p>Thanks for taking part.</p>') +
+        '<p style="margin-top:10px">The results are on the big screen.</p></div>';
+    } else h += '<p class="empty">Watch the screen…</p>';
+    $('aBody').innerHTML = h;
+  }
+  $('aBody').addEventListener('click', function (e) {
+    if (!aud || !aud.st) return;
+    if (e.target.closest('[data-aud=rename]')) { renderName(true); return; }
+    if (e.target.closest('[data-aud=cancel]')) { aud.asking = false; aud.key = ''; renderAud(); audPoll(); return; }
+    var b = e.target.closest('[data-ch]'); if (!b) return;
+    var st = aud.st; if (st.phase !== 'question') return;
+    var c = +b.dataset.ch, me = aud, ver = st.version;
+    buzz(12);
+    me.pending = { q: st.qindex, v: ver, c: c };
+    renderAud();
+    rpc('live_vote', { p_code: me.code, p_participant: me.pid, p_qindex: st.qindex, p_choice: c }).then(function () {
+      if (aud !== me) return;
+      if (me.st && me.st.version === ver) me.st.mine = c;
+      if (me.pending && me.pending.c === c) me.pending = null;
+      me.key = ''; renderAud();
+    }, function (e) {
+      if (aud !== me) return;
+      me.pending = null; me.key = '';
+      toast(errText(e));
+      if (e.message === 'not_joined') { me.st.joined = false; }
+      audPoll();
+    });
+  });
+
+  // ================= Routing =================
+  function go(search, opts) {
+    opts = opts || {};
+    var url = location.pathname + (search || '');
+    if (opts.replace) history.replaceState(opts.view ? { view: opts.view } : null, '', url);
+    else history.pushState(opts.view ? { view: opts.view } : null, '', url);
+    route(opts);
+  }
+  function route(opts) {
+    opts = opts || {};
+    var p = new URLSearchParams(location.search), code = cleanCode(p.get('c')), tok = p.get('o') || '';
+    if (code && tok) {
+      var view = opts.view || (history.state && history.state.view) || (innerWidth >= 760 ? 'big' : 'remote');
+      var s = load(K_SESS, []).filter(function (x) { return x.code === code; })[0];
+      rememberSession(code, tok, s ? s.title : 'Live quiz');
+      startOrg(code, tok, view);
+      return;
+    }
+    if (code) { startAud(code); return; }
+    stopOrg(); stopAud();
+    showHome();
+    document.title = 'Live Quiz';
+    $('joinErr').textContent = opts.joinErr || '';
+    if (opts.code) $('joinCode').value = opts.code;
+  }
+  addEventListener('popstate', function () { route(); });
+  // Keep the saved title of an open session up to date.
+  setInterval(function () { if (org && org.h && !org.gone) { var s = load(K_SESS, []); s.forEach(function (x) { if (x.code === org.code && x.title !== org.h.title) { x.title = org.h.title; store(K_SESS, s); } }); } }, 5000);
+
+  window.PebblyLive = { parse: parseImport, qr: QR.encode, qrSvg: QR.svg, csv: resultsCsv };
+  route();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

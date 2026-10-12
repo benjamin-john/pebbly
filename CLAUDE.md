@@ -119,6 +119,10 @@ shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI s
   savepoint, because Poll's tables aren't in the repo.
 - **Secret Santa** (`santa_*`): the draw and pairs live only in the database; `santa_get` returns just
   the calling phone's match (by its participant id). Never add a function that returns all pairs.
+- **Live Quiz** (`live_*`, `/live/`): built for a room of phones, so each answer is its own row in
+  `live_votes` (no shared document). Phones poll `live_state` (~2 s), the presenter `live_host` (~1 s);
+  the right answer and counts reach phones only after reveal. `live_control` takes `p_version` so two
+  screens pressing Next at once count once.
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)
