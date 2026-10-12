@@ -24,6 +24,8 @@ Static site served by GitHub Pages at https://pebbly.dev.
   `play/play.sql` (run once in Supabase) stores each shared game as one JSON document with a
   version number; `play/sync.js` pushes changes, polls every 1.5 s, and merges when two phones
   change things at once. A game page hooks in with `PebblySync.wire(kind, {...})` (see Kwiks).
+- `lock.js` + `supabase/migrations/20261012000000_plan_passwords.sql`: optional passwords for RSVP,
+  Poll and Which Day Works? (set when creating, or with 🔒 Password in the host tools).
 - `keepawake.js` keeps the screen on during games: call `keepAwake(true)` / `keepAwake(false)`.
 - `CNAME` holds the custom domain. Don't delete it.
 - `.nojekyll` tells Pages to serve files as-is (no Jekyll build).

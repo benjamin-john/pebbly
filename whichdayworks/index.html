@@ -216,6 +216,7 @@ textarea{resize:vertical}
   #toast{transition:none}
 }
 </style>
+<script src="/lock.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -323,7 +324,8 @@ function ApiError(message, status) { this.message = message; this.status = statu
 ApiError.prototype = Object.create(Error.prototype);
 
 var remoteApi = {
-  rpc: function (fn, args) {
+  rpc: function (fn, args) { return PebblyLock.call('wdw', fn, args, lockRaw); },
+  raw: function (fn, args) {
     var headers = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY };
     if (/^eyJ/.test(CFG.SUPABASE_KEY)) headers.Authorization = 'Bearer ' + CFG.SUPABASE_KEY;
     return fetch(CFG.SUPABASE_URL.replace(/\/+$/, '') + '/rest/v1/rpc/' + fn, {
@@ -471,8 +473,10 @@ var localApi = {
 };
 
 var api = REMOTE ? remoteApi : localApi;
+function lockRaw(fn, args) { return remoteApi.raw(fn, args); }
 
 function friendly(e) {
+  if (PebblyLock.message(e && e.message)) return PebblyLock.message(e.message);
   var m = (e && e.message) || '';
   var map = {
     network: "Couldn't reach the server. Check your connection and try again.",
@@ -674,6 +678,8 @@ function loadEvent(code) {
     S.view = 'event';
     renderEvent();
   }, function (e) {
+    if (REMOTE && PebblyLock.handle(e, { app: 'wdw', code: code, owner: S.owner, raw: lockRaw, el: $app, what: 'event',
+      retry: function () { loadEvent(code); } })) return;
     $app.innerHTML = '<p class="err">' + esc(friendly(e)) + '</p><p><a href="">Try again</a></p>';
   });
 }
@@ -711,6 +717,7 @@ function renderHome() {
         '<label class="fld"><span>Earliest start</span><input type="date" name="earliest"><small>Optional</small></label>' +
         '<label class="fld"><span>Latest end</span><input type="date" name="latest"><small>Optional</small></label>' +
       '</div>' +
+      (REMOTE ? PebblyLock.fieldHtml('event') : '') +
       '<button class="btn primary" type="submit">Create event</button>' +
       '<p class="err" id="formErr" role="alert"></p>' +
     '</form>' +
@@ -851,7 +858,11 @@ function submitCreate(form) {
     var code = typeof res === 'string' ? res : res.code;
     if (res && res.owner_token) setOwnerToken(code, res.owner_token);
     rememberEvent(code, name);
-    renderCreated(code, name);
+    var pw = res && res.owner_token && f.lockpw ? f.lockpw.value : '';
+    return PebblyLock.afterCreate('wdw', code, res && res.owner_token, pw, lockRaw).then(function (lockErr) {
+      renderCreated(code, name);
+      if (lockErr) toast(lockErr);
+    });
   }, failed);
 }
 
@@ -861,7 +872,8 @@ function renderCreated(code, name) {
   $app.innerHTML =
     previewBanner() +
     '<h1>Event created</h1>' +
-    '<p class="lede">Send this link to the group chat. Anyone with it can add their days.</p>' +
+    '<p class="lede">Send this link to the group chat. Anyone with it can add their days.' +
+      (REMOTE && PebblyLock.key('wdw', code) ? ' They’ll also need the password, so tell them that separately.' : '') + '</p>' +
     '<div class="panel">' +
       '<strong>' + esc(name) + '</strong>' +
       '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(url) + '" aria-label="Event link"></div>' +
@@ -1036,6 +1048,7 @@ function renderOwnerTools() {
       (S.responses.length ? ' To remove someone’s answers, tap Remove next to their name above.' : '') + '</p>' +
     '<div class="row-btns"><button type="button" class="btn small" data-act="edit-ev">Edit event</button>' +
     '<button type="button" class="btn small" data-act="copy-owner">Copy organizer link</button>' +
+    (REMOTE && S.owner ? '<button type="button" class="btn small" data-act="lock">🔒 Password</button>' : '') +
     '<button type="button" class="btn small danger" data-act="del-ev">Delete event</button></div>' +
     '<p class="hint" style="margin-top:10px;font-size:13px">The organizer link gives control of this event on another device. Keep it private.</p></div>';
 }
@@ -1430,6 +1443,7 @@ $app.addEventListener('click', function (e) {
     case 'edit-ev': S.editEv = true; renderOwnerTools(); var ef = document.getElementById('evForm'); if (ef && ef.scrollIntoView) ef.scrollIntoView({ block: 'start', behavior: 'smooth' }); break;
     case 'edit-ev-cancel': S.editEv = false; renderOwnerTools(); break;
     case 'del-ev': deleteEvent(); break;
+    case 'lock': PebblyLock.openHost({ app: 'wdw', code: S.code, owner: S.owner, raw: lockRaw, what: 'event', toast: toast }); break;
     case 'set-final': setFinal(t.dataset.start); break;
     case 'clear-final': if (confirm('Undo the final date? Everyone will see the event as undecided again.')) setFinal(null); break;
     case 'ics': downloadIcs(); break;

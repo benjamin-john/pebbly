@@ -203,6 +203,7 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
 </style>
+<script src="/lock.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -422,7 +423,8 @@ function ApiError(message, status) { this.message = message; this.status = statu
 ApiError.prototype = Object.create(Error.prototype);
 
 var remoteApi = {
-  rpc: function (fn, args) {
+  rpc: function (fn, args) { return PebblyLock.call('rsvp', fn, args, lockRaw); },
+  raw: function (fn, args) {
     var headers = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY };
     if (/^eyJ/.test(CFG.SUPABASE_KEY)) headers.Authorization = 'Bearer ' + CFG.SUPABASE_KEY;
     return fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: headers, body: JSON.stringify(args) })
@@ -687,9 +689,11 @@ var localApi = {
 };
 
 var api = REMOTE ? remoteApi : localApi;
+function lockRaw(fn, args) { return remoteApi.raw(fn, args); }
 
 function friendly(e) {
   var m = (e && e.message) || '';
+  if (PebblyLock.message(m)) return PebblyLock.message(m);
   var map = {
     network: "Couldn't reach the server. Check your connection and try again.",
     event_not_found: 'That event no longer exists.',
@@ -842,6 +846,8 @@ function loadEvent(code, justCreated) {
     rememberEvent(S.ev);
     renderEvent();
   }, function (e) {
+    if (REMOTE && PebblyLock.handle(e, { app: 'rsvp', code: code, owner: S.owner, raw: lockRaw, el: $app, what: 'event',
+      retry: function () { loadEvent(code, justCreated); } })) return;
     $app.innerHTML = '<p class="err">' + esc(friendly(e)) + '</p><p><a href="">Try again</a></p>';
   });
 }
@@ -959,6 +965,7 @@ function eventFormHtml(ev) {
       '<label class="check"><input type="checkbox" name="hide_count"' + (e.hide_count ? ' checked' : '') + '><span><b>Hide guest count</b><small>Guests don’t see how many are going.</small></span></label>' +
       '<label class="check"><input type="checkbox" name="require_phone"' + (e.require_phone ? ' checked' : '') + '><span><b>Require a phone number</b><small>So you can text guests from your phone. Only you see the numbers. Without this, it’s optional.</small></span></label>' +
     '</div>' +
+    (ev || !REMOTE ? '' : PebblyLock.fieldHtml('event')) +
 
     '<h3 class="sect">Bring list</h3>' +
     '<div class="checks" style="margin-bottom:6px"><label class="check"><input type="checkbox" name="bring_list"' + (ev && e.bring_list !== false ? ' checked' : '') + '><span><b>Add a bring list</b><small>Guests tap “I’ll bring it” so nobody doubles up.</small></span></label></div>' +
@@ -1032,9 +1039,13 @@ function submitEvent(form) {
   } else {
     api.create(p, items).then(function (res) {
       setOwnerToken(res.code, res.owner_token);
-      history.pushState(null, '', baseUrl() + '?e=' + res.code);
-      loadEvent(res.code, true);
-      window.scrollTo(0, 0);
+      var pw = form.elements.lockpw ? form.elements.lockpw.value : '';
+      return PebblyLock.afterCreate('rsvp', res.code, res.owner_token, pw, lockRaw).then(function (lockErr) {
+        history.pushState(null, '', baseUrl() + '?e=' + res.code);
+        loadEvent(res.code, true);
+        window.scrollTo(0, 0);
+        if (lockErr) toast(lockErr);
+      });
     }, done);
   }
 }
@@ -1119,7 +1130,7 @@ function renderEvent() {
     previewBanner() +
     '<nav class="topnav">' + (S.fromAdmin ? '<button type="button" class="link" data-act="to-admin" style="padding:0">← All events (admin)</button>' : '<a href="' + esc(baseUrl()) + '">New event</a>') +
       (S.isOwner ? '<span class="hint">' + (S.fromAdmin ? 'Admin: host view' : 'You’re the host') + '</span>' : '') + '</nav>' +
-    (S.justCreated ? '<section class="panel created"><h2>Your event is ready 🎉</h2><p style="margin-top:4px">Send this link to your guests:</p>' +
+    (S.justCreated ? '<section class="panel created"><h2>Your event is ready 🎉</h2><p style="margin-top:4px">Send this link to your guests' + (REMOTE && PebblyLock.key('rsvp', S.code) ? ', and tell them the password separately' : '') + ':</p>' +
       '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Event link">' +
       '<button type="button" class="btn small" data-act="copy-link">Copy</button></div></section>' : '') +
     '<header class="hero' + (t.ink === '#FFFFFF' ? ' light-ink' : '') + '" style="--ga:' + t.a + ';--gb:' + t.b + ';--gi:' + t.ink + '">' +
@@ -1429,6 +1440,7 @@ function renderHost() {
       '<button type="submit" class="btn primary small">Post announcement</button></form>' +
     '<div class="row"><button type="button" class="btn small" data-act="edit-event">Edit event</button>' +
       '<button type="button" class="btn small" data-act="copy-host">Copy host link</button>' +
+      (REMOTE ? '<button type="button" class="btn small" data-act="lock">🔒 Password</button>' : '') +
       '<button type="button" class="btn small danger" data-act="delete-event">Delete event</button></div>' +
     '<p class="hint" style="margin-top:8px;font-size:13px">The host link gives control of this event on another device. Keep it private.</p>' +
     '<h3 style="font-size:16px;margin-top:20px">Text guests</h3>' +
@@ -1615,6 +1627,7 @@ $app.addEventListener('click', function (e) {
       if (ri && confirm('Remove “' + ri.label + '” from the bring list?')) after(api.removeItem({ code: S.code, pid: S.pid, owner: S.owner, item: id }), 'Removed.');
       break;
     case 'edit-event': S.mode = 'edit'; renderEvent(); window.scrollTo(0, 0); break;
+    case 'lock': PebblyLock.openHost({ app: 'rsvp', code: S.code, owner: S.owner, raw: lockRaw, what: 'event', toast: toast }); break;
     case 'copy-host': copyText(hostUrl(S.code)).then(function (ok) { toast(ok ? 'Host link copied. Keep it private.' : 'Could not copy.'); }); break;
     case 'delete-event':
       if (confirm('Delete this event for everyone? This can’t be undone.')) {

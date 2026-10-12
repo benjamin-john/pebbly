@@ -26,6 +26,7 @@ database for the apps that share data between people. See README.md for the app 
 | `nav.js` | In the installed app, adds the "← Pebbly" home bar; also asks for persistent storage. Include in every app's `<head>`. |
 | `keepawake.js` | `keepAwake(true/false)`: Screen Wake Lock while a game is on screen. |
 | `play/sync.js`, `play/play.sql` | "Play together": share any game between phones with a 5-letter code. |
+| `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
 | `migrate.js` | Merges saved data forwarded from benjamin-john.com (RSVP/Poll/Which Day Works? only). |
 | `sw.js` | Service worker: network-first with `cache: 'no-cache'` (updates show right away), offline fallback. |
 | `manifest.webmanifest`, `icons/` | Installable app (PWA). Shortcuts list in the manifest. |
@@ -97,6 +98,15 @@ shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI s
   (Supabase SQL Editor: `select pg_get_functiondef(…)`) first, as done for Which Day Works?.
 - Pages should keep working before a migration is applied (fall back to old functions or show a
   clear message), since deploys of the site and the database aren't simultaneous.
+- **Passwords** (`supabase/migrations/20261012000000_plan_passwords.sql`, `lock.js`): RSVP, Poll and
+  Which Day Works? can be password protected. Every guest-callable function (list in `_lock_wrap_all`)
+  has a wrapper `gated_<name>(same args, p_key)`; the originals are not executable by anon/authenticated.
+  Pages call through `PebblyLock.call` (falls back to the originals if the wrappers don't exist yet).
+  If a migration changes or adds a guest-callable function, end it with `select _lock_wrap_all();`
+  (add new ones to its list) and **never grant execute on the originals** to anon/authenticated. The
+  old reference scripts (`rsvp/*.sql`, `whichdayworks/*.sql`, `play/play.sql`) contain such grants:
+  don't re-run them in Supabase. Poll's owner check works by deleting the poll inside a rolled-back
+  savepoint, because Poll's tables aren't in the repo.
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)
@@ -115,6 +125,8 @@ the repo with `python3 -m http.server <port>` and drive a Pixel 7 viewport.
   (`phone(browser, devices, db)` gives a page; use several for multi-phone "play together" tests).
 - Screenshot the result on a phone viewport (light and dark) and look at it before pushing.
 - `tests/rsvp_test.js`: RSVP checks (see its header).
+- `tests/lock_test.js`: passwords in all three Plan apps (see its header; Poll uses the stand-in
+  `tests/poll_fixture.sql`).
 
 ## Gotchas learned the hard way
 

@@ -118,6 +118,7 @@ textarea{resize:vertical}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){.namebox.nudge{animation:none}#toast{transition:none}}
 </style>
+<script src="/lock.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -189,7 +190,8 @@ function ApiError(message, status) { this.message = message; this.status = statu
 ApiError.prototype = Object.create(Error.prototype);
 
 var remoteApi = {
-  rpc: function (fn, args) {
+  rpc: function (fn, args) { return PebblyLock.call('poll', fn, args, lockRaw); },
+  raw: function (fn, args) {
     var headers = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY };
     if (/^eyJ/.test(CFG.SUPABASE_KEY)) headers.Authorization = 'Bearer ' + CFG.SUPABASE_KEY;
     return fetch(CFG.SUPABASE_URL + '/rest/v1/rpc/' + fn, { method: 'POST', headers: headers, body: JSON.stringify(args) })
@@ -345,9 +347,11 @@ var localApi = {
 };
 
 var api = REMOTE ? remoteApi : localApi;
+function lockRaw(fn, args) { return remoteApi.raw(fn, args); }
 
 function friendly(e) {
   var m = (e && e.message) || '';
+  if (PebblyLock.message(m)) return PebblyLock.message(m);
   var map = {
     network: "Couldn't reach the server. Check your connection and try again.",
     poll_not_found: 'That poll no longer exists.',
@@ -456,6 +460,8 @@ function loadPoll(code) {
     if (S.isOwner) rememberPoll(code, S.poll.name, true); else rememberPoll(code, S.poll.name);
     renderPoll();
   }, function (e) {
+    if (REMOTE && PebblyLock.handle(e, { app: 'poll', code: code, owner: S.owner, raw: lockRaw, el: $app, what: 'poll',
+      retry: function () { loadPoll(code); } })) return;
     $app.innerHTML = '<p class="err">' + esc(friendly(e)) + '</p><p><a href="">Try again</a></p>';
   });
 }
@@ -500,6 +506,7 @@ function renderHome() {
         '<label class="check"><input type="checkbox" name="anonymous"><span><b>Anonymous</b><small>Nobody sees who voted for what, and no names are asked for.</small></span></label>' +
         '<label class="check"><input type="checkbox" name="allow_custom" checked><span><b>Allow custom submissions</b><small>Anyone can add their own choice. Turn off to keep your list as is.</small></span></label>' +
       '</div>' +
+      (REMOTE ? PebblyLock.fieldHtml('poll') : '') +
       '<button class="btn primary" type="submit">Create poll</button>' +
       '<p class="err" id="formErr" role="alert"></p>' +
     '</form>' +
@@ -537,9 +544,12 @@ function submitCreate(form) {
       setOwnerToken(res.code, res.owner_token);
       rememberPoll(res.code, name);
       store.set('pick.justCreated', res.code);
-      history.pushState(null, '', baseUrl() + '?p=' + res.code);
-      S.justCreated = true;
-      loadPoll(res.code);
+      return PebblyLock.afterCreate('poll', res.code, res.owner_token, f.lockpw ? f.lockpw.value : '', lockRaw).then(function (lockErr) {
+        history.pushState(null, '', baseUrl() + '?p=' + res.code);
+        S.justCreated = true;
+        loadPoll(res.code);
+        if (lockErr) toast(lockErr);
+      });
     }, function (e) {
       btn.disabled = false; btn.textContent = 'Create poll';
       err.textContent = friendly(e);
@@ -638,7 +648,7 @@ function renderPoll() {
     previewBanner() +
     '<nav class="topnav">' + (S.fromAdmin ? '<button type="button" class="link" data-act="to-admin" style="padding:0">← All polls (admin)</button>' : '<a href="' + esc(baseUrl()) + '">New poll</a>') +
       (S.isOwner ? '<span class="hint">' + (S.fromAdmin ? 'Admin: organizer view' : 'You’re the organizer') + '</span>' : '') + '</nav>' +
-    (S.justCreated ? '<section class="panel created"><h2>Poll created</h2><p style="margin-top:4px">Send this link to the group:</p>' +
+    (S.justCreated ? '<section class="panel created"><h2>Poll created</h2><p style="margin-top:4px">Send this link to the group' + (REMOTE && PebblyLock.key('poll', S.code) ? ', and tell them the password separately' : '') + ':</p>' +
       '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Poll link">' +
       '<button type="button" class="btn small" data-act="copy-link">Copy</button></div></section>' : '') +
     '<header><h1>' + esc(p.name) + '</h1>' +
@@ -749,6 +759,7 @@ function renderOwnerTools() {
       (P.winner_option_id ? '<button type="button" class="btn" data-act="clear-winner">Clear winner</button>' : '') + '</div>' +
       '<p class="hint" style="margin-top:10px">To choose the winner yourself, tap “Pick as winner” under a choice.</p>' +
       '<div class="row"><button type="button" class="btn small" data-act="copy-owner">Copy organizer link</button>' +
+      (REMOTE ? '<button type="button" class="btn small" data-act="lock">🔒 Password</button>' : '') +
       '<button type="button" class="btn small danger" data-act="delete-poll">Delete poll</button></div>' +
       '<p class="hint" style="margin-top:8px;font-size:13px">The organizer link gives control of this poll on another device. Keep it private.</p>';
   }
@@ -854,6 +865,7 @@ $app.addEventListener('click', function (e) {
     case 'rnone': R.sel = {}; renderParts(); break;
     case 'spin': spin(); break;
     case 'copy-owner': copyText(ownerUrl(S.code)).then(function (ok) { toast(ok ? 'Organizer link copied. Keep it private.' : 'Could not copy.'); }); break;
+    case 'lock': PebblyLock.openHost({ app: 'poll', code: S.code, owner: S.owner, raw: lockRaw, what: 'poll', toast: toast }); break;
     case 'delete-poll':
       if (confirm('Delete this poll for everyone? This can’t be undone.')) {
         api.del({ code: S.code, owner: S.owner }).then(function () {

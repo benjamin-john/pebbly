@@ -1,11 +1,11 @@
 // RSVP app end-to-end checks (Playwright, Pixel 7).
-// Serve the app:   cd rsvp && python3 -m http.server 8767
+// Serve the repo:  python3 -m http.server 8767   (from the repo root; the page loads /lock.js)
 // Preview mode:    node tests/rsvp_test.js
 // Real database:   PGURL=postgres://postgres@localhost:5433/postgres node tests/rsvp_test.js
 //   (needs the `pg` npm package; schema.sql + rsvp_admin.sql loaded, roles anon/authenticated present).
 //   Supabase calls from the page are answered by running the same function in that Postgres as role anon.
 const { chromium, devices } = require('playwright');
-const BASE = 'http://localhost:8767/index.html';
+const BASE = 'http://localhost:8767/rsvp/index.html';
 const PGURL = process.env.PGURL;
 let pass = 0, fail = 0;
 function check(ok, msg) { if (ok) { pass++; } else { fail++; console.log('FAIL: ' + msg); } }
