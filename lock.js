@@ -96,11 +96,19 @@
     return true;
   }
 
+  // Host phone: get the key with the host's own key (no typing). Resolves true if this phone now has it.
+  function ownerKey(app, code, owner, raw) {
+    if (!owner) return Promise.resolve(false);
+    return lockCall(raw, 'lock_owner', { p_app: app, p_code: code, p_owner_token: owner }).then(function (d) {
+      setKey(app, code, d.key); return !!d.key;
+    }, function () { return false; });
+  }
+
   function fieldHtml(what) {
-    var w = words(what);
+    var w = words(what), verb = /^(bill|list|sheet)$/.test(w.a) ? 'see or change' : 'see or reply to';
     return '<label class="fld"><span>🔒 Password <span class="pl-opt">(optional)</span></span>' +
       '<input type="text" name="lockpw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="100">' +
-      '<small>Leave blank so anyone with the link can open it. With a password, people need it to see or reply to the ' + w.a +
+      '<small>Leave blank so anyone with the link can open it. With a password, people need it to ' + verb + ' the ' + w.a +
       '. Tell them the password separately. You can change it later.</small></label>';
   }
 
@@ -178,6 +186,6 @@
   }
 
   addCss();
-  window.PebblyLock = { call: call, handle: handle, fieldHtml: fieldHtml, afterCreate: afterCreate, openHost: openHost,
+  window.PebblyLock = { call: call, handle: handle, ownerKey: ownerKey, fieldHtml: fieldHtml, afterCreate: afterCreate, openHost: openHost,
     message: msg, key: key };
 })();

@@ -27,12 +27,13 @@ database for the apps that share data between people. See README.md for the app 
 | `theme.js` | Applies the homepage's Theme switch (Auto/Light/Dark) before the page draws. |
 | `keepawake.js` | `keepAwake(true/false)`: Screen Wake Lock while a game is on screen. |
 | `play/sync.js`, `play/play.sql` | "Play together": share any game between phones with a 5-letter code. |
+| `doc.js` | Shared documents for Sign-up Sheet, Split the Bill, Shared List (doc_* functions): open/change/merge, host keys. Keep lists as objects keyed by id. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
 | `migrate.js` | Merges saved data forwarded from benjamin-john.com (RSVP/Poll/Which Day Works? only). |
 | `sw.js` | Service worker: network-first with `cache: 'no-cache'` (updates show right away), offline fallback. |
 | `manifest.webmanifest`, `icons/` | Installable app (PWA). Shortcuts list in the manifest. |
 | `supabase/migrations/` | Database changes; applied automatically on push to `main` (see below). |
-| `tests/` | Playwright helpers and the RSVP test. |
+| `tests/` | Playwright helpers and one test per app (`<app>_test.js`); `setup_db.sh` builds a test database. |
 
 ## Design conventions (match these in every app)
 
@@ -115,6 +116,8 @@ shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI s
   old reference scripts (`rsvp/*.sql`, `whichdayworks/*.sql`, `play/play.sql`) contain such grants:
   don't re-run them in Supabase. Poll's owner check works by deleting the poll inside a rolled-back
   savepoint, because Poll's tables aren't in the repo.
+- **Secret Santa** (`santa_*`): the draw and pairs live only in the database; `santa_get` returns just
+  the calling phone's match (by its participant id). Never add a function that returns all pairs.
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)
@@ -124,6 +127,9 @@ the repo with `python3 -m http.server <port>` and drive a Pixel 7 viewport.
 
 - Unit-ish checks: expose pure functions on `window` for tests only if needed; fixed dice by
   overriding `crypto.getRandomValues` in an init script with a queue.
+- `sh tests/setup_db.sh <db>` starts the test Postgres (if needed) and builds a database with every
+  schema and migration loaded (`nomigrations` as a second argument skips the migrations). Each app test's
+  header says which port to serve on and which database it uses.
 - Database functions: start a throwaway Postgres 16 (`/usr/lib/postgresql/16/bin/initdb` as user
   `postgres`, in a folder under `/tmp` owned by `postgres`), create roles `anon`/`authenticated`, load
   the relevant scripts (for Which Day Works?: `tests/wdw_fixture.sql`, then

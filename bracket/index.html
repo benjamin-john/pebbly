@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Bracket</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--no);border:1.5px solid var(--no)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,.chip button:focus-visible,.side:focus-visible,.rtab:focus-visible,.ob:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text],input[type=number]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;
+  background:var(--surface);color:var(--ink);font:500 17px/1.2 var(--body)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:10px 0 0}
+.wrap{max-width:720px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom))}
+.lead{margin:0 0 16px;color:var(--muted)}
+.stack{display:grid;gap:10px}
+
+/* ---------- Setup ---------- */
+.phead{display:flex;align-items:baseline;gap:8px}
+.phead h2{flex:1}
+.count{color:var(--muted);font-size:14px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{min-height:52px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;font-weight:500;padding:4px 8px;line-height:1.2}
+.seg button small{display:block;color:var(--muted);font-size:13px;font-weight:500}
+.seg button[aria-pressed=true]{border:2px solid var(--brand);background:var(--brand-t);color:var(--brand);font-weight:700}
+.seg.mb{margin-bottom:12px}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px;counter-reset:s}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:22px;flex:none;text-align:right;color:var(--muted);font-size:14px;font-variant-numeric:tabular-nums}
+.plist input{flex:1;min-width:0}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+.toggle{display:flex;align-items:center;gap:12px;min-height:48px;cursor:pointer}
+.toggle input{width:22px;height:22px;accent-color:var(--brand);flex:none}
+.err{color:var(--no);font-size:14px;margin:8px 0 0;min-height:0}
+
+/* ---------- Play ---------- */
+.topbar{display:flex;align-items:center;gap:10px;margin:0 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0;overflow-wrap:anywhere}
+.topbar .sub{color:var(--muted);font-size:14px}
+.views{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface);border:1px solid var(--line);margin-bottom:12px}
+.views button{min-height:44px;border:0;border-radius:10px;background:none;cursor:pointer;font-weight:600;color:var(--muted)}
+.views button[aria-pressed=true]{background:var(--brand);color:var(--brand-ink)}
+.rtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px 6px;scrollbar-width:thin;overscroll-behavior-x:contain}
+.rtab{flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:52px;padding:4px 14px;border:1px solid var(--line);
+  border-radius:12px;background:var(--surface);cursor:pointer;font-weight:600;line-height:1.15;white-space:nowrap}
+.rtab small{color:var(--muted);font-weight:500;font-size:12.5px}
+.rtab[aria-selected=true]{border:2px solid var(--brand);background:var(--brand-t);color:var(--brand)}
+.rtab[aria-selected=true] small{color:var(--brand)}
+.rtab:disabled{opacity:.5;cursor:default}
+.watch{padding:12px 14px;border-radius:12px;background:var(--lead-t);font-weight:600;margin-bottom:12px;font-size:15px}
+.matches{display:grid;gap:12px}
+@media (min-width:640px){ .matches{grid-template-columns:1fr 1fr} }
+.match{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:10px;scroll-margin-top:60px}
+.match.flash{animation:hl 1.6s ease-out}
+@keyframes hl{0%,30%{box-shadow:0 0 0 3px var(--lead)}100%{box-shadow:0 0 0 0 transparent}}
+.mhead{display:flex;align-items:center;gap:8px;margin:0 2px 8px;min-height:32px}
+.mhead .mno{flex:1;font-size:13px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.mhead .mscore{min-height:36px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--bg);cursor:pointer;font-size:14px;font-weight:600}
+.side{display:flex;align-items:center;gap:10px;width:100%;min-height:58px;padding:8px 12px;border:1.5px solid var(--line);border-radius:12px;
+  background:var(--bg);cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.side + .side{margin-top:6px}
+.side:active:not(:disabled){transform:scale(.99)}
+.side .seed{flex:none;min-width:26px;height:26px;padding:0 4px;border-radius:8px;display:grid;place-items:center;background:var(--surface);border:1px solid var(--line);color:var(--muted);font-size:13px;font-weight:700}
+.side .nm{flex:1;min-width:0;font:600 19px/1.2 var(--body);overflow-wrap:anywhere}
+.side .sc{flex:none;font:800 22px/1 var(--head);font-variant-numeric:tabular-nums}
+.side .mark{flex:none;font-size:18px;width:22px;text-align:center}
+.side.win{border:2px solid var(--brand);background:var(--brand-t)}
+.side.win .nm{color:var(--brand);font-weight:700}
+.side.lose{opacity:.55}
+.side.lose .nm{text-decoration:line-through;text-decoration-thickness:1px}
+.side.tbd{border-style:dashed;cursor:default}
+.side.tbd .nm{color:var(--muted);font-weight:500;font-size:16px}
+.side:disabled{cursor:default}
+.vs{display:none}
+.bye{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px dashed var(--line);border-radius:16px;color:var(--muted);font-size:15px}
+.bye b{color:var(--ink);font-weight:600;overflow-wrap:anywhere}
+.roundnote{color:var(--muted);font-size:14px;margin:12px 2px 0;text-align:center}
+.nextround{margin-top:14px}
+
+/* Champion */
+.champ{position:relative;overflow:hidden;text-align:center;padding:22px 16px 18px;border-radius:20px;margin-bottom:14px;
+  background:linear-gradient(160deg,var(--lead-t),var(--brand-t));border:2px solid var(--lead)}
+.champ .cup{font-size:54px;line-height:1}
+.champ .lbl{font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:13px;margin-top:6px}
+.champ .who{font:800 40px/1.1 var(--head);margin:4px 0 12px;overflow-wrap:anywhere}
+.champ .row{display:grid;grid-template-columns:1fr 1fr;gap:8px;position:relative;z-index:1}
+.champ .row .btn{min-height:46px;font-size:15px}
+.confetti{position:absolute;inset:0;pointer-events:none}
+.confetti i{position:absolute;top:-20px;width:8px;height:14px;border-radius:2px;opacity:0;animation:fall 2.4s ease-in forwards}
+@keyframes fall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(260px) rotate(540deg)}}
+@media (prefers-reduced-motion:reduce){ .confetti{display:none} }
+
+/* Whole bracket (only this part scrolls sideways) */
+.ov{overflow-x:auto;margin:0 -16px;padding:0 16px 12px;overscroll-behavior-x:contain}
+.ovin{display:flex;width:max-content}
+.oc{width:168px;flex:none}
+.oc h3{margin:0 0 8px;padding:0 12px;font:600 12.5px/1.2 var(--body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);height:16px;white-space:nowrap}
+.os{position:relative;height:calc(var(--u) * var(--k))}
+.ob{position:absolute;left:12px;right:12px;top:50%;transform:translateY(-50%);border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  padding:0;cursor:pointer;text-align:left;font-size:14px;line-height:1.2;width:auto}
+.ob span{display:flex;align-items:center;gap:6px;height:24px;padding:0 8px;white-space:nowrap;overflow:hidden}
+.ob span + span{border-top:1px solid var(--line)}
+.ob span em{font-style:normal;color:var(--muted);font-size:11px;min-width:14px}
+.ob span b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:500}
+.ob span i{font-style:normal;font-weight:700;font-variant-numeric:tabular-nums}
+.ob .w{background:var(--brand-t)}
+.ob .w b{font-weight:700;color:var(--brand)}
+.ob .t b{color:var(--muted)}
+.ob.byebox{border-style:dashed}
+.os::after{content:"";position:absolute;right:0;top:50%;width:12px;border-top:2px solid var(--field)}
+.os.top::before{content:"";position:absolute;right:0;top:50%;height:100%;border-right:2px solid var(--field)}
+.oc:not(:first-child) .ob::before{content:"";position:absolute;left:-13px;top:50%;width:12px;border-top:2px solid var(--field)}
+.oc:last-child .os::after{display:none}
+.oc.champc .ob{border:2px solid var(--lead);background:var(--lead-t);font-weight:700}
+
+dialog{width:min(480px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+.scrow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.scrow label{flex:1;min-width:0;font-weight:600;font-size:17px;overflow-wrap:anywhere}
+.scrow input{width:96px;flex:none;text-align:center;font:800 22px/1 var(--head)}
+</style>
+<script src="/play/sync.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Setup ================= -->
+<main class="wrap" id="setup" hidden>
+  <h1>Bracket</h1>
+  <p class="lead">A knockout tournament for cornhole, ping pong, or “best pizza” votes. Tap the winner of each match and they move on.</p>
+  <div id="psJoin"></div>
+
+  <section class="card">
+    <h2>Name</h2>
+    <input type="text" id="title" maxlength="40" placeholder="e.g. Cornhole Cup" autocomplete="off" enterkeyhint="next" aria-label="Bracket name">
+  </section>
+
+  <section class="card">
+    <div class="phead"><h2>Who’s in?</h2><span class="count" id="count"></span></div>
+    <div class="seg mb" role="group" aria-label="Kind of entrants">
+      <button type="button" data-kind="people" id="kPeople">People<small>Players or teams</small></button>
+      <button type="button" data-kind="things" id="kThings">Things<small>Pizzas, movies…</small></button>
+    </div>
+    <ul class="plist" id="plist"></ul>
+    <form class="addrow" id="addForm" autocomplete="off">
+      <input type="text" id="newName" maxlength="30" placeholder="Add a name" enterkeyhint="done" aria-label="Add an entrant">
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <p class="err" id="addErr" hidden></p>
+    <div class="chips" id="chips"></div>
+    <p class="hint" id="addHint">Tip: paste a list (one per line) to add them all at once. The order is the seeding: #1 first.</p>
+  </section>
+
+  <section class="card">
+    <h2>Order</h2>
+    <div class="seg" role="group" aria-label="Order">
+      <button type="button" data-order="seeded" id="oSeeded">As entered<small>#1 is the top seed</small></button>
+      <button type="button" data-order="shuffle" id="oShuffle">Shuffle<small>Random draw</small></button>
+    </div>
+    <p class="hint" id="byeHint"></p>
+  </section>
+
+  <div id="psSetup"></div>
+  <section class="card" id="openCard" style="padding:4px 16px" hidden>
+    <label class="toggle"><input type="checkbox" id="openSetup"><span>Let everyone who joins record results (otherwise only you can)</span></label>
+  </section>
+
+  <div class="stack">
+    <button class="btn" id="startBtn" type="button">Start bracket</button>
+    <button class="btn ghost" id="backBtn" type="button" hidden>Back to current bracket</button>
+  </div>
+</main>
+
+<!-- ================= Play ================= -->
+<main class="wrap" id="play" hidden>
+  <div class="topbar">
+    <div class="title"><h1 id="pTitle"></h1><div class="sub" id="pSub"></div></div>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+  <div id="psBadge" hidden></div>
+  <div id="champ"></div>
+  <div class="views" role="group" aria-label="View">
+    <button type="button" data-view="rounds" id="vRounds">Rounds</button>
+    <button type="button" data-view="all" id="vAll">Whole bracket</button>
+  </div>
+  <div id="roundsView">
+    <div class="rtabs" id="rtabs" role="tablist" aria-label="Rounds"></div>
+    <div class="watch" id="watch" hidden>👀 Watching live. Only the host can record results.</div>
+    <div class="matches" id="matches"></div>
+    <p class="roundnote" id="roundNote"></p>
+    <button class="btn ghost nextround" type="button" id="nextRound" hidden></button>
+  </div>
+  <div id="allView" hidden>
+    <div class="ov" id="ov"></div>
+    <p class="hint">Tap a match to open it.</p>
+  </div>
+</main>
+
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Bracket menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="card" id="mOpenCard" style="margin:0 0 12px;padding:4px 12px">
+      <label class="toggle"><input type="checkbox" id="mOpen"><span>Let others record results</span></label>
+    </div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mCopy">Copy results</button>
+      <button class="btn ghost" type="button" id="mNew">New bracket</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="scoreDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="sTitle">Score</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="scrow"><label for="sA" id="sAName"></label><input type="number" id="sA" inputmode="numeric" placeholder="–"></div>
+    <div class="scrow"><label for="sB" id="sBName"></label><input type="number" id="sB" inputmode="numeric" placeholder="–"></div>
+    <p class="hint" style="margin:0 0 12px">Scores are optional. The higher score wins; for a tie, tap the winner on the card.</p>
+    <div class="stack">
+      <button class="btn" type="button" id="sSave">Save</button>
+      <button class="btn danger" type="button" id="sClear">Clear this result</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var K_GAME = 'pebbly_bracket', K_UNDO = 'pebbly_bracket_undo', K_UI = 'pebbly_bracket_ui', K_SET = 'pebbly_bracket_setup', K_MEM = 'pebbly_score_memory';
+  var MAX = 64;
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s || '').trim().replace(/\s+/g, ' '); }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function buzz(ms) { if (navigator.vibrate) try { navigator.vibrate(ms || 8); } catch (e) {} }
+  function rand(n) {
+    if (n <= 1) return 0;
+    var lim = Math.floor(4294967296 / n) * n, a = new Uint32Array(1);
+    for (var i = 0; i < 50; i++) { crypto.getRandomValues(a); if (a[0] < lim) return a[0] % n; }
+    return a[0] % n;
+  }
+
+  // game (shared when playing together): { id, title, people, entrants:[{id,name}] in seed order, size, res:{"r-i":{w,s}}, open }
+  var game = load(K_GAME, null);
+  var undo = load(K_UNDO, []);
+  // Per-phone view state, never shared: which round tab and which view.
+  var ui = load(K_UI, {});
+  var setupPrefs = load(K_SET, { people: true, order: 'seeded', open: true });
+  var mem = load(K_MEM, { players: [], games: [] }); if (!Array.isArray(mem.players)) mem.players = [];
+  var sync = null;
+  function saveGame() { store(K_GAME, game); store(K_UNDO, undo); if (sync) sync.push(); }
+  function saveUi() { store(K_UI, ui); }
+  function snapshot() { undo.push(JSON.stringify(game)); if (undo.length > 60) undo.shift(); }
+
+  // ================= Bracket maths =================
+  // Standard seeding: 1 v 16, 8 v 9, 5 v 12, 4 v 13, … so top seeds meet as late as possible
+  // and the byes (seeds past the number of entrants) go to the top seeds.
+  function seedOrder(size) {
+    var o = [1];
+    while (o.length < size) {
+      var n = o.length * 2, next = [];
+      o.forEach(function (s) { next.push(s, n + 1 - s); });
+      o = next;
+    }
+    return o;
+  }
+  function roundsCount(g) { return Math.round(Math.log2(g.size)); }
+  function roundName(g, r) {
+    var left = roundsCount(g) - r;
+    return left === 1 ? 'Final' : left === 2 ? 'Semifinals' : left === 3 ? 'Quarterfinals' : 'Round ' + (r + 1);
+  }
+  var BYE = '~bye';
+  // Every match: { r, i, a, b (entrant id, BYE, or null = not decided yet), w (winner id or null), res, bye, no }
+  function table(g) {
+    var R = roundsCount(g), order = seedOrder(g.size), rounds = [], no = 0;
+    for (var r = 0; r < R; r++) {
+      var list = [], count = g.size >> (r + 1);
+      for (var i = 0; i < count; i++) {
+        var a, b;
+        if (r === 0) {
+          var sa = order[2 * i], sb = order[2 * i + 1];
+          a = sa <= g.entrants.length ? g.entrants[sa - 1].id : BYE;
+          b = sb <= g.entrants.length ? g.entrants[sb - 1].id : BYE;
+        } else { a = rounds[r - 1][2 * i].w; b = rounds[r - 1][2 * i + 1].w; }
+        var m = { r: r, i: i, a: a, b: b, w: null, res: (g.res || {})[r + '-' + i] || null, bye: a === BYE || b === BYE };
+        if (m.bye) m.w = a === BYE ? b : a;
+        else if (a && b && m.res && (m.res.w === a || m.res.w === b)) m.w = m.res.w;
+        if (!m.bye) m.no = ++no;
+        list.push(m);
+      }
+      rounds.push(list);
+    }
+    return rounds;
+  }
+  function entrant(id) { return game.entrants.find(function (e) { return e.id === id; }); }
+  function nameOf(id) { var e = entrant(id); return e ? e.name : '?'; }
+  function seedOf(id) { return game.entrants.findIndex(function (e) { return e.id === id; }) + 1; }
+  function champion(T) { var f = T[T.length - 1][0]; return f.w; }
+  // Later results that depend on match (r, i): the chain of next matches that already have a result.
+  function dependents(r, i) {
+    var out = [], j = i;
+    for (var rr = r + 1; rr < roundsCount(game); rr++) {
+      j = j >> 1; var k = rr + '-' + j;
+      if (game.res[k]) out.push(k); else break;
+    }
+    return out;
+  }
+  function roundDone(T, r) { return T[r].every(function (m) { return !!m.w; }); }
+  function firstOpenRound(T) { for (var r = 0; r < T.length; r++) if (!roundDone(T, r)) return r; return T.length - 1; }
+  function canEdit() { return !PebblySync.active() || PebblySync.isHost() || game.open !== false; }
+
+  // ================= Setup =================
+  var draft = [];
+  function openSetup(prefill) {
+    var src = prefill || null;
+    draft = src ? src.entrants.map(function (e) { return { id: uid(), name: e.name }; }) : [];
+    $('title').value = src ? src.title : '';
+    if (src) setupPrefs.people = src.people !== false;
+    $('backBtn').hidden = !game;
+    $('addErr').hidden = true;
+    renderSetup();
+    $('play').hidden = true; $('setup').hidden = false; scrollTo(0, 0);
+  }
+  function renderSetup() {
+    if (sync && sync.box) sync.box.redraw();
+    $('kPeople').setAttribute('aria-pressed', !!setupPrefs.people); $('kThings').setAttribute('aria-pressed', !setupPrefs.people);
+    $('oSeeded').setAttribute('aria-pressed', setupPrefs.order !== 'shuffle'); $('oShuffle').setAttribute('aria-pressed', setupPrefs.order === 'shuffle');
+    $('openSetup').checked = setupPrefs.open !== false;
+    $('openCard').hidden = !(sync && sync.shared());
+    var ul = $('plist'); ul.innerHTML = '';
+    draft.forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num">' + (i + 1) + '</span><input type="text" maxlength="30" aria-label="Seed ' + (i + 1) + ' name">' +
+        '<button type="button" class="icon-btn" data-mv="-1" aria-label="Move ' + esc(p.name) + ' up"' + (i ? '' : ' disabled') + '>↑</button>' +
+        '<button type="button" class="icon-btn" data-mv="1" aria-label="Move ' + esc(p.name) + ' down"' + (i < draft.length - 1 ? '' : ' disabled') + '>↓</button>' +
+        '<button type="button" class="icon-btn x" data-rm aria-label="Remove ' + esc(p.name) + '">✕</button>';
+      var inp = li.querySelector('input'); inp.value = p.name;
+      inp.addEventListener('change', function () { var v = tidy(inp.value).slice(0, 30); if (v) p.name = v; else inp.value = p.name; });
+      li.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        if (b.hasAttribute('data-rm')) draft.splice(i, 1);
+        else { var j = i + +b.dataset.mv; draft.splice(j, 0, draft.splice(i, 1)[0]); }
+        renderSetup();
+      });
+      ul.appendChild(li);
+    });
+    var n = draft.length;
+    $('count').textContent = n ? n + (n === 1 ? ' entrant' : ' entrants') : '';
+    $('addForm').hidden = n >= MAX;
+    var ch = $('chips'); ch.innerHTML = '';
+    if (setupPrefs.people && n < MAX) {
+      mem.players.filter(function (x) { return !has(x); }).slice(0, 24).forEach(function (nm) {
+        var c = document.createElement('span'); c.className = 'chip';
+        c.innerHTML = '<button type="button" class="add">' + esc(nm) + '</button><button type="button" class="forget" aria-label="Forget ' + esc(nm) + '">×</button>';
+        c.firstChild.onclick = function () { add(nm); renderSetup(); };
+        c.lastChild.onclick = function () { mem.players = mem.players.filter(function (x) { return x !== nm; }); store(K_MEM, mem); renderSetup(); };
+        ch.appendChild(c);
+      });
+    }
+    $('newName').placeholder = setupPrefs.people ? 'Add a player or team' : 'Add something';
+    var size = 2; while (size < n) size *= 2;
+    var byes = n >= 2 ? size - n : 0;
+    $('byeHint').textContent = n < 2 ? '' : byes
+      ? n + ' entrants → ' + byes + (byes === 1 ? ' bye' : ' byes') + ': the top ' + (byes === 1 ? 'seed goes' : byes + ' seeds go') + ' straight to round 2.'
+      : n + ' entrants → ' + Math.log2(size) + (size === 2 ? ' round' : ' rounds') + ', no byes.';
+    $('startBtn').disabled = n < 2;
+    $('startBtn').textContent = n < 2 ? 'Add at least 2 entrants' : 'Start bracket';
+  }
+  function has(name) { return draft.some(function (p) { return p.name.toLowerCase() === name.toLowerCase(); }); }
+  function add(name) {
+    name = tidy(name).slice(0, 30);
+    if (!name) return 0;
+    if (has(name)) { $('addErr').textContent = '“' + name + '” is already in.'; $('addErr').hidden = false; return 0; }
+    if (draft.length >= MAX) { $('addErr').textContent = 'That’s the most a bracket can hold (64).'; $('addErr').hidden = false; return 0; }
+    draft.push({ id: uid(), name: name }); return 1;
+  }
+  function addMany(text) {
+    $('addErr').hidden = true;
+    text.split(/\r?\n/).forEach(function (line) { add(line.replace(/^\s*(\d+[.)]|[-•*])\s+/, '')); });
+    renderSetup();
+  }
+  $('addForm').addEventListener('submit', function (e) {
+    e.preventDefault(); $('addErr').hidden = true;
+    if (add($('newName').value)) $('newName').value = '';
+    renderSetup(); $('newName').focus();
+  });
+  $('newName').addEventListener('paste', function (e) {
+    var t = (e.clipboardData || window.clipboardData).getData('text');
+    if (!/\n/.test(t.trim())) return;
+    e.preventDefault(); addMany(t);
+  });
+  document.querySelectorAll('[data-kind]').forEach(function (b) {
+    b.addEventListener('click', function () { setupPrefs.people = b.dataset.kind === 'people'; store(K_SET, setupPrefs); renderSetup(); });
+  });
+  document.querySelectorAll('[data-order]').forEach(function (b) {
+    b.addEventListener('click', function () { setupPrefs.order = b.dataset.order; store(K_SET, setupPrefs); renderSetup(); });
+  });
+  $('openSetup').addEventListener('change', function () { setupPrefs.open = $('openSetup').checked; store(K_SET, setupPrefs); });
+  $('psSetup').addEventListener('click', function () { setTimeout(renderSetup, 0); });
+  $('backBtn').addEventListener('click', showPlay);
+
+  $('startBtn').addEventListener('click', function () {
+    var pending = tidy($('newName').value);
+    if (pending && add(pending)) $('newName').value = '';
+    if (draft.length < 2) { renderSetup(); return; }
+    if (game && Object.keys(game.res || {}).length && !confirm('Start a new bracket? The current one will be replaced.')) return;
+    var list = draft.slice();
+    if (setupPrefs.order === 'shuffle') for (var i = list.length - 1; i > 0; i--) { var j = rand(i + 1); var t = list[i]; list[i] = list[j]; list[j] = t; }
+    var size = 2; while (size < list.length) size *= 2;
+    game = { id: uid(), title: tidy($('title').value) || 'Bracket', people: !!setupPrefs.people,
+      entrants: list.map(function (p) { return { id: p.id, name: p.name }; }), size: size, res: {}, open: setupPrefs.open !== false };
+    undo = [];
+    if (game.people) {
+      list.slice().reverse().forEach(function (p) {
+        mem.players = [p.name].concat(mem.players.filter(function (x) { return x.toLowerCase() !== p.name.toLowerCase(); }));
+      });
+      mem.players = mem.players.slice(0, 40); store(K_MEM, mem);
+    }
+    ui = { gid: game.id, tab: 0, view: 'rounds' }; saveUi();
+    saveGame(); showPlay();
+    sync.started(null);
+  });
+
+  // ================= Play =================
+  function showPlay() {
+    if (!game) return;
+    $('setup').hidden = true; $('play').hidden = false; scrollTo(0, 0);
+    render();
+  }
+  var celebrated = null;
+  function render() {
+    if (!game || $('play').hidden) return;
+    var T = table(game), R = T.length;
+    if (ui.gid !== game.id) { ui = { gid: game.id, tab: firstOpenRound(T), view: ui.view || 'rounds' }; saveUi(); }
+    if (!(ui.tab >= 0 && ui.tab < R)) ui.tab = 0;
+    var played = 0, total = 0;
+    T.forEach(function (l) { l.forEach(function (m) { if (!m.bye) { total++; if (m.w) played++; } }); });
+    $('pTitle').textContent = game.title;
+    var champ = champion(T);
+    $('pSub').textContent = game.entrants.length + ' entrants · ' + (champ ? 'Finished' : played + ' of ' + total + ' matches played');
+    $('undoBtn').disabled = !undo.length;
+    $('undoBtn').hidden = !canEdit();
+    $('vRounds').setAttribute('aria-pressed', ui.view !== 'all'); $('vAll').setAttribute('aria-pressed', ui.view === 'all');
+    $('roundsView').hidden = ui.view === 'all'; $('allView').hidden = ui.view !== 'all';
+    renderChamp(champ);
+    if (ui.view === 'all') renderAll(T); else renderRounds(T);
+  }
+
+  function renderChamp(champ) {
+    var el = $('champ');
+    if (!champ) { el.innerHTML = ''; el.dataset.key = ''; celebrated = null; return; }
+    var key = game.id + champ;
+    if (el.dataset.key === key && el.firstChild) return;   // keep the confetti running
+    var fresh = celebrated !== key;
+    el.dataset.key = key;
+    el.innerHTML = '<section class="champ" aria-live="polite">' + (fresh ? confetti() : '') +
+      '<div class="cup">🏆</div><div class="lbl">Champion</div><div class="who">' + esc(nameOf(champ)) + '</div>' +
+      '<div class="row"><button class="btn plain" type="button" data-a="copy">Copy results</button><button class="btn" type="button" data-a="new">New bracket</button></div></section>';
+    celebrated = key;
+  }
+  function confetti() {
+    var cols = ['#D64541', '#2F6FD6', '#2E9B5A', '#E0A800', '#8A4FD1', '#E0702A', '#D2458A', '#16939A'], h = '';
+    for (var i = 0; i < 26; i++) {
+      h += '<i style="left:' + (Math.random() * 100).toFixed(1) + '%;background:' + cols[i % cols.length] + ';animation-delay:' + (Math.random() * .6).toFixed(2) + 's"></i>';
+    }
+    return '<div class="confetti" aria-hidden="true">' + h + '</div>';
+  }
+  $('champ').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-a]'); if (!b) return;
+    if (b.dataset.a === 'copy') copyResults(b); else newBracket();
+  });
+
+  function sideHtml(m, side, T) {
+    var id = m[side], other = m[side === 'a' ? 'b' : 'a'];
+    if (!id) {
+      // Not decided yet: say where they come from.
+      var src = T[m.r - 1][2 * m.i + (side === 'a' ? 0 : 1)];
+      return '<button type="button" class="side tbd" disabled><span class="mark"></span><span class="nm">Winner of match ' + src.no + '</span></button>';
+    }
+    var cls = 'side', s = m.res && m.res.s, si = side === 'a' ? 0 : 1;
+    if (m.w) cls += m.w === id ? ' win' : ' lose';
+    var ready = m.a && m.b;
+    return '<button type="button" class="' + cls + '" data-r="' + m.r + '" data-i="' + m.i + '" data-id="' + esc(id) + '"' + (ready && canEdit() ? '' : ' disabled') +
+      ' aria-pressed="' + (m.w === id) + '" aria-label="' + esc(nameOf(id)) + (m.w === id ? ', winner' : ready && canEdit() ? ', tap if they won' : '') + '">' +
+      '<span class="seed">' + seedOf(id) + '</span><span class="nm">' + esc(nameOf(id)) + '</span>' +
+      (s && s[si] != null ? '<span class="sc">' + s[si] + '</span>' : '') +
+      '<span class="mark">' + (m.w === id ? (m.r === T.length - 1 ? '🏆' : '✓') : '') + '</span></button>';
+  }
+  function renderRounds(T) {
+    var R = T.length;
+    $('rtabs').innerHTML = T.map(function (list, r) {
+      var real = list.filter(function (m) { return !m.bye; }), done = real.filter(function (m) { return m.w; }).length;
+      return '<button type="button" class="rtab" role="tab" data-tab="' + r + '" aria-selected="' + (r === ui.tab) + '">' + roundName(game, r) +
+        '<small>' + (done === real.length ? '✓ done' : done + ' of ' + real.length) + '</small></button>';
+    }).join('');
+    var sel = $('rtabs').querySelector('[aria-selected=true]');
+    if (sel) { var box = $('rtabs'); if (sel.offsetLeft < box.scrollLeft || sel.offsetLeft + sel.offsetWidth > box.scrollLeft + box.clientWidth) box.scrollLeft = sel.offsetLeft - 16; }
+    $('watch').hidden = canEdit();
+    var list = T[ui.tab], byes = list.filter(function (m) { return m.bye; });
+    var h = list.filter(function (m) { return !m.bye; }).map(function (m) {
+      var ready = m.a && m.b;
+      return '<article class="match" id="m-' + m.r + '-' + m.i + '"><div class="mhead"><span class="mno">Match ' + m.no + '</span>' +
+        (ready && canEdit() ? '<button type="button" class="mscore" data-score="' + m.r + '-' + m.i + '">' + (m.res && m.res.s ? 'Edit score' : '+ Score') + '</button>' : '') + '</div>' +
+        sideHtml(m, 'a', T) + sideHtml(m, 'b', T) + '</article>';
+    }).join('');
+    h += byes.map(function (m) {
+      return '<div class="bye"><span>➜</span><span><b>' + esc(nameOf(m.w)) + '</b> (#' + seedOf(m.w) + ') has a bye and goes straight through</span></div>';
+    }).join('');
+    $('matches').innerHTML = h;
+    var done = roundDone(T, ui.tab), nb = $('nextRound');
+    $('roundNote').textContent = done ? '' : canEdit() ? 'Tap the winner of each match. Scores are optional.' : '';
+    nb.hidden = !(done && ui.tab < R - 1);
+    nb.textContent = 'Go to ' + (ui.tab < R - 1 ? roundName(game, ui.tab + 1) : '') + ' →';
+  }
+
+  function renderAll(T) {
+    var R = T.length, u = 62, champ = champion(T);
+    var h = '<div class="ovin" style="--u:' + u + 'px">';
+    T.forEach(function (list, r) {
+      h += '<div class="oc"><h3>' + roundName(game, r) + '</h3>';
+      list.forEach(function (m) {
+        h += '<div class="os' + (m.i % 2 === 0 && r < R - 1 ? ' top' : '') + '" style="--k:' + Math.pow(2, r) + '">' +
+          '<button type="button" class="ob' + (m.bye ? ' byebox' : '') + '" data-go="' + r + '-' + m.i + '" aria-label="' + esc(roundName(game, r)) + (m.no ? ', match ' + m.no : '') + '">' +
+          line(m, 'a', m.res && m.res.s ? m.res.s[0] : null) + line(m, 'b', m.res && m.res.s ? m.res.s[1] : null) + '</button></div>';
+      });
+      h += '</div>';
+    });
+    h += '<div class="oc champc"><h3>Champion</h3><div class="os" style="--k:' + Math.pow(2, R - 1) + '"><div class="ob"><span><em>🏆</em><b>' +
+      (champ ? esc(nameOf(champ)) : '…') + '</b></span></div></div></div>';
+    $('ov').innerHTML = h + '</div>';
+    function line(m, side, sc) {
+      var id = m[side];
+      if (id === BYE) return '<span class="t"><em></em><b>bye</b></span>';
+      if (!id) return '<span class="t"><em></em><b>—</b></span>';
+      return '<span class="' + (m.w === id && !m.bye ? 'w' : '') + '"><em>' + seedOf(id) + '</em><b>' + esc(nameOf(id)) + '</b>' + (sc != null ? '<i>' + sc + '</i>' : '') + '</span>';
+    }
+  }
+
+  // ================= Recording results =================
+  function setResult(r, i, w, scores) {
+    var key = r + '-' + i, old = game.res[key] || null, T = table(game), m = T[r][i];
+    if (!m.a || !m.b || m.bye) return;
+    var sameW = old && old.w === w;
+    if (sameW && scores === undefined) return;
+    var deps = sameW ? [] : dependents(r, i);
+    if (deps.length && !confirm('Changing this result clears ' + deps.length + (deps.length === 1 ? ' later result' : ' later results') + ' that depended on it. Change it?')) return false;
+    var before = roundDone(T, r);
+    snapshot();
+    deps.forEach(function (k) { delete game.res[k]; });
+    var res = {}; if (w) res.w = w;
+    var s = scores !== undefined ? scores : old && old.s;
+    if (s) res.s = s;
+    if (res.w || res.s) game.res[key] = res; else delete game.res[key];
+    saveGame(); buzz(15);
+    var T2 = table(game);
+    if (!before && roundDone(T2, r) && r < T2.length - 1 && ui.tab === r) {
+      // Round finished on this phone: move on to the next one after a moment.
+      render();
+      setTimeout(function () { if (ui.tab === r) { ui.tab = r + 1; saveUi(); render(); scrollTo({ top: 0, behavior: 'smooth' }); } }, 700);
+      return true;
+    }
+    render();
+    return true;
+  }
+  $('matches').addEventListener('click', function (e) {
+    var sc = e.target.closest('[data-score]');
+    if (sc) { openScore(sc.dataset.score); return; }
+    var b = e.target.closest('.side[data-id]'); if (!b || b.disabled || !canEdit()) return;
+    setResult(+b.dataset.r, +b.dataset.i, b.dataset.id);
+  });
+  $('rtabs').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-tab]'); if (!t) return; ui.tab = +t.dataset.tab; saveUi(); render();
+  });
+  $('nextRound').addEventListener('click', function () { ui.tab++; saveUi(); render(); scrollTo(0, 0); });
+  document.querySelectorAll('[data-view]').forEach(function (b) {
+    b.addEventListener('click', function () { ui.view = b.dataset.view; saveUi(); render(); });
+  });
+  $('ov').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-go]'); if (!b) return;
+    var p = b.dataset.go.split('-');
+    ui.view = 'rounds'; ui.tab = +p[0]; saveUi(); render();
+    var el = $('m-' + b.dataset.go);
+    if (el) { el.scrollIntoView({ block: 'center' }); el.classList.add('flash'); }
+  });
+
+  var scoreKey = null;
+  function openScore(key) {
+    var p = key.split('-'), m = table(game)[+p[0]][+p[1]], s = m.res && m.res.s;
+    scoreKey = key;
+    $('sTitle').textContent = roundName(game, m.r) + ' · Match ' + m.no;
+    $('sAName').textContent = nameOf(m.a); $('sBName').textContent = nameOf(m.b);
+    $('sA').value = s && s[0] != null ? s[0] : ''; $('sB').value = s && s[1] != null ? s[1] : '';
+    $('sClear').hidden = !m.res;
+    $('scoreDlg').showModal();
+  }
+  function num(v) { v = String(v).trim(); if (v === '') return null; var n = Number(v); return isFinite(n) ? n : null; }
+  $('sSave').addEventListener('click', function () {
+    var p = scoreKey.split('-'), r = +p[0], i = +p[1], m = table(game)[r][i];
+    var a = num($('sA').value), b = num($('sB').value);
+    var s = a == null && b == null ? null : [a, b];
+    var w = m.w;
+    if (a != null && b != null && a !== b) w = a > b ? m.a : m.b;
+    if (setResult(r, i, w, s) !== false) $('scoreDlg').close();
+  });
+  $('sClear').addEventListener('click', function () {
+    var p = scoreKey.split('-'), r = +p[0], i = +p[1], deps = dependents(r, i);
+    if (deps.length && !confirm('This also clears ' + deps.length + (deps.length === 1 ? ' later result' : ' later results') + ' that depended on it. Clear?')) return;
+    snapshot();
+    deps.forEach(function (k) { delete game.res[k]; });
+    delete game.res[scoreKey];
+    saveGame(); render(); $('scoreDlg').close();
+  });
+
+  $('undoBtn').addEventListener('click', function () {
+    if (!undo.length) return;
+    game = JSON.parse(undo.pop()); saveGame(); buzz(); render();
+  });
+
+  // ================= Menu =================
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  });
+  $('menuBtn').addEventListener('click', function () {
+    $('mOpenCard').hidden = !(PebblySync.active() && PebblySync.isHost());
+    $('mOpen').checked = game.open !== false;
+    $('mCopy').textContent = 'Copy results';
+    $('menuDlg').showModal();
+  });
+  $('mOpen').addEventListener('change', function () { game.open = $('mOpen').checked; saveGame(); render(); });
+  $('mCopy').addEventListener('click', function () { copyResults($('mCopy')); });
+  $('mNew').addEventListener('click', function () { $('menuDlg').close(); newBracket(); });
+  function newBracket() {
+    if (PebblySync.active() && !PebblySync.isHost()) {
+      if (!confirm('Leave this shared bracket and set up your own?')) return;
+      PebblySync.leave();
+    }
+    openSetup(game);
+  }
+
+  function resultsText() {
+    var T = table(game), out = [game.title], champ = champion(T);
+    if (champ) out.push('🏆 Champion: ' + nameOf(champ));
+    T.forEach(function (list, r) {
+      var lines = list.filter(function (m) { return !m.bye && m.a && m.b; }).map(function (m) {
+        var s = m.res && m.res.s, sc = s && s[0] != null && s[1] != null ? ' (' + (m.w === m.b ? s[1] + '–' + s[0] : s[0] + '–' + s[1]) + ')' : '';
+        if (!m.w) return nameOf(m.a) + ' vs ' + nameOf(m.b);
+        return nameOf(m.w) + ' beat ' + nameOf(m.w === m.a ? m.b : m.a) + sc;
+      });
+      if (lines.length) out.push('', roundName(game, r) + ':', lines.join('\n'));
+    });
+    return out.join('\n');
+  }
+  function copyResults(btn) {
+    var text = resultsText(), done = function () { var t = btn.textContent; btn.textContent = 'Copied ✓'; setTimeout(function () { btn.textContent = t; }, 1600); };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+    function fallback() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;opacity:0;top:0';
+      document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch (e) {} ta.remove(); done();
+    }
+  }
+
+  // ================= Start =================
+  if (game && game.entrants && game.size) showPlay(); else { game = null; openSetup(null); }
+
+  // Play together (see /play/sync.js): others watch live and, if allowed, record results.
+  sync = PebblySync.wire('bracket', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; store(K_GAME, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: function () { if (game && !$('play').hidden) render(); },
+    showPlay: showPlay,
+    onLeave: function () { render(); }
+  });
+  renderSetup();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

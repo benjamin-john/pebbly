@@ -106,16 +106,25 @@
     code = String(code || '').trim().toLowerCase();
     var tok = owner(code);
     return new Promise(function (resolve, reject) {
+      var triedOwner = false;
       function first() {
         rpc('doc_get', { p_code: code, p_owner_token: tok, p_since: 0 }).then(function (r) {
           if (!r) { resolve(null); return; }
           if (opts.kind && r.kind !== opts.kind) { resolve(null); return; }
           resolve(start(code, tok, r, opts));
         }, function (e) {
-          if (window.PebblyLock && opts.el && PebblyLock.handle(e, { app: 'doc', code: code, owner: tok, raw: raw, el: opts.el,
-            what: opts.what || 'list', retry: first })) return;
-          reject(e);
+          if (e.message === 'password_required' && tok && window.PebblyLock && !triedOwner) {
+            triedOwner = true;                                     // the host's phone fetches the key itself
+            PebblyLock.ownerKey('doc', code, tok, raw).then(function (ok) { if (ok) first(); else fail(e); });
+            return;
+          }
+          fail(e);
         });
+      }
+      function fail(e) {
+        if (window.PebblyLock && opts.el && PebblyLock.handle(e, { app: 'doc', code: code, owner: null, raw: raw, el: opts.el,
+          what: opts.what || 'list', retry: first })) return;
+        reject(e);
       }
       first();
     });
@@ -143,7 +152,7 @@
         }
       }, function (e) {
         if (D.closed) return;
-        if (e.message === 'password_required') { gone('password_required'); return; }
+        if (e.message === 'password_required') { relock(); return; }
         status('offline');
       });
     }
@@ -171,10 +180,20 @@
       }, function (e) {
         if (D.closed) return;
         inflight = false;
-        if (e.message === 'doc_not_found' || e.message === 'password_required') { gone(e.message); return; }
+        if (e.message === 'password_required') { relock(); return; }
+        if (e.message === 'doc_not_found') { gone(e.message); return; }
         status('offline');
         setTimeout(function () { if (!D.closed) push(); }, 3000);
       });
+    }
+    // A password was added while this was open: the host's phone fetches the new key and carries on;
+    // anyone else is told (onGone('password_required')) and enters it after reloading.
+    var relocking = false;
+    function relock() {
+      if (relocking) return;
+      relocking = true;
+      var ok = window.PebblyLock && tok ? PebblyLock.ownerKey('doc', code, tok, raw) : Promise.resolve(false);
+      ok.then(function (has) { relocking = false; if (!has) { gone('password_required'); return; } if (D.closed) return; push(); poll(); });
     }
     function onVis() { if (document.visibilityState === 'visible') poll(); }
 

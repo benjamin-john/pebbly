@@ -8,6 +8,14 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/rsvp/` | Event invites and RSVPs (Supabase) |
 | `/whichdayworks/` | Find a date that works for everyone (Supabase) |
 | `/poll/` | Group polls (Supabase) |
+| `/signup/` | Sign-up Sheet: slots people sign up for from a link, live (Supabase, doc.js) |
+| `/bill/` | Split the Bill: shared expenses (equal or exact splits), balances and fewest payments to settle up (Supabase, doc.js) |
+| `/list/` | Shared List: groceries/packing/to-do list everyone edits live, with sections (Supabase, doc.js) |
+| `/santa/` | Secret Santa: names, exclusions and a private draw; each phone sees only its own match (Supabase) |
+| `/teams/` | Team Picker: random teams, pick someone, shuffle turn order |
+| `/timer/` | Game Timer: turn clock (time bank or per turn) and countdown with buzzer |
+| `/bracket/` | Bracket: knockout tournament (2–64, seeded byes, scores), shareable live with a code |
+| `/trivia/` | Trivia: family quiz; sets made by hand or imported from AI-written JSON; one phone or everyone's phones |
 | `/score/` | Score Keeper: per-round scores for any game |
 | `/darts/` | Darts Scorer: '01 (301/501/701/901, straight/double/master out, double in) and Cricket (standard or cut-throat) |
 | `/farkle/` | Farkle: dice roller and/or scoreboard, 1+ players, standard or continue-play, editable house rules |
@@ -24,6 +32,8 @@ Static site served by GitHub Pages at https://pebbly.dev.
   `play/play.sql` (run once in Supabase) stores each shared game as one JSON document with a
   version number; `play/sync.js` pushes changes, polls every 1.5 s, and merges when two phones
   change things at once. A game page hooks in with `PebblySync.wire(kind, {...})` (see Kwiks).
+- `doc.js`: shared JSON documents (Sign-up Sheet, Split the Bill, Shared List) with versioned merges;
+  see its header.
 - `lock.js` + `supabase/migrations/20261012000000_plan_passwords.sql`: optional passwords for RSVP,
   Poll and Which Day Works? (set when creating, or with 🔒 Password in the host tools).
 - `keepawake.js` keeps the screen on during games: call `keepAwake(true)` / `keepAwake(false)`.

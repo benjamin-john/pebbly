@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<meta name="description" content="Who paid what, and the fewest payments to settle up.">
+<title>Split the Bill</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED;
+  --good:#23704A; --good-t:#DCEFE3; --bad:#B8362F; --bad-t:#F8E1DF; --warn-t:#FBF0CC; --warn-line:#E5CB6B;
+  --shadow:0 8px 24px rgba(20,42,34,.22);
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31;
+    --good:#6CC48F; --good-t:#1C3326; --bad:#F07A75; --bad-t:#3A2120; --warn-t:#3A3218; --warn-line:#6B5A22;
+    --shadow:0 8px 24px rgba(0,0,0,.5); color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31;
+    --good:#6CC48F; --good-t:#1C3326; --bad:#F07A75; --bad-t:#3A2120; --warn-t:#3A3218; --warn-line:#6B5A22;
+    --shadow:0 8px 24px rgba(0,0,0,.5); color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+[hidden]{display:none !important}
+.wrap{max-width:620px;margin:0 auto;padding:12px 16px calc(112px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--head);line-height:1.15;margin:0}
+h1{font-size:30px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+h2{font-size:20px;font-weight:800}
+p{margin:0}
+a{color:var(--brand)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hint{color:var(--muted);font-size:14px}
+.lede{margin:8px 0 18px;font-size:17px;color:var(--muted);max-width:46ch}
+.err{color:var(--bad);font-weight:600;margin-top:10px;min-height:1.4em}
+.err:empty{min-height:0;margin:0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border-radius:12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:16px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.ghost{background:transparent;border:1.5px solid var(--brand);color:var(--brand)}
+.btn.danger{background:transparent;border:1.5px solid var(--bad);color:var(--bad)}
+.btn.small{min-height:44px;padding:0 14px;font-size:15px;border-radius:10px}
+.btn.wide{width:100%}
+.link{background:none;border:0;padding:10px 4px;min-height:44px;color:var(--brand);font-weight:600;cursor:pointer;font-size:15px}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.icon-btn.x{color:var(--bad)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.card>h2{margin-bottom:10px}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.cardhead h2{margin:0}
+.fld{display:block;margin-bottom:16px}
+.fld>span:not(.money),.lbl{display:block;font-weight:600;margin-bottom:6px;font-size:15px}
+.fld small{display:block;color:var(--muted);margin-top:5px;font-size:13px}
+input[type=text],input[type=number],select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:17px}
+fieldset{border:0;margin:0 0 16px;padding:0;min-width:0}
+legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:40px;border:1px solid var(--line);border-radius:999px;background:var(--bg);overflow:hidden;font-size:15px}
+.chip .add{padding:0 6px 0 12px;min-height:40px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:34px;min-height:40px;border:0;background:none;color:var(--muted);cursor:pointer}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist:empty{display:none}
+.plist li{display:flex;gap:8px;align-items:center;min-height:44px;padding-left:12px;border:1px solid var(--line);border-radius:12px;background:var(--bg)}
+.plist li .nm{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.plist li .icon-btn{border:0;background:none}
+.addrow{display:flex;gap:8px;margin-top:8px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{flex:none}
+
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{position:relative;display:inline-flex}
+.pill input{position:absolute;opacity:0;pointer-events:none}
+.pill span{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:999px;background:var(--surface);
+  font-weight:500;cursor:pointer;max-width:16em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill input:checked + span{border:2px solid var(--brand);background:var(--brand-t);color:var(--ink);font-weight:700;padding:0 13px}
+.pill input:focus-visible + span{outline:3px solid var(--brand);outline-offset:2px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg label{position:relative;display:flex}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:9px;font-weight:600;color:var(--muted);cursor:pointer;text-align:center}
+.seg input:checked + span{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.seg input:focus-visible + span{outline:3px solid var(--brand)}
+
+/* ---------- top of a bill ---------- */
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px;font-size:15px;min-height:44px}
+.topnav a{display:inline-flex;align-items:center;min-height:44px;font-weight:600;text-decoration:none}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
+.sync.saving::before{background:#D9A520}
+.sync.offline{color:var(--bad)}
+.sync.offline::before{background:var(--bad)}
+.titlebar{margin-bottom:12px}
+.facts{color:var(--muted);font-size:15px;margin-top:4px}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.banner{background:var(--warn-t);border:1px solid var(--warn-line);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:15px}
+.created{background:var(--brand-t);border-color:var(--brand)}
+.created .cardhead{margin-bottom:4px}
+.linkbox{display:flex;gap:8px;margin-top:10px}
+.linkbox input{flex:1;min-width:0;font-size:15px}
+
+.who{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.who .q{font-weight:600;width:100%}
+.mebar{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:15px;margin:-4px 0 10px}
+.mebar b{color:var(--ink)}
+.mebar .link{white-space:nowrap;flex:none}
+
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;background:var(--brand-t);border-color:transparent}
+.summary.one{grid-template-columns:1fr}
+.summary small{display:block;color:var(--muted);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+.summary .big{font:800 30px/1.15 var(--head);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.summary .big.good{color:var(--good)}
+.summary .big.bad{color:var(--bad)}
+.summary .sub{font-size:14px;color:var(--muted)}
+
+.bal{list-style:none;margin:0;padding:0}
+.bal li{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.bal li:first-child{border-top:0;padding-top:2px}
+.bal .nm{flex:1;min-width:0}
+.bal .nm b{display:block;overflow-wrap:anywhere}
+.bal .nm small{display:block;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.bal li.me{background:var(--brand-t);margin:0 -10px;padding:10px;border-radius:10px;border-top-color:transparent}
+.bal li.me + li{border-top-color:transparent}
+.net{flex:none;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:15px;padding:4px 10px;border-radius:999px;white-space:nowrap}
+.net.good{color:var(--good);background:var(--good-t)}
+.net.bad{color:var(--bad);background:var(--bad-t)}
+.net.zero{color:var(--muted)}
+
+.pays{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.pay{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 8px 8px 12px;background:var(--bg)}
+.pay .txt{flex:1;min-width:0;overflow-wrap:anywhere}
+.pay .amt{font-weight:800;font-family:var(--head);font-size:18px;white-space:nowrap}
+.pay.mine{border-color:var(--brand);border-width:2px}
+.square{text-align:center;padding:10px 0 4px}
+.square .e{font-size:34px;line-height:1}
+.paid{list-style:none;margin:12px 0 0;padding:10px 0 0;border-top:1px dashed var(--line)}
+.paid li{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.paid li span{flex:1;min-width:0}
+.paid li .link{font-size:14px}
+.subhead{font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 6px}
+
+.exps{list-style:none;margin:0;padding:0}
+.exp{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:12px 0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.exps li:first-child .exp{border-top:0;padding-top:2px}
+.exp .r1{display:flex;gap:10px;align-items:baseline}
+.exp .what{flex:1;min-width:0;font-weight:700;font-size:17px;overflow-wrap:anywhere}
+.exp .amt{font:800 18px/1.2 var(--head);font-variant-numeric:tabular-nums;white-space:nowrap}
+.exp .meta{display:block;color:var(--muted);font-size:14px;margin-top:2px}
+.exp .warn{display:block;color:var(--bad);font-size:14px;font-weight:600;margin-top:2px}
+.empty{text-align:center;padding:22px 8px 14px;color:var(--muted)}
+.empty .e{font-size:40px;line-height:1;margin-bottom:8px}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+
+.host{border:2px solid var(--brand)}
+.host .tools{margin-top:8px}
+.host .tools .btn{flex:1 1 auto}
+
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom));z-index:4;min-height:56px;padding:0 26px;border-radius:999px;
+  border:0;background:var(--brand);color:var(--brand-ink);font-weight:700;font-size:17px;box-shadow:var(--shadow);cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.fab:active{transform:translateX(-50%) scale(.97)}
+.fab .plus{font-size:24px;line-height:1;font-weight:500}
+
+.recent{margin-top:26px}
+.recent h2{margin-bottom:8px}
+.recent ul{list-style:none;padding:0;margin:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.recent li+li{border-top:1px solid var(--line)}
+.recent a{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 16px;color:var(--ink);text-decoration:none}
+.recent a .t{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.recent a .when{color:var(--muted);font-size:13px;white-space:nowrap}
+.tag{font-size:12px;font-weight:700;background:var(--brand-t);color:var(--brand);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.state{text-align:center;padding:40px 8px}
+.state .e{font-size:48px;line-height:1;margin-bottom:10px}
+.state .lede{margin:8px auto 18px}
+
+/* ---------- dialogs ---------- */
+dialog.dlg{width:min(560px,calc(100% - 24px));max-height:calc(100% - 32px);padding:0;border:0;border-radius:18px;background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog.dlg::backdrop{background:rgba(10,20,16,.55)}
+.dlg>form,.dlg>.in{padding:16px}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.dlghead h2{flex:1;margin:0;font-size:22px}
+.dlghead .icon-btn{border:0;background:var(--bg)}
+.money{display:flex;align-items:center;border:1px solid var(--field);border-radius:10px;background:var(--surface);min-height:48px;padding-left:12px}
+.money:focus-within{outline:3px solid var(--brand);outline-offset:2px}
+.money .sym{color:var(--muted);font-weight:600;font-size:17px}
+.money input{border:0 !important;outline:0 !important;min-height:46px;padding-left:6px;background:none}
+.money.big input{font:800 24px/1 var(--head)}
+.splitlist{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.splitlist li{display:flex;align-items:center;gap:10px;min-height:48px}
+.splitlist label.ck{flex:1;min-width:0;display:flex;align-items:center;gap:12px;min-height:48px;cursor:pointer}
+.splitlist input[type=checkbox]{width:24px;height:24px;flex:none;accent-color:var(--brand)}
+.splitlist .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:500}
+.splitlist .sh{color:var(--muted);font-variant-numeric:tabular-nums;font-size:15px;white-space:nowrap}
+.splitlist .money{width:130px;flex:none;min-height:44px}
+.splitlist .money input{min-height:42px;font-size:16px}
+.splitlinks{display:flex;gap:12px;margin-top:4px}
+.remain{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--bg);font-weight:600;font-size:15px}
+.remain.ok{color:var(--good);background:var(--good-t)}
+.remain.bad{color:var(--bad);background:var(--bad-t)}
+.dlgbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.dlgbtns .btn{flex:1 1 auto}
+.dlg .stamp{color:var(--muted);font-size:13px;margin-top:12px}
+
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;font-size:15px;font-weight:500}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+@media (max-width:359px){
+  h1{font-size:26px}
+  .summary .big{font-size:25px}
+  .splitlist .money{width:110px}
+  .seg span{font-size:15px}
+}
+</style>
+<script src="/lock.js"></script>
+<script src="/doc.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+<main id="app" class="wrap"><p class="hint">Loading…</p></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This page needs JavaScript to work.</p></noscript>
+
+<script>
+(function () {
+'use strict';
+
+/* ------------------------------------------------------------------ helpers */
+var $app = document.getElementById('app');
+var K_RECENT = 'pebbly_bill_recent', K_ME = 'pebbly_bill_me', K_MEM = 'pebbly_score_memory';
+var MAX_PEOPLE = 40, MAX_CENTS = 100000000;
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function tidy(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
+function shareUrl(code) { return baseUrl() + '?d=' + code; }
+
+var toastTimer, $toast = document.getElementById('toast');
+function toast(msg) {
+  $toast.textContent = msg; $toast.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { $toast.classList.remove('show'); }, 3400);
+}
+function copyText(text) {
+  function fallback() {
+    var el = document.createElement('textarea'); el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select(); var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(el); return ok;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function () { return true; }, fallback);
+  return Promise.resolve(fallback());
+}
+function share(title, url) {
+  if (navigator.share) { navigator.share({ title: title, text: title, url: url }).catch(function () {}); return; }
+  copyText(url).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : url); });
+}
+function when(ts) {
+  if (!ts) return '';
+  var d = new Date(ts), now = new Date();
+  var t = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  if (d.toDateString() === now.toDateString()) return 'today ' + t;
+  var y = new Date(now); y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return 'yesterday ' + t;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric' }) + ', ' + t;
+}
+
+// Remembered names (shared with the games)
+var mem = load(K_MEM, { players: [], games: [] });
+if (!mem || !Array.isArray(mem.players)) mem = { players: [], games: [] };
+if (!Array.isArray(mem.games)) mem.games = [];
+function remember(name) {
+  mem = load(K_MEM, mem); if (!Array.isArray(mem.players)) mem.players = [];
+  var v = tidy(name); if (!v) return;
+  var i = mem.players.findIndex(function (x) { return x.toLowerCase() === v.toLowerCase(); });
+  if (i > -1) mem.players.splice(i, 1);
+  mem.players.unshift(v); if (mem.players.length > 40) mem.players.length = 40;
+  store(K_MEM, mem);
+}
+function forget(name) { mem = load(K_MEM, mem); mem.players = (mem.players || []).filter(function (x) { return x !== name; }); store(K_MEM, mem); }
+function chipsHtml(names) {
+  return names.map(function (n) {
+    return '<span class="chip"><button type="button" class="add" data-act="chip-add" data-name="' + esc(n) + '">' + esc(n) + '</button>' +
+      '<button type="button" class="forget" data-act="chip-forget" data-name="' + esc(n) + '" aria-label="Forget ' + esc(n) + '">×</button></span>';
+  }).join('');
+}
+
+/* ------------------------------------------------------------------ money */
+var SYM = '$';
+function money(c) {
+  c = Math.round(Math.abs(c || 0));
+  return SYM + Math.floor(c / 100).toLocaleString('en-US') + '.' + String(c % 100).padStart(2, '0');
+}
+function plain(c) { c = Math.round(Math.abs(c || 0)); return Math.floor(c / 100) + '.' + String(c % 100).padStart(2, '0'); }
+// "12", "12.5", "1,234.50", "12,50", "$12" → cents; null if it isn't an amount.
+function parseMoney(str) {
+  var s = String(str == null ? '' : str).replace(/[^\d.,]/g, '');
+  if (!s) return null;
+  if (/^\d+,\d{1,2}$/.test(s)) s = s.replace(',', '.'); else s = s.replace(/,/g, '');
+  if (!/^\d*(\.\d{0,2})?$/.test(s) || s === '.') return null;
+  var parts = s.split('.');
+  return parseInt(parts[0] || '0', 10) * 100 + parseInt(((parts[1] || '') + '00').slice(0, 2), 10);
+}
+
+/* ------------------------------------------------------------------ the bill
+   state: { v, title, currency,
+     people:   { id: { name, order } },
+     expenses: { id: { what, amount (cents), by (person id), mode: 'equal'|'exact', among: {pid:1}, shares: {pid:cents},
+                       at, addedBy, editedAt, editedBy } },
+     payments: { id: { from, to, amount, at, by } } } */
+var D = null, S = null, CODE = '', justCreated = false, gone = null;
+
+function people(s) {
+  s = s || S;
+  return Object.keys(s.people || {}).map(function (id) { var p = s.people[id]; return { id: id, name: p.name, order: p.order || 0 }; })
+    .sort(function (a, b) { return (a.order - b.order) || (a.id < b.id ? -1 : 1); });
+}
+function pname(id) { return (S.people[id] && S.people[id].name) || 'Someone'; }
+function hash(s) { var h = 7; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 1000003; return h; }
+function orderIds(ids) {
+  var all = S ? people().map(function (p) { return p.id; }) : [];
+  return ids.slice().sort(function (a, b) {
+    var ia = all.indexOf(a), ib = all.indexOf(b);
+    if (ia < 0) ia = 1e6; if (ib < 0) ib = 1e6;
+    return (ia - ib) || (a < b ? -1 : 1);
+  });
+}
+// Equal split: everyone gets the same; leftover cents go one each to people in list order, starting at a
+// spot picked from the expense's id, so the extra pennies are spread around rather than always landing on one person.
+function equalShares(eid, amount, ids) {
+  var out = {}; ids = orderIds(ids); var n = ids.length;
+  if (!n) return out;
+  var base = Math.floor(amount / n), rest = amount - base * n, start = hash(eid) % n;
+  ids.forEach(function (id, i) { out[id] = base + (((i - start + n) % n) < rest ? 1 : 0); });
+  return out;
+}
+function exactSum(e) { var t = 0; Object.keys(e.shares || {}).forEach(function (k) { t += Math.max(0, e.shares[k] | 0); }); return t; }
+function sharesOf(eid, e) {
+  if (e.mode === 'exact') {
+    var ids = Object.keys(e.shares || {}).filter(function (k) { return e.shares[k] > 0; });
+    if (exactSum(e) === e.amount) { var o = {}; ids.forEach(function (k) { o[k] = e.shares[k]; }); return o; }
+    return equalShares(eid, e.amount, ids.length ? ids : [e.by]);      // amounts got out of step (two people edited at once)
+  }
+  var among = Object.keys(e.among || {}).filter(function (k) { return e.among[k]; });
+  return equalShares(eid, e.amount, among.length ? among : [e.by]);
+}
+function balances() {
+  var B = {};
+  function b(id) { return B[id] || (B[id] = { id: id, paid: 0, share: 0, sent: 0, recv: 0 }); }
+  people().forEach(function (p) { b(p.id); });
+  Object.keys(S.expenses || {}).forEach(function (eid) {
+    var e = S.expenses[eid]; if (!e || !(e.amount > 0)) return;
+    b(e.by).paid += e.amount;
+    var sh = sharesOf(eid, e);
+    Object.keys(sh).forEach(function (k) { b(k).share += sh[k]; });
+  });
+  Object.keys(S.payments || {}).forEach(function (k) {
+    var p = S.payments[k]; if (!p || !(p.amount > 0)) return;
+    b(p.from).sent += p.amount; b(p.to).recv += p.amount;
+  });
+  return orderIds(Object.keys(B)).map(function (id) { var x = B[id]; x.net = x.paid - x.share + x.sent - x.recv; return x; });
+}
+// Fewest payments (greedy): the person who owes most pays the person owed most, until everyone is square.
+function settle(bal) {
+  var order = bal.map(function (x) { return x.id; });
+  var deb = [], cred = [], out = [];
+  bal.forEach(function (x) { if (x.net < 0) deb.push({ id: x.id, amt: -x.net }); else if (x.net > 0) cred.push({ id: x.id, amt: x.net }); });
+  function srt(l) { l.sort(function (a, b) { return (b.amt - a.amt) || (order.indexOf(a.id) - order.indexOf(b.id)); }); }
+  var guard = 0;
+  while (deb.length && cred.length && guard++ < 500) {
+    srt(deb); srt(cred);
+    var d = deb[0], c = cred[0], x = Math.min(d.amt, c.amt);
+    out.push({ from: d.id, to: c.id, amount: x });
+    d.amt -= x; c.amt -= x;
+    deb = deb.filter(function (y) { return y.amt > 0; }); cred = cred.filter(function (y) { return y.amt > 0; });
+  }
+  return out;
+}
+function usedBy(pid) {
+  var n = 0;
+  Object.keys(S.expenses || {}).forEach(function (eid) {
+    var e = S.expenses[eid];
+    if (e.by === pid || (e.among && e.among[pid]) || (e.shares && e.shares[pid] > 0)) n++;
+  });
+  var pays = 0;
+  Object.keys(S.payments || {}).forEach(function (k) { var p = S.payments[k]; if (p.from === pid || p.to === pid) pays++; });
+  return { expenses: n, payments: pays };
+}
+
+/* ------------------------------------------------------------------ this phone */
+function recent() { var r = load(K_RECENT, []); return Array.isArray(r) ? r : []; }
+function rememberBill(code, title) {
+  var list = recent().filter(function (r) { return r.code !== code; });
+  list.unshift({ code: code, title: title, at: Date.now() });
+  store(K_RECENT, list.slice(0, 20));
+}
+function forgetBill(code) { store(K_RECENT, recent().filter(function (r) { return r.code !== code; })); }
+function me() { var m = load(K_ME, {}); var id = m && m[CODE]; return id && S && S.people[id] ? id : null; }
+function setMe(id) { var m = load(K_ME, {}) || {}; if (id) m[CODE] = id; else delete m[CODE]; store(K_ME, m); }
+
+var MSG = {
+  network: 'Couldn’t reach the server. Check your connection and try again.',
+  doc_not_found: 'This bill doesn’t exist anymore. It may have been deleted.',
+  invalid_state: 'This bill has got too big to save. Try deleting some old expenses.',
+  invalid_kind: 'Something went wrong. Please try again.',
+  not_owner: 'Only the person who made this bill can do that.'
+};
+function friendly(e) { var m = (e && e.message) || e || ''; return (PebblyLock.message(m)) || MSG[m] || PebblyDoc.message(e); }
+
+/* ------------------------------------------------------------------ routes */
+function route() {
+  closeDialogs();
+  if (D) { D.close(); D = null; }
+  S = null; gone = null;
+  var q = new URLSearchParams(location.search), code = q.get('d');
+  if (!code) { renderHome(); return; }
+  openBill(code.trim().toLowerCase());
+}
+
+function openBill(code) {
+  CODE = code;
+  PebblyDoc.takeOwnerFromUrl(code);
+  $app.innerHTML = '<div class="state"><p class="hint">Loading…</p></div>';
+  PebblyDoc.open(code, {
+    kind: 'bill', el: $app, what: 'bill',
+    onState: function (s) { if (CODE !== code) return; S = normalize(s); render(); },
+    onStatus: function () { showStatus(); },
+    onGone: function (why) { gone = why; if (why === 'doc_not_found') forgetBill(code); closeDialogs(); render(); }
+  }).then(function (d) {
+    if (CODE !== code) { if (d) d.close(); return; }
+    if (!d) { forgetBill(code); renderNotFound(); return; }
+    D = d;
+  }, function (e) {
+    $app.innerHTML = '<div class="state"><div class="e" aria-hidden="true">📶</div><h1>Couldn’t open this bill</h1><p class="lede">' + esc(friendly(e)) + '</p>' +
+      '<button type="button" class="btn primary" data-act="retry">Try again</button></div>';
+  });
+}
+function normalize(s) {
+  s = s || {}; s.people = s.people || {}; s.expenses = s.expenses || {}; s.payments = s.payments || {};
+  s.title = s.title || 'Bill'; s.currency = s.currency || '$';
+  return s;
+}
+
+function renderNotFound() {
+  document.title = 'Not found | Split the Bill';
+  $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">＋ New bill</a></nav>' +
+    '<div class="state"><div class="e" aria-hidden="true">🔍</div><h1>Bill not found</h1>' +
+    '<p class="lede">That link doesn’t match a bill. It may have been deleted, or part of the link is missing.</p>' +
+    '<a class="btn primary" href="' + esc(baseUrl()) + '">Start a new bill</a></div>';
+}
+
+/* ------------------------------------------------------------------ home / create */
+var draft = [];
+function renderHome() {
+  document.title = 'Split the Bill';
+  CODE = '';
+  draft = [];
+  var owners = load('pebbly_doc_owners', {}) || {};
+  var list = recent();
+  $app.innerHTML =
+    '<h1 style="margin-top:8px">Split the Bill</h1>' +
+    '<p class="lede">Keep track of who paid what on a trip or a night out. Everyone can add expenses, and you’ll see the fewest payments to settle up.</p>' +
+    '<form id="createForm" class="card" novalidate autocomplete="off">' +
+      '<label class="fld"><span>What’s it for?</span><input type="text" name="title" maxlength="60" placeholder="Lake weekend"></label>' +
+      '<div class="fld"><span class="lbl">Who’s in?</span>' +
+        '<ul class="plist" id="draftList"></ul>' +
+        '<div class="addrow"><input type="text" id="draftName" maxlength="30" placeholder="Add a name" enterkeyhint="done" aria-label="Name to add">' +
+        '<button type="button" class="btn ghost small" data-act="draft-add">Add</button></div>' +
+        '<div class="chips" id="draftChips"></div>' +
+        '<small>You can add more people later.</small></div>' +
+      '<div class="fld"><span class="lbl">Currency symbol</span><div class="pills" id="curPills">' +
+        ['$', '€', '£', '¥', '₹'].map(function (c, i) {
+          return '<label class="pill"><input type="radio" name="cur" value="' + c + '"' + (i ? '' : ' checked') + '><span>' + c + '</span></label>';
+        }).join('') +
+        '<label class="pill"><input type="radio" name="cur" value="other"><span>Other</span></label></div>' +
+        '<input type="text" name="curOther" maxlength="4" placeholder="e.g. kr or CHF" hidden style="margin-top:8px" aria-label="Currency symbol"></div>' +
+      PebblyLock.fieldHtml('bill') +
+      '<button class="btn primary wide" type="submit">Create bill</button>' +
+      '<p class="err" id="formErr" role="alert"></p>' +
+    '</form>' +
+    (list.length ? '<section class="recent"><h2>Your bills</h2><ul>' + list.map(function (r) {
+      return '<li><a href="?d=' + esc(r.code) + '"><span class="t">' + esc(r.title || 'Bill') + '</span>' +
+        (owners[r.code] ? '<span class="tag">host</span>' : '') + '</a></li>';
+    }).join('') + '</ul></section>' : '');
+  renderDraft();
+}
+function renderDraft() {
+  var ul = $('#draftList'); if (!ul) return;
+  ul.innerHTML = draft.map(function (n, i) {
+    return '<li><span class="nm">' + esc(n) + '</span><button type="button" class="icon-btn x" data-act="draft-rm" data-i="' + i + '" aria-label="Remove ' + esc(n) + '">✕</button></li>';
+  }).join('');
+  var taken = draft.map(function (n) { return n.toLowerCase(); });
+  mem = load(K_MEM, mem);
+  $('#draftChips').innerHTML = chipsHtml((mem.players || []).filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 16));
+}
+function draftAdd(name) {
+  var v = tidy(name).slice(0, 30);
+  if (!v) return false;
+  if (draft.some(function (n) { return n.toLowerCase() === v.toLowerCase(); })) { toast(v + ' is already in.'); return false; }
+  if (draft.length >= MAX_PEOPLE) { toast('That’s the most people one bill can have.'); return false; }
+  draft.push(v); renderDraft(); return true;
+}
+function submitCreate(form) {
+  var f = form.elements, err = $('#formErr'), btn = form.querySelector('[type=submit]');
+  err.textContent = '';
+  var pending = $('#draftName').value; if (tidy(pending)) { draftAdd(pending); $('#draftName').value = ''; }
+  var title = tidy(f.title.value).slice(0, 60);
+  if (!title) { err.textContent = 'Give the bill a name, like “Lake weekend”.'; f.title.focus(); return; }
+  if (draft.length < 2) { err.textContent = 'Add at least two people.'; $('#draftName').focus(); return; }
+  var cur = f.cur.value === 'other' ? tidy(f.curOther.value).slice(0, 4) : f.cur.value;
+  if (!cur) { err.textContent = 'Type a currency symbol, or pick one.'; f.curOther.focus(); return; }
+  var st = { v: 1, title: title, currency: cur, people: {}, expenses: {}, payments: {} };
+  var t = Date.now();
+  draft.forEach(function (n, i) { st.people[PebblyDoc.id()] = { name: n, order: t + i }; });
+  btn.disabled = true; btn.textContent = 'Creating…';
+  PebblyDoc.create('bill', st).then(function (r) {
+    draft.slice().reverse().forEach(remember);
+    rememberBill(r.code, title);
+    return PebblyLock.afterCreate('doc', r.code, r.owner_token, f.lockpw ? f.lockpw.value : '', PebblyDoc.raw).then(function (lockErr) {
+      history.pushState(null, '', baseUrl() + '?d=' + r.code);
+      justCreated = true;
+      route();
+      if (lockErr) toast(lockErr);
+    });
+  }, function (e) { btn.disabled = false; btn.textContent = 'Create bill'; err.textContent = friendly(e); });
+}
+
+/* ------------------------------------------------------------------ the bill page */
+function statusText() {
+  if (!D) return ['', 'Loading…'];
+  return { live: ['', 'Saved'], saving: ['saving', 'Saving…'], offline: ['offline', 'Offline – will retry'] }[D.status] || ['', ''];
+}
+function showStatus() {
+  var el = $('#sync'); if (!el) return;
+  var t = statusText(); el.className = 'sync ' + t[0]; el.textContent = t[1];
+}
+
+function render() {
+  if (!S) return;
+  SYM = S.currency || '$';
+  document.title = S.title + ' | Split the Bill';
+  rememberBill(CODE, S.title);
+  var focus = document.activeElement, fa = focus && $app.contains(focus) && focus.dataset ? focus.dataset.act : null, fid = fa ? focus.dataset.id : null;
+  var ppl = people(), bal = balances(), plan = settle(bal), mine = me();
+  var total = 0; Object.keys(S.expenses).forEach(function (k) { total += S.expenses[k].amount || 0; });
+  var isOwner = !!(D && D.isOwner);
+  var h = '';
+  h += '<nav class="topnav"><a href="' + esc(baseUrl()) + '">＋ New bill</a><span id="sync" class="sync" role="status"></span></nav>';
+  if (gone) {
+    h += '<div class="banner" role="alert">' + (gone === 'doc_not_found' ? '<b>This bill was deleted.</b> Changes can’t be saved anymore.' :
+      '<b>This bill now needs a password.</b> Reload to enter it.') +
+      '<div class="tools"><button type="button" class="btn small" data-act="reload">Reload</button></div></div>';
+  }
+  if (justCreated) {
+    h += '<section class="card created"><div class="cardhead"><h2>Your bill is ready 🎉</h2>' +
+      '<button type="button" class="icon-btn" data-act="hide-created" aria-label="Close">✕</button></div>' +
+      '<p>Send this link to everyone' + (PebblyLock.key('doc', CODE) ? ', and tell them the password separately' : '') + '. Anyone with it can add expenses.</p>' +
+      '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(CODE)) + '" aria-label="Bill link">' +
+      '<button type="button" class="btn primary small" data-act="share">Share</button></div></section>';
+  }
+  h += '<header class="titlebar"><h1>' + esc(S.title) + '</h1><p class="facts">' + ppl.length + (ppl.length === 1 ? ' person' : ' people') +
+    ' · ' + Object.keys(S.expenses).length + (Object.keys(S.expenses).length === 1 ? ' expense' : ' expenses') + '</p>' +
+    '<div class="tools"><button type="button" class="btn small ghost" data-act="share">Share link</button>' +
+    '<button type="button" class="btn small" data-act="people">👥 People</button></div></header>';
+
+  // Which one are you?
+  if (!mine && ppl.length) {
+    h += '<section class="card"><div class="who"><span class="q">Which one are you?</span>' +
+      ppl.map(function (p) { return '<button type="button" class="btn small" data-act="me" data-id="' + esc(p.id) + '">' + esc(p.name) + '</button>'; }).join('') +
+      '</div><p class="hint" style="margin-top:8px">Just for this phone, so your balance stands out. Not on the list? Add yourself under 👥 People.</p></section>';
+  } else if (mine) {
+    h += '<p class="mebar"><span>You’re <b>' + esc(pname(mine)) + '</b> on this phone</span><button type="button" class="link" data-act="not-me">Change</button></p>';
+  }
+
+  // Summary
+  var myBal = mine ? bal.filter(function (x) { return x.id === mine; })[0] : null;
+  h += '<section class="card summary' + (myBal ? '' : ' one') + '" aria-label="Summary"><div><small>Total spent</small><div class="big">' + money(total) + '</div>' +
+    '<div class="sub">' + (ppl.length ? 'about ' + money(Math.round(total / ppl.length)) + ' each' : '') + '</div></div>';
+  if (myBal) {
+    var n = myBal.net;
+    h += '<div><small>You</small><div class="big ' + (n > 0 ? 'good' : n < 0 ? 'bad' : '') + '">' + (n ? money(n) : 'Square') + '</div>' +
+      '<div class="sub">' + (n > 0 ? 'you get back' : n < 0 ? 'you owe' : 'nothing owed') + '</div></div>';
+  }
+  h += '</section>';
+
+  // Settle up
+  var pays = Object.keys(S.payments).map(function (k) { var p = S.payments[k]; p.id = k; return p; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+  h += '<section class="card" id="settle"><div class="cardhead"><h2>Settle up</h2>' +
+    (total ? '<button type="button" class="btn small" data-act="summary">Copy summary</button>' : '') + '</div>';
+  if (!total) h += '<p class="hint">Add an expense and you’ll see who pays whom here.</p>';
+  else if (!plan.length) h += '<div class="square"><div class="e" aria-hidden="true">🎉</div><p><b>Everyone’s square.</b></p><p class="hint">Nobody owes anything.</p></div>';
+  else {
+    h += '<p class="hint" style="margin-bottom:10px">The fewest payments that make everyone even:</p><ul class="pays">' + plan.map(function (p) {
+      var key = p.from + '>' + p.to;
+      return '<li class="pay' + (mine && (p.from === mine || p.to === mine) ? ' mine' : '') + '"><span class="txt"><b>' + esc(pname(p.from)) + '</b> pays <b>' + esc(pname(p.to)) + '</b>' +
+        '<br><span class="amt">' + money(p.amount) + '</span></span>' +
+        '<button type="button" class="btn small ghost" data-act="mark-paid" data-id="' + esc(key) + '" data-amt="' + p.amount + '">Mark paid</button></li>';
+    }).join('') + '</ul>';
+  }
+  if (pays.length) {
+    h += '<p class="subhead">Paid back</p><ul class="paid" style="border:0;margin:0;padding:0">' + pays.map(function (p) {
+      return '<li><span>✓ ' + esc(pname(p.from)) + ' paid ' + esc(pname(p.to)) + ' <b>' + money(p.amount) + '</b> · ' + esc(when(p.at)) + '</span>' +
+        '<button type="button" class="link" data-act="undo-pay" data-id="' + esc(p.id) + '">Undo</button></li>';
+    }).join('') + '</ul>';
+  }
+  h += '</section>';
+
+  // Balances
+  if (total || pays.length) {
+    h += '<section class="card"><h2>Balances</h2><ul class="bal">' + bal.map(function (x) {
+      var n = x.net, cls = n > 0 ? 'good' : n < 0 ? 'bad' : 'zero';
+      var bits = ['paid ' + money(x.paid), 'share ' + money(x.share)];
+      if (x.sent) bits.push('paid back ' + money(x.sent));
+      if (x.recv) bits.push('got back ' + money(x.recv));
+      return '<li' + (x.id === mine ? ' class="me"' : '') + '><span class="nm"><b>' + esc(pname(x.id)) + (x.id === mine ? ' (you)' : '') + '</b><small>' + bits.join(' · ') + '</small></span>' +
+        '<span class="net ' + cls + '">' + (n > 0 ? 'gets back ' + money(n) : n < 0 ? 'owes ' + money(n) : 'square') + '</span></li>';
+    }).join('') + '</ul></section>';
+  }
+
+  // Expenses
+  var exps = Object.keys(S.expenses).map(function (k) { var e = S.expenses[k]; e.id = k; return e; }).sort(function (a, b) { return (b.at || 0) - (a.at || 0) || (a.id < b.id ? 1 : -1); });
+  h += '<section class="card"><h2>Expenses</h2>';
+  if (!exps.length) {
+    h += '<div class="empty"><div class="e" aria-hidden="true">🧾</div><b>No expenses yet</b>Tap <b style="display:inline">Add expense</b> when someone pays for something.</div>';
+  } else {
+    h += '<ul class="exps">' + exps.map(function (e) {
+      var split = '';
+      if (e.mode === 'exact') {
+        var sh = sharesOf(e.id, e);
+        split = 'split: ' + orderIds(Object.keys(sh)).map(function (k) { return esc(pname(k)) + ' ' + money(sh[k]); }).join(', ');
+      } else {
+        var among = Object.keys(e.among || {}).filter(function (k) { return e.among[k]; });
+        split = among.length === ppl.length && ppl.every(function (p) { return e.among[p.id]; }) ? 'split equally between everyone' :
+          among.length === 1 ? 'for ' + esc(pname(among[0])) :
+          'split equally: ' + orderIds(among).map(function (k) { return esc(pname(k)); }).join(', ');
+      }
+      var stamp = [];
+      if (e.addedBy && S.people[e.addedBy]) stamp.push('added by ' + esc(pname(e.addedBy)));
+      stamp.push(esc(when(e.at)));
+      if (e.editedAt) stamp.push('edited');
+      var bad = e.mode === 'exact' && exactSum(e) !== e.amount;
+      return '<li><button type="button" class="exp" data-act="edit-exp" data-id="' + esc(e.id) + '"><span class="r1"><span class="what">' + esc(e.what) + '</span>' +
+        '<span class="amt">' + money(e.amount) + '</span></span>' +
+        '<span class="meta"><b style="color:var(--ink);font-weight:600">' + esc(pname(e.by)) + '</b> paid · ' + split + '</span>' +
+        (bad ? '<span class="warn">⚠ The amounts don’t add up. Tap to fix.</span>' : '') +
+        '<span class="meta">' + stamp.join(' · ') + '</span></button></li>';
+    }).join('') + '</ul>';
+  }
+  h += '</section>';
+
+  if (isOwner) {
+    h += '<section class="card host"><h2>Host tools</h2><p class="hint">Only you can see these.</p><div class="tools">' +
+      '<button type="button" class="btn small" data-act="rename">✏️ Rename</button>' +
+      '<button type="button" class="btn small" data-act="copy-host">Copy host link</button>' +
+      '<button type="button" class="btn small" data-act="lock">🔒 Password</button>' +
+      '<button type="button" class="btn small danger" data-act="delete">Delete bill</button></div>' +
+      '<p class="hint" style="margin-top:10px;font-size:13px">The host link lets you manage this bill from another phone. Keep it private.</p></section>';
+  }
+  h += '<button type="button" class="fab" data-act="add-exp"' + (gone ? ' hidden' : '') + '><span class="plus" aria-hidden="true">＋</span> Add expense</button>';
+  $app.innerHTML = h;
+  showStatus();
+  if (fa) { var again = $app.querySelector('[data-act="' + fa + '"]' + (fid ? '[data-id="' + CSS.escape(fid) + '"]' : '')); if (again) again.focus(); }
+  if (peopleDlg) peopleDlg.refresh();
+}
+
+function change(fn) {
+  if (!D || gone) { toast(gone ? 'This bill can’t be changed anymore.' : 'Still loading. Try again in a moment.'); return false; }
+  D.change(function (s) { normalize(s); return fn(s); });
+  return true;
+}
+
+/* ------------------------------------------------------------------ dialogs */
+var openDlgs = [];
+function dialog(html, cls) {
+  var d = document.createElement('dialog'); d.className = 'dlg' + (cls ? ' ' + cls : ''); d.innerHTML = html;
+  document.body.appendChild(d); openDlgs.push(d);
+  d.addEventListener('close', function () { d.remove(); openDlgs = openDlgs.filter(function (x) { return x !== d; }); if (d.onClosed) d.onClosed(); });
+  d.addEventListener('click', function (ev) { if (ev.target.closest('[data-close]')) d.close(); });
+  if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  return d;
+}
+function closeDialogs() { openDlgs.slice().forEach(function (d) { try { d.close(); } catch (e) { d.remove(); } }); openDlgs = []; peopleDlg = null; }
+function head(title) { return '<div class="dlghead"><h2>' + title + '</h2><button type="button" class="icon-btn" data-close aria-label="Close">✕</button></div>'; }
+
+// Add / edit an expense
+function openExpense(eid) {
+  var e = eid ? S.expenses[eid] : null;
+  if (eid && !e) { toast('That expense was deleted.'); return; }
+  var ppl = people(), mine = me(), id = eid || PebblyDoc.id();
+  if (!ppl.length) { toast('Add people first, under 👥 People.'); return; }
+  var by = e ? e.by : (mine || ppl[0].id);
+  var mode = e && e.mode === 'exact' ? 'exact' : 'equal';
+  var among = e && e.mode !== 'exact' ? (e.among || {}) : null;
+  if (!among) { among = {}; ppl.forEach(function (p) { among[p.id] = 1; }); if (e && e.mode === 'exact') { among = {}; Object.keys(e.shares || {}).forEach(function (k) { if (e.shares[k] > 0) among[k] = 1; }); } }
+  var shares = e && e.mode === 'exact' ? e.shares || {} : {};
+  var d = dialog('<form novalidate autocomplete="off">' + head(e ? 'Edit expense' : 'Add expense') +
+    '<label class="fld"><span>What for?</span><input type="text" name="what" maxlength="60" placeholder="Groceries" value="' + esc(e ? e.what : '') + '"></label>' +
+    '<label class="fld"><span>How much?</span><span class="money big"><span class="sym">' + esc(SYM) + '</span>' +
+      '<input type="text" name="amount" inputmode="decimal" placeholder="0.00" value="' + (e ? plain(e.amount) : '') + '" aria-label="Amount"></span></label>' +
+    '<fieldset><legend>Paid by</legend><div class="pills">' + ppl.map(function (p) {
+      return '<label class="pill"><input type="radio" name="by" value="' + esc(p.id) + '"' + (p.id === by ? ' checked' : '') + '><span>' + esc(p.name) + '</span></label>';
+    }).join('') + '</div></fieldset>' +
+    '<fieldset><legend>Split</legend><div class="seg"><label><input type="radio" name="mode" value="equal"' + (mode === 'equal' ? ' checked' : '') + '><span>Equally</span></label>' +
+      '<label><input type="radio" name="mode" value="exact"' + (mode === 'exact' ? ' checked' : '') + '><span>Exact amounts</span></label></div>' +
+      '<div class="eq"><ul class="splitlist">' + ppl.map(function (p) {
+        return '<li><label class="ck"><input type="checkbox" name="among" value="' + esc(p.id) + '"' + (among[p.id] ? ' checked' : '') + '><span class="nm">' + esc(p.name) + '</span>' +
+          '<span class="sh" data-sh="' + esc(p.id) + '"></span></label></li>';
+      }).join('') + '</ul><div class="splitlinks"><button type="button" class="link" data-x="all">Everyone</button><button type="button" class="link" data-x="none">No one</button></div></div>' +
+      '<div class="ex"><ul class="splitlist">' + ppl.map(function (p) {
+        return '<li><span class="nm">' + esc(p.name) + '</span><span class="money"><span class="sym">' + esc(SYM) + '</span>' +
+          '<input type="text" inputmode="decimal" name="share" data-id="' + esc(p.id) + '" placeholder="0.00" value="' + (shares[p.id] > 0 ? plain(shares[p.id]) : '') + '" aria-label="' + esc(p.name) + '’s share"></span></li>';
+      }).join('') + '</ul><p class="remain" aria-live="polite"></p></div></fieldset>' +
+    '<p class="err" role="alert"></p>' +
+    '<div class="dlgbtns"><button type="submit" class="btn primary">' + (e ? 'Save' : 'Add expense') + '</button>' +
+      (e ? '<button type="button" class="btn danger" data-x="delete">Delete</button>' : '<button type="button" class="btn" data-close>Cancel</button>') + '</div>' +
+    (e ? '<p class="stamp">' + (e.addedBy && S.people[e.addedBy] ? 'Added by ' + esc(pname(e.addedBy)) + ', ' : 'Added ') + esc(when(e.at)) +
+      (e.editedAt ? '. Edited ' + (e.editedBy && S.people[e.editedBy] ? 'by ' + esc(pname(e.editedBy)) + ', ' : '') + esc(when(e.editedAt)) : '') + '.</p>' : '') +
+    '</form>');
+  var f = d.querySelector('form'), err = d.querySelector('.err');
+  function cur() {
+    var m = f.querySelector('[name=mode]:checked').value;
+    d.querySelector('.eq').hidden = m !== 'equal'; d.querySelector('.ex').hidden = m !== 'exact';
+    var amt = parseMoney(f.amount.value) || 0;
+    if (m === 'equal') {
+      var ids = $$('[name=among]:checked', f).map(function (x) { return x.value; });
+      var sh = equalShares(id, amt, ids);
+      $$('[data-sh]', f).forEach(function (el) { var k = el.getAttribute('data-sh'); el.textContent = sh[k] != null && amt ? money(sh[k]) : ''; });
+    } else {
+      var sum = 0, bad = false;
+      $$('[name=share]', f).forEach(function (x) { if (!tidy(x.value)) return; var v = parseMoney(x.value); if (v == null) bad = true; else sum += v; });
+      var r = d.querySelector('.remain'), left = amt - sum;
+      r.className = 'remain' + (bad ? ' bad' : !amt ? '' : left === 0 ? ' ok' : ' bad');
+      r.textContent = bad ? 'One of the amounts isn’t a number.' : !amt ? 'Enter the total first.' :
+        left === 0 ? '✓ Adds up to ' + money(amt) : left > 0 ? money(left) + ' left to split' : money(-left) + ' too much';
+    }
+  }
+  f.addEventListener('input', cur); f.addEventListener('change', cur);
+  f.addEventListener('click', function (ev) {
+    var x = ev.target.closest('[data-x]'); if (!x) return;
+    var k = x.getAttribute('data-x');
+    if (k === 'all' || k === 'none') { $$('[name=among]', f).forEach(function (c) { c.checked = k === 'all'; }); cur(); }
+    if (k === 'delete') {
+      if (!confirm('Delete “' + e.what + '” (' + money(e.amount) + ')?')) return;
+      if (change(function (s) { delete s.expenses[eid]; })) { d.close(); toast('Expense deleted.'); }
+    }
+  });
+  f.addEventListener('submit', function (ev) {
+    ev.preventDefault(); err.textContent = '';
+    var what = tidy(f.what.value).slice(0, 60), amt = parseMoney(f.amount.value);
+    if (!what) { err.textContent = 'Say what it was for, like “Groceries”.'; f.what.focus(); return; }
+    if (amt == null || amt <= 0) { err.textContent = 'Enter the amount, like 24.50.'; f.amount.focus(); return; }
+    if (amt > MAX_CENTS) { err.textContent = 'That amount is too big.'; f.amount.focus(); return; }
+    var payer = (f.querySelector('[name=by]:checked') || {}).value;
+    if (!payer) { err.textContent = 'Pick who paid.'; return; }
+    var m = f.querySelector('[name=mode]:checked').value, entry = { what: what, amount: amt, by: payer, mode: m };
+    if (m === 'equal') {
+      entry.among = {};
+      $$('[name=among]:checked', f).forEach(function (x) { entry.among[x.value] = 1; });
+      if (!Object.keys(entry.among).length) { err.textContent = 'Pick at least one person to split it between.'; return; }
+    } else {
+      entry.shares = {}; var sum = 0, bad = false;
+      $$('[name=share]', f).forEach(function (x) {
+        if (!tidy(x.value)) return; var v = parseMoney(x.value);
+        if (v == null) bad = true; else if (v > 0) { entry.shares[x.getAttribute('data-id')] = v; sum += v; }
+      });
+      if (bad) { err.textContent = 'One of the amounts isn’t a number.'; return; }
+      if (sum !== amt) { err.textContent = sum < amt ? 'The amounts add up to ' + money(sum) + '. ' + money(amt - sum) + ' is still left to split.' : 'The amounts add up to ' + money(sum) + ', which is ' + money(sum - amt) + ' too much.'; return; }
+    }
+    var who = me();
+    var ok = change(function (s) {
+      var old = s.expenses[id];
+      entry.at = old && old.at ? old.at : Date.now();
+      if (old && old.addedBy) entry.addedBy = old.addedBy; else if (!old && who) entry.addedBy = who;
+      if (old) { entry.editedAt = Date.now(); if (who) entry.editedBy = who; }
+      s.expenses[id] = entry;
+    });
+    if (ok) { d.close(); toast(e ? 'Saved.' : 'Added ' + what + '.'); }
+  });
+  cur();
+  if (!e) f.what.focus();
+}
+
+// People: add, rename, remove
+var peopleDlg = null;
+function openPeople() {
+  var d = dialog('<div class="in">' + head('👥 People') + '<ul class="plist" id="pplList"></ul>' +
+    '<form id="pplAdd" novalidate autocomplete="off"><div class="addrow" style="margin-top:14px"><input type="text" name="nm" maxlength="30" placeholder="Add someone" enterkeyhint="done" aria-label="Name to add">' +
+    '<button type="submit" class="btn primary small">Add</button></div><div class="chips" id="pplChips"></div><p class="err" role="alert"></p></form>' +
+    '<p class="hint" style="margin-top:10px">Anyone can add people. Someone who’s part of an expense or payment can’t be removed.</p>' +
+    '<div class="dlgbtns"><button type="button" class="btn" data-close>Done</button></div></div>');
+  var editing = null;
+  function refresh() {
+    if (!S) return;
+    var ul = d.querySelector('#pplList'), act = document.activeElement;
+    if (editing && ul.contains(act) && act.tagName === 'INPUT') return;          // don't clobber typing
+    ul.innerHTML = people().map(function (p) {
+      if (editing === p.id) return '<li><form class="addrow" style="margin:0;flex:1;padding:4px 4px 4px 0" data-rn="' + esc(p.id) + '"><input type="text" maxlength="30" value="' + esc(p.name) + '" aria-label="New name">' +
+        '<button type="submit" class="btn primary small">Save</button></form></li>';
+      return '<li><span class="nm">' + esc(p.name) + (p.id === me() ? ' <span class="tag">you</span>' : '') + '</span>' +
+        '<button type="button" class="icon-btn" data-p="rename" data-id="' + esc(p.id) + '" aria-label="Rename ' + esc(p.name) + '">✏️</button>' +
+        '<button type="button" class="icon-btn x" data-p="rm" data-id="' + esc(p.id) + '" aria-label="Remove ' + esc(p.name) + '">✕</button></li>';
+    }).join('');
+    var taken = people().map(function (p) { return p.name.toLowerCase(); });
+    mem = load(K_MEM, mem);
+    d.querySelector('#pplChips').innerHTML = chipsHtml((mem.players || []).filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 12));
+    var inp = ul.querySelector('[data-rn] input'); if (inp && act !== inp) { inp.focus(); inp.select(); }
+  }
+  function add(name) {
+    var v = tidy(name).slice(0, 30), err = d.querySelector('.err'); err.textContent = '';
+    if (!v) return false;
+    if (people().some(function (p) { return p.name.toLowerCase() === v.toLowerCase(); })) { err.textContent = v + ' is already on the list.'; return false; }
+    if (people().length >= MAX_PEOPLE) { err.textContent = 'That’s the most people one bill can have.'; return false; }
+    var max = 0; people().forEach(function (p) { max = Math.max(max, p.order || 0); });
+    var ok = change(function (s) { s.people[PebblyDoc.id()] = { name: v, order: Math.max(Date.now(), max + 1) }; });
+    if (ok) { remember(v); toast('Added ' + v + '.'); }
+    return ok;
+  }
+  d.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    if (ev.target.id === 'pplAdd') { var i = ev.target.elements.nm; if (add(i.value)) i.value = ''; i.focus(); return; }
+    var rid = ev.target.getAttribute('data-rn');
+    if (rid) {
+      var v = tidy(ev.target.querySelector('input').value).slice(0, 30);
+      editing = null;
+      if (v && v !== pname(rid)) {
+        if (people().some(function (p) { return p.id !== rid && p.name.toLowerCase() === v.toLowerCase(); })) { toast(v + ' is already on the list.'); refresh(); return; }
+        change(function (s) { if (s.people[rid]) s.people[rid].name = v; }); remember(v);
+      }
+      refresh();
+    }
+  });
+  d.addEventListener('click', function (ev) {
+    var c = ev.target.closest('[data-act=chip-add]');
+    if (c) { add(c.getAttribute('data-name')); return; }
+    c = ev.target.closest('[data-act=chip-forget]');
+    if (c) { forget(c.getAttribute('data-name')); refresh(); return; }
+    var b = ev.target.closest('[data-p]'); if (!b) return;
+    var pid = b.getAttribute('data-id');
+    if (b.getAttribute('data-p') === 'rename') { editing = pid; refresh(); return; }
+    var u = usedBy(pid), nm = pname(pid);
+    if (u.expenses || u.payments) {
+      var bits = [];
+      if (u.expenses) bits.push(u.expenses + (u.expenses === 1 ? ' expense' : ' expenses'));
+      if (u.payments) bits.push(u.payments + (u.payments === 1 ? ' payment' : ' payments'));
+      alert(nm + ' is part of ' + bits.join(' and ') + ', so they can’t be removed. Change or delete those first (or just leave them on the list).');
+      return;
+    }
+    if (!confirm('Remove ' + nm + ' from this bill?')) return;
+    change(function (s) { delete s.people[pid]; });
+    if (me() === pid) setMe(null);
+  });
+  d.onClosed = function () { peopleDlg = null; };
+  peopleDlg = { refresh: refresh };
+  refresh();
+}
+
+function openRename() {
+  var d = dialog('<form novalidate autocomplete="off">' + head('Rename bill') +
+    '<label class="fld"><span>Name</span><input type="text" name="title" maxlength="60" value="' + esc(S.title) + '"></label>' +
+    '<label class="fld"><span>Currency symbol</span><input type="text" name="cur" maxlength="4" value="' + esc(S.currency) + '" style="max-width:140px"></label>' +
+    '<p class="err" role="alert"></p><div class="dlgbtns"><button type="submit" class="btn primary">Save</button><button type="button" class="btn" data-close>Cancel</button></div></form>');
+  var f = d.querySelector('form');
+  f.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var t = tidy(f.title.value).slice(0, 60), c = tidy(f.cur.value).slice(0, 4);
+    if (!t) { d.querySelector('.err').textContent = 'The bill needs a name.'; return; }
+    if (!c) { d.querySelector('.err').textContent = 'Type a currency symbol, like $.'; return; }
+    if (change(function (s) { s.title = t; s.currency = c; })) { d.close(); toast('Saved.'); }
+  });
+}
+
+function summaryText() {
+  var bal = balances(), plan = settle(bal), total = 0;
+  Object.keys(S.expenses).forEach(function (k) { total += S.expenses[k].amount || 0; });
+  var lines = [S.title + ': ' + money(total) + ' spent', ''];
+  bal.forEach(function (x) {
+    lines.push(pname(x.id) + ': paid ' + money(x.paid) + ', share ' + money(x.share) +
+      (x.net > 0 ? ', gets back ' + money(x.net) : x.net < 0 ? ', owes ' + money(x.net) : ', square'));
+  });
+  lines.push('');
+  if (plan.length) { lines.push('To settle up:'); plan.forEach(function (p) { lines.push('• ' + pname(p.from) + ' pays ' + pname(p.to) + ' ' + money(p.amount)); }); }
+  else lines.push('Everyone’s square.');
+  lines.push('', shareUrl(CODE));
+  return lines.join('\n');
+}
+
+/* ------------------------------------------------------------------ events */
+$app.addEventListener('click', function (ev) {
+  var t = ev.target.closest('[data-act]'); if (!t || !$app.contains(t)) return;
+  var id = t.getAttribute('data-id');
+  switch (t.getAttribute('data-act')) {
+    case 'retry': route(); break;
+    case 'reload': location.reload(); break;
+    case 'draft-add': var i = $('#draftName'); if (draftAdd(i.value)) i.value = ''; i.focus(); break;
+    case 'draft-rm': draft.splice(+t.getAttribute('data-i'), 1); renderDraft(); break;
+    case 'chip-add': draftAdd(t.getAttribute('data-name')); break;
+    case 'chip-forget': forget(t.getAttribute('data-name')); renderDraft(); break;
+    case 'share': share(S ? S.title : 'Split the Bill', shareUrl(CODE)); break;
+    case 'hide-created': justCreated = false; render(); break;
+    case 'me': setMe(id); render(); toast('Got it. Your balance is highlighted.'); break;
+    case 'not-me': setMe(null); render(); break;
+    case 'people': openPeople(); break;
+    case 'add-exp': openExpense(null); break;
+    case 'edit-exp': openExpense(id); break;
+    case 'mark-paid':
+      var parts = id.split('>'), amt = +t.getAttribute('data-amt');
+      if (!confirm(pname(parts[0]) + ' paid ' + pname(parts[1]) + ' ' + money(amt) + '?')) return;
+      change(function (s) { s.payments[PebblyDoc.id()] = { from: parts[0], to: parts[1], amount: amt, at: Date.now(), by: me() || undefined }; });
+      toast('Marked as paid.');
+      break;
+    case 'undo-pay':
+      var p = S.payments[id]; if (!p) return;
+      if (!confirm('Undo “' + pname(p.from) + ' paid ' + pname(p.to) + ' ' + money(p.amount) + '”?')) return;
+      change(function (s) { delete s.payments[id]; });
+      break;
+    case 'summary': copyText(summaryText()).then(function (ok) { toast(ok ? 'Summary copied. Paste it into your group chat.' : 'Couldn’t copy. Try again.'); }); break;
+    case 'rename': openRename(); break;
+    case 'copy-host': copyText(PebblyDoc.ownerLink(CODE)).then(function (ok) { toast(ok ? 'Host link copied. Keep it private.' : 'Couldn’t copy. Try again.'); }); break;
+    case 'lock': PebblyLock.openHost({ app: 'doc', code: CODE, owner: PebblyDoc.owner(CODE), raw: PebblyDoc.raw, what: 'bill', toast: toast }); break;
+    case 'delete':
+      if (!confirm('Delete “' + S.title + '” for everyone? This can’t be undone.')) return;
+      D.remove().then(function () { forgetBill(CODE); D = null; history.pushState(null, '', baseUrl()); route(); toast('Bill deleted.'); },
+        function (e) { toast(friendly(e)); });
+      break;
+  }
+});
+$app.addEventListener('change', function (ev) {
+  if (ev.target.name === 'cur') { var o = $('[name=curOther]'); o.hidden = ev.target.value !== 'other'; if (!o.hidden) o.focus(); }
+});
+$app.addEventListener('keydown', function (ev) {
+  if (ev.key === 'Enter' && ev.target.id === 'draftName') { ev.preventDefault(); if (draftAdd(ev.target.value)) ev.target.value = ''; }
+});
+$app.addEventListener('submit', function (ev) {
+  if (ev.target.id === 'createForm') { ev.preventDefault(); submitCreate(ev.target); }
+});
+window.addEventListener('popstate', function () { justCreated = false; route(); });
+
+// for tests
+window.__bill = { parseMoney: parseMoney, equalShares: equalShares, settle: settle, state: function () { return S; } };
+route();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

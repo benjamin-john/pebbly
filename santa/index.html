@@ -1,0 +1,731 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Secret Santa</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#E3A918; --lead-t:#FBF0CC; --no:#CC423D; --no-ink:#FFFFFF;
+  --red:#B8433A; --red-t:#FBE9E6; --gift:#2F7A63; --gift-2:#225C4A; --ribbon:#C9473D;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-ink:#2A0F0D;
+    --red:#F08A80; --red-t:#36211F; --gift:#245F4D; --gift-2:#18443A; --ribbon:#B5443B;
+    color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-ink:#2A0F0D;
+    --red:#F08A80; --red-t:#36211F; --gift:#245F4D; --gift-2:#18443A; --ribbon:#B5443B;
+    color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+[hidden]{display:none !important}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--head);line-height:1.15;margin:0}
+h1{font-size:30px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+h2{font-size:20px;font-weight:800}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+a{color:var(--brand)}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.lede{margin:8px 0 20px;font-size:17px;color:var(--muted);max-width:46ch}
+.hint{color:var(--muted);font-size:14px}
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;font-size:15px;min-height:32px}
+.topnav a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;font-weight:600}
+.pill{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;text-decoration:none;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.wide{width:100%}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--no);border:1.5px solid var(--no)}
+.btn.bad{background:var(--no);color:var(--no-ink)}
+.btn.small{min-height:44px;font-size:15px;padding:0 14px;border-radius:10px}
+.pl-dlg .btn:not(.primary):not(.danger){background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.icon-btn.x{color:var(--no)}
+.link{background:none;border:0;padding:0 2px;min-height:44px;color:var(--brand);text-decoration:underline;cursor:pointer;font-size:15px;font-weight:500}
+.link.danger{color:var(--no)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.fld{display:block;margin-bottom:16px}
+.fld>span{display:block;font-weight:600;margin-bottom:6px;font-size:15px}
+.fld small{display:block;color:var(--muted);margin-top:5px;font-size:13px}
+.opt{font-weight:400;color:var(--muted)}
+input[type=text],input[type=date],textarea,select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:16px}
+textarea{resize:vertical;line-height:1.4}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two .fld{min-width:0}
+.check{display:flex;gap:12px;align-items:flex-start;padding:6px 2px 10px;cursor:pointer;min-height:48px;margin-bottom:8px}
+.check input{width:24px;height:24px;margin:1px 0 0;flex:none;accent-color:var(--brand)}
+.check b{display:block;font-weight:600}
+.check small{display:block;color:var(--muted);font-size:14px}
+.err{color:var(--no);font-weight:600;margin-top:10px;min-height:1.4em}
+.err:empty{min-height:0;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden;max-width:100%}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .btn{flex:1 1 auto}
+.linkbox{display:flex;gap:8px;margin-top:10px}
+.linkbox input{flex:1;min-width:0}
+.recent{margin-top:28px}
+.recent h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
+.recent ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.recent a{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:10px 14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--ink);font-weight:600}
+.recent a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{flex:none;font-size:12px;font-weight:600;background:var(--brand-t);color:var(--brand);border-radius:999px;padding:2px 9px}
+
+.created{border:2px solid var(--brand);background:var(--brand-t)}
+.created h2{font-size:19px}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.facts span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:14px}
+.facts .ok{border-color:var(--brand);color:var(--brand);font-weight:600}
+.note{margin-top:10px;white-space:pre-wrap;overflow-wrap:anywhere}
+.head{margin-bottom:18px}
+.sec-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px}
+
+/* Which one are you? */
+.names{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px}
+.names button{width:100%;min-height:52px;padding:6px 10px;border:1.5px solid var(--brand);border-radius:12px;background:var(--surface);color:var(--ink);
+  font-weight:600;font-size:16px;cursor:pointer;overflow-wrap:anywhere;line-height:1.2}
+.names button:disabled{border:1px dashed var(--line);color:var(--muted);background:var(--bg);cursor:default;font-weight:500}
+.names button small{display:block;font-size:12px;font-weight:600}
+.joinbox{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.joinform{display:flex;gap:8px;margin-top:8px}
+.joinform input{flex:1;min-width:0}
+.joinform .btn{flex:none}
+
+/* the gift */
+.gift{position:relative;display:block;width:100%;min-height:210px;border:0;border-radius:18px;cursor:pointer;color:#fff;overflow:hidden;
+  background:linear-gradient(140deg,var(--gift),var(--gift-2));box-shadow:0 8px 24px rgba(20,50,40,.22);-webkit-tap-highlight-color:transparent;
+  margin-bottom:14px;font:inherit;padding:0}
+.gift::before,.gift::after{content:"";position:absolute;background:var(--ribbon)}
+.gift::before{left:50%;top:0;bottom:0;width:30px;transform:translateX(-50%)}
+.gift::after{top:50%;left:0;right:0;height:30px;transform:translateY(-50%)}
+.gift .tagline{position:relative;z-index:1;display:inline-block;max-width:88%;background:#fff;color:#1F2A27;border-radius:12px;padding:12px 18px;
+  font:800 19px/1.2 var(--head);box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.gift .tagline small{display:block;font:500 13px/1.3 var(--body);color:#5D6B66;margin-top:3px}
+.gift .inner{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:210px;padding:20px}
+.gift:active{transform:scale(.99)}
+.reveal{text-align:center;border:2px solid var(--red);background:var(--red-t);border-radius:18px;padding:22px 16px 16px;margin-bottom:14px;position:relative}
+.reveal .kicker{font-weight:600;color:var(--muted)}
+.reveal .who{font:800 40px/1.1 var(--head);color:var(--red);margin:6px 0 4px;overflow-wrap:anywhere;letter-spacing:-.01em}
+.reveal .wish{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:14px}
+.reveal .wish h3{font-size:15px;margin-bottom:4px}
+.reveal .wish p{white-space:pre-wrap;overflow-wrap:anywhere}
+.reveal .facts{justify-content:center}
+.reveal .link{margin-top:6px}
+.youcard{display:flex;align-items:center;gap:12px}
+.youcard .t{flex:1;min-width:0}
+.youcard b{font:800 22px/1.15 var(--head);overflow-wrap:anywhere}
+.counter{font-size:12px;color:var(--muted);text-align:right;margin-top:4px}
+
+/* organizer */
+.host{border:2px solid var(--brand);margin-top:26px}
+.host h3{margin:20px 0 4px}
+.drawbox{margin-top:14px;padding:14px;border-radius:12px;background:var(--bg);border:1px solid var(--line)}
+.drawn{display:flex;align-items:center;gap:10px;font:800 20px/1.2 var(--head);color:var(--brand)}
+.plist{list-style:none;margin:8px 0 0;padding:0}
+.plist li{display:flex;align-items:center;gap:8px;min-height:52px;border-top:1px solid var(--line);padding:4px 0}
+.plist li:first-child{border-top:0}
+.plist .nm{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600}
+.plist .st{display:block;font-size:13px;font-weight:500;color:var(--muted)}
+.plist .st .y{color:var(--brand);font-weight:600}
+.plist .link{font-size:14px;flex:none}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{flex:none}
+.pair{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;align-items:center;margin-top:10px}
+.pair span{color:var(--muted);font-weight:600}
+.pair select{min-width:0}
+.pairs{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.pairs li{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:2px 2px 2px 12px;min-height:48px}
+.pairs li span{flex:1;min-width:0;overflow-wrap:anywhere}
+.pairs .icon-btn{border:0;background:none}
+
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;font-size:15px}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+dialog.dlg{width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 32px);padding:18px 16px 16px;border:1px solid var(--line);border-radius:18px;
+  background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog.dlg::backdrop{background:rgba(10,20,16,.55)}
+dialog.dlg h2{font-size:22px;margin-bottom:4px;overflow-wrap:anywhere}
+dialog.dlg p{margin:6px 0 0;overflow-wrap:anywhere}
+.dlgbtns{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.dlgbtns .btn{width:100%}
+@media (max-width:359px){.two{grid-template-columns:1fr;gap:0}.reveal .who{font-size:34px}}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}.btn:active,.gift:active{transform:none}}
+</style>
+<script src="/lock.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+<main id="app" class="wrap"><p class="hint">Loading…</p></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This page needs JavaScript to work.</p></noscript>
+
+<script>
+(function () {
+'use strict';
+
+// Secret Santa. Everything lives in the database (santa_* in supabase/migrations/20261013000000_new_apps.sql);
+// each phone only ever gets its own match. Phones are told apart by a random id kept in localStorage.
+var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
+var K_PID = 'pebbly_santa_pid', K_OWN = 'pebbly_santa_owners', K_RECENT = 'pebbly_santa_recent', K_MEM = 'pebbly_score_memory', K_NEW = 'pebbly_santa_new';
+var POLL_MS = 5000;
+
+var $app = document.getElementById('app'), $toast = document.getElementById('toast');
+function $(s) { return document.querySelector(s); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function tidy(s, max) { s = String(s || '').replace(/\s+/g, ' ').trim(); return max ? s.slice(0, max) : s; }
+function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+var toastTimer;
+function toast(m) { $toast.textContent = m; $toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { $toast.classList.remove('show'); }, 3600); }
+function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
+function shareUrl(code) { return baseUrl() + '?g=' + code; }
+function ownerUrl(code) { return baseUrl() + '?g=' + code + '&o=' + encodeURIComponent(owner(code) || ''); }
+function copyText(text) {
+  function fallback() {
+    var el = document.createElement('textarea'); el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select(); var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(el); return ok;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function () { return true; }, fallback);
+  return Promise.resolve(fallback());
+}
+function shareLink(title, url) {
+  if (navigator.share) { navigator.share({ title: title, text: '🎁 ' + title + ': pick your name for Secret Santa', url: url }).catch(function () {}); return; }
+  copyText(url).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : url); });
+}
+function fmtDate(d) {
+  var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || ''); if (!m) return '';
+  var dt = new Date(+m[1], +m[2] - 1, +m[3]);
+  return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: dt.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+}
+
+// Phone id, organizer keys, recent groups, remembered names.
+function pid() {
+  var p = load(K_PID, null);
+  if (!p || !/^[A-Za-z0-9_-]{8,80}$/.test(p)) {
+    var a = new Uint8Array(12); (window.crypto || {}).getRandomValues ? crypto.getRandomValues(a) : a.forEach(function (x, i) { a[i] = Math.random() * 256; });
+    p = 's' + Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    store(K_PID, p);
+  }
+  return p;
+}
+function owner(code) { return load(K_OWN, {})[code] || null; }
+function setOwner(code, tok) { var o = load(K_OWN, {}); if (tok) o[code] = tok; else delete o[code]; store(K_OWN, o); }
+function remember(code, name) { var l = load(K_RECENT, []).filter(function (r) { return r.code !== code; }); l.unshift({ code: code, name: name }); store(K_RECENT, l.slice(0, 12)); }
+function forget(code) { store(K_RECENT, load(K_RECENT, []).filter(function (r) { return r.code !== code; })); }
+function memNames() { var m = load(K_MEM, null); return m && Array.isArray(m.players) ? m.players : []; }
+function rememberName(n) {
+  n = tidy(n); if (!n) return;
+  var m = load(K_MEM, null); if (!m || !Array.isArray(m.players)) m = { players: [], games: (m && m.games) || [] };
+  var i = m.players.findIndex(function (x) { return x.toLowerCase() === n.toLowerCase(); });
+  if (i > -1) m.players.splice(i, 1);
+  m.players.unshift(n); if (m.players.length > 40) m.players.length = 40;
+  store(K_MEM, m);
+}
+function forgetName(n) { var m = load(K_MEM, null); if (!m || !Array.isArray(m.players)) return; m.players = m.players.filter(function (x) { return x !== n; }); store(K_MEM, m); }
+function chipsHtml(names, act) {
+  return names.map(function (n) {
+    return '<span class="chip"><button type="button" class="add" data-act="' + act + '" data-name="' + esc(n) + '">' + esc(n) + '</button>' +
+      '<button type="button" class="forget" data-act="forget-name" data-name="' + esc(n) + '" aria-label="Forget ' + esc(n) + '">×</button></span>';
+  }).join('');
+}
+
+/* ------------------------------------------------------------------ database */
+
+function raw(fn, args) {
+  var headers = { 'Content-Type': 'application/json', apikey: KEY_ };
+  if (/^eyJ/.test(KEY_)) headers.Authorization = 'Bearer ' + KEY_;
+  return fetch(URL_ + '/rest/v1/rpc/' + fn, { method: 'POST', headers: headers, body: JSON.stringify(args) }).then(function (res) {
+    return res.text().then(function (t) {
+      var d = null; try { d = t ? JSON.parse(t) : null; } catch (e) {}
+      if (!res.ok) { var err = new Error((d && (d.message || d.error_description)) || ('http_' + res.status)); err.status = res.status; throw err; }
+      return d;
+    });
+  }, function () { throw new Error('network'); });
+}
+function rpc(fn, args) { return PebblyLock.call('santa', fn, args, raw); }
+
+var MSG = {
+  network: 'Couldn’t reach the server. Check your connection and try again.',
+  already_claimed: 'Someone else already picked that name. If it’s really you, ask the organizer to free it up.',
+  already_drawn: 'Names have already been drawn. The organizer can undo the draw first.',
+  need_three: 'You need at least 3 people to draw names.',
+  no_valid_draw: 'Couldn’t find a draw that fits those rules. Remove a pair and try again.',
+  name_taken: 'That name is already on the list. Add a last initial to tell them apart.',
+  join_closed: 'The organizer is adding the names for this group. Ask them to add you.',
+  too_many_people: 'That’s as many people as one group can have (60).',
+  not_claimed: 'Pick your name from the list first.',
+  wish_too_long: 'Keep your wish list to 1000 characters.',
+  group_not_found: 'This group doesn’t exist anymore. It may have been deleted.',
+  person_not_found: 'That person isn’t in the group anymore. The list has been refreshed.',
+  invalid_title: 'Give your group a name.',
+  invalid_name: 'Enter a name (up to 40 characters).',
+  invalid_participant: 'This phone’s saved data looks off. Reload the page and try again.',
+  invalid_exclusions: 'That pair doesn’t work. Pick two different people.',
+  not_owner: 'Only the organizer can do that.'
+};
+function friendly(e) {
+  var m = (e && e.message) || String(e || '');
+  if (m === 'not_owner') return MSG.not_owner;
+  return PebblyLock.message(m) || MSG[m] || 'Something went wrong. Please try again.';
+}
+
+/* ------------------------------------------------------------------ state */
+
+var S = { code: '', G: null, revealed: false, justCreated: false, busy: false, pending: false, drafts: {}, joinOpen: false, timer: null };
+
+function route() {
+  clearInterval(S.timer);
+  var q = new URLSearchParams(location.search), code = (q.get('g') || '').trim().toLowerCase(), tok = q.get('o');
+  S.G = null; S.revealed = false; S.drafts = {}; S.joinOpen = false;
+  if (!code) { renderHome(); return; }
+  if (tok) {
+    setOwner(code, tok.trim()); q.delete('o');
+    try { history.replaceState(null, '', location.pathname + '?' + q.toString()); } catch (e) {}
+  }
+  S.code = code;
+  S.justCreated = load(K_NEW, '') === code; if (S.justCreated) store(K_NEW, '');
+  $app.innerHTML = '<p class="hint">Loading group…</p>';
+  first();
+}
+function get() { return rpc('santa_get', { p_code: S.code, p_participant: pid(), p_owner_token: owner(S.code) }); }
+function first() {
+  get().then(function (g) {
+    if (!g) { forget(S.code); renderNotFound(); return; }
+    S.G = g; remember(S.code, g.group.name); render();
+    S.timer = setInterval(poll, POLL_MS);
+  }, function (e) {
+    if (PebblyLock.handle(e, { app: 'santa', code: S.code, owner: owner(S.code), raw: raw, el: $app, what: 'group', retry: first })) return;
+    $app.innerHTML = nav() + '<p class="err">' + esc(friendly(e)) + '</p><p style="margin-top:12px"><button type="button" class="btn ghost" data-act="reload">Try again</button></p>';
+  });
+}
+// Fetch the latest and redraw (after an action, or every few seconds).
+function refresh() {
+  return get().then(function (g) {
+    if (!g) { clearInterval(S.timer); forget(S.code); renderGone(); return; }
+    S.G = g; render();
+  });
+}
+function busyOpen() { return S.busy || !!document.querySelector('dialog[open]'); }
+function poll() {
+  if (document.visibilityState !== 'visible' || busyOpen() || !S.G) return;
+  get().then(function (g) {
+    if (!g) { clearInterval(S.timer); forget(S.code); renderGone(); return; }
+    if (JSON.stringify(g) === JSON.stringify(S.G)) return;
+    S.G = g; render();
+  }, function (e) {
+    if (e.message === 'password_required') { clearInterval(S.timer); renderLocked(); }
+  });
+}
+document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') poll(); });
+
+// Run an action, then refresh. Errors become friendly messages.
+function act(p, okMsg) {
+  S.busy = true;
+  return p.then(function (r) { S.busy = false; if (okMsg) toast(okMsg); return refresh().then(function () { return r; }); }, function (e) {
+    S.busy = false; toast(friendly(e));
+    if (/already_|person_not_found|need_three/.test(e.message)) refresh().catch(function () {});
+    throw e;
+  });
+}
+
+// A small yes/no dialog. Resolves true when the first button is tapped.
+function ask(o) {
+  return new Promise(function (resolve) {
+    var d = document.createElement('dialog'); d.className = 'dlg';
+    d.innerHTML = '<h2>' + esc(o.title) + '</h2>' + (o.text ? '<p>' + esc(o.text) + '</p>' : '') +
+      '<div class="dlgbtns"><button type="button" class="btn ' + (o.danger ? 'bad' : '') + '" data-ok>' + esc(o.ok || 'OK') + '</button>' +
+      '<button type="button" class="btn plain" data-no>' + esc(o.cancel || 'Cancel') + '</button></div>';
+    document.body.appendChild(d);
+    function done(v) { try { d.close(); } catch (e) {} d.remove(); resolve(v); }
+    d.querySelector('[data-ok]').addEventListener('click', function () { done(true); });
+    d.querySelector('[data-no]').addEventListener('click', function () { done(false); });
+    d.addEventListener('cancel', function (e) { e.preventDefault(); done(false); });
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  });
+}
+
+/* ------------------------------------------------------------------ home */
+
+function nav(right) { return '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Secret Santa</a>' + (right || '') + '</nav>'; }
+
+function renderHome() {
+  document.title = 'Secret Santa';
+  var recent = load(K_RECENT, []);
+  $app.innerHTML =
+    '<h1>🎁 Secret Santa</h1>' +
+    '<p class="lede">Draw names for a gift swap. Everyone picks their own name on their phone and sees only who they’re buying for. Not even you can peek.</p>' +
+    '<form id="createForm" class="card" novalidate>' +
+      '<label class="fld"><span>Group name</span><input type="text" name="name" maxlength="80" placeholder="Family Christmas 2026" autocomplete="off"></label>' +
+      '<div class="two"><label class="fld"><span>Budget <span class="opt">(optional)</span></span><input type="text" name="budget" maxlength="40" placeholder="$25"></label>' +
+      '<label class="fld"><span>Swap date <span class="opt">(optional)</span></span><input type="date" name="date"></label></div>' +
+      '<label class="fld"><span>Note <span class="opt">(optional)</span></span><textarea name="note" rows="2" maxlength="1000" placeholder="Where you’ll swap, theme, anything people should know"></textarea></label>' +
+      '<label class="fld" style="margin-bottom:6px"><span>Who’s in?</span><textarea name="people" rows="5" placeholder="One name per line&#10;Ann&#10;Ben&#10;Cara"></textarea>' +
+        '<small>Include yourself if you’re taking part.</small></label>' +
+      '<div class="chips" id="createChips" style="margin-bottom:14px">' + chipsHtml(memNames().slice(0, 16), 'add-create') + '</div>' +
+      '<label class="check"><input type="checkbox" name="selfjoin" checked><span><b>Let people add themselves</b><small>Anyone with the link can add their own name until you draw.</small></span></label>' +
+      PebblyLock.fieldHtml('group') +
+      '<button class="btn wide" type="submit">Create group</button>' +
+      '<p class="err" id="formErr" role="alert"></p>' +
+    '</form>' +
+    (recent.length ? '<section class="recent"><h2>Your groups</h2><ul>' + recent.map(function (r) {
+      return '<li><a href="?g=' + esc(r.code) + '"><span>' + esc(r.name || 'Secret Santa') + '</span>' + (owner(r.code) ? '<span class="tag">organizer</span>' : '') + '</a></li>';
+    }).join('') + '</ul></section>' : '');
+  updateCreateChips();
+}
+function createNames() { var f = $('#createForm'); return f ? f.elements.people.value.split('\n').map(function (x) { return tidy(x); }).filter(Boolean) : []; }
+function updateCreateChips() {
+  var box = $('#createChips'); if (!box) return;
+  var have = createNames().map(function (n) { return n.toLowerCase(); });
+  box.innerHTML = chipsHtml(memNames().filter(function (n) { return have.indexOf(n.toLowerCase()) < 0; }).slice(0, 16), 'add-create');
+}
+
+function submitCreate(form) {
+  var f = form.elements, err = $('#formErr'), btn = form.querySelector('button[type=submit]');
+  err.textContent = '';
+  var name = tidy(f.name.value, 80);
+  if (!name) { err.textContent = MSG.invalid_title; f.name.focus(); return; }
+  var seen = {}, people = [];
+  createNames().forEach(function (n) { if (!seen[n.toLowerCase()]) { seen[n.toLowerCase()] = 1; people.push(n); } });
+  if (people.some(function (n) { return n.length > 40; })) { err.textContent = 'Keep each name to 40 characters.'; return; }
+  if (people.length > 60) { err.textContent = MSG.too_many_people; return; }
+  if (!people.length && !f.selfjoin.checked) { err.textContent = 'Add some names, or let people add themselves.'; f.people.focus(); return; }
+  btn.disabled = true; btn.textContent = 'Creating…';
+  var pw = f.lockpw ? f.lockpw.value : '';
+  raw('santa_create', { p_name: name, p_budget: tidy(f.budget.value, 40), p_swap_date: f.date.value || null, p_note: String(f.note.value || '').trim().slice(0, 1000),
+    p_people: people, p_self_join: f.selfjoin.checked }).then(function (r) {
+    setOwner(r.code, r.owner_token); remember(r.code, name); store(K_NEW, r.code);
+    people.forEach(rememberName);
+    return PebblyLock.afterCreate('santa', r.code, r.owner_token, pw, raw).then(function (lockErr) {
+      history.pushState(null, '', baseUrl() + '?g=' + r.code);
+      route();
+      if (lockErr) toast(lockErr);
+    });
+  }, function (e) { btn.disabled = false; btn.textContent = 'Create group'; err.textContent = friendly(e); });
+}
+
+/* ------------------------------------------------------------------ group */
+
+function renderNotFound() {
+  document.title = 'Group not found | Secret Santa';
+  $app.innerHTML = nav() + '<h1>Group not found</h1><p class="lede">That link doesn’t match a Secret Santa group. It may have been deleted, or the link was copied incompletely.</p>' +
+    '<a class="btn" href="' + esc(baseUrl()) + '">Start a new group</a>';
+}
+function renderGone() {
+  $app.innerHTML = nav() + '<h1>Group deleted</h1><p class="lede">The organizer deleted this Secret Santa group.</p><a class="btn" href="' + esc(baseUrl()) + '">Start a new group</a>';
+}
+function renderLocked() {
+  $app.innerHTML = nav() + '<h1>🔒 Password added</h1><p class="lede">The organizer just added a password to this group. Reload to enter it.</p>' +
+    '<button type="button" class="btn" data-act="reload">Reload</button>';
+}
+
+function typing() {
+  var a = document.activeElement;
+  return !!(a && $app.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+function render() { if (typing()) { S.pending = true; return; } S.pending = false; draw(); }
+$app.addEventListener('focusout', function () { setTimeout(function () { if (S.pending && !typing() && S.G) render(); }, 0); });
+$app.addEventListener('input', function (e) {
+  if (e.target.dataset && e.target.dataset.keep) S.drafts[e.target.dataset.keep] = e.target.value;
+  if (e.target.dataset && e.target.dataset.keep === 'wish') { var c = $('#wishCount'); if (c) c.textContent = e.target.value.length + ' / 1000'; }
+  if (e.target.name === 'people' && e.target.form && e.target.form.id === 'createForm') updateCreateChips();
+});
+function draft(k, d) { return S.drafts[k] != null ? S.drafts[k] : d; }
+
+function draw() {
+  var G = S.G, g = G.group, y = window.scrollY;
+  document.title = g.name + ' | Secret Santa';
+  var facts = [];
+  if (g.budget) facts.push('<span>💰 ' + esc(g.budget) + '</span>');
+  if (g.swap_date) facts.push('<span>📅 ' + esc(fmtDate(g.swap_date)) + '</span>');
+  facts.push('<span>👥 ' + plural(G.people.length, 'person', 'people') + '</span>');
+  facts.push(g.drawn ? '<span class="ok">✓ Names drawn</span>' : '<span>Names not drawn yet</span>');
+  $app.innerHTML = nav(G.is_owner ? '<span class="pill">You’re the organizer</span>' : '') +
+    (S.justCreated && G.is_owner ? '<section class="card created"><h2>Your group is ready 🎉</h2><p style="margin-top:4px">Send this link to everyone' +
+      (PebblyLock.key('santa', S.code) ? ', and tell them the password separately' : '') + '. Each person taps their own name.</p>' +
+      '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Group link">' +
+      '<button type="button" class="btn small" data-act="share">Share</button></div></section>' : '') +
+    '<header class="head"><h1>🎁 ' + esc(g.name) + '</h1><div class="facts">' + facts.join('') + '</div>' +
+      (g.note ? '<p class="note">' + esc(g.note) + '</p>' : '') +
+      (S.justCreated && G.is_owner ? '' : '<div class="row" style="margin-top:12px"><button type="button" class="btn small ghost" data-act="share" style="flex:none">Share link</button></div>') +
+    '</header>' +
+    meHtml() + (G.is_owner ? hostHtml() : '');
+  window.scrollTo(0, y);
+}
+
+function meHtml() {
+  var G = S.G, g = G.group;
+  if (!G.me) {
+    var open = G.people.filter(function (p) { return !p.claimed; }).length;
+    var canJoin = g.self_join && !g.drawn;
+    var h = '<section class="card" id="pick"><h2>Which one are you?</h2>' +
+      '<p class="hint" style="margin-top:4px">Tap your own name. Only this phone will see who you’re buying for.</p>';
+    if (G.people.length) {
+      h += '<ul class="names">' + G.people.map(function (p) {
+        return '<li><button type="button" data-act="claim" data-id="' + esc(p.id) + '" data-name="' + esc(p.name) + '"' + (p.claimed ? ' disabled' : '') + '>' +
+          esc(p.name) + (p.claimed ? '<small>picked</small>' : '') + '</button></li>';
+      }).join('') + '</ul>';
+    } else h += '<p style="margin-top:12px">No names yet.' + (canJoin ? ' Add yourself below.' : ' The organizer will add them soon.') + '</p>';
+    if (G.people.length && !open && g.drawn) h += '<p class="hint" style="margin-top:12px">Everyone has picked their name. If you should be in this group, ask the organizer.</p>';
+    if (canJoin) {
+      h += '<div class="joinbox">' + (S.joinOpen || !G.people.length
+        ? '<form id="joinForm" novalidate><label for="joinName"><b>Add yourself</b></label><div class="joinform"><input type="text" id="joinName" name="name" data-keep="join" maxlength="40" autocomplete="given-name" placeholder="Your name" value="' + esc(draft('join', '')) + '">' +
+          '<button type="submit" class="btn small">Add me</button></div>' +
+          '<div class="chips">' + chipsHtml(memNames().filter(function (n) { return !G.people.some(function (p) { return p.name.toLowerCase() === n.toLowerCase(); }); }).slice(0, 6), 'join-chip') + '</div></form>'
+        : '<button type="button" class="btn small ghost wide" data-act="join-open">I’m not on the list</button>') + '</div>';
+    } else if (!g.drawn) h += '<p class="hint" style="margin-top:12px">Not on the list? Ask the organizer to add you.</p>';
+    return h + '</section>';
+  }
+  var me = G.me, out = '';
+  if (g.drawn) {
+    if (G.match) {
+      if (!S.revealed) {
+        out += '<button type="button" class="gift" data-act="reveal" aria-label="Tap to reveal who you’re buying for"><span class="inner"><span class="tagline">Tap to reveal<small>who you’re buying for. Make sure nobody’s peeking!</small></span></span></button>';
+      } else {
+        var f = [];
+        if (g.budget) f.push('<span>💰 ' + esc(g.budget) + '</span>');
+        if (g.swap_date) f.push('<span>📅 ' + esc(fmtDate(g.swap_date)) + '</span>');
+        out += '<section class="reveal" aria-live="polite"><p class="kicker">🎁 You’re buying for…</p><p class="who" id="matchName">' + esc(G.match.name) + '</p>' +
+          (f.length ? '<div class="facts">' + f.join('') + '</div>' : '') +
+          '<div class="wish"><h3>' + esc(G.match.name) + '’s wish list</h3>' +
+          (G.match.wish ? '<p>' + esc(G.match.wish) + '</p>' : '<p class="hint">No wish list yet — check back later.</p>') + '</div>' +
+          '<button type="button" class="link" data-act="hide">Hide it again</button></section>';
+      }
+    } else out += '<section class="card"><p>Your match isn’t ready yet. Ask the organizer to draw names again.</p></section>';
+  }
+  out += '<section class="card"><div class="youcard"><span style="font-size:30px" aria-hidden="true">🙋</span><div class="t"><span class="hint">This phone is</span><br><b>' + esc(me.name) + '</b></div>' +
+    (g.drawn ? '' : '<button type="button" class="link" data-act="unclaim">That’s not me</button>') + '</div>' +
+    (g.drawn ? '' : '<p style="margin-top:10px">Waiting for the organizer to draw names. Come back to this page after the draw to see who you’re buying for.</p>') + '</section>';
+  var w = draft('wish', me.wish || '');
+  out += '<form class="card" id="wishForm" novalidate><h2>Your wish list</h2><p class="hint" style="margin:4px 0 10px">Gift ideas, sizes, favorite things, no-gos. Your Secret Santa sees this' + (g.drawn ? '' : ' after the draw') + '.</p>' +
+    '<textarea name="wish" data-keep="wish" rows="4" maxlength="1000" aria-label="Your wish list" placeholder="e.g. Books, cozy socks (size M), dark chocolate. No candles please.">' + esc(w) + '</textarea>' +
+    '<p class="counter" id="wishCount">' + w.length + ' / 1000</p>' +
+    '<button type="submit" class="btn small" style="margin-top:6px">' + (me.wish ? 'Save changes' : 'Save wish list') + '</button></form>';
+  return out;
+}
+
+function nameOf(id) { var p = S.G.people.filter(function (x) { return x.id === id; })[0]; return p ? p.name : '?'; }
+
+function hostHtml() {
+  var G = S.G, g = G.group, people = G.people, picked = people.filter(function (p) { return p.claimed; }).length, ex = G.exclusions || [];
+  var h = '<section class="card host"><h2>Organizer tools</h2>' +
+    '<p class="hint" style="margin-top:4px">Only you can see this. Even you can’t see who has whom: each person sees only their own match, on their own phone.</p>';
+  h += '<div class="drawbox">' + (g.drawn
+    ? '<p class="drawn">✓ Names drawn</p><p class="hint" style="margin:4px 0 12px">' + (picked < people.length ? plural(people.length - picked, 'person hasn’t', 'people haven’t') + ' picked their name yet. They can still do it now.' : 'Everyone has picked their name.') + '</p>' +
+      '<button type="button" class="btn small danger" data-act="undraw">Undo draw</button>'
+    : '<p><b>' + picked + ' of ' + people.length + '</b> have picked their name.</p>' +
+      '<p class="hint" style="margin:4px 0 12px">' + (people.length < 3 ? 'Add at least 3 people to draw names.' : 'You can draw now, even if some haven’t picked yet. After the draw, people can’t be added or removed unless you undo it.') + '</p>' +
+      '<button type="button" class="btn wide" data-act="draw"' + (people.length < 3 ? ' disabled' : '') + '>🎲 Draw names</button>') + '</div>';
+  h += '<h3>People (' + people.length + ')</h3><ul class="plist">' + people.map(function (p) {
+    return '<li><span class="nm">' + esc(p.name) + (p.mine ? ' <span class="hint">(this phone)</span>' : '') + '<span class="st">' +
+      (p.claimed ? '<span class="y">✓ picked</span>' : 'not picked yet') + (p.has_wish ? ' · wish list ✓' : '') + '</span></span>' +
+      (p.claimed ? '<button type="button" class="link" data-act="reset" data-id="' + esc(p.id) + '" data-name="' + esc(p.name) + '">Free up</button>' : '') +
+      (g.drawn ? '' : '<button type="button" class="icon-btn x" data-act="rmperson" data-id="' + esc(p.id) + '" data-name="' + esc(p.name) + '" aria-label="Remove ' + esc(p.name) + '">✕</button>') + '</li>';
+  }).join('') + '</ul>' + (people.length ? '' : '<p class="hint">No one yet.</p>');
+  if (people.some(function (p) { return p.claimed; })) h += '<p class="hint" style="font-size:13px;margin-top:6px">“Free up” lets the right person pick a name if someone tapped the wrong one.</p>';
+  if (!g.drawn) {
+    h += '<form id="addForm" class="addrow" novalidate><input type="text" name="name" data-keep="add" maxlength="40" placeholder="Add a name" aria-label="Add a name" value="' + esc(draft('add', '')) + '">' +
+      '<button type="submit" class="btn small">Add</button></form>' +
+      '<div class="chips">' + chipsHtml(memNames().filter(function (n) { return !people.some(function (p) { return p.name.toLowerCase() === n.toLowerCase(); }); }).slice(0, 10), 'add-chip') + '</div>';
+  }
+  h += '<h3>Who shouldn’t draw each other?</h3><p class="hint">For couples or people who live together. They won’t be matched with each other either way.</p>';
+  if (ex.length) h += '<ul class="pairs">' + ex.map(function (x, i) {
+    var two = [nameOf(x[0]), nameOf(x[1])].sort(function (m, n) { return m.localeCompare(n); });
+    return '<li><span>' + esc(two[0]) + ' &amp; ' + esc(two[1]) + '</span>' +
+      (g.drawn ? '' : '<button type="button" class="icon-btn x" data-act="rmpair" data-i="' + i + '" aria-label="Remove pair">✕</button>') + '</li>';
+  }).join('') + '</ul>';
+  if (!g.drawn && people.length >= 2) {
+    var opts = '<option value="">Choose…</option>' + people.map(function (p) { return '<option value="' + esc(p.id) + '">' + esc(p.name) + '</option>'; }).join('');
+    h += '<form id="pairForm" novalidate><div class="pair"><select name="a" aria-label="First person">' + opts + '</select><span>&amp;</span><select name="b" aria-label="Second person">' + opts + '</select></div>' +
+      '<button type="submit" class="btn small ghost" style="margin-top:8px">Add pair</button></form>';
+  }
+  h += '<h3>Group</h3><div class="row" style="margin-top:8px"><button type="button" class="btn small ghost" data-act="edit">Edit details</button>' +
+    '<button type="button" class="btn small ghost" data-act="copy-host">Copy organizer link</button>' +
+    '<button type="button" class="btn small ghost" data-act="lock">🔒 Password</button>' +
+    '<button type="button" class="btn small danger" data-act="delete">Delete group</button></div>' +
+    '<p class="hint" style="font-size:13px;margin-top:8px">The organizer link lets you manage this group on another phone. Keep it private.</p></section>';
+  return h;
+}
+
+/* ------------------------------------------------------------------ actions */
+
+function O() { return owner(S.code); }
+
+function editDialog() {
+  var g = S.G.group, d = document.createElement('dialog'); d.className = 'dlg';
+  d.innerHTML = '<form novalidate><h2>Edit details</h2><div style="margin-top:12px">' +
+    '<label class="fld"><span>Group name</span><input type="text" name="name" maxlength="80" value="' + esc(g.name) + '"></label>' +
+    '<div class="two"><label class="fld"><span>Budget</span><input type="text" name="budget" maxlength="40" placeholder="$25" value="' + esc(g.budget || '') + '"></label>' +
+    '<label class="fld"><span>Swap date</span><input type="date" name="date" value="' + esc(g.swap_date || '') + '"></label></div>' +
+    '<label class="fld"><span>Note</span><textarea name="note" rows="3" maxlength="1000">' + esc(g.note || '') + '</textarea></label>' +
+    '<label class="check"><input type="checkbox" name="selfjoin"' + (g.self_join ? ' checked' : '') + '><span><b>Let people add themselves</b><small>Until you draw names.</small></span></label>' +
+    '</div><p class="err" role="alert"></p><div class="dlgbtns"><button type="submit" class="btn">Save</button><button type="button" class="btn plain" data-no>Cancel</button></div></form>';
+  document.body.appendChild(d);
+  var f = d.querySelector('form');
+  function close() { try { d.close(); } catch (e) {} d.remove(); }
+  d.querySelector('[data-no]').addEventListener('click', close);
+  d.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = tidy(f.elements.name.value, 80);
+    if (!name) { d.querySelector('.err').textContent = MSG.invalid_title; return; }
+    var b = f.querySelector('[type=submit]'); b.disabled = true;
+    raw('santa_update', { p_code: S.code, p_owner_token: O(), p_name: name, p_budget: tidy(f.elements.budget.value, 40), p_swap_date: f.elements.date.value || null,
+      p_note: String(f.elements.note.value || '').trim().slice(0, 1000), p_self_join: f.elements.selfjoin.checked }).then(function () {
+      close(); remember(S.code, name); toast('Saved.'); refresh();
+    }, function (er) { b.disabled = false; d.querySelector('.err').textContent = friendly(er); });
+  });
+  if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+}
+
+function saveExclusions(list, msg) {
+  return act(raw('santa_set_exclusions', { p_code: S.code, p_owner_token: O(), p_pairs: list }), msg);
+}
+
+document.addEventListener('submit', function (e) {
+  var f = e.target;
+  if (!f.id || !$app.contains(f)) return;
+  e.preventDefault();
+  if (f.id === 'createForm') { submitCreate(f); return; }
+  if (f.id === 'wishForm') {
+    var w = f.elements.wish.value;
+    if (w.length > 1000) { toast(MSG.wish_too_long); return; }
+    f.elements.wish.blur();
+    act(rpc('santa_set_wish', { p_code: S.code, p_participant: pid(), p_wish: w }), 'Wish list saved.').then(function () { delete S.drafts.wish; render(); }, function () {});
+    return;
+  }
+  if (f.id === 'joinForm') {
+    var n = tidy(f.elements.name.value, 40); if (!n) { f.elements.name.focus(); return; }
+    f.elements.name.blur();
+    act(rpc('santa_join', { p_code: S.code, p_participant: pid(), p_name: n }), 'Welcome, ' + n + '! You’re in.').then(function () {
+      rememberName(n); delete S.drafts.join; S.joinOpen = false; render();
+    }, function () {});
+    return;
+  }
+  if (f.id === 'addForm') {
+    var a = tidy(f.elements.name.value, 40); if (!a) { f.elements.name.focus(); return; }
+    act(raw('santa_add_person', { p_code: S.code, p_owner_token: O(), p_name: a }), a + ' added.').then(function () {
+      rememberName(a); delete S.drafts.add; S.pending = false; draw(); var i = $('#addForm input'); if (i) i.focus();
+    }, function () {});
+    return;
+  }
+  if (f.id === 'pairForm') {
+    var x = f.elements.a.value, y = f.elements.b.value;
+    if (!x || !y) { toast('Choose two people.'); return; }
+    if (x === y) { toast(MSG.invalid_exclusions); return; }
+    var list = (S.G.exclusions || []).slice();
+    if (list.some(function (p) { return (p[0] === x && p[1] === y) || (p[0] === y && p[1] === x); })) { toast('That pair is already on the list.'); return; }
+    list.push([x, y]);
+    document.activeElement && document.activeElement.blur();
+    saveExclusions(list, nameOf(x) + ' and ' + nameOf(y) + ' won’t draw each other.').catch(function () {});
+  }
+});
+
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('[data-act]'); if (!t || !$app.contains(t)) return;
+  var a = t.dataset.act, id = t.dataset.id, nm = t.dataset.name;
+  switch (a) {
+    case 'reload': location.reload(); break;
+    case 'add-create':
+      var ta = $('#createForm').elements.people, v = ta.value.replace(/\s+$/, '');
+      ta.value = (v ? v + '\n' : '') + nm; updateCreateChips(); break;
+    case 'forget-name': forgetName(nm); if (S.G) draw(); else updateCreateChips(); break;
+    case 'share': shareLink(S.G ? S.G.group.name : 'Secret Santa', shareUrl(S.code)); break;
+    case 'claim':
+      ask({ title: 'You’re ' + nm + '?', text: 'Only pick your own name — you can’t change it after the draw.', ok: 'Yes, I’m ' + nm }).then(function (ok) {
+        if (ok) act(rpc('santa_claim', { p_code: S.code, p_participant: pid(), p_person: id }), 'Hi ' + nm + '! 👋').catch(function () {});
+      });
+      break;
+    case 'unclaim':
+      ask({ title: 'That’s not you?', text: 'Your name goes back on the list so you can pick the right one.', ok: 'Pick again' }).then(function (ok) {
+        if (ok) act(rpc('santa_unclaim', { p_code: S.code, p_participant: pid() })).catch(function () {});
+      });
+      break;
+    case 'join-open': S.joinOpen = true; draw(); var j = $('#joinName'); if (j) j.focus(); break;
+    case 'join-chip': var ji = $('#joinName'); if (ji) { ji.value = nm; S.drafts.join = nm; ji.focus(); } break;
+    case 'reveal': S.revealed = true; draw(); break;
+    case 'hide': S.revealed = false; draw(); break;
+    case 'add-chip':
+      act(raw('santa_add_person', { p_code: S.code, p_owner_token: O(), p_name: nm }), nm + ' added.').then(function () { rememberName(nm); }, function () {});
+      break;
+    case 'rmperson':
+      ask({ title: 'Remove ' + nm + '?', text: 'They’ll be taken out of this group, with their wish list.', ok: 'Remove', danger: true }).then(function (ok) {
+        if (ok) act(raw('santa_remove_person', { p_code: S.code, p_owner_token: O(), p_person: id }), nm + ' removed.').catch(function () {});
+      });
+      break;
+    case 'reset':
+      ask({ title: 'Free up ' + nm + '?', text: 'Use this if the wrong person tapped “' + nm + '”. The name goes back on the list so the right person can pick it. Their wish list stays.', ok: 'Free up this name' }).then(function (ok) {
+        if (ok) act(raw('santa_reset_claim', { p_code: S.code, p_owner_token: O(), p_person: id }), nm + ' can be picked again.').catch(function () {});
+      });
+      break;
+    case 'rmpair':
+      var list = (S.G.exclusions || []).filter(function (_, i) { return String(i) !== t.dataset.i; });
+      saveExclusions(list, 'Pair removed.').catch(function () {});
+      break;
+    case 'draw':
+      var waiting = S.G.people.filter(function (p) { return !p.claimed; }).length;
+      ask({ title: 'Draw names now?', text: 'Everyone gets one person to buy for. ' + (waiting ? plural(waiting, 'person hasn’t', 'people haven’t') + ' picked their name yet; they still can after the draw.' : 'Everyone has picked their name.'), ok: '🎲 Draw names' }).then(function (ok) {
+        if (ok) act(raw('santa_draw', { p_code: S.code, p_owner_token: O() }), 'Names drawn! Everyone can now see who they’re buying for.').catch(function () {});
+      });
+      break;
+    case 'undraw':
+      ask({ title: 'Undo the draw?', text: 'Everyone’s match is thrown away. Anyone who already looked will get a different person after the next draw.', ok: 'Undo draw', danger: true }).then(function (ok) {
+        if (ok) act(raw('santa_undraw', { p_code: S.code, p_owner_token: O() }), 'Draw undone. You can change things and draw again.').then(function () { S.revealed = false; }, function () {});
+      });
+      break;
+    case 'edit': editDialog(); break;
+    case 'copy-host': copyText(ownerUrl(S.code)).then(function (ok) { toast(ok ? 'Organizer link copied. Keep it private.' : ownerUrl(S.code)); }); break;
+    case 'lock': PebblyLock.openHost({ app: 'santa', code: S.code, owner: O(), raw: raw, what: 'group', toast: toast }); break;
+    case 'delete':
+      ask({ title: 'Delete this group?', text: 'Names, wish lists and the draw are gone for everyone. This can’t be undone.', ok: 'Delete group', danger: true }).then(function (ok) {
+        if (!ok) return;
+        raw('santa_delete', { p_code: S.code, p_owner_token: O() }).then(function () {
+          clearInterval(S.timer); forget(S.code); setOwner(S.code, null);
+          history.pushState(null, '', baseUrl()); route(); toast('Group deleted.');
+        }, function (er) { toast(friendly(er)); });
+      });
+      break;
+  }
+});
+window.addEventListener('popstate', route);
+route();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

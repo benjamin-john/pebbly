@@ -1,0 +1,1254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Trivia</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D;
+  --good:#2E9B5A; --good-t:#DDF1E5; --good-i:#1E7344; --bad-t:#FBE3E2; --bad-i:#B32B27;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75;
+    --good:#5CC98A; --good-t:#1B3326; --good-i:#7FD6A2; --bad-t:#3A2120; --bad-i:#FF9C98; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75;
+    --good:#5CC98A; --good-t:#1B3326; --good-i:#7FD6A2; --bad-t:#3A2120; --bad-i:#FF9C98; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.wrap{max-width:680px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;line-height:1.2}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--no);border:1.5px solid var(--no)}
+.btn.sm{width:auto;min-height:44px;padding:0 14px;font-size:16px}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text],textarea,select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:500 17px/1.3 var(--body)}
+textarea{resize:vertical;display:block}
+label.lbl{display:block;font-weight:600;margin:0 0 6px}
+label.lbl small{font-weight:400;color:var(--muted)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.err{color:var(--no);font-size:15px;margin:8px 0 0;min-height:0}
+.err:empty{display:none}
+.stack{display:grid;gap:10px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:5px 0}
+.topbar{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+
+/* ---------- Sets ---------- */
+.sets{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.set{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 12px;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.set .si{flex:1;min-width:0}
+.set .si b{display:block;font-weight:600;font-size:16.5px;line-height:1.25;overflow-wrap:anywhere}
+.set .si small{color:var(--muted);font-size:13.5px}
+.set .btn.sm{padding:0 16px}
+.empty{color:var(--muted);text-align:center;padding:8px 0}
+
+/* ---------- Editor ---------- */
+.qlist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.eq{display:flex;gap:8px;align-items:stretch;border:1px solid var(--line);border-radius:14px;background:var(--bg);overflow:hidden}
+.eq.bad{border-color:var(--no);border-width:1.5px}
+.eq .eqb{flex:1;min-width:0;display:block;text-align:left;border:0;background:none;padding:10px 4px 10px 12px;cursor:pointer}
+.eq .eqq{font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.eq .eqq .n{color:var(--muted);font-weight:600;margin-right:4px}
+.eq .eqa{color:var(--good-i);font-size:14px;margin-top:3px;overflow-wrap:anywhere}
+.eq .eqp{color:var(--no);font-size:14px;margin-top:3px;font-weight:600}
+.eq .eqm{display:flex;flex-direction:column;justify-content:center;gap:4px;padding:6px 6px 6px 0}
+.chedit{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.chedit li{display:flex;gap:8px;align-items:center}
+.chedit input{flex:1;min-width:0}
+.chedit li.ok input{border-color:var(--good);background:var(--good-t)}
+.mark{flex:none;width:44px;height:44px;border-radius:50%;border:2px solid var(--field);background:var(--surface);color:transparent;font:800 20px/1 var(--head);cursor:pointer;padding:0}
+.mark[aria-pressed="true"]{background:var(--good);border-color:var(--good);color:#fff}
+.field{margin-bottom:14px}
+
+/* ---------- Import ---------- */
+.opts2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+.prompt{white-space:pre-wrap;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0 0;overflow-wrap:anywhere;max-height:260px;overflow:auto}
+details summary{cursor:pointer;color:var(--brand);font-weight:600;padding:10px 0 2px;min-height:44px}
+.pastebar{display:flex;gap:8px;align-items:center;justify-content:space-between;margin:0 0 6px}
+.pastebar label{margin:0}
+.res{border-radius:12px;padding:12px;margin:12px 0}
+.res.ok{background:var(--good-t);color:var(--good-i)}
+.res.warn{background:var(--lead-t)}
+.res.no{background:var(--bad-t);color:var(--bad-i)}
+.res b.big{display:block;font:800 20px/1.2 var(--head);margin-bottom:4px}
+.res ul{margin:6px 0 0;padding-left:20px}
+.pv{list-style:none;margin:8px 0 0;padding:0;font-size:14.5px}
+.pv li{padding:7px 0;border-bottom:1px solid var(--line)}
+.pv li .a{color:var(--good-i);display:block}
+.pv li .p{color:var(--no);display:block;font-weight:600}
+
+/* ---------- Setup ---------- */
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:22px;flex:none;text-align:right;color:var(--muted);font-size:14px}
+.plist input{flex:1;min-width:0}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer}
+.check{display:flex;gap:12px;align-items:flex-start;padding:8px 0;cursor:pointer}
+.check input{width:22px;height:22px;accent-color:var(--brand);flex:none;margin-top:1px}
+.check small{display:block;color:var(--muted);font-size:13.5px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.seg button{min-height:44px;border:1px solid var(--line);border-radius:10px;background:var(--surface);cursor:pointer;font-weight:600}
+.seg button[aria-pressed="true"]{border:2px solid var(--brand);background:var(--brand-t);color:var(--ink)}
+.note{padding:12px;border-radius:12px;background:var(--brand-t);margin-bottom:12px}
+
+/* ---------- Play ---------- */
+.prog{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin:0 0 12px}
+.prog i{display:block;height:100%;background:var(--brand);border-radius:3px}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px 16px}
+.qnum{font:600 13px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+.qtext{font:600 clamp(21px,5.8vw,27px)/1.28 var(--head);margin:0;overflow-wrap:anywhere}
+.timer{position:relative;height:28px;margin-top:14px;border-radius:999px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.timer i{position:absolute;inset:0 auto 0 0;background:var(--brand-t);border-right:3px solid var(--brand);transition:width .25s linear}
+.timer.warn i{background:var(--bad-t);border-color:var(--no)}
+.timer span{position:relative;display:block;text-align:center;font:700 14px/26px var(--body)}
+.choices{display:grid;gap:10px;margin:14px 0}
+.ch{position:relative;display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:10px 12px 10px 10px;border:0;border-radius:14px;
+  text-align:left;font:600 18px/1.25 var(--body);color:#fff;background:var(--c);box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);
+  cursor:pointer;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+div.ch{cursor:default}
+button.ch:active:not(:disabled){transform:scale(.98)}
+button.ch:disabled{cursor:default}
+.ch .lt{flex:none;width:38px;height:38px;display:grid;place-items:center;border-radius:10px;background:rgba(255,255,255,.26);font:800 19px/1 var(--head)}
+.ch .tx{flex:1;min-width:0;overflow-wrap:anywhere}
+.ch .mk{flex:none;min-width:32px;height:32px;padding:0 8px;border-radius:999px;display:grid;place-items:center;background:#fff;color:#1F2A27;font:800 15px/1 var(--body)}
+.c0{--c:#D93F3B}.c1{--c:#3570C9}.c2{--c:#F2C230;color:#33290A}.c3{--c:#7B4FC4}.c4{--c:#178585}.c5{--c:#E8833A;color:#33200A}
+.c2 .lt,.c5 .lt{background:rgba(255,255,255,.45)}
+.choices.picked .ch:not(.sel){opacity:.5}
+.ch.sel{outline:4px solid var(--ink);outline-offset:3px;opacity:1}
+.choices.revealed .ch{opacity:.35;outline:0}
+.choices.revealed .ch.right{opacity:1;outline:4px solid var(--good);outline-offset:3px}
+.choices.revealed .ch.wrong{opacity:.6}
+.whos{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 0}
+.whos span{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:0 10px;border-radius:999px;border:1px dashed var(--field);color:var(--muted);font-size:14.5px}
+.whos span.done{border:1px solid var(--good);background:var(--good-t);color:var(--good-i);font-weight:600}
+.status{font-weight:600;text-align:center;margin:4px 0 12px}
+.status small{display:block;font-weight:400;color:var(--muted)}
+.result{border-radius:14px;padding:14px;text-align:center;margin:0 0 12px}
+.result b{display:block;font:800 24px/1.2 var(--head)}
+.result.ok{background:var(--good-t);color:var(--good-i)}
+.result.no{background:var(--bad-t);color:var(--bad-i)}
+.result.none{background:var(--surface);border:1px solid var(--line)}
+.explain{background:var(--lead-t);border-radius:12px;padding:10px 12px;margin:0 0 12px}
+.gotline{margin:0 0 12px;font-weight:600}
+.gotline span{font-weight:400;color:var(--muted)}
+.toggles{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:0 0 6px}
+.tog{display:flex;align-items:center;gap:8px;min-height:52px;padding:6px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;text-align:left}
+.tog .nm{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tog .sc{font:800 18px/1 var(--head);color:var(--muted)}
+.tog .bx{flex:none;width:24px;height:24px;border-radius:6px;border:2px solid var(--field);display:grid;place-items:center;font-weight:800;font-size:15px;color:transparent}
+.tog[aria-pressed="true"]{border-color:var(--good);background:var(--good-t)}
+.tog[aria-pressed="true"] .bx{background:var(--good);border-color:var(--good);color:#fff}
+.board{list-style:none;margin:0;padding:0}
+.board li{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:17px}
+.board li:last-child{border-bottom:0}
+.board .pl{width:28px;flex:none;text-align:center;color:var(--muted);font-weight:600}
+.board .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .nm small{color:var(--muted);font-size:13px;margin-left:4px}
+.board .gt{color:var(--good-i);font-weight:700;font-size:14px}
+.board .sc{font:800 22px/1 var(--head);font-variant-numeric:tabular-nums;min-width:28px;text-align:right}
+.board li.me{font-weight:700}
+.bigcode{font:800 46px/1 var(--head);letter-spacing:.14em;text-align:center;margin:12px 0}
+.win{text-align:center;padding:22px 16px;border-radius:18px;margin-bottom:12px;color:#33290A;
+  background:linear-gradient(135deg,#FCE38A 0%,#F2C230 55%,#E8A93A 100%);box-shadow:0 6px 20px rgba(0,0,0,.12);position:relative;overflow:hidden}
+.win .tr{font-size:56px;line-height:1;display:inline-block;animation:pop .6s cubic-bezier(.2,1.6,.4,1) both}
+.win .wl{font:600 13px/1 var(--body);letter-spacing:.1em;text-transform:uppercase;margin-top:10px;opacity:.8}
+.win .wn{font:800 30px/1.15 var(--head);margin-top:4px;overflow-wrap:anywhere}
+.win .ws{font-weight:600;margin-top:4px}
+.win .cf{position:absolute;top:-10px;font-size:20px;animation:fall 2.4s ease-in 1 both;opacity:0}
+@keyframes pop{0%{transform:scale(.2) rotate(-20deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes fall{0%{opacity:1;transform:translateY(0) rotate(0)}100%{opacity:0;transform:translateY(180px) rotate(240deg)}}
+@media (prefers-reduced-motion:reduce){.win .tr,.win .cf{animation:none}.win .cf{display:none}}
+.waiting{color:var(--muted);text-align:center;margin:10px 0}
+
+/* ---------- Dialogs ---------- */
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+</style>
+<script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Start ================= -->
+<main class="wrap" id="home" hidden>
+  <h1>Trivia</h1>
+  <p class="lead">A quiz for the family. Read it out on one phone, or everyone answers on their own phone.</p>
+  <div id="psJoin"></div>
+  <button class="btn ghost" id="resumeBtn" type="button" hidden style="margin-bottom:12px">Back to the quiz</button>
+
+  <section class="card">
+    <h2>Question sets</h2>
+    <ul class="sets" id="setList"></ul>
+    <div class="row2">
+      <button class="btn plain" id="newSetBtn" type="button">✎ Make a set</button>
+      <button class="btn plain" id="importBtn" type="button">✨ Import / AI</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>How it works</h2>
+    <ul class="rules">
+      <li>Pick a question set, or make your own. <b>Import / AI</b> gives you a prompt to paste into ChatGPT, Gemini or Claude, which writes a whole quiz on any topic.</li>
+      <li><b>This phone:</b> the quizmaster reads each question, reveals the answer and taps who got it right.</li>
+      <li><b>Everyone’s phones:</b> others join with a code and tap their answers. This phone runs the quiz.</li>
+      <li>One point for each right answer. Most points wins.</li>
+    </ul>
+  </section>
+</main>
+
+<!-- ================= Editor ================= -->
+<main class="wrap" id="editor" hidden>
+  <div class="topbar">
+    <button class="icon-btn" id="edBack" type="button" aria-label="Back">←</button>
+    <div class="title"><h1 id="edHead">New set</h1></div>
+  </div>
+  <section class="card">
+    <label class="lbl" for="edTitle">Title</label>
+    <input type="text" id="edTitle" maxlength="60" placeholder="e.g. Family Movie Night" autocomplete="off">
+  </section>
+  <section class="card">
+    <h2 id="edCount">Questions</h2>
+    <ol class="qlist" id="edList"></ol>
+    <button class="btn ghost" id="edAdd" type="button">+ Add a question</button>
+  </section>
+  <p class="err" id="edErr" role="alert"></p>
+  <div class="stack" style="margin-top:12px">
+    <button class="btn" id="edSave" type="button">Save set</button>
+    <div class="row2">
+      <button class="btn plain" id="edCopy" type="button">Copy JSON</button>
+      <button class="btn plain" id="edCancel" type="button">Cancel</button>
+    </div>
+  </div>
+</main>
+
+<!-- ================= Import ================= -->
+<main class="wrap" id="import" hidden>
+  <div class="topbar">
+    <button class="icon-btn" id="imBack" type="button" aria-label="Back">←</button>
+    <div class="title"><h1>Import questions</h1></div>
+  </div>
+  <section class="card">
+    <h2>1 · Ask an AI (optional)</h2>
+    <label class="lbl" for="imCat">Topic</label>
+    <input type="text" id="imCat" maxlength="80" placeholder="e.g. 80s movies" autocomplete="off">
+    <div class="opts2">
+      <div><label class="lbl" for="imNum">Questions</label>
+        <select id="imNum"><option>5</option><option>10</option><option selected>15</option><option>20</option><option>25</option><option>30</option></select></div>
+      <div><label class="lbl" for="imDiff">Difficulty</label>
+        <select id="imDiff"><option value="easy">Easy</option><option value="medium" selected>Medium</option><option value="hard">Hard</option><option value="mixed">Mixed</option><option value="kids">For kids</option></select></div>
+    </div>
+    <p class="err" id="imCatErr"></p>
+    <button class="btn" id="imCopy" type="button">📋 Copy AI prompt</button>
+    <p class="hint">Paste it into ChatGPT, Gemini, Claude or any AI chat. Then copy its whole reply and paste it below.</p>
+    <details><summary>Show the prompt</summary><pre class="prompt" id="imPrompt"></pre></details>
+  </section>
+  <section class="card">
+    <h2>2 · Paste the questions</h2>
+    <div class="pastebar"><label class="lbl" for="imText">The AI’s reply, or a copied set</label>
+      <button class="btn plain sm" id="imPaste" type="button">Paste</button></div>
+    <textarea id="imText" rows="6" placeholder='{"title": "…", "questions": [ … ]}' spellcheck="false" autocomplete="off"></textarea>
+    <div id="imResult" aria-live="polite"></div>
+    <div id="imSaveBox" hidden>
+      <label class="lbl" for="imTitle">Title</label>
+      <input type="text" id="imTitle" maxlength="60" autocomplete="off">
+      <div class="stack" style="margin-top:12px">
+        <button class="btn" id="imSave" type="button">Save set</button>
+        <button class="btn plain" id="imFix" type="button">Fix them in the editor</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= Setup ================= -->
+<main class="wrap" id="setup" hidden>
+  <div class="topbar">
+    <button class="icon-btn" id="suBack" type="button" aria-label="Back">←</button>
+    <div class="title"><h1 id="suTitle"></h1><div class="sub" id="suSub"></div></div>
+  </div>
+  <div class="note" id="contNote" hidden></div>
+  <div id="psSetup"></div>
+
+  <section class="card" id="playersCard">
+    <h2>Players</h2>
+    <ul class="plist" id="setupPlayers"></ul>
+    <form class="addrow" id="addPlayerForm" autocomplete="off">
+      <input type="text" id="newPlayer" maxlength="16" placeholder="Add a player" enterkeyhint="done">
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <div class="chips" id="playerChips"></div>
+    <p class="hint">You read out the questions, reveal the answer, then tap who got it right.</p>
+  </section>
+
+  <section class="card" id="hostCard">
+    <h2>You</h2>
+    <label class="lbl" for="myName">Your name</label>
+    <input type="text" id="myName" maxlength="16" placeholder="Quizmaster" autocomplete="off">
+    <label class="check"><input type="checkbox" id="hostPlays"><span><b>I’m answering too</b><small>Only if you haven’t seen the answers. This phone shows the answer buttons as well as the quizmaster buttons.</small></span></label>
+  </section>
+
+  <section class="card">
+    <h2>Options</h2>
+    <div id="timerBox">
+      <label class="lbl">Time to answer</label>
+      <div class="seg" id="timerSeg">
+        <button type="button" data-t="0">Off</button><button type="button" data-t="10">10 s</button><button type="button" data-t="20">20 s</button><button type="button" data-t="30">30 s</button>
+      </div>
+      <p class="hint" style="margin-bottom:6px">When time runs out, answers lock.</p>
+    </div>
+    <label class="check"><input type="checkbox" id="shufQ"><span><b>Shuffle the questions</b></span></label>
+    <label class="check"><input type="checkbox" id="shufA"><span><b>Shuffle the answer order</b></span></label>
+  </section>
+  <p class="err" id="suErr"></p>
+  <button class="btn" id="startBtn" type="button">Start</button>
+</main>
+
+<!-- ================= Play ================= -->
+<main class="wrap" id="play" hidden>
+  <div class="topbar">
+    <div class="title"><h1 id="pTitle">Trivia</h1><div class="sub" id="pSub"></div></div>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+  <div id="psBadge" hidden></div>
+  <div id="stage"></div>
+</main>
+
+<!-- ================= Question editor ================= -->
+<dialog id="qDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="qHead">Question</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="field">
+      <label class="lbl" for="qText">Question</label>
+      <textarea id="qText" rows="3" maxlength="300" placeholder="e.g. Who directed E.T.?"></textarea>
+    </div>
+    <div class="field">
+      <label class="lbl">Answer choices <small>· tap ✓ next to the right one</small></label>
+      <ul class="chedit" id="qChoices"></ul>
+      <button class="btn ghost sm" id="qAddChoice" type="button" style="margin-top:10px">+ Add a choice</button>
+    </div>
+    <div class="field">
+      <label class="lbl" for="qExplain">Fun fact <small>· optional, shown after the answer</small></label>
+      <input type="text" id="qExplain" maxlength="240" autocomplete="off">
+    </div>
+    <p class="err" id="qErr" role="alert"></p>
+    <div class="stack" style="margin-top:12px">
+      <button class="btn" id="qSave" type="button">Done</button>
+      <button class="btn danger" id="qDel" type="button">Delete this question</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- ================= Menu ================= -->
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mScores">Scores so far</button>
+      <button class="btn plain" type="button" id="mAgain">Play again, same questions</button>
+      <button class="btn plain" type="button" id="mEnd">End the quiz now</button>
+      <button class="btn plain" type="button" id="mHome">Back to start</button>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="scoreDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Scores so far</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div id="scoreBody"></div>
+    <button class="btn plain" type="button" data-close style="margin-top:14px">Close</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var K_SETS = 'pebbly_trivia_sets', K_GAME = 'pebbly_trivia_game', K_UNDO = 'pebbly_trivia_undo', K_QUIZ = 'pebbly_trivia_quiz',
+      K_OPTS = 'pebbly_trivia_opts', K_SEEN = 'pebbly_trivia_seen', K_MEM = 'pebbly_score_memory';
+  var LETTERS = 'ABCDEF', MAXQ = 200, GRACE = 3000;
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s == null ? '' : s).trim().replace(/\s+/g, ' '); }
+  function clip(s, n) { s = tidy(s); return s.length > n ? s.slice(0, n) : s; }
+  function clone(x) { return x == null ? x : JSON.parse(JSON.stringify(x)); }
+  function buzz(ms) { if (navigator.vibrate) try { navigator.vibrate(ms || 8); } catch (e) {} }
+  function randInt(n) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+  function shuffle(a) { for (var i = a.length - 1; i > 0; i--) { var j = randInt(i + 1), t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function plural(n, w) { return n + ' ' + w + (n === 1 ? '' : 's'); }
+  function listNames(ns) { return ns.length <= 2 ? ns.join(' and ') : ns.slice(0, -1).join(', ') + ' and ' + ns[ns.length - 1]; }
+
+  // ================= Built-in sample =================
+  var SAMPLE = { id: 'sample', builtin: true, title: 'Fun Facts (sample)', questions: [
+    { q: 'What is the largest planet in our solar system?', choices: ['Earth', 'Jupiter', 'Saturn', 'Neptune'], answer: 1, explain: 'Jupiter is so big that all the other planets could fit inside it.' },
+    { q: 'How many legs does a spider have?', choices: ['6', '8', '10', '12'], answer: 1, explain: 'Insects have 6 legs. Spiders aren’t insects: they’re arachnids.' },
+    { q: 'Which animal is known as the “ship of the desert”?', choices: ['Horse', 'Elephant', 'Camel', 'Ostrich'], answer: 2 },
+    { q: 'What color do you get when you mix blue and yellow?', choices: ['Green', 'Purple', 'Orange', 'Brown'], answer: 0 },
+    { q: 'Which is the only mammal that can truly fly?', choices: ['Flying squirrel', 'Bat', 'Sugar glider', 'Flying lemur'], answer: 1, explain: 'The others only glide.' },
+    { q: 'What is the capital of Australia?', choices: ['Sydney', 'Melbourne', 'Canberra', 'Perth'], answer: 2, explain: 'Canberra was built as a compromise between Sydney and Melbourne.' },
+    { q: 'How many minutes are in a whole day?', choices: ['1,440', '1,240', '2,400', '3,600'], answer: 0, explain: '24 hours × 60 minutes = 1,440.' },
+    { q: 'Which is the largest ocean?', choices: ['Atlantic', 'Indian', 'Arctic', 'Pacific'], answer: 3 },
+    { q: 'Who painted the Mona Lisa?', choices: ['Vincent van Gogh', 'Leonardo da Vinci', 'Pablo Picasso', 'Michelangelo'], answer: 1 },
+    { q: 'Which gas do plants take in from the air?', choices: ['Oxygen', 'Carbon dioxide', 'Helium', 'Nitrogen'], answer: 1, explain: 'They use it to make sugar, and give out oxygen.' }
+  ] };
+
+  var sets = load(K_SETS, []); if (!Array.isArray(sets)) sets = [];
+  var game = load(K_GAME, null), undo = load(K_UNDO, []), quiz = load(K_QUIZ, null);
+  var opts = load(K_OPTS, {}); if (typeof opts !== 'object' || !opts) opts = {};
+  var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
+  var seen = load(K_SEEN, {});
+  var sync = null, connecting = 0;
+  if (game && game.mode !== 'local' && game.mode !== 'shared') game = null;
+
+  function allSets() { return sets.concat([SAMPLE]); }
+  function findSet(id) { return allSets().filter(function (s) { return s.id === id; })[0] || null; }
+  function saveSets() { store(K_SETS, sets); }
+  function save() { store(K_GAME, game); store(K_UNDO, undo); if (sync && game && game.mode === 'shared') sync.push(); }
+  function snap() { undo.push(JSON.stringify(game)); if (undo.length > 100) undo.shift(); }
+
+  var SCREENS = ['home', 'editor', 'import', 'setup', 'play'];
+  function show(id) {
+    SCREENS.forEach(function (s) { $(s).hidden = s !== id; });
+    if (id !== 'play') keepAwake(false);
+    scrollTo(0, 0);
+  }
+
+  var toastT;
+  function toast(msg) {
+    var t = $('toast'); if (!t) { t = document.createElement('div'); t.id = 'toast'; t.setAttribute('role', 'status');
+      t.style.cssText = 'position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;font-size:15px;width:max-content;max-width:calc(100% - 32px);transition:opacity .2s;pointer-events:none';
+      document.body.appendChild(t); }
+    t.textContent = msg; t.style.opacity = '1'; clearTimeout(toastT); toastT = setTimeout(function () { t.style.opacity = '0'; }, 3200);
+  }
+  function copyText(text) {
+    function fallback() {
+      var ta = document.createElement('textarea'); ta.value = text; ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0'; document.body.appendChild(ta); ta.select();
+      var ok = false; try { ok = document.execCommand('copy'); } catch (e) {} ta.remove(); return ok;
+    }
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text).then(function () { return true; }, fallback);
+    return Promise.resolve(fallback());
+  }
+
+  // ================= Importing (forgiving JSON reader) =================
+  // Finds the JSON in whatever was pasted (code fences, chatty text before or after), then reads
+  // questions from common shapes. Answers can be the choice text (any case/spacing), a letter (B),
+  // or a number counting from 1 (if any numeric answer in the set is 0, numbers count from 0).
+  function matchEnd(t, i) {
+    var depth = 0, inStr = false, bs = false;
+    for (var j = i; j < t.length; j++) {
+      var c = t[j];
+      if (inStr) { if (bs) bs = false; else if (c === '\\') bs = true; else if (c === '"') inStr = false; continue; }
+      if (c === '"') inStr = true;
+      else if (c === '{' || c === '[') depth++;
+      else if (c === '}' || c === ']') { depth--; if (depth === 0) return j; }
+    }
+    return -1;
+  }
+  function tryParse(s) {
+    var fixes = [function (x) { return x; },
+      function (x) { return x.replace(/,\s*([}\]])/g, '$1'); },
+      function (x) { return x.replace(/[“”„‟″]/g, '"').replace(/,\s*([}\]])/g, '$1'); }];
+    for (var i = 0; i < fixes.length; i++) { try { return JSON.parse(fixes[i](s)); } catch (e) {} }
+    return undefined;
+  }
+  function keyMap(o) { var m = {}; Object.keys(o).forEach(function (k) { m[k.toLowerCase().replace(/[\s_-]/g, '')] = o[k]; }); return m; }
+  function pick(o, keys) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return undefined;
+    var m = keyMap(o);
+    for (var i = 0; i < keys.length; i++) { var v = m[keys[i]]; if (v !== undefined && v !== null && v !== '') return v; }
+    return undefined;
+  }
+  var K_Q = ['q', 'question', 'questiontext', 'text', 'prompt', 'query'];
+  var K_CH = ['choices', 'options', 'answers', 'answerchoices', 'answeroptions', 'alternatives', 'possibleanswers'];
+  var K_ANS = ['answer', 'correct', 'correctanswer', 'correctchoice', 'correctoption', 'answerindex', 'correctindex', 'rightanswer', 'solution', 'answerkey', 'key'];
+  var K_EX = ['explain', 'explanation', 'fact', 'funfact', 'note', 'info', 'why', 'details'];
+  var K_LIST = ['questions', 'quiz', 'items', 'data', 'trivia', 'results', 'questionlist', 'list'];
+  var K_TITLE = ['title', 'name', 'quiztitle', 'category', 'topic'];
+  function looksLikeQ(o) { return !!o && typeof o === 'object' && !Array.isArray(o) && pick(o, K_Q) !== undefined; }
+  function topOf(v, depth) {
+    if (Array.isArray(v)) return { title: '', items: v };
+    if (!v || typeof v !== 'object') return { title: '', items: [] };
+    var title = pick(v, K_TITLE), list = pick(v, K_LIST);
+    if (typeof title !== 'string') title = '';
+    if (Array.isArray(list)) return { title: title, items: list };
+    if (list && typeof list === 'object' && (depth || 0) < 2) { var inner = topOf(list, (depth || 0) + 1); if (!inner.title) inner.title = title; if (inner.items.length) return inner; }
+    if (looksLikeQ(v)) return { title: '', items: [v] };
+    return { title: title, items: [] };
+  }
+  function useful(v) { var t = topOf(v); return t.items.some(function (x) { return x && typeof x === 'object'; }); }
+  function extractJson(text) {
+    var t = String(text || '').replace(/^﻿/, '').replace(/```[A-Za-z]*[ \t]*/g, '').replace(/~~~[A-Za-z]*/g, '');
+    if (!/[{[]/.test(t)) return { error: 'That doesn’t look like quiz questions. Copy the AI’s whole reply (it starts with { ) and paste it here.' };
+    var tries = 0, firstFailed = null;
+    var variants = [t, t.replace(/[“”„‟]/g, '"')];
+    for (var vi = 0; vi < variants.length; vi++) {
+      var s = variants[vi];
+      for (var i = 0; i < s.length && tries < 60; i++) {
+        var c = s[i]; if (c !== '{' && c !== '[') continue;
+        tries++;
+        var end = matchEnd(s, i);
+        var cands = end > i ? [s.slice(i, end + 1)] : [];
+        var last = s.lastIndexOf(c === '{' ? '}' : ']'); if (last > i && last !== end) cands.push(s.slice(i, last + 1));
+        var okHere = false;
+        for (var k = 0; k < cands.length; k++) {
+          var v = tryParse(cands[k]);
+          if (v !== undefined && v && typeof v === 'object') { okHere = true; if (useful(v)) return { value: v }; }
+        }
+        if (firstFailed === null) firstFailed = !okHere;
+      }
+    }
+    return { error: !firstFailed ? 'Couldn’t find any questions in that text. Check you copied the AI’s whole reply.'
+                              : 'The questions look broken or cut off. Copy the AI’s whole reply again, or ask it for fewer questions.' };
+  }
+  function norm(s) { return String(s).toLowerCase().replace(/\s+/g, ' ').trim().replace(/[.!]+$/, ''); }
+  function loose(s) { return String(s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ''); }
+  function rawQ(it) {
+    if (!it || typeof it !== 'object' || Array.isArray(it)) return { q: typeof it === 'string' ? clip(it, 300) : '', choices: [], flagged: -1, explain: '' };
+    var q = pick(it, K_Q); q = typeof q === 'string' || typeof q === 'number' ? clip(q, 300) : '';
+    var ch = pick(it, K_CH), flagged = -1, ans = pick(it, K_ANS);
+    if (ch && !Array.isArray(ch) && typeof ch === 'object') ch = Object.keys(ch).sort().map(function (k) { return ch[k]; });   // {"A": …, "B": …}
+    if (!Array.isArray(ch)) ch = [];
+    // Open Trivia DB style: correct_answer + incorrect_answers.
+    var wrong = pick(it, ['incorrectanswers', 'wronganswers', 'incorrect', 'distractors']);
+    if (!ch.length && Array.isArray(wrong) && (typeof ans === 'string' || typeof ans === 'number')) {
+      ch = wrong.slice(); ch.splice(randInt(ch.length + 1), 0, ans);
+    }
+    var choices = [];
+    ch.forEach(function (c) {
+      var text = c, ok = false;
+      if (c && typeof c === 'object') { text = pick(c, ['text', 'answer', 'option', 'label', 'value', 'choice']);
+        ok = c.correct === true || c.isCorrect === true || c.is_correct === true || c.right === true; }
+      text = typeof text === 'string' || typeof text === 'number' ? clip(text, 120) : '';
+      if (!text) return;
+      if (ok) flagged = choices.length;
+      choices.push(text);
+    });
+    // "A) Paris", "B) Rome": drop the letters when every choice has them in order.
+    if (choices.length > 1 && choices.every(function (c, i) { var m = /^\(?([A-Fa-f1-6])[).:\]]\s+/.exec(c); return m && (m[1].toUpperCase() === LETTERS[i] || m[1] === String(i + 1)); }))
+      choices = choices.map(function (c) { return c.replace(/^\(?[A-Fa-f1-6][).:\]]\s+/, ''); });
+    var ex = pick(it, K_EX); ex = typeof ex === 'string' ? clip(ex, 240) : '';
+    var r = { q: q, choices: choices, ans: ans, flagged: flagged, explain: ex, num: null };
+    if (Array.isArray(ans) && ans.length === 1) r.ans = ans = ans[0];
+    if (typeof ans === 'number') r.num = ans;
+    else if (typeof ans === 'string' && /^\s*\d+\s*$/.test(ans) && !choices.some(function (c) { return norm(c) === norm(ans); })) r.num = parseInt(ans, 10);
+    return r;
+  }
+  function resolveAnswer(r, zero) {
+    var a = r.ans, ch = r.choices, n = ch.length, i, m;
+    if (a === undefined) return r.flagged > -1 ? r.flagged : -2;
+    if (r.num != null) { var k = zero ? r.num : r.num - 1; return Number.isInteger(r.num) && k >= 0 && k < n ? k : -1; }
+    if (a && typeof a === 'object' && !Array.isArray(a)) { var at = pick(a, ['text', 'answer', 'value', 'choice']); if (typeof at !== 'string') return -1; a = at; }
+    if (typeof a !== 'string') return -1;
+    var na = norm(a);
+    for (i = 0; i < n; i++) if (norm(ch[i]) === na) return i;
+    if ((m = /^(?:option|choice|answer)?\s*\(?([a-f])\)?[.):]?$/i.exec(a.trim()))) { i = LETTERS.indexOf(m[1].toUpperCase()); return i < n ? i : -1; }
+    if ((m = /^\(?(?:[a-f]|\d)[).:\]-]\s*(.+)$/i.exec(a.trim()))) { var rest = norm(m[1]); for (i = 0; i < n; i++) if (norm(ch[i]) === rest) return i; }
+    var la = loose(a);
+    if (la) for (i = 0; i < n; i++) if (loose(ch[i]) === la) return i;
+    return -1;
+  }
+  function problemOf(q) {
+    if (!tidy(q.q)) return 'the question text is missing';
+    if (!q.choices.length) return 'the answer choices are missing';
+    if (q.choices.length < 2) return 'needs at least 2 answer choices';
+    if (q.choices.length > 6) return 'has more than 6 answer choices (6 is the most)';
+    var seenC = {};
+    for (var i = 0; i < q.choices.length; i++) { var k = norm(q.choices[i]); if (seenC[k]) return 'two of the answer choices are the same'; seenC[k] = 1; }
+    if (q.answer === -2) return 'no right answer is given';
+    if (!(q.answer >= 0 && q.answer < q.choices.length)) return q.answer === -1 ? 'the answer isn’t one of the choices' : 'no right answer is marked';
+    return null;
+  }
+  function parseImport(text) {
+    var x = extractJson(text);
+    if (x.error) return { error: x.error };
+    var top = topOf(x.value), items = top.items;
+    if (!items.length) return { error: 'Couldn’t find any questions in that text.' };
+    var raws = items.slice(0, MAXQ).map(rawQ);
+    var nums = raws.filter(function (r) { return r.num != null; });
+    var zero = nums.some(function (r) { return r.num === 0; }) && !nums.some(function (r) { return r.num === r.choices.length; });
+    var qs = raws.map(function (r) {
+      var q = { q: r.q, choices: r.choices, answer: resolveAnswer(r, zero), explain: r.explain };
+      var p = problemOf(q); if (p) q.problem = p;
+      return q;
+    });
+    return { title: clip(top.title, 60), qs: qs, zero: zero && nums.length > 0, cut: items.length > MAXQ };
+  }
+  function exportJson(title, qs) {
+    return JSON.stringify({ title: title, questions: qs.map(function (q) {
+      var o = { q: q.q, choices: q.choices, answer: q.choices[q.answer] };
+      if (q.explain) o.explain = q.explain;
+      return o;
+    }) }, null, 2);
+  }
+  function aiPrompt(cat, n, diff) {
+    var d = diff === 'mixed' ? 'a mix of easy, medium and hard' : diff === 'kids' ? 'easy, suitable for children aged 7 to 12,' : diff;
+    return 'Write ' + n + ' multiple-choice trivia questions about ' + cat + ', ' + d + ' difficulty, for a fun family quiz night.\n\n' +
+      'Reply with ONLY the JSON: no other text, no explanation, no code fences. Use exactly this format:\n' +
+      '{"title": "80s Movies", "questions": [{"q": "Who directed E.T.?", "choices": ["Steven Spielberg", "George Lucas", "James Cameron", "Ron Howard"], "answer": "Steven Spielberg", "explain": "optional one-line fact"}]}\n\n' +
+      'Rules:\n' +
+      '- "title": a short title for this quiz (2 to 4 words).\n' +
+      '- Exactly ' + n + ' questions.\n' +
+      '- Each question has 4 different choices (2 to 6 are allowed) and exactly one right answer.\n' +
+      '- "answer" must be the full text of the right choice, copied exactly from "choices". Not a letter. (If you must use a number, 1 means the first choice.)\n' +
+      '- Put the right answer in a different position from question to question.\n' +
+      '- "explain" is optional: one short, interesting sentence about the answer.\n' +
+      '- Double-check every fact. Keep questions short and clear, with no trick questions.';
+  }
+
+  // ================= Start screen =================
+  function showHome() { show('home'); renderHome(); }
+  function inProgress(g) { return !!g && (g.mode === 'shared' ? PebblySync.active() || g.phase !== 'over' : g.phase !== 'over'); }
+  function renderHome() {
+    var r = $('resumeBtn');
+    r.hidden = !game || (game.mode === 'shared' && !PebblySync.active());
+    if (game) r.textContent = game.mode === 'shared' ? '← Back to the shared quiz' : game.phase === 'over' ? '← Back to the results' :
+      '← Back to the quiz (question ' + (game.qi + 1) + ' of ' + game.qs.length + ')';
+    var all = allSets();
+    $('setList').innerHTML = all.map(function (s) {
+      return '<li class="set"><div class="si"><b>' + esc(s.title) + '</b><small>' + plural(s.questions.length, 'question') + (s.builtin ? ' · built in' : '') + '</small></div>' +
+        '<button type="button" class="btn sm" data-act="play" data-id="' + esc(s.id) + '">Play</button>' +
+        '<button type="button" class="icon-btn" data-act="edit" data-id="' + esc(s.id) + '" aria-label="Edit ' + esc(s.title) + '">✎</button>' +
+        (s.builtin ? '' : '<button type="button" class="icon-btn x" data-act="del" data-id="' + esc(s.id) + '" aria-label="Delete ' + esc(s.title) + '">🗑</button>') + '</li>';
+    }).join('');
+  }
+  $('setList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var s = findSet(b.dataset.id); if (!s) return;
+    if (b.dataset.act === 'play') openSetup(s.id);
+    else if (b.dataset.act === 'edit') openEditor(s.id);
+    else if (b.dataset.act === 'del') {
+      if (!confirm('Delete “' + s.title + '”? This can’t be undone.')) return;
+      sets = sets.filter(function (x) { return x.id !== s.id; }); saveSets(); renderHome(); toast('Deleted “' + s.title + '”.');
+    }
+  });
+  $('resumeBtn').addEventListener('click', showPlay);
+  $('newSetBtn').addEventListener('click', function () { openEditor(null); });
+  $('importBtn').addEventListener('click', openImport);
+
+  // ================= Editor =================
+  var ed = null;   // { id, title, qs, dirty }
+  function openEditor(id, preset) {
+    var s = id ? findSet(id) : null;
+    ed = { id: s && !s.builtin ? s.id : null, title: s ? (s.builtin ? s.title.replace(/ \(sample\)$/, '') : s.title) : '', qs: s ? clone(s.questions) : [], dirty: false };
+    if (preset) { ed.title = preset.title; ed.qs = preset.qs; ed.dirty = true; }
+    $('edHead').textContent = ed.id ? 'Edit set' : s && s.builtin ? 'Copy of sample' : 'New set';
+    $('edTitle').value = ed.title; $('edErr').textContent = '';
+    show('editor'); renderEditor();
+  }
+  function edProblem(q) { return q.problem || problemOf(q); }
+  function renderEditor() {
+    $('edCount').textContent = ed.qs.length ? plural(ed.qs.length, 'question') : 'Questions';
+    $('edList').innerHTML = ed.qs.length ? ed.qs.map(function (q, i) {
+      var p = edProblem(q);
+      return '<li class="eq' + (p ? ' bad' : '') + '"><button type="button" class="eqb" data-act="open" data-i="' + i + '">' +
+        '<div class="eqq"><span class="n">' + (i + 1) + '.</span>' + (tidy(q.q) ? esc(q.q) : '<i>(no question text)</i>') + '</div>' +
+        (q.answer >= 0 && q.choices[q.answer] ? '<div class="eqa">✓ ' + esc(q.choices[q.answer]) + ' · ' + plural(q.choices.length, 'choice') + '</div>' : '') +
+        (p ? '<div class="eqp">⚠ ' + esc(p.charAt(0).toUpperCase() + p.slice(1)) + '. Tap to fix.</div>' : '') + '</button>' +
+        '<div class="eqm"><button type="button" class="icon-btn" data-act="up" data-i="' + i + '" aria-label="Move question ' + (i + 1) + ' up"' + (i ? '' : ' disabled') + '>↑</button>' +
+        '<button type="button" class="icon-btn" data-act="down" data-i="' + i + '" aria-label="Move question ' + (i + 1) + ' down"' + (i < ed.qs.length - 1 ? '' : ' disabled') + '>↓</button></div></li>';
+    }).join('') : '<li class="empty">No questions yet.</li>';
+  }
+  $('edTitle').addEventListener('input', function () { ed.title = $('edTitle').value; ed.dirty = true; });
+  $('edList').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b) return;
+    var i = +b.dataset.i;
+    if (b.dataset.act === 'open') openQ(i);
+    else { var j = b.dataset.act === 'up' ? i - 1 : i + 1; if (j < 0 || j >= ed.qs.length) return;
+      ed.qs.splice(j, 0, ed.qs.splice(i, 1)[0]); ed.dirty = true; renderEditor();
+      var again = $('edList').children[j] && $('edList').children[j].querySelector('[data-act="' + b.dataset.act + '"]'); if (again && !again.disabled) again.focus(); }
+  });
+  $('edAdd').addEventListener('click', function () { if (ed.qs.length >= MAXQ) { toast('That’s the most questions a set can have.'); return; } openQ(-1); });
+  function leaveEditor() { if (ed && ed.dirty && !confirm('Leave without saving your changes?')) return; ed = null; showHome(); }
+  $('edBack').addEventListener('click', leaveEditor);
+  $('edCancel').addEventListener('click', leaveEditor);
+  function cleanQ(q) {
+    var out = { q: clip(q.q, 300), choices: [], answer: -1 }, ex = clip(q.explain, 240);
+    q.choices.forEach(function (c, i) { c = clip(c, 120); if (!c) return; if (i === q.answer) out.answer = out.choices.length; out.choices.push(c); });
+    if (ex) out.explain = ex;
+    return out;
+  }
+  $('edSave').addEventListener('click', function () {
+    var title = clip($('edTitle').value, 60), err = $('edErr');
+    if (!title) { err.textContent = 'Give the set a title.'; $('edTitle').focus(); return; }
+    if (!ed.qs.length) { err.textContent = 'Add at least one question.'; return; }
+    var bad = [];
+    ed.qs.forEach(function (q, i) { var p = edProblem(q); if (p) bad.push('Question ' + (i + 1) + ': ' + p + '.'); });
+    if (bad.length) { err.innerHTML = bad.slice(0, 4).map(esc).join('<br>') + (bad.length > 4 ? '<br>…and ' + (bad.length - 4) + ' more.' : '') + '<br>Tap a question to fix it.'; return; }
+    var qs = ed.qs.map(cleanQ);
+    if (ed.id) sets = sets.map(function (s) { return s.id === ed.id ? { id: s.id, title: title, questions: qs, created: s.created } : s; });
+    else sets.unshift({ id: uid(), title: title, questions: qs, created: Date.now() });
+    saveSets(); ed = null; showHome(); toast('Saved “' + title + '” (' + plural(qs.length, 'question') + ').');
+  });
+  $('edCopy').addEventListener('click', function () {
+    var qs = ed.qs.filter(function (q) { return !edProblem(q); }).map(cleanQ);
+    if (!qs.length) { toast('Nothing to copy yet.'); return; }
+    copyText(exportJson(clip($('edTitle').value, 60) || 'Quiz', qs)).then(function (ok) {
+      toast(ok ? 'Copied ' + plural(qs.length, 'question') + '. Paste it into a message to share, or into Import on another phone.' : 'Couldn’t copy on this phone.');
+    });
+  });
+
+  // ---- Question dialog ----
+  var qd = null, qdi = -1;
+  function openQ(i) {
+    qdi = i;
+    qd = i < 0 ? { q: '', choices: ['', '', '', ''], answer: -1, explain: '' } : clone(ed.qs[i]);
+    if (!Array.isArray(qd.choices)) qd.choices = [];
+    while (qd.choices.length < 2) qd.choices.push('');
+    if (qd.answer < 0 || qd.answer >= qd.choices.length) qd.answer = -1;
+    $('qHead').textContent = i < 0 ? 'New question' : 'Question ' + (i + 1);
+    $('qText').value = qd.q || ''; $('qExplain').value = qd.explain || '';
+    $('qDel').hidden = i < 0; $('qErr').textContent = '';
+    renderQChoices(); $('qDlg').showModal();
+    if (i < 0) setTimeout(function () { $('qText').focus(); }, 50);
+  }
+  function renderQChoices() {
+    $('qChoices').innerHTML = qd.choices.map(function (c, i) {
+      var on = qd.answer === i;
+      return '<li' + (on ? ' class="ok"' : '') + '><button type="button" class="mark" data-mark="' + i + '" aria-pressed="' + on + '" aria-label="Mark choice ' + LETTERS[i] + ' as the right answer">✓</button>' +
+        '<input type="text" data-ci="' + i + '" maxlength="120" placeholder="Choice ' + LETTERS[i] + '" value="' + esc(c) + '" autocomplete="off" aria-label="Choice ' + LETTERS[i] + '">' +
+        '<button type="button" class="icon-btn x" data-rm="' + i + '" aria-label="Remove choice ' + LETTERS[i] + '"' + (qd.choices.length <= 2 ? ' disabled' : '') + '>✕</button></li>';
+    }).join('');
+    $('qAddChoice').hidden = qd.choices.length >= 6;
+  }
+  $('qChoices').addEventListener('input', function (e) { var i = e.target.dataset.ci; if (i != null) qd.choices[+i] = e.target.value; });
+  $('qChoices').addEventListener('click', function (e) {
+    var m = e.target.closest('[data-mark]'), r = e.target.closest('[data-rm]');
+    if (m) { qd.answer = +m.dataset.mark; renderQChoices(); buzz(); }
+    if (r && !r.disabled) { var i = +r.dataset.rm; qd.choices.splice(i, 1); if (qd.answer === i) qd.answer = -1; else if (qd.answer > i) qd.answer--; renderQChoices(); }
+  });
+  $('qAddChoice').addEventListener('click', function () {
+    if (qd.choices.length >= 6) return; qd.choices.push(''); renderQChoices();
+    var ins = $('qChoices').querySelectorAll('input'); ins[ins.length - 1].focus();
+  });
+  $('qSave').addEventListener('click', function () {
+    qd.q = $('qText').value; qd.explain = $('qExplain').value;
+    var picked = qd.answer >= 0 && tidy(qd.choices[qd.answer]);
+    var c = cleanQ(qd);
+    if (qd.answer >= 0 && !picked) c.answer = -1;
+    var p = problemOf(c);
+    if (p === 'no right answer is marked' || p === 'the answer isn’t one of the choices') p = 'tap ✓ next to the right answer';
+    if (p) { $('qErr').textContent = p.charAt(0).toUpperCase() + p.slice(1) + '.'; return; }
+    if (qdi < 0) ed.qs.push(c); else ed.qs[qdi] = c;
+    ed.dirty = true; $('qDlg').close(); renderEditor();
+  });
+  $('qDel').addEventListener('click', function () {
+    if (!confirm('Delete this question?')) return;
+    ed.qs.splice(qdi, 1); ed.dirty = true; $('qDlg').close(); renderEditor();
+  });
+
+  // ================= Import screen =================
+  var im = null, imTimer = null, imTitleAuto = true;
+  function openImport() {
+    im = null; imTitleAuto = true;
+    $('imText').value = ''; $('imTitle').value = ''; $('imCatErr').textContent = '';
+    updatePrompt(); renderImport(); show('import');
+  }
+  function updatePrompt() { $('imPrompt').textContent = aiPrompt(tidy($('imCat').value) || '[your topic]', $('imNum').value, $('imDiff').value); }
+  ['imCat', 'imNum', 'imDiff'].forEach(function (id) { $(id).addEventListener('input', function () { $('imCatErr').textContent = ''; updatePrompt(); }); });
+  $('imCopy').addEventListener('click', function () {
+    var cat = tidy($('imCat').value);
+    if (!cat) { $('imCatErr').textContent = 'Type a topic first, e.g. “80s movies” or “Harry Potter”.'; $('imCat').focus(); return; }
+    updatePrompt();
+    copyText(aiPrompt(cat, $('imNum').value, $('imDiff').value)).then(function (ok) {
+      toast(ok ? 'Prompt copied. Paste it into your AI app, then copy its whole reply back here.' : 'Couldn’t copy. Tap “Show the prompt” and copy it by hand.');
+      if (!ok) $('imPrompt').parentNode.open = true;
+    });
+  });
+  $('imPaste').addEventListener('click', function () {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { toast('Long-press the box below and choose Paste.'); $('imText').focus(); return; }
+    navigator.clipboard.readText().then(function (t) { $('imText').value = t; checkImport(); },
+      function () { toast('Long-press the box below and choose Paste.'); $('imText').focus(); });
+  });
+  $('imText').addEventListener('input', function () { clearTimeout(imTimer); imTimer = setTimeout(checkImport, 250); });
+  $('imTitle').addEventListener('input', function () { imTitleAuto = false; });
+  function checkImport() {
+    var t = $('imText').value;
+    im = tidy(t) ? parseImport(t) : null;
+    if (im && !im.error && imTitleAuto) $('imTitle').value = im.title || clip($('imCat').value.replace(/^./, function (c) { return c.toUpperCase(); }), 60);
+    renderImport();
+  }
+  function renderImport() {
+    var box = $('imResult'), sb = $('imSaveBox');
+    if (!im) { box.innerHTML = ''; sb.hidden = true; return; }
+    if (im.error) { box.innerHTML = '<div class="res no">' + esc(im.error) + '</div>'; sb.hidden = true; return; }
+    var good = im.qs.filter(function (q) { return !q.problem; }), bad = im.qs.length - good.length;
+    var h = '<div class="res ' + (bad ? (good.length ? 'warn' : 'no') : 'ok') + '"><b class="big">' +
+      (good.length ? '✓ ' + plural(good.length, 'question') + ' ready' : 'No questions ready yet') + '</b>';
+    if (bad) h += plural(bad, 'question') + (bad === 1 ? ' needs' : ' need') + ' fixing:<ul>' + im.qs.map(function (q, i) {
+      return q.problem ? '<li>Question ' + (i + 1) + ': ' + esc(q.problem) + '</li>' : ''; }).join('') + '</ul>';
+    if (im.zero) h += '<div class="hint">Answers given as numbers were read as 0 = first choice.</div>';
+    if (im.cut) h += '<div class="hint">Only the first ' + MAXQ + ' questions are used.</div>';
+    h += '</div><details><summary>Preview the questions</summary><ol class="pv">' + im.qs.map(function (q, i) {
+      return '<li>' + (i + 1) + '. ' + esc(q.q || '(no question text)') +
+        (q.problem ? '<span class="p">⚠ ' + esc(q.problem) + '</span>' : '<span class="a">✓ ' + esc(q.choices[q.answer]) + '</span>') + '</li>';
+    }).join('') + '</ol></details>';
+    box.innerHTML = h;
+    sb.hidden = false;
+    $('imSave').hidden = !good.length;
+    $('imSave').textContent = bad ? 'Skip ' + (bad === 1 ? 'that one' : 'those ' + bad) + ', save ' + plural(good.length, 'question') : 'Save set';
+    $('imFix').textContent = bad ? 'Fix ' + (bad === 1 ? 'it' : 'them') + ' in the editor' : 'Edit before saving';
+  }
+  $('imSave').addEventListener('click', function () {
+    var qs = im.qs.filter(function (q) { return !q.problem; }).map(cleanQ);
+    if (!qs.length) return;
+    var title = clip($('imTitle').value, 60) || 'Imported quiz';
+    sets.unshift({ id: uid(), title: title, questions: qs, created: Date.now() }); saveSets();
+    showHome(); toast('Saved “' + title + '” (' + plural(qs.length, 'question') + ').');
+  });
+  $('imFix').addEventListener('click', function () {
+    var qs = im.qs.map(function (q) { var c = clone(q); if (c.answer < 0) c.answer = -1; return c; });
+    openEditor(null, { title: clip($('imTitle').value, 60), qs: qs });
+  });
+  $('imBack').addEventListener('click', showHome);
+
+  // ================= Setup =================
+  var setupSet = null, draft = [];
+  function hostingNow() { return PebblySync.active() && PebblySync.isHost() && !!game && game.mode === 'shared'; }
+  function openSetup(id) {
+    setupSet = findSet(id); if (!setupSet) return;
+    draft = game && game.mode === 'local' ? game.players.map(function (p) { return { id: p.id, name: p.name }; }) : [];
+    $('myName').value = opts.myName || '';
+    $('hostPlays').checked = !!opts.hostPlays;
+    $('shufQ').checked = opts.shufQ !== false; $('shufA').checked = !!opts.shufA;
+    $('suErr').textContent = '';
+    show('setup'); renderSetup();
+  }
+  function isShared() { return hostingNow() || (sync && sync.shared()); }
+  function renderSetup() {
+    if (sync && sync.box) sync.box.redraw();
+    $('suTitle').textContent = setupSet.title;
+    $('suSub').textContent = plural(setupSet.questions.length, 'question');
+    var cont = hostingNow(), shared = isShared();
+    $('contNote').hidden = !cont;
+    if (cont) $('contNote').innerHTML = '👥 You’re hosting <b>' + esc(PebblySync.code()) + '</b>. Everyone stays in the game for this set.';
+    $('psSetup').hidden = cont;
+    $('playersCard').hidden = shared; $('hostCard').hidden = !shared || cont; $('timerBox').hidden = !shared;
+    var t = +opts.timer || 0;
+    Array.prototype.forEach.call($('timerSeg').children, function (b) { b.setAttribute('aria-pressed', String(+b.dataset.t === t)); });
+    renderPlayerList();
+    var taken = draft.map(function (p) { return p.name.toLowerCase(); });
+    var left = mem.players.filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 16);
+    var chips = $('playerChips'); chips.innerHTML = '';
+    left.forEach(function (n) {
+      var s = document.createElement('span'); s.className = 'chip';
+      s.innerHTML = '<button type="button" class="add"></button><button type="button" class="forget" aria-label="Forget ' + esc(n) + '">×</button>';
+      s.firstChild.textContent = n;
+      s.firstChild.addEventListener('click', function () { draft.push({ id: uid(), name: n }); renderSetup(); });
+      s.lastChild.addEventListener('click', function () { mem.players = mem.players.filter(function (x) { return x !== n; }); store(K_MEM, mem); renderSetup(); });
+      chips.appendChild(s);
+    });
+    var ok = shared || draft.length > 0;
+    $('startBtn').disabled = !ok;
+    $('startBtn').textContent = !ok ? 'Add at least one player' : cont ? 'Start this set' : shared ? 'Start and get a code' : 'Start';
+  }
+  function renderPlayerList() {
+    var ul = $('setupPlayers'); ul.innerHTML = '';
+    draft.forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num">' + (i + 1) + '</span>';
+      var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 16; inp.value = p.name;
+      inp.setAttribute('aria-label', 'Player ' + (i + 1) + ' name');
+      inp.addEventListener('change', function () { var v = tidy(inp.value); if (v) p.name = v; else inp.value = p.name; });
+      li.appendChild(inp);
+      [['↑', -1, 'Move up'], ['↓', 1, 'Move down']].forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'icon-btn'; b.textContent = m[0];
+        b.setAttribute('aria-label', m[2] + ' ' + p.name);
+        var j = i + m[1]; b.disabled = j < 0 || j >= draft.length;
+        b.addEventListener('click', function () { draft.splice(j, 0, draft.splice(i, 1)[0]); renderSetup(); });
+        li.appendChild(b);
+      });
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'icon-btn x'; x.textContent = '✕';
+      x.setAttribute('aria-label', 'Remove ' + p.name);
+      x.addEventListener('click', function () { draft.splice(i, 1); renderSetup(); });
+      li.appendChild(x); ul.appendChild(li);
+    });
+  }
+  $('psSetup').addEventListener('click', function () { setTimeout(renderSetup, 0); });
+  $('timerSeg').addEventListener('click', function (e) { var b = e.target.closest('[data-t]'); if (!b) return; opts.timer = +b.dataset.t; store(K_OPTS, opts); renderSetup(); });
+  $('addPlayerForm').addEventListener('submit', function (e) {
+    e.preventDefault(); var v = tidy($('newPlayer').value); if (!v) return;
+    draft.push({ id: uid(), name: v }); $('newPlayer').value = ''; renderSetup(); $('newPlayer').focus();
+  });
+  $('suBack').addEventListener('click', showHome);
+
+  function buildQs(set, shufQ, shufA) {
+    var qs = set.questions.map(function (q) { return { q: q.q, choices: q.choices.slice(), answer: q.answer, explain: q.explain || '' }; });
+    if (shufA) qs.forEach(function (x) {
+      var order = shuffle(x.choices.map(function (c, i) { return i; }));
+      x.choices = order.map(function (i) { return x.choices[i]; }); x.answer = order.indexOf(x.answer);
+    });
+    if (shufQ) shuffle(qs);
+    return qs;
+  }
+  function remember(name) {
+    var i = mem.players.findIndex(function (x) { return x.toLowerCase() === name.toLowerCase(); });
+    if (i > -1) mem.players.splice(i, 1); mem.players.unshift(name); mem.players.length = Math.min(mem.players.length, 40);
+  }
+  $('startBtn').addEventListener('click', function () {
+    var pending = tidy($('newPlayer').value);
+    if (pending) { draft.push({ id: uid(), name: pending }); $('newPlayer').value = ''; }
+    var cont = hostingNow(), shared = isShared();
+    if (!shared && !draft.length) return;
+    opts.shufQ = $('shufQ').checked; opts.shufA = $('shufA').checked;
+    opts.hostPlays = $('hostPlays').checked; opts.myName = tidy($('myName').value);
+    store(K_OPTS, opts);
+    if (!cont && game && inProgress(game) && game.phase !== 'over' &&
+        !confirm(game.mode === 'shared' && PebblySync.active() ? 'Start a new quiz? This phone will leave the shared one.' : 'Start a new quiz? The current one will end.')) return;
+    var qs = buildQs(setupSet, opts.shufQ, opts.shufA), o = { shufQ: opts.shufQ, shufA: opts.shufA };
+    if (!shared) {
+      draft.slice().reverse().forEach(function (p) { remember(p.name); }); store(K_MEM, mem);
+      game = { mode: 'local', title: setupSet.title, setId: setupSet.id, opts: o, qs: qs, qi: 0, phase: 'question',
+               players: draft.map(function (p) { return { id: p.id, name: p.name }; }), got: {} };
+      undo = []; save(); showPlay(); sync.started(null); return;
+    }
+    var round = uid();
+    quiz = { round: round, setId: setupSet.id, opts: o, qs: qs }; store(K_QUIZ, quiz);
+    if (cont) {
+      game.title = setupSet.title; game.n = qs.length; game.round = round; game.timer = +opts.timer || 0;
+      game.ans = {}; game.key = {}; game.ex = {};
+      undo = []; startQuestion(0); showPlay(); return;
+    }
+    var name = opts.myName, me = { id: PebblySync.newId(), name: name || 'Quizmaster' }, players = [];
+    if (opts.hostPlays) { me.name = name || 'Host'; players.push({ id: me.id, name: me.name }); }
+    if (name) { remember(name); store(K_MEM, mem); }
+    game = { mode: 'shared', title: setupSet.title, n: qs.length, round: round, qi: 0, qk: '', phase: 'lobby', q: null,
+             timer: +opts.timer || 0, players: players, ans: {}, key: {}, ex: {} };
+    undo = []; store(K_GAME, game); store(K_UNDO, undo);
+    connecting = Date.now(); showPlay();
+    sync.started(me);
+    setTimeout(function () { connecting = 0; render(); }, 15000);
+  });
+
+  // ================= Playing =================
+  function showPlay() { if (!game) { showHome(); return; } show('play'); keepAwake(true); lastHtml = ''; render(); }
+  function rowsFor(scores, gotNow) {
+    var me = game.mode === 'shared' ? PebblySync.me() : null;
+    var rows = game.players.map(function (p) { return { id: p.id, name: p.name, score: scores[p.id] || 0, got: !!gotNow[p.id], me: p.id === me }; });
+    rows.sort(function (a, b) { return b.score - a.score; });
+    var place = 0, prev = null;
+    rows.forEach(function (r, i) { if (r.score !== prev) place = i + 1; prev = r.score; r.place = place; });
+    return rows;
+  }
+  function scores() {
+    var s = {};
+    game.players.forEach(function (p) { s[p.id] = 0; });
+    if (game.mode === 'local') Object.keys(game.got || {}).forEach(function (k) { game.got[k].forEach(function (pid) { if (pid in s) s[pid]++; }); });
+    else Object.keys(game.key || {}).forEach(function (qk) {
+      var a = (game.ans || {})[qk] || {};
+      Object.keys(a).forEach(function (pid) { if (pid in s && a[pid] === game.key[qk]) s[pid]++; });
+    });
+    return s;
+  }
+  function gotNow() {
+    var g = {};
+    if (game.mode === 'local') ((game.got || {})[game.qi] || []).forEach(function (pid) { g[pid] = true; });
+    else if (game.key && game.key[game.qk] != null) { var a = (game.ans || {})[game.qk] || {}; Object.keys(a).forEach(function (pid) { if (a[pid] === game.key[game.qk]) g[pid] = true; }); }
+    return g;
+  }
+  function boardHtml(rows) {
+    if (!rows.length) return '<p class="hint" style="margin:0">No players yet.</p>';
+    return '<ol class="board">' + rows.map(function (r) {
+      return '<li' + (r.me ? ' class="me"' : '') + '><span class="pl">' + (r.place === 1 && r.score > 0 ? '🏆' : r.place) + '</span><span class="nm">' + esc(r.name) +
+        (r.me ? '<small>you</small>' : '') + '</span>' + (r.got ? '<span class="gt">+1</span>' : '') + '<span class="sc">' + r.score + '</span></li>';
+    }).join('') + '</ol>';
+  }
+  function choicesHtml(ch, o) {
+    var revealed = o.right != null && o.right > -1, picked = !revealed && o.sel > -1;
+    return '<div class="choices' + (revealed ? ' revealed' : '') + (picked ? ' picked' : '') + '">' + ch.map(function (c, i) {
+      var cls = 'ch c' + i + (o.sel === i ? ' sel' : '') + (revealed && o.right === i ? ' right' : '') + (revealed && o.sel === i && o.right !== i ? ' wrong' : '');
+      var mk = revealed && o.right === i ? (o.sel === i ? '✓ You' : '✓') : revealed && o.sel === i ? '✕ You' : o.sel === i ? 'You' : '';
+      var inner = '<span class="lt">' + LETTERS[i] + '</span><span class="tx">' + esc(c) + '</span>' + (mk ? '<span class="mk">' + mk + '</span>' : '');
+      if (!o.interactive) return '<div class="' + cls + '">' + inner + '</div>';
+      return '<button type="button" class="' + cls + '" data-act="pick" data-i="' + i + '" aria-pressed="' + (o.sel === i) + '"' + (o.locked ? ' disabled' : '') + '>' + inner + '</button>';
+    }).join('') + '</div>';
+  }
+  function questionHead(num, n, text) {
+    return '<div class="prog" aria-hidden="true"><i style="width:' + Math.round(100 * num / n) + '%"></i></div>' +
+      '<section class="qcard"><p class="qnum">Question ' + num + ' of ' + n + '</p><p class="qtext">' + esc(text) + '</p>' +
+      (game.mode === 'shared' && game.timer && game.phase === 'question' ? '<div class="timer" id="timer"><i id="tbar"></i><span id="ttxt"></span></div>' : '') + '</section>';
+  }
+  function winnerHtml(rows, total) {
+    var top = rows.length ? rows[0].score : 0, win = rows.filter(function (r) { return r.score === top && top > 0; });
+    var cf = ['🎉', '✨', '🎊', '⭐', '🎉', '✨'].map(function (e, i) { return '<span class="cf" style="left:' + (8 + i * 16) + '%;animation-delay:' + (i * 0.15) + 's">' + e + '</span>'; }).join('');
+    if (!win.length) return '<div class="win">' + cf + '<div class="tr">🏁</div><div class="wn">Quiz done!</div><div class="ws">' + (rows.length ? 'No points this time.' : '') + '</div></div>';
+    return '<div class="win" id="winCard">' + cf + '<div class="tr">🏆</div><div class="wl">' + (win.length > 1 ? 'It’s a tie!' : 'Winner') + '</div>' +
+      '<div class="wn">' + esc(listNames(win.map(function (r) { return r.name; }))) + '</div><div class="ws">' + top + ' out of ' + total + ' right</div></div>';
+  }
+  function overHtml(canRun) {
+    var rows = rowsFor(scores(), {}), total = game.mode === 'local' ? game.qs.length : game.n;
+    return winnerHtml(rows, total) + '<section class="card"><h2>Final standings</h2>' + boardHtml(rows) + '</section>' +
+      (canRun ? '<div class="stack"><button type="button" class="btn" data-act="again">Play again</button><button type="button" class="btn plain" data-act="newset">New set</button></div>'
+              : '<p class="waiting">Waiting for the quizmaster to start another round…</p>');
+  }
+
+  var lastHtml = '';
+  function render() {
+    if (!game) return;
+    if ($('play').hidden) { if (!$('home').hidden) renderHome(); return; }
+    var local = game.mode === 'local';
+    $('pTitle').textContent = game.title || 'Trivia';
+    var n = local ? game.qs.length : game.n;
+    $('pSub').textContent = game.phase === 'lobby' ? 'Waiting for players' : game.phase === 'over' ? 'Final results' : 'Question ' + (game.qi + 1) + ' of ' + n;
+    $('undoBtn').hidden = !local; $('undoBtn').disabled = !undo.length;
+    var h = local ? renderLocal() : renderShared();
+    if (h !== lastHtml) { $('stage').innerHTML = h; lastHtml = h; }
+    tick();
+  }
+
+  // ---- One phone ----
+  function renderLocal() {
+    if (game.phase === 'over') return overHtml(true);
+    var x = game.qs[game.qi], rev = game.phase === 'reveal', last = game.qi + 1 >= game.qs.length;
+    var h = questionHead(game.qi + 1, game.qs.length, x.q) + choicesHtml(x.choices, { interactive: false, sel: -1, right: rev ? x.answer : -1 });
+    if (!rev) return h + '<button type="button" class="btn" data-act="reveal">Reveal answer</button><p class="hint" style="text-align:center">Read it out, let everyone answer, then reveal.</p>';
+    var g = gotNow(), s = scores();
+    if (x.explain) h += '<div class="explain">💡 ' + esc(x.explain) + '</div>';
+    h += '<section class="card"><h2>Who got it right?</h2><div class="toggles">' + game.players.map(function (p) {
+      return '<button type="button" class="tog" data-act="got" data-p="' + esc(p.id) + '" aria-pressed="' + !!g[p.id] + '"><span class="bx">✓</span><span class="nm">' + esc(p.name) + '</span><span class="sc">' + s[p.id] + '</span></button>';
+    }).join('') + '</div></section>';
+    return h + '<button type="button" class="btn" data-act="next">' + (last ? 'See the final results' : 'Next question') + '</button>';
+  }
+  function localAct(act, el) {
+    if (act === 'reveal' && game.phase === 'question') { snap(); game.phase = 'reveal'; save(); buzz(20); render(); }
+    else if (act === 'got' && game.phase === 'reveal') {
+      snap(); var pid = el.dataset.p, list = (game.got[game.qi] = game.got[game.qi] || []), i = list.indexOf(pid);
+      if (i > -1) list.splice(i, 1); else list.push(pid);
+      save(); buzz(); render();
+    } else if (act === 'next' && game.phase === 'reveal') {
+      snap(); if (game.qi + 1 < game.qs.length) { game.qi++; game.phase = 'question'; } else game.phase = 'over';
+      save(); render(); scrollTo(0, 0);
+    }
+  }
+
+  // ---- Everyone's phones ----
+  // Shared state: { mode:'shared', title, n, round, qi, qk, phase: lobby|question|locked|reveal|over, q:{text, choices},
+  //   timer, players:[{id,name}], ans:{qk:{pid:choice}}, key:{qk:right choice}, ex:{qk:fun fact} }
+  // The host keeps the full set (with answers) on its own phone (K_QUIZ) and only shares the
+  // right answer of each question when it's revealed. Scores are worked out from ans + key.
+  function hasQuiz() { return PebblySync.isHost() && !!quiz && quiz.round === game.round; }
+  function qStart(qk) { if (!seen[qk]) { seen = {}; seen[qk] = Date.now(); store(K_SEEN, seen); } return seen[qk]; }
+  function remaining() { return game.timer * 1000 - (Date.now() - qStart(game.qk)); }
+  function timeUp() { return game.phase === 'locked' || (game.phase === 'question' && game.timer > 0 && remaining() <= 0); }
+  function startQuestion(i) {
+    var x = quiz.qs[i];
+    game.qi = i; game.qk = game.round + '-' + i; game.q = { text: x.q, choices: x.choices.slice() }; game.phase = 'question';
+    seen = {}; seen[game.qk] = Date.now(); store(K_SEEN, seen);
+    save(); buzz(20); render(); scrollTo(0, 0);
+  }
+  function reveal() {
+    if (!hasQuiz() || (game.phase !== 'question' && game.phase !== 'locked')) return;
+    var x = quiz.qs[game.qi];
+    game.key[game.qk] = x.answer; if (x.explain) game.ex[game.qk] = x.explain;
+    game.phase = 'reveal'; save(); buzz(20); render();
+  }
+  function nextShared() {
+    if (!hasQuiz() || game.phase !== 'reveal') return;
+    if (game.qi + 1 < quiz.qs.length) startQuestion(game.qi + 1);
+    else { game.phase = 'over'; save(); render(); scrollTo(0, 0); }
+  }
+  function whoHtml() {
+    var a = game.ans[game.qk] || {};
+    if (!game.players.length) return '<p class="hint">Nobody has joined yet.</p>';
+    var n = game.players.filter(function (p) { return a[p.id] != null; }).length;
+    return '<section class="card"><h2>Answered: ' + n + ' of ' + game.players.length + '</h2><div class="whos">' + game.players.map(function (p) {
+      return '<span class="' + (a[p.id] != null ? 'done' : '') + '">' + (a[p.id] != null ? '✓ ' : '') + esc(p.name) + '</span>';
+    }).join('') + '</div></section>';
+  }
+  function renderShared() {
+    if (!PebblySync.active()) {
+      if (connecting && Date.now() - connecting < 15000) return '<section class="card"><p class="status">Connecting…</p></section>';
+      return '<section class="card"><p class="status">You’re no longer in this shared quiz.<small>It ended, or this phone left it.</small></p>' +
+        '<button type="button" class="btn" data-act="clear">Back to start</button></section>';
+    }
+    connecting = 0;
+    var host = PebblySync.isHost(), me = PebblySync.me(), mine = game.players.some(function (p) { return p.id === me; });
+    var plist = '<section class="card"><h2>Players (' + game.players.length + ')</h2>' + (game.players.length ? '<div class="whos">' + game.players.map(function (p) {
+      return '<span class="done">' + esc(p.name) + (p.id === me ? ' (you)' : '') + '</span>'; }).join('') + '</div>' : '<p class="hint" style="margin:0">Nobody yet. They’ll show up here as they join.</p>') + '</section>';
+    if (game.phase === 'lobby') {
+      if (host) return '<section class="card" style="text-align:center"><h2>Get everyone in</h2><p style="margin:0">On their phones: open Trivia in Pebbly, tap <b>Join a game with a code</b>, and enter</p>' +
+        '<div class="bigcode" id="lobbyCode">' + esc(PebblySync.code()) + '</div><button type="button" class="btn ghost" data-act="code">Share the join link</button></section>' + plist +
+        '<button type="button" class="btn" data-act="begin"' + (game.players.length ? '' : ' disabled') + '>' + (game.players.length ? 'Start the quiz' : 'Waiting for players to join') + '</button>';
+      return '<section class="card" style="text-align:center"><p class="status" style="margin:6px 0">🎉 You’re in!<small>Waiting for the quizmaster to start the quiz.</small></p></section>' + plist;
+    }
+    if (game.phase === 'over') return overHtml(host && hasQuiz());
+    if (!game.q) return '';
+    var qk = game.qk, a = game.ans[qk] || {}, rev = game.phase === 'reveal', right = rev ? game.key[qk] : -1;
+    var sel = mine && a[me] != null ? a[me] : -1, up = timeUp();
+    var h = questionHead(game.qi + 1, game.n, game.q.text) +
+      choicesHtml(game.q.choices, { interactive: mine, sel: sel, right: right, locked: rev || up || game.phase !== 'question' });
+    if (!rev) {
+      if (mine) h += '<p class="status">' + (up ? '⏱ Time’s up!' + (sel > -1 ? '<small>You picked ' + LETTERS[sel] + '. Waiting for the answer…</small>' : '<small>Waiting for the answer…</small>')
+        : sel > -1 ? 'Locked in: ' + LETTERS[sel] + '<small>You can change it until the answer is shown.</small>' : 'Tap your answer') + '</p>';
+      h += whoHtml();
+      if (host) h += hasQuiz() ? '<button type="button" class="btn" data-act="reveal">Reveal answer</button>' +
+        (mine ? '' : '<p class="hint" style="text-align:center">Read it out if you like. Reveal when everyone’s answered.</p>')
+        : '<p class="hint">This phone doesn’t have the questions for this quiz any more.</p>';
+      else if (!mine) h += '<p class="waiting">Watching…</p>';
+      return h;
+    }
+    var g = gotNow(), names = game.players.filter(function (p) { return g[p.id]; }).map(function (p) { return p.name; });
+    if (mine) h = (sel === right ? '<div class="result ok"><b>🎉 You got it!</b></div>' : sel > -1 ? '<div class="result no"><b>Not this time</b>It was ' + LETTERS[right] + ': ' + esc(game.q.choices[right]) + '</div>'
+        : '<div class="result none"><b>You didn’t answer</b>It was ' + LETTERS[right] + ': ' + esc(game.q.choices[right]) + '</div>') + h;
+    if (game.ex[qk]) h += '<div class="explain">💡 ' + esc(game.ex[qk]) + '</div>';
+    h += '<p class="gotline">' + (names.length ? '✓ Got it right: <span>' + esc(listNames(names)) + '</span>' : 'Nobody got this one.') + '</p>';
+    h += '<section class="card"><h2>Scores</h2>' + boardHtml(rowsFor(scores(), g)) + '</section>';
+    var last = game.qi + 1 >= game.n;
+    h += host && hasQuiz() ? '<button type="button" class="btn" data-act="next">' + (last ? 'See the final results' : 'Next question') + '</button>'
+      : '<p class="waiting">' + (last ? 'That was the last question…' : 'Waiting for the next question…') + '</p>';
+    return h;
+  }
+  function choose(i) {
+    if (game.mode !== 'shared' || game.phase !== 'question' || timeUp()) return;
+    var me = PebblySync.me(); if (!game.players.some(function (p) { return p.id === me; })) return;
+    if (i < 0 || i >= game.q.choices.length) return;
+    if (!game.ans[game.qk]) game.ans[game.qk] = {};
+    game.ans[game.qk][me] = i; save(); buzz(); render();
+  }
+
+  // Timer (shared games). Each phone counts down from when it first saw the question; the host
+  // locks the answers a few seconds after its own countdown ends, to allow for the delay.
+  var upShown = {};
+  function tick() {
+    if (!game || game.mode !== 'shared' || game.phase !== 'question' || !game.timer || $('play').hidden) return;
+    var rem = remaining(), bar = $('tbar');
+    if (bar) {
+      bar.style.width = Math.max(0, Math.min(100, 100 * rem / (game.timer * 1000))) + '%';
+      $('ttxt').textContent = rem > 0 ? Math.ceil(rem / 1000) + ' s' : 'Time’s up';
+      $('timer').classList.toggle('warn', rem <= 5000);
+    }
+    if (rem <= 0 && !upShown[game.qk]) { upShown[game.qk] = 1; buzz(40); render(); }
+    if (rem <= -GRACE && hasQuiz() && PebblySync.active()) { game.phase = 'locked'; save(); render(); }
+  }
+  setInterval(tick, 250);
+
+  // ---- Actions ----
+  $('stage').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-act]'); if (!b || b.disabled) return;
+    var act = b.dataset.act;
+    if (act === 'again') return playAgain();
+    if (act === 'newset') { showHome(); return; }
+    if (act === 'clear') { game = null; undo = []; store(K_GAME, null); store(K_UNDO, undo); showHome(); return; }
+    if (game.mode === 'local') return localAct(act, b);
+    if (act === 'pick') choose(+b.dataset.i);
+    else if (act === 'code') PebblySync.showCode();
+    else if (act === 'begin' && hasQuiz() && game.phase === 'lobby') startQuestion(0);
+    else if (act === 'reveal') reveal();
+    else if (act === 'next') nextShared();
+  });
+  function playAgain() {
+    if (game.mode === 'local') {
+      var s = findSet(game.setId), o = game.opts || {};
+      var qs = s ? buildQs(s, o.shufQ, o.shufA) : game.qs.slice();
+      snap(); game.qs = qs; game.qi = 0; game.phase = 'question'; game.got = {};
+      undo = []; save(); render(); scrollTo(0, 0); return;
+    }
+    if (!hasQuiz()) return;
+    var set = findSet(quiz.setId), qo = quiz.opts || {};
+    quiz = { round: uid(), setId: quiz.setId, opts: qo, qs: set ? buildQs(set, qo.shufQ, qo.shufA) : quiz.qs };
+    store(K_QUIZ, quiz);
+    game.round = quiz.round; game.n = quiz.qs.length; game.ans = {}; game.key = {}; game.ex = {};
+    startQuestion(0);
+  }
+  $('undoBtn').addEventListener('click', function () {
+    if (!undo.length || game.mode !== 'local') return; game = JSON.parse(undo.pop()); save(); buzz(); render();
+  });
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  });
+  function canRun() { return game.mode === 'local' || (PebblySync.active() && hasQuiz()); }
+  $('menuBtn').addEventListener('click', function () {
+    var run = canRun();
+    $('mAgain').hidden = !run || game.phase === 'lobby';
+    $('mEnd').hidden = !run || game.phase === 'over' || game.phase === 'lobby';
+    $('mScores').hidden = game.phase === 'lobby';
+    $('menuDlg').showModal();
+  });
+  $('mScores').addEventListener('click', function () {
+    $('menuDlg').close(); $('scoreBody').innerHTML = boardHtml(rowsFor(scores(), {})); $('scoreDlg').showModal();
+  });
+  $('mAgain').addEventListener('click', function () {
+    if (game.phase !== 'over' && !confirm('Start again from question 1? Scores go back to 0.')) return;
+    $('menuDlg').close(); playAgain();
+  });
+  $('mEnd').addEventListener('click', function () {
+    if (!confirm('End the quiz now and show the final results?')) return;
+    $('menuDlg').close(); if (game.mode === 'local') snap();
+    game.phase = 'over'; save(); render(); scrollTo(0, 0);
+  });
+  $('mHome').addEventListener('click', function () { $('menuDlg').close(); showHome(); });
+
+  // ================= Play together =================
+  if (game) showPlay(); else showHome();
+  sync = PebblySync.wire('trivia', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    getGame: function () { return game && game.mode === 'shared' ? game : null; },
+    setGame: function (g) { game = g; store(K_GAME, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: render,
+    showPlay: showPlay,
+    players: function (g) { return (g && g.players) || []; },
+    addPlayer: function (g, id, name) { if (!g.players.some(function (p) { return p.id === id; })) g.players.push({ id: id, name: name }); },
+    onRemote: function (prev, next) {
+      if (!prev || !next) return;
+      if (prev.qk !== next.qk && next.phase === 'question') { buzz(30); scrollTo(0, 0); }
+      else if (prev.phase !== next.phase) buzz(20);
+    },
+    onLeave: function () { connecting = 0; render(); }
+  });
+  // For tests only: the import reader.
+  window.PebblyTrivia = { parse: parseImport, prompt: aiPrompt };
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

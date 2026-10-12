@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Game Timer</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D; --no-t:#FBE3E1;
+  --warn:#B26A00; --warn-t:#FFF0D6;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2220;
+    --warn:#F2B24C; --warn-t:#3A2C14; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2220;
+    --warn:#F2B24C; --warn-t:#3A2C14; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--no);border:1.5px solid var(--no)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,.chip button:focus-visible,.tab:focus-visible,.stage:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text],input[type=number]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;
+  background:var(--surface);color:var(--ink);font:500 17px/1.2 var(--body)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:10px 0 0}
+
+/* ---------- Setup ---------- */
+.setup{max-width:620px;margin:0 auto;padding:16px 16px calc(32px + env(safe-area-inset-bottom))}
+.lead{margin:0 0 16px;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:14px;background:var(--surface);border:1px solid var(--line);margin-bottom:14px}
+.tab{min-height:48px;border:0;border-radius:10px;background:none;cursor:pointer;font-weight:600;font-size:16px;color:var(--muted)}
+.tab[aria-selected=true]{background:var(--brand);color:var(--brand-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:18px;flex:none;text-align:right;color:var(--muted);font-size:14px}
+.plist input{flex:1;min-width:0}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{min-height:52px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;font-weight:500;padding:4px 8px;line-height:1.2}
+.seg button small{display:block;color:var(--muted);font-size:13px;font-weight:500}
+.seg button[aria-pressed=true]{border:2px solid var(--brand);background:var(--brand-t);color:var(--brand);font-weight:700}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.presets button{min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--bg);cursor:pointer;font-weight:600}
+.presets button[aria-pressed=true]{border:2px solid var(--brand);background:var(--brand-t);color:var(--brand)}
+.custom{display:flex;align-items:center;gap:6px 14px;margin-top:14px;flex-wrap:wrap}
+.custom .lbl{font-weight:600;flex-basis:100%}
+.custom label{display:flex;align-items:center;gap:8px;color:var(--muted);flex:1;min-width:0}
+.custom input{width:100%;min-width:0;text-align:center;font-weight:700}
+.toggle{display:flex;align-items:center;gap:12px;min-height:48px;cursor:pointer}
+.toggle input{width:22px;height:22px;accent-color:var(--brand);flex:none}
+.stack{display:grid;gap:10px}
+
+/* ---------- Play (fills one screen; --app-h is the measured visible height) ---------- */
+body.in-game{height:100vh;height:var(--app-h,100vh);overflow:hidden}
+.play{height:100%;display:flex;flex-direction:column;max-width:720px;margin:0 auto;padding:0 12px calc(10px + env(safe-area-inset-bottom) + var(--sys-bottom,0px))}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 0 8px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:20px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .sub{color:var(--muted);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:100%;
+  border:2px solid var(--line);border-radius:22px;background:var(--surface);cursor:pointer;padding:12px;text-align:center;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;user-select:none;-webkit-user-select:none;transition:background .25s,border-color .25s}
+.stage:active{transform:scale(.995)}
+.stage .who{font:800 clamp(26px,8vw,44px)/1.1 var(--head);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stage .time{font:800 clamp(60px,min(24vw,calc(var(--app-h,700px) * .17)),190px)/1 var(--head);font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin:4px 0}
+.stage .status{font-weight:600;font-size:17px;color:var(--muted);min-height:1.4em}
+.stage.running{border-color:var(--brand)}
+.stage.running .time{color:var(--ink)}
+.stage.paused .time{color:var(--muted)}
+.stage.warn{background:var(--warn-t);border-color:var(--warn)}
+.stage.warn .time{color:var(--warn)}
+.stage.up{background:var(--no-t);border-color:var(--no);animation:flash 1s ease-in-out 3}
+.stage.up .time,.stage.up .status{color:var(--no)}
+@keyframes flash{50%{background:var(--surface)}}
+@media (prefers-reduced-motion:reduce){ .stage.up{animation:none} }
+.controls{display:grid;grid-template-columns:1fr 1.3fr 1fr;gap:8px;margin-top:10px}
+.controls .btn{min-height:56px;font-size:16px;padding:0 8px}
+.strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:6px;margin-top:10px}
+.strip button{min-height:46px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;padding:4px 6px;line-height:1.15;min-width:0}
+.strip b{display:block;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.strip span{display:block;font:800 16px/1.1 var(--head);font-variant-numeric:tabular-nums}
+.strip .cur{border:2px solid var(--brand);background:var(--brand-t)}
+.strip .out span{color:var(--no)}
+
+dialog{width:min(480px,calc(100% - 24px));padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+</style>
+<script>
+  // Size full-screen layouts to the visible area (measured), not the CSS viewport units.
+  (function () {
+    function fit() {
+      var h = window.visualViewport ? Math.min(window.innerHeight, window.visualViewport.height) : window.innerHeight;
+      document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+      var probe = document.createElement('div');
+      probe.style.cssText = 'position:fixed;visibility:hidden;padding-bottom:env(safe-area-inset-bottom)';
+      document.documentElement.appendChild(probe);
+      var inset = parseFloat(getComputedStyle(probe).paddingBottom) || 0;
+      probe.remove();
+      var standalone = matchMedia('(display-mode: standalone)').matches;
+      var fullScreen = screen.height - window.innerHeight < 12;
+      document.documentElement.style.setProperty('--sys-bottom', standalone && fullScreen && !inset ? '48px' : '0px');
+    }
+    fit();
+    addEventListener('resize', fit);
+    addEventListener('orientationchange', function () { setTimeout(fit, 200); });
+    if (window.visualViewport) visualViewport.addEventListener('resize', fit);
+  })();
+</script>
+<script src="/keepawake.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Setup ================= -->
+<main class="setup" id="setup" hidden>
+  <h1>Game Timer</h1>
+  <p class="lead">A turn clock for board games, or a simple countdown for charades and drawing games.</p>
+
+  <div class="tabs" role="tablist" aria-label="Timer type">
+    <button class="tab" role="tab" data-mode="turn" id="tabTurn">Turn timer</button>
+    <button class="tab" role="tab" data-mode="cd" id="tabCd">Countdown</button>
+  </div>
+
+  <div id="turnSetup">
+    <section class="card">
+      <h2>Players</h2>
+      <ul class="plist" id="plist"></ul>
+      <form class="addrow" id="addForm" autocomplete="off">
+        <input type="text" id="newName" maxlength="20" placeholder="Add a player" enterkeyhint="done" aria-label="Add a player">
+        <button class="btn" type="submit">Add</button>
+      </form>
+      <div class="chips" id="chips"></div>
+      <p class="hint" id="chipHint" hidden>Tap a name from past games to add it. Tap × to forget it.</p>
+    </section>
+
+    <section class="card">
+      <h2>Clock</h2>
+      <div class="seg" role="group" aria-label="Clock type">
+        <button type="button" data-clock="bank" id="clkBank">Time bank<small>Total for the game</small></button>
+        <button type="button" data-clock="turn" id="clkTurn">Per turn<small>Resets every turn</small></button>
+      </div>
+      <div class="presets" id="turnPresets"></div>
+      <div class="custom">
+        <span class="lbl" id="customLbl">Each player</span>
+        <label><input type="number" id="tMin" min="0" max="180" inputmode="numeric" aria-label="Minutes"> min</label>
+        <label><input type="number" id="tSec" min="0" max="59" inputmode="numeric" aria-label="Seconds"> sec</label>
+      </div>
+      <p class="hint" id="clockHint"></p>
+    </section>
+  </div>
+
+  <div id="cdSetup" hidden>
+    <section class="card">
+      <h2>How long?</h2>
+      <div class="presets" id="cdPresets"></div>
+      <div class="custom">
+        <span class="lbl">Custom</span>
+        <label><input type="number" id="cMin" min="0" max="180" inputmode="numeric" aria-label="Minutes"> min</label>
+        <label><input type="number" id="cSec" min="0" max="59" inputmode="numeric" aria-label="Seconds"> sec</label>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="padding:4px 16px">
+    <label class="toggle"><input type="checkbox" id="soundOn"><span>Buzzer sound when time runs out</span></label>
+  </section>
+
+  <div class="stack">
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <button class="btn ghost" id="backBtn" type="button" hidden>Back to the timer</button>
+  </div>
+</main>
+
+<!-- ================= Play ================= -->
+<main class="play" id="play" hidden>
+  <div class="topbar">
+    <div class="title"><h1 id="pTitle"></h1><div class="sub" id="pSub"></div></div>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+  <button type="button" class="stage" id="stage" aria-live="polite">
+    <span class="who" id="sWho"></span>
+    <span class="time" id="sTime">0:00</span>
+    <span class="status" id="sStatus"></span>
+  </button>
+  <div class="controls" id="turnCtl">
+    <button class="btn plain" type="button" id="prevBtn" aria-label="Back to the previous player">← Back</button>
+    <button class="btn ghost" type="button" id="pauseBtn">Pause</button>
+    <button class="btn" type="button" id="nextBtn">Next →</button>
+  </div>
+  <div class="controls" id="cdCtl">
+    <button class="btn plain" type="button" id="resetBtn">Reset</button>
+    <button class="btn" type="button" id="cdGoBtn">Start</button>
+    <button class="btn ghost" type="button" id="plusBtn">+30 s</button>
+  </div>
+  <div class="strip" id="strip"></div>
+</main>
+
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Timer menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mRestart">Restart all clocks</button>
+      <button class="btn plain" type="button" id="mSetup">Change players or time</button>
+    </div>
+    <div class="card" style="margin:14px 0 0;padding:4px 12px">
+      <label class="toggle"><input type="checkbox" id="mSound"><span>Buzzer sound</span></label>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var K_PREF = 'pebbly_timer_prefs', K_GAME = 'pebbly_timer_game', K_CD = 'pebbly_timer_cd', K_MEM = 'pebbly_score_memory';
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s || '').trim().replace(/\s+/g, ' '); }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function now() { return Date.now(); }   // all clocks are worked out from timestamps, so they stay right in the background
+
+  var prefs = load(K_PREF, {});
+  prefs.mode = prefs.mode === 'cd' ? 'cd' : 'turn';
+  prefs.clock = prefs.clock === 'turn' ? 'turn' : 'bank';
+  prefs.bank = prefs.bank > 0 ? prefs.bank : 300000;
+  prefs.turn = prefs.turn > 0 ? prefs.turn : 60000;
+  prefs.cd = prefs.cd > 0 ? prefs.cd : 60000;
+  if (prefs.sound == null) prefs.sound = true;
+  prefs.players = Array.isArray(prefs.players) ? prefs.players : [];
+  var mem = load(K_MEM, { players: [], games: [] }); if (!Array.isArray(mem.players)) mem.players = [];
+  // G: turn timer { clock, limit, players:[{id,name,left,out}], cur, running, t0, left0, turnNo, buzzed, started, hist:[] }
+  var G = load(K_GAME, null);
+  // C: countdown { dur, left, running, t0, left0, done }
+  var C = load(K_CD, null);
+  var view = null;
+  function savePrefs() { store(K_PREF, prefs); }
+  function saveG() { store(K_GAME, G); }
+  function saveC() { store(K_CD, C); }
+
+  function fmt(ms) {
+    var neg = ms < 0, s = neg ? Math.floor(-ms / 1000) : Math.ceil(ms / 1000);
+    var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60;
+    var t = (h ? h + ':' + (m < 10 ? '0' : '') + m : m) + ':' + (sec < 10 ? '0' : '') + sec;
+    return (neg && s ? '−' : '') + t;
+  }
+  function words(ms) {
+    var s = Math.round(ms / 1000), m = Math.floor(s / 60), r = s % 60;
+    return (m ? m + ' min' : '') + (m && r ? ' ' : '') + (r || !m ? r + ' s' : '');
+  }
+
+  // ================= Sound and vibration =================
+  var actx = null;
+  function audio() {   // created on a tap (browsers only allow sound after one)
+    if (!actx) { var A = window.AudioContext || window.webkitAudioContext; if (A) try { actx = new A(); } catch (e) {} }
+    if (actx && actx.state === 'suspended' && actx.resume) actx.resume().catch(function () {});
+    return actx;
+  }
+  function tone(freq, start, len, vol, type) {
+    var a = audio(); if (!a) return;
+    try {
+      var o = a.createOscillator(), g = a.createGain(), t = a.currentTime + start;
+      o.type = type || 'square'; o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+      g.gain.setValueAtTime(vol, t + len - 0.03); g.gain.exponentialRampToValueAtTime(0.0001, t + len);
+      o.connect(g); g.connect(a.destination); o.start(t); o.stop(t + len + 0.02);
+    } catch (e) {}
+  }
+  function vibrate(p) { if (navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
+  function buzzer() {
+    if (prefs.sound) { tone(880, 0, 0.22, 0.3); tone(880, 0.3, 0.22, 0.3); tone(660, 0.6, 0.6, 0.3); }
+    vibrate([300, 120, 300, 120, 600]);
+  }
+  function tick() { if (prefs.sound) tone(1200, 0, 0.06, 0.08, 'triangle'); }
+
+  // ================= Setup =================
+  var draft = [];
+  function openSetup() {
+    pauseAll();
+    view = null; prefs.view = null; savePrefs();
+    draft = (G ? G.players.map(function (p) { return p.name; }) : prefs.players).map(function (n) { return { id: uid(), name: n }; });
+    $('play').hidden = true; $('setup').hidden = false; document.body.classList.remove('in-game'); keepAwake(false);
+    renderSetup(); scrollTo(0, 0);
+  }
+  var TURN_PRESETS = { bank: [60, 180, 300, 600, 900, 1800], turn: [15, 30, 45, 60, 90, 120] };
+  var CD_PRESETS = [30, 60, 120, 180, 300, 600];
+  function presetLabel(s) { return s < 60 ? s + ' s' : s % 60 ? (s / 60).toFixed(1).replace('.5', '½') + ' min' : s / 60 + ' min'; }
+  // Buttons are only rebuilt when the list changes, so a tap isn't lost when a field loses focus.
+  function presets(el, list, cur, onPick) {
+    if (el.dataset.list !== list.join()) {
+      el.dataset.list = list.join();
+      el.innerHTML = list.map(function (s) { return '<button type="button" data-s="' + s + '">' + presetLabel(s) + '</button>'; }).join('');
+    }
+    el.querySelectorAll('[data-s]').forEach(function (b) { b.setAttribute('aria-pressed', cur === +b.dataset.s * 1000); });
+    el.onclick = function (e) { var b = e.target.closest('[data-s]'); if (b) onPick(+b.dataset.s * 1000); };
+  }
+  function fillCustom(minEl, secEl, ms) {
+    var s = Math.round(ms / 1000);
+    if (document.activeElement !== minEl) minEl.value = Math.floor(s / 60);
+    if (document.activeElement !== secEl) secEl.value = s % 60;
+  }
+  function readCustom(minEl, secEl) {
+    var m = Math.max(0, Math.min(180, parseInt(minEl.value, 10) || 0)), s = Math.max(0, Math.min(59, parseInt(secEl.value, 10) || 0));
+    return (m * 60 + s) * 1000;
+  }
+
+  function renderSetup() {
+    document.querySelectorAll('.tab').forEach(function (t) { t.setAttribute('aria-selected', t.dataset.mode === prefs.mode); });
+    $('turnSetup').hidden = prefs.mode !== 'turn'; $('cdSetup').hidden = prefs.mode !== 'cd';
+    $('soundOn').checked = prefs.sound;
+    // players
+    var ul = $('plist'); ul.innerHTML = '';
+    draft.forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num">' + (i + 1) + '</span><input type="text" maxlength="20" aria-label="Player ' + (i + 1) + ' name">' +
+        '<button type="button" class="icon-btn" data-mv="-1" aria-label="Move ' + esc(p.name) + ' up"' + (i ? '' : ' disabled') + '>↑</button>' +
+        '<button type="button" class="icon-btn" data-mv="1" aria-label="Move ' + esc(p.name) + ' down"' + (i < draft.length - 1 ? '' : ' disabled') + '>↓</button>' +
+        '<button type="button" class="icon-btn x" data-rm aria-label="Remove ' + esc(p.name) + '">✕</button>';
+      var inp = li.querySelector('input'); inp.value = p.name;
+      inp.addEventListener('change', function () { var v = tidy(inp.value); if (v) p.name = v; else inp.value = p.name; });
+      li.addEventListener('click', function (e) {
+        var b = e.target.closest('button'); if (!b) return;
+        if (b.hasAttribute('data-rm')) draft.splice(i, 1);
+        else { var j = i + +b.dataset.mv; draft.splice(j, 0, draft.splice(i, 1)[0]); }
+        renderSetup();
+      });
+      ul.appendChild(li);
+    });
+    var taken = draft.map(function (p) { return p.name.toLowerCase(); });
+    var left = draft.length >= 8 ? [] : mem.players.filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 20);
+    var ch = $('chips'); ch.innerHTML = '';
+    left.forEach(function (n) {
+      var c = document.createElement('span'); c.className = 'chip';
+      c.innerHTML = '<button type="button" class="add">' + esc(n) + '</button><button type="button" class="forget" aria-label="Forget ' + esc(n) + '">×</button>';
+      c.firstChild.onclick = function () { draft.push({ id: uid(), name: n }); renderSetup(); };
+      c.lastChild.onclick = function () { mem.players = mem.players.filter(function (x) { return x !== n; }); store(K_MEM, mem); renderSetup(); };
+      ch.appendChild(c);
+    });
+    $('chipHint').hidden = !left.length;
+    $('addForm').hidden = draft.length >= 8;
+    // clock
+    $('clkBank').setAttribute('aria-pressed', prefs.clock === 'bank'); $('clkTurn').setAttribute('aria-pressed', prefs.clock === 'turn');
+    var lim = prefs[prefs.clock];
+    presets($('turnPresets'), TURN_PRESETS[prefs.clock], lim, function (ms) { prefs[prefs.clock] = ms; savePrefs(); renderSetup(); });
+    fillCustom($('tMin'), $('tSec'), lim);
+    $('customLbl').textContent = prefs.clock === 'bank' ? 'Each player gets' : 'Each turn';
+    $('clockHint').textContent = prefs.clock === 'bank'
+      ? 'Like a chess clock: your time only runs on your turn. If someone runs out, the buzzer goes and their clock keeps counting up in red, so the game can go on and you can see how far over they went.'
+      : 'Every turn starts fresh. When it hits zero the buzzer goes; tap Next to move on.';
+    presets($('cdPresets'), CD_PRESETS, prefs.cd, function (ms) { prefs.cd = ms; savePrefs(); renderSetup(); });
+    fillCustom($('cMin'), $('cSec'), prefs.cd);
+    // start
+    var sb = $('startBtn');
+    if (prefs.mode === 'turn') {
+      var ok = draft.length >= 2 && lim >= 1000;
+      sb.disabled = !ok;
+      sb.textContent = draft.length < 2 ? 'Add at least 2 players' : lim < 1000 ? 'Choose a time' : 'Start turn timer';
+      $('backBtn').hidden = !G;
+    } else {
+      sb.disabled = prefs.cd < 1000; sb.textContent = prefs.cd < 1000 ? 'Choose a time' : 'Start countdown (' + words(prefs.cd) + ')';
+      $('backBtn').hidden = !C;
+    }
+  }
+  document.querySelector('.tabs').addEventListener('click', function (e) {
+    var t = e.target.closest('[data-mode]'); if (!t) return; prefs.mode = t.dataset.mode; savePrefs(); renderSetup();
+  });
+  document.querySelectorAll('[data-clock]').forEach(function (b) {
+    b.addEventListener('click', function () { prefs.clock = b.dataset.clock; savePrefs(); renderSetup(); });
+  });
+  ['tMin', 'tSec'].forEach(function (id) {
+    $(id).addEventListener('input', function () { prefs[prefs.clock] = readCustom($('tMin'), $('tSec')); savePrefs(); renderSetup(); });
+    $(id).addEventListener('blur', renderSetup);
+  });
+  ['cMin', 'cSec'].forEach(function (id) {
+    $(id).addEventListener('input', function () { prefs.cd = readCustom($('cMin'), $('cSec')); savePrefs(); renderSetup(); });
+    $(id).addEventListener('blur', renderSetup);
+  });
+  $('soundOn').addEventListener('change', function () { prefs.sound = $('soundOn').checked; savePrefs(); if (prefs.sound) audio(); });
+  $('addForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = tidy($('newName').value); if (!v || draft.length >= 8) return;
+    draft.push({ id: uid(), name: v }); $('newName').value = ''; renderSetup(); $('newName').focus();
+  });
+  $('backBtn').addEventListener('click', function () { showPlay(prefs.mode); });
+
+  $('startBtn').addEventListener('click', function () {
+    audio();
+    if (prefs.mode === 'cd') {
+      C = { dur: prefs.cd, left: prefs.cd, running: false, done: false };
+      saveC(); showPlay('cd'); cdStart(); return;
+    }
+    var pending = tidy($('newName').value);
+    if (pending && draft.length < 8) { draft.push({ id: uid(), name: pending }); $('newName').value = ''; }
+    if (draft.length < 2) return;
+    if (G && G.started && !confirm('Start a new game? The current clocks will be reset.')) return;
+    var lim = prefs[prefs.clock];
+    G = { clock: prefs.clock, limit: lim, cur: 0, running: false, turnNo: 0, buzzed: -1, started: false, hist: [],
+      players: draft.map(function (p) { return { id: p.id, name: p.name, left: lim }; }) };
+    prefs.players = draft.map(function (p) { return p.name; });
+    draft.slice().reverse().forEach(function (p) {
+      mem.players = [p.name].concat(mem.players.filter(function (x) { return x.toLowerCase() !== p.name.toLowerCase(); }));
+    });
+    mem.players = mem.players.slice(0, 40); store(K_MEM, mem);
+    savePrefs(); saveG(); showPlay('turn');
+  });
+
+  // ================= Turn timer =================
+  function curLeft() { var p = G.players[G.cur]; return G.running ? G.left0 - (now() - G.t0) : p.left; }
+  function run() { G.left0 = G.players[G.cur].left; G.t0 = now(); G.running = true; G.started = true; }
+  function hold() { if (G.running) { G.players[G.cur].left = curLeft(); G.running = false; } }
+  function snapshot() {
+    G.hist.push({ cur: G.cur, turnNo: G.turnNo, left: G.players.map(function (p) { return p.left; }), out: G.players.map(function (p) { return !!p.out; }) });
+    if (G.hist.length > 100) G.hist.shift();
+  }
+  function moveTo(i) {
+    var was = G.running || !G.started;
+    hold(); snapshot();
+    G.cur = i; G.turnNo++;
+    if (G.clock === 'turn') G.players[i].left = G.limit;
+    if (was) run();
+    saveG(); render(); vibrate(15);
+  }
+  function next() { moveTo((G.cur + 1) % G.players.length); }
+  function prev() {
+    if (!G.hist.length) return;
+    var was = G.running; hold();
+    var h = G.hist.pop();
+    G.cur = h.cur; G.turnNo = h.turnNo;
+    G.players.forEach(function (p, i) { p.left = h.left[i]; if (h.out[i]) p.out = true; else delete p.out; });
+    if (was) run();
+    saveG(); render(); vibrate(15);
+  }
+  function togglePause() { if (G.running) hold(); else run(); saveG(); render(); }
+
+  $('stage').addEventListener('click', function () {
+    audio();
+    if (view === 'cd') { cdToggle(); return; }
+    if (!G.started || !G.running) { run(); saveG(); render(); vibrate(15); return; }
+    next();
+  });
+  $('nextBtn').addEventListener('click', function () { audio(); next(); });
+  $('prevBtn').addEventListener('click', prev);
+  $('pauseBtn').addEventListener('click', function () { audio(); togglePause(); });
+  $('strip').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-i]'); if (!b) return;
+    var i = +b.dataset.i; if (i === G.cur) return;
+    audio(); moveTo(i);
+  });
+
+  // Called often: updates the numbers and sounds the buzzer once when a clock reaches zero.
+  function check() {
+    if (view === 'turn' && G) {
+      var left = curLeft(), p = G.players[G.cur];
+      if (G.running && left <= 0) {
+        if (G.clock === 'bank' && !p.out) { p.out = true; saveG(); buzzer(); }
+        if (G.clock === 'turn' && G.buzzed !== G.turnNo) { G.buzzed = G.turnNo; saveG(); buzzer(); }
+      }
+      countdownTicks(G.running ? left : null);
+    }
+    if (view === 'cd' && C && C.running) {
+      var l = cdLeft();
+      if (l <= 0) { C.running = false; C.left = 0; C.done = true; saveC(); buzzer(); }
+      else countdownTicks(l);
+    }
+  }
+  var lastTickSec = null;
+  function countdownTicks(left) {
+    if (left == null || left <= 0) { lastTickSec = null; return; }
+    var s = Math.ceil(left / 1000);
+    if (s <= 3 && lastTickSec !== null && s < lastTickSec) tick();
+    lastTickSec = s;
+  }
+
+  function renderTurn() {
+    var p = G.players[G.cur], left = curLeft(), stage = $('stage');
+    var up = left <= 0 && (G.clock === 'bank' ? !!p.out || G.running : true) && G.started;
+    var warn = !up && left < 10000 && G.started;
+    stage.className = 'stage ' + (G.running ? 'running' : 'paused') + (up ? ' up' : warn ? ' warn' : '');
+    $('pTitle').textContent = 'Turn timer';
+    $('pSub').textContent = (G.clock === 'bank' ? words(G.limit) + ' each for the game' : words(G.limit) + ' per turn');
+    $('sWho').textContent = p.name;
+    var nx = G.players[(G.cur + 1) % G.players.length].name;
+    var t = left, status;
+    if (G.clock === 'turn' && left <= 0) { t = 0; }
+    $('sTime').textContent = fmt(t);
+    if (!G.started) status = 'Tap to start ' + p.name + '’s clock';
+    else if (!G.running) status = 'Paused · tap to carry on';
+    else if (up) status = G.clock === 'bank' ? 'Out of time! Over by ' + fmt(left).replace('−', '') : 'Time’s up! Tap for ' + nx;
+    else status = 'Tap when done → ' + nx;
+    $('sStatus').textContent = status;
+    $('pauseBtn').textContent = G.running ? 'Pause' : G.started ? 'Resume' : 'Start';
+    $('prevBtn').disabled = !G.hist.length;
+    var s = $('strip');
+    s.innerHTML = G.players.map(function (q, i) {
+      var l = i === G.cur ? left : q.left, show = G.clock === 'bank' ? fmt(l) : (i === G.cur ? fmt(Math.max(0, l)) : '');
+      return '<button type="button" data-i="' + i + '" class="' + (i === G.cur ? 'cur' : '') + (q.out && G.clock === 'bank' ? ' out' : '') +
+        '" aria-label="' + esc(q.name) + (G.clock === 'bank' ? ', ' + fmt(l) + ' left' : '') + (i === G.cur ? ', playing now' : ', switch to them') + '"><b>' +
+        esc(q.name) + '</b>' + (show ? '<span>' + (q.out && G.clock === 'bank' ? '⏰ ' : '') + show + '</span>' : '') + '</button>';
+    }).join('');
+  }
+
+  // ================= Countdown =================
+  function cdLeft() { return C.running ? C.left0 - (now() - C.t0) : C.left; }
+  function cdStart() { if (C.left <= 0) return; C.left0 = C.left; C.t0 = now(); C.running = true; C.done = false; saveC(); render(); }
+  function cdPause() { if (C.running) { C.left = Math.max(0, cdLeft()); C.running = false; saveC(); render(); } }
+  function cdToggle() { if (C.done) { cdReset(); return; } if (C.running) cdPause(); else cdStart(); vibrate(15); }
+  function cdReset() { C.running = false; C.left = C.dur; C.done = false; saveC(); render(); }
+  $('cdGoBtn').addEventListener('click', function () { audio(); cdToggle(); });
+  $('resetBtn').addEventListener('click', cdReset);
+  $('plusBtn').addEventListener('click', function () {
+    audio();
+    if (C.running) { C.left0 += 30000; }
+    else { var wasDone = C.done; C.left = Math.max(0, C.left) + 30000; C.done = false; if (wasDone) { cdStart(); return; } }
+    saveC(); render();
+  });
+  function renderCd() {
+    var left = cdLeft(), stage = $('stage');
+    stage.className = 'stage ' + (C.running ? 'running' : 'paused') + (C.done ? ' up' : C.running && left < 10000 ? ' warn' : '');
+    $('pTitle').textContent = 'Countdown';
+    $('pSub').textContent = words(C.dur);
+    $('sWho').textContent = C.done ? 'Time’s up!' : '';
+    $('sTime').textContent = fmt(Math.max(0, left));
+    $('sStatus').textContent = C.done ? 'Tap to reset' : C.running ? 'Tap to pause' : left === C.dur ? 'Tap to start' : 'Paused · tap to carry on';
+    $('cdGoBtn').textContent = C.running ? 'Pause' : C.done ? 'Again' : left === C.dur ? 'Start' : 'Resume';
+    $('resetBtn').disabled = !C.running && !C.done && left === C.dur;
+  }
+
+  // ================= Screens =================
+  function showPlay(v) {
+    view = v; prefs.view = v; savePrefs();
+    $('setup').hidden = true; $('play').hidden = false; document.body.classList.add('in-game'); keepAwake(true);
+    $('turnCtl').hidden = v !== 'turn'; $('strip').hidden = v !== 'turn'; $('cdCtl').hidden = v !== 'cd';
+    $('mRestart').textContent = v === 'turn' ? 'Restart all clocks' : 'Reset countdown';
+    $('mSetup').textContent = v === 'turn' ? 'Change players or time' : 'Change the time';
+    render();
+  }
+  function render() {
+    if (view === 'turn' && G) renderTurn();
+    else if (view === 'cd' && C) renderCd();
+  }
+  function pauseAll() {
+    if (G && G.running) { hold(); saveG(); }
+    if (C && C.running) { C.left = Math.max(0, cdLeft()); C.running = false; saveC(); }
+  }
+
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  });
+  $('menuBtn').addEventListener('click', function () { $('mSound').checked = prefs.sound; $('menuDlg').showModal(); });
+  $('mSound').addEventListener('change', function () { prefs.sound = $('mSound').checked; savePrefs(); if (prefs.sound) audio(); });
+  $('mRestart').addEventListener('click', function () {
+    $('menuDlg').close();
+    if (view === 'cd') { cdReset(); return; }
+    if (G.started && !confirm('Put everyone’s clock back to ' + words(G.limit) + '?')) return;
+    G.players.forEach(function (p) { p.left = G.limit; delete p.out; });
+    G.cur = 0; G.running = false; G.started = false; G.hist = []; G.turnNo = 0; G.buzzed = -1;
+    saveG(); render();
+  });
+  $('mSetup').addEventListener('click', function () { $('menuDlg').close(); prefs.mode = view; openSetup(); });
+
+  setInterval(function () { if (view) { check(); render(); } }, 100);
+  document.addEventListener('visibilitychange', function () { if (view && document.visibilityState === 'visible') { check(); render(); } });
+
+  // ================= Start =================
+  if (prefs.view === 'turn' && G && G.players && G.players.length) showPlay('turn');
+  else if (prefs.view === 'cd' && C) showPlay('cd');
+  else openSetup();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Sign-up Sheet</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#E3A918; --lead-t:#FBF0CC; --no:#CC423D; --no-ink:#FFFFFF; --no-t:#F6DAD8;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-ink:#2A0F0D; --no-t:#3D2220;
+    color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-ink:#2A0F0D; --no-t:#3D2220;
+    color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+[hidden]{display:none !important}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--head);line-height:1.15;margin:0}
+h1{font-size:30px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+h2{font-size:20px;font-weight:800}
+h3{font-size:17px;font-weight:600}
+p{margin:0}
+a{color:var(--brand)}
+button,input,textarea,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.lede{margin:8px 0 20px;font-size:17px;color:var(--muted);max-width:46ch}
+.hint{color:var(--muted);font-size:14px}
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;font-size:15px;min-height:32px}
+.topnav a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;font-weight:600}
+.sync{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
+.sync.saving{color:var(--ink)}
+.sync.offline{color:var(--no);border-color:var(--no)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;text-decoration:none;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.wide{width:100%}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--no);border:1.5px solid var(--no)}
+.btn.bad{background:var(--no);color:var(--no-ink)}
+.btn.small{min-height:44px;font-size:15px;padding:0 14px;border-radius:10px}
+.pl-dlg .btn:not(.primary):not(.danger){background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.link{background:none;border:0;padding:0 2px;min-height:44px;color:var(--brand);text-decoration:underline;cursor:pointer;font-size:15px;font-weight:500}
+.link.danger{color:var(--no)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.fld{display:block;margin-bottom:16px}
+.fld>span{display:block;font-weight:600;margin-bottom:6px;font-size:15px}
+.fld small{display:block;color:var(--muted);margin-top:5px;font-size:13px}
+.opt{font-weight:400;color:var(--muted)}
+input[type=text],input[type=number],input[type=date],textarea,select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:16px}
+textarea{resize:vertical;line-height:1.4}
+.err{color:var(--no);font-weight:600;margin-top:10px;min-height:1.4em}
+.err:empty{min-height:0;margin:0}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden;max-width:100%}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.linkbox{display:flex;gap:8px;margin-top:10px}
+.linkbox input{flex:1;min-width:0}
+.recent{margin-top:28px}
+.recent h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 10px}
+.recent ul{list-style:none;padding:0;margin:0;display:grid;gap:8px}
+.recent a{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;padding:10px 14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;text-decoration:none;color:var(--ink);font-weight:600}
+.recent a span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tag{flex:none;font-size:12px;font-weight:600;background:var(--brand-t);color:var(--brand);border-radius:999px;padding:2px 9px}
+
+.created{margin-bottom:18px;border:2px solid var(--brand);background:var(--brand-t)}
+.created h2{font-size:19px}
+.details{margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 18px}
+
+/* slots */
+.slots{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.slot{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 14px 12px}
+.slot.mine{border:2px solid var(--brand)}
+.slot.full{background:var(--bg)}
+.shead{display:flex;align-items:flex-start;gap:10px}
+.shead .t{flex:1;min-width:0}
+.shead b{display:block;font:600 19px/1.2 var(--head);overflow-wrap:anywhere}
+.when{display:block;color:var(--muted);font-size:14px;margin-top:2px;overflow-wrap:anywhere}
+.badge{flex:none;font-size:13px;font-weight:700;border-radius:999px;padding:4px 10px;background:var(--brand-t);color:var(--brand);white-space:nowrap}
+.badge.full{background:var(--line);color:var(--muted)}
+.badge.over{background:var(--lead-t);color:var(--ink);border:1px solid var(--lead)}
+.bar{height:6px;border-radius:99px;background:var(--line);margin:10px 0 4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--brand);border-radius:99px}
+.bar.over i{background:var(--lead)}
+.people{list-style:none;margin:6px 0 0;padding:0}
+.people li{display:flex;align-items:center;gap:6px;min-height:44px;border-top:1px solid var(--line);padding:4px 0}
+.people li:first-child{border-top:0}
+.people .who{flex:1;min-width:0;overflow-wrap:anywhere}
+.people .who b{font-weight:600}
+.people .note{display:block;color:var(--muted);font-size:14px}
+.people .you{font-size:13px;font-weight:700;color:var(--brand)}
+.people .extra{font-size:12px;font-weight:700;color:var(--ink);background:var(--lead-t);border-radius:999px;padding:1px 7px;margin-left:4px}
+.people .acts{display:flex;gap:2px;flex:none}
+.people .acts .link{font-size:14px;padding:0 6px}
+.slot .btn{margin-top:8px}
+.empty{color:var(--muted);font-size:14px;padding:6px 0 0}
+.orph{margin-top:16px}
+
+/* host */
+.host{margin-top:26px;border:2px solid var(--brand)}
+.host .row{margin-top:12px}
+.host .row .btn{flex:1 1 auto}
+
+/* editor */
+.editor{display:grid;gap:12px}
+.eslot{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px}
+.eslot .grid{display:grid;grid-template-columns:1fr 92px;gap:8px}
+.eslot .grid .lbl{grid-column:1/3}
+.eslot label span{display:block;font-size:13px;font-weight:600;color:var(--muted);margin-bottom:3px}
+.eslot .ctl{display:flex;gap:6px;align-items:center;margin-top:10px}
+.eslot .ctl .hint{flex:1;min-width:0;font-size:13px}
+
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;font-size:15px}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+dialog.dlg{width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 32px);padding:18px 16px 16px;border:1px solid var(--line);border-radius:18px;
+  background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog.dlg::backdrop{background:rgba(10,20,16,.55)}
+dialog.dlg h2{font-size:22px;margin-bottom:4px;overflow-wrap:anywhere}
+dialog.dlg p{margin:6px 0 0;overflow-wrap:anywhere}
+.dlgbtns{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.dlgbtns .btn{width:100%}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}.btn:active{transform:none}}
+</style>
+<script src="/lock.js"></script>
+<script src="/doc.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+<main id="app" class="wrap"><p class="hint">Loading…</p></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This page needs JavaScript to work.</p></noscript>
+
+<script>
+(function () {
+'use strict';
+
+// Sign-up Sheet. A shared document (doc.js, kind 'signup'):
+//   { title, details, slots: { id: { label, when, spots, order } }, signups: { id: { slot, name, note, pid, at } } }
+// Slots and sign-ups are objects keyed by id so two phones changing things at once merge cleanly.
+var K_PID = 'pebbly_signup_pid', K_NAME = 'pebbly_signup_name', K_RECENT = 'pebbly_signup_recent', K_MEM = 'pebbly_score_memory',
+  K_NEW = 'pebbly_signup_new';
+var MAX_SLOTS = 100, MAX_SPOTS = 50;
+
+var $app = document.getElementById('app'), $toast = document.getElementById('toast');
+function $(s) { return document.querySelector(s); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function tidy(s, max) { s = String(s || '').replace(/\s+/g, ' ').trim(); return max ? s.slice(0, max) : s; }
+function plural(n, one, many) { return n + ' ' + (n === 1 ? one : (many || one + 's')); }
+function pid() {
+  var p = load(K_PID, null);
+  if (!p) { p = 'p' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); store(K_PID, p); }
+  return p;
+}
+var toastTimer;
+function toast(m) { $toast.textContent = m; $toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { $toast.classList.remove('show'); }, 3400); }
+function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
+function shareUrl(code) { return baseUrl() + '?d=' + code; }
+function copyText(text) {
+  function fallback() {
+    var el = document.createElement('textarea'); el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select(); var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(el); return ok;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function () { return true; }, fallback);
+  return Promise.resolve(fallback());
+}
+function shareLink(title, url) {
+  if (navigator.share) { navigator.share({ title: title, text: title, url: url }).catch(function () {}); return; }
+  copyText(url).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : url); });
+}
+
+// Remembered names, shared with the games.
+var mem = load(K_MEM, { players: [], games: [] });
+if (!mem || !Array.isArray(mem.players)) mem = { players: [], games: [] };
+function rememberName(n) {
+  n = tidy(n); if (!n) return;
+  mem = load(K_MEM, mem); if (!Array.isArray(mem.players)) mem.players = [];
+  var i = mem.players.findIndex(function (x) { return x.toLowerCase() === n.toLowerCase(); });
+  if (i > -1) mem.players.splice(i, 1);
+  mem.players.unshift(n); if (mem.players.length > 40) mem.players.length = 40;
+  store(K_MEM, mem);
+}
+function forgetName(n) { mem = load(K_MEM, mem); mem.players = (mem.players || []).filter(function (x) { return x !== n; }); store(K_MEM, mem); }
+
+function remember(code, title) {
+  var list = load(K_RECENT, []).filter(function (r) { return r.code !== code; });
+  list.unshift({ code: code, title: title }); store(K_RECENT, list.slice(0, 12));
+}
+function forget(code) { store(K_RECENT, load(K_RECENT, []).filter(function (r) { return r.code !== code; })); }
+
+// A small yes/no dialog. Resolves true when the first button is tapped.
+function ask(o) {
+  return new Promise(function (resolve) {
+    var d = document.createElement('dialog'); d.className = 'dlg';
+    d.innerHTML = '<h2>' + esc(o.title) + '</h2>' + (o.text ? '<p>' + esc(o.text) + '</p>' : '') +
+      '<div class="dlgbtns"><button type="button" class="btn ' + (o.danger ? 'bad' : '') + '" data-ok>' + esc(o.ok || 'OK') + '</button>' +
+      '<button type="button" class="btn plain" data-no>' + esc(o.cancel || 'Cancel') + '</button></div>';
+    document.body.appendChild(d);
+    function done(v) { try { d.close(); } catch (e) {} d.remove(); resolve(v); }
+    d.querySelector('[data-ok]').addEventListener('click', function () { done(true); });
+    d.querySelector('[data-no]').addEventListener('click', function () { done(false); });
+    d.addEventListener('cancel', function (e) { e.preventDefault(); done(false); });
+    if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  });
+}
+
+/* ------------------------------------------------------------------ state */
+
+var S = { code: '', doc: null, s: null, status: 'live', editing: false, justCreated: false, pending: false };
+
+function slotList(s) {
+  s = s || S.s;
+  return Object.keys(s.slots || {}).map(function (id) { var x = s.slots[id]; return { id: id, label: x.label, when: x.when, spots: x.spots, order: x.order }; })
+    .sort(function (a, b) { return ((a.order || 0) - (b.order || 0)) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0); });
+}
+function signupsFor(slotId) {
+  var su = S.s.signups || {};
+  return Object.keys(su).filter(function (k) { return su[k] && su[k].slot === slotId; })
+    .map(function (k) { var x = su[k]; return { id: k, name: x.name, note: x.note, pid: x.pid, at: x.at || 0 }; })
+    .sort(function (a, b) { return (a.at - b.at) || (a.id < b.id ? -1 : 1); });
+}
+function spotsOf(sl) { var n = parseInt(sl.spots, 10); return n >= 1 ? Math.min(n, MAX_SPOTS) : 1; }
+function isOwner() { return !!(S.doc && S.doc.isOwner); }
+
+/* ------------------------------------------------------------------ routes */
+
+function route() {
+  var q = new URLSearchParams(location.search), code = (q.get('d') || '').trim().toLowerCase();
+  if (S.doc) { S.doc.close(); S.doc = null; }
+  S.editing = false;
+  if (!code) { renderHome(); return; }
+  PebblyDoc.takeOwnerFromUrl(code);
+  openSheet(code);
+}
+
+function openSheet(code) {
+  S.code = code; S.s = null;
+  S.justCreated = load(K_NEW, '') === code;
+  if (S.justCreated) store(K_NEW, '');
+  document.title = 'Sign-up Sheet';
+  $app.innerHTML = '<p class="hint">Loading sheet…</p>';
+  PebblyDoc.open(code, {
+    kind: 'signup', el: $app, what: 'sheet',
+    onState: function (s, info) { S.s = normalize(s); if (info.first) remember(code, S.s.title); rerender(); },
+    onStatus: function (st) { S.status = st; showStatus(); },
+    onGone: function (why) { S.doc = null; renderGone(why); }
+  }).then(function (d) {
+    if (!d) { forget(code); renderNotFound(); return; }
+    S.doc = d; S.status = d.status;
+  }, function (e) {
+    $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Sign-up sheets</a></nav>' +
+      '<p class="err">' + esc(PebblyDoc.message(e)) + '</p><p style="margin-top:12px"><button type="button" class="btn ghost" data-act="retry">Try again</button></p>';
+  });
+}
+
+function normalize(s) {
+  s = s || {}; if (!s.slots || typeof s.slots !== 'object') s.slots = {}; if (!s.signups || typeof s.signups !== 'object') s.signups = {};
+  return s;
+}
+
+/* ------------------------------------------------------------------ home */
+
+function renderHome() {
+  document.title = 'Sign-up Sheet';
+  var recent = load(K_RECENT, []);
+  $app.innerHTML =
+    '<h1>📋 Sign-up Sheet</h1>' +
+    '<p class="lede">Who’s bringing what, who’s helping when. Make a list of jobs or things to bring, send the link, and people put their name down.</p>' +
+    '<form id="createForm" class="card" novalidate>' +
+      '<label class="fld"><span>What’s it for?</span><input type="text" name="title" maxlength="100" placeholder="Potluck on Saturday" autocomplete="off"></label>' +
+      '<label class="fld"><span>Details <span class="opt">(optional)</span></span><textarea name="details" rows="2" maxlength="1000" placeholder="Where, when, anything people should know"></textarea></label>' +
+      '<label class="fld"><span>Things to sign up for</span><textarea name="slots" rows="5" placeholder="One per line&#10;Bring dessert x3&#10;Bring drinks&#10;Setup crew x2"></textarea>' +
+        '<small>One per line. Add “x3” at the end for 3 spots. You can add times and change things later.</small></label>' +
+      '<label class="fld" style="max-width:220px"><span>Spots for each</span><input type="number" name="spots" min="1" max="50" value="1" inputmode="numeric"></label>' +
+      PebblyLock.fieldHtml('sheet') +
+      '<button class="btn wide" type="submit">Create sign-up sheet</button>' +
+      '<p class="err" id="formErr" role="alert"></p>' +
+    '</form>' +
+    (recent.length ? '<section class="recent"><h2>Your sheets</h2><ul>' + recent.map(function (r) {
+      return '<li><a href="?d=' + esc(r.code) + '"><span>' + esc(r.title || 'Sign-up sheet') + '</span>' +
+        (PebblyDoc.owner(r.code) ? '<span class="tag">organizer</span>' : '') + '</a></li>';
+    }).join('') + '</ul></section>' : '');
+}
+
+function parseLines(text, defSpots) {
+  var out = [], seen = {};
+  String(text || '').split('\n').forEach(function (line) {
+    line = tidy(line); if (!line) return;
+    var spots = defSpots, m = line.match(/^(.*?)\s*[x×]\s*(\d{1,3})$/i) || line.match(/^(.*?)\s*\((\d{1,3})\)$/);
+    if (m && tidy(m[1])) { line = tidy(m[1]); spots = Math.max(1, Math.min(MAX_SPOTS, parseInt(m[2], 10) || 1)); }
+    line = line.slice(0, 80);
+    if (seen[line.toLowerCase()]) return; seen[line.toLowerCase()] = 1;
+    out.push({ label: line, spots: spots });
+  });
+  return out;
+}
+
+function submitCreate(form) {
+  var f = form.elements, err = $('#formErr'), btn = form.querySelector('button[type=submit]');
+  err.textContent = '';
+  var title = tidy(f.title.value, 100);
+  if (!title) { err.textContent = 'Give your sheet a name.'; f.title.focus(); return; }
+  var def = parseInt(f.spots.value, 10);
+  if (!(def >= 1 && def <= MAX_SPOTS)) { err.textContent = 'Spots for each should be a number from 1 to 50.'; f.spots.focus(); return; }
+  var lines = parseLines(f.slots.value, def);
+  if (!lines.length) { err.textContent = 'Add at least one thing to sign up for.'; f.slots.focus(); return; }
+  if (lines.length > MAX_SLOTS) { err.textContent = 'That’s a lot! Keep it to ' + MAX_SLOTS + ' or fewer.'; return; }
+  var state = { title: title, details: String(f.details.value || '').trim().slice(0, 1000), slots: {}, signups: {} };
+  lines.forEach(function (l, i) { state.slots[PebblyDoc.id()] = { label: l.label, when: '', spots: l.spots, order: i + 1 }; });
+  btn.disabled = true; btn.textContent = 'Creating…';
+  var pw = f.lockpw ? f.lockpw.value : '';
+  PebblyDoc.create('signup', state).then(function (r) {
+    remember(r.code, title); store(K_NEW, r.code);
+    return PebblyLock.afterCreate('doc', r.code, r.owner_token, pw, PebblyDoc.raw).then(function (lockErr) {
+      history.pushState(null, '', baseUrl() + '?d=' + r.code);
+      route();
+      if (lockErr) toast(lockErr);
+    });
+  }, function (e) {
+    btn.disabled = false; btn.textContent = 'Create sign-up sheet';
+    err.textContent = PebblyDoc.message(e);
+  });
+}
+
+/* ------------------------------------------------------------------ sheet */
+
+function renderNotFound() {
+  document.title = 'Sheet not found | Sign-up Sheet';
+  $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Sign-up sheets</a></nav><h1>Sheet not found</h1>' +
+    '<p class="lede">That link doesn’t match a sign-up sheet. It may have been deleted, or the link was copied incompletely.</p>' +
+    '<a class="btn" href="' + esc(baseUrl()) + '">Make a new sheet</a>';
+}
+function renderGone(why) {
+  if (why === 'password_required') {
+    $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Sign-up sheets</a></nav><h1>🔒 Password added</h1>' +
+      '<p class="lede">The organizer just added a password to this sheet. Reload to enter it.</p>' +
+      '<button type="button" class="btn" data-act="reload">Reload</button>';
+    return;
+  }
+  forget(S.code);
+  $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Sign-up sheets</a></nav><h1>Sheet deleted</h1>' +
+    '<p class="lede">The organizer deleted this sign-up sheet.</p><a class="btn" href="' + esc(baseUrl()) + '">Make a new sheet</a>';
+}
+
+var STATUS = { live: '✓ Saved', saving: 'Saving…', offline: 'Offline – will retry' };
+function showStatus() {
+  var el = $('#sync'); if (!el) return;
+  el.textContent = STATUS[S.status] || ''; el.className = 'sync ' + S.status;
+}
+
+// Re-draw, but not while someone is typing in the page (it would lose what they typed).
+function typing() {
+  var a = document.activeElement;
+  return !!(a && $app.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+function rerender() { if (!S.s) return; if (typing()) { S.pending = true; return; } S.pending = false; renderSheet(); }
+$app.addEventListener('focusout', function () { setTimeout(function () { if (S.pending && !typing()) rerender(); }, 0); });
+
+function renderSheet() {
+  var s = S.s, owner = isOwner();
+  document.title = (s.title || 'Sign-up sheet') + ' | Sign-up Sheet';
+  var y = window.scrollY;
+  $app.innerHTML =
+    '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Sign-up sheets</a><span id="sync" class="sync" aria-live="polite"></span></nav>' +
+    (S.justCreated && owner ? '<section class="card created"><h2>Your sheet is ready 🎉</h2><p style="margin-top:4px">Send this link to the group' +
+      (PebblyLock.key('doc', S.code) ? ', and tell them the password separately' : '') + ':</p>' +
+      '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Sheet link">' +
+      '<button type="button" class="btn small" data-act="share">Share</button></div></section>' : '') +
+    (S.editing ? editorHtml() : viewHtml());
+  showStatus();
+  window.scrollTo(0, y);
+}
+
+function badge(taken, spots) {
+  var left = spots - taken;
+  if (left > 0) return '<span class="badge">' + (spots === 1 ? '1 spot open' : left + ' of ' + spots + ' left') + '</span>';
+  if (left === 0) return '<span class="badge full">Full</span>';
+  return '<span class="badge over">Full +' + (-left) + ' extra</span>';
+}
+
+function viewHtml() {
+  var s = S.s, me = pid(), owner = isOwner(), slots = slotList(), known = {};
+  var html = '<header><h1>' + esc(s.title) + '</h1>' + (s.details ? '<p class="details">' + esc(s.details) + '</p>' : '') + '</header>' +
+    '<div class="tools"><button type="button" class="btn small ghost" data-act="share">Share link</button>' +
+    (owner ? '<button type="button" class="btn small ghost" data-act="summary">Copy summary</button>' : '') + '</div>';
+  if (!slots.length) html += '<p class="card hint">Nothing to sign up for yet.' + (owner ? ' Tap “Edit sheet” below to add things.' : '') + '</p>';
+  html += '<ul class="slots" id="slots">' + slots.map(function (sl) {
+    known[sl.id] = 1;
+    var list = signupsFor(sl.id), spots = spotsOf(sl), taken = list.length, mine = list.some(function (x) { return x.pid === me; });
+    var pct = Math.min(100, Math.round(taken / spots * 100));
+    return '<li class="slot' + (mine ? ' mine' : '') + (taken >= spots ? ' full' : '') + '" data-slot="' + esc(sl.id) + '">' +
+      '<div class="shead"><div class="t"><b>' + esc(sl.label) + '</b>' + (sl.when ? '<span class="when">🕘 ' + esc(sl.when) + '</span>' : '') + '</div>' +
+      badge(taken, spots) + '</div>' +
+      '<div class="bar' + (taken > spots ? ' over' : '') + '" aria-hidden="true"><i style="width:' + pct + '%"></i></div>' +
+      (list.length ? '<ul class="people">' + list.map(function (p, i) { return personHtml(p, i >= spots, owner, me); }).join('') + '</ul>'
+        : '<p class="empty">Nobody yet. Be the first!</p>') +
+      (mine ? '' : taken >= spots ? '<button type="button" class="btn plain small wide" disabled>Full</button>'
+        : '<button type="button" class="btn small wide" data-act="signup" data-slot="' + esc(sl.id) + '">Sign up</button>') +
+      '</li>';
+  }).join('') + '</ul>';
+  // Sign-ups whose slot was removed while someone was signing up: shown, not hidden.
+  var su = s.signups, orph = Object.keys(su).filter(function (k) { return su[k] && !known[su[k].slot] && (owner || su[k].pid === me); });
+  if (orph.length) {
+    html += '<section class="card orph"><h3>On a removed slot</h3><p class="hint" style="margin-top:2px">These sign-ups were for something that’s no longer on the sheet.</p><ul class="people">' +
+      orph.map(function (k) { var x = su[k]; return personHtml({ id: k, name: x.name, note: x.note, pid: x.pid }, false, owner, me); }).join('') + '</ul></section>';
+  }
+  if (owner) html += hostHtml();
+  return html;
+}
+
+function personHtml(p, extra, owner, me) {
+  var mine = p.pid === me;
+  return '<li><span class="who"><b>' + esc(p.name) + '</b>' + (mine ? ' <span class="you">(you)</span>' : '') +
+    (extra ? '<span class="extra" title="Signed up at the same moment as someone else">extra</span>' : '') +
+    (p.note ? '<span class="note">' + esc(p.note) + '</span>' : '') + '</span>' +
+    '<span class="acts">' + (mine ? '<button type="button" class="link" data-act="note" data-id="' + esc(p.id) + '">' + (p.note ? 'Edit note' : 'Add note') + '</button>' : '') +
+    (mine || owner ? '<button type="button" class="link danger" data-act="remove" data-id="' + esc(p.id) + '" aria-label="Remove ' + esc(p.name) + '">Remove</button>' : '') +
+    '</span></li>';
+}
+
+function hostHtml() {
+  return '<section class="card host"><h2>Organizer tools</h2><p class="hint" style="margin-top:4px">Only you can see this. You can remove anyone’s sign-up.</p>' +
+    '<div class="row"><button type="button" class="btn small" data-act="edit">✏️ Edit sheet</button>' +
+    '<button type="button" class="btn small ghost" data-act="copy-host">Copy organizer link</button>' +
+    '<button type="button" class="btn small ghost" data-act="lock">🔒 Password</button>' +
+    '<button type="button" class="btn small danger" data-act="delete">Delete sheet</button></div>' +
+    '<p class="hint" style="margin-top:10px;font-size:13px">The organizer link lets you manage this sheet on another phone. Keep it private.</p></section>';
+}
+
+/* ------------------------------------------------------------------ editor (organizer) */
+
+function editorHtml() {
+  var s = S.s, slots = slotList();
+  return '<header style="margin-bottom:14px"><h1>Edit sheet</h1><p class="hint" style="margin-top:4px">Changes save as you go.</p></header>' +
+    '<div class="card" style="margin-bottom:14px">' +
+      '<label class="fld"><span>Name</span><input type="text" data-ed="title" maxlength="100" value="' + esc(s.title) + '"></label>' +
+      '<label class="fld" style="margin:0"><span>Details <span class="opt">(optional)</span></span><textarea data-ed="details" rows="2" maxlength="1000">' + esc(s.details || '') + '</textarea></label>' +
+    '</div>' +
+    '<div class="editor" id="editor">' + slots.map(function (sl, i) {
+      var n = signupsFor(sl.id).length;
+      return '<div class="eslot" data-slot="' + esc(sl.id) + '"><div class="grid">' +
+        '<label class="lbl"><span>What</span><input type="text" data-ed="label" maxlength="80" value="' + esc(sl.label) + '"></label>' +
+        '<label><span>When</span><input type="text" data-ed="when" maxlength="60" placeholder="Sat 9–11am" value="' + esc(sl.when || '') + '"></label>' +
+        '<label><span>Spots</span><input type="number" data-ed="spots" min="1" max="50" inputmode="numeric" value="' + spotsOf(sl) + '"></label></div>' +
+        '<div class="ctl"><span class="hint">' + (n ? plural(n, 'person', 'people') + ' signed up' : 'Nobody yet') + '</span>' +
+        '<button type="button" class="icon-btn" data-act="up" aria-label="Move up"' + (i ? '' : ' disabled') + '>↑</button>' +
+        '<button type="button" class="icon-btn" data-act="down" aria-label="Move down"' + (i < slots.length - 1 ? '' : ' disabled') + '>↓</button>' +
+        '<button type="button" class="icon-btn x" data-act="rmslot" aria-label="Remove ' + esc(sl.label) + '">✕</button></div></div>';
+    }).join('') + '</div>' +
+    '<form id="addSlots" class="card" style="margin-top:14px" novalidate><label class="fld" style="margin-bottom:10px"><span>Add more</span>' +
+      '<textarea name="lines" rows="2" placeholder="One per line, e.g. Bring napkins x2"></textarea></label>' +
+      '<button type="submit" class="btn small ghost">Add</button></form>' +
+    '<button type="button" class="btn wide" style="margin-top:18px" data-act="done">Done editing</button>';
+}
+
+function editField(el) {
+  var what = el.dataset.ed, v = el.value, box = el.closest('.eslot'), id = box && box.dataset.slot;
+  if (what === 'title') {
+    v = tidy(v, 100); if (!v) { el.value = S.s.title; toast('The sheet needs a name.'); return; }
+    S.doc.change(function (s) { s.title = v; }); remember(S.code, v); return;
+  }
+  if (what === 'details') { v = String(v || '').trim().slice(0, 1000); S.doc.change(function (s) { s.details = v; }); return; }
+  if (!id || !S.s.slots[id]) return;
+  if (what === 'label') { v = tidy(v, 80); if (!v) { el.value = S.s.slots[id].label; toast('Each one needs a name.'); return; } }
+  if (what === 'when') v = tidy(v, 60);
+  if (what === 'spots') {
+    v = parseInt(v, 10);
+    if (!(v >= 1)) { el.value = spotsOf(S.s.slots[id]); toast('Spots should be a number from 1 to 50.'); return; }
+    v = Math.min(v, MAX_SPOTS); el.value = v;
+    var n = signupsFor(id).length;
+    if (v < n) toast('More people than spots: everyone stays on, marked “extra”.');
+  }
+  S.doc.change(function (s) { if (s.slots[id]) s.slots[id][what] = v; });
+}
+
+function moveSlot(id, dir) {
+  var list = slotList(), i = list.findIndex(function (x) { return x.id === id; }), j = i + dir;
+  if (i < 0 || j < 0 || j >= list.length) return;
+  S.doc.change(function (s) {
+    // Renumber everything so ties left by merges don't stick around.
+    list.splice(j, 0, list.splice(i, 1)[0]);
+    list.forEach(function (x, k) { if (s.slots[x.id]) s.slots[x.id].order = k + 1; });
+  });
+}
+
+function removeSlot(id) {
+  var sl = S.s.slots[id]; if (!sl) return;
+  var n = signupsFor(id).length;
+  ask({ title: 'Remove “' + sl.label + '”?', text: n ? 'The ' + plural(n, 'sign-up') + ' on it will be removed too.' : '', ok: 'Remove', danger: true }).then(function (ok) {
+    if (!ok) return;
+    S.doc.change(function (s) {
+      delete s.slots[id];
+      Object.keys(s.signups).forEach(function (k) { if (s.signups[k] && s.signups[k].slot === id) delete s.signups[k]; });
+    });
+  });
+}
+
+function addSlots(form) {
+  var lines = parseLines(form.elements.lines.value, 1);
+  if (!lines.length) { form.elements.lines.focus(); return; }
+  if (Object.keys(S.s.slots).length + lines.length > MAX_SLOTS) { toast('Keep it to ' + MAX_SLOTS + ' things or fewer.'); return; }
+  form.elements.lines.value = '';
+  form.elements.lines.blur();
+  S.doc.change(function (s) {
+    var max = 0; Object.keys(s.slots).forEach(function (k) { max = Math.max(max, s.slots[k].order || 0); });
+    lines.forEach(function (l, i) { s.slots[PebblyDoc.id()] = { label: l.label, when: '', spots: l.spots, order: max + i + 1 }; });
+  });
+  toast(lines.length === 1 ? 'Added.' : plural(lines.length, 'thing') + ' added.');
+}
+
+/* ------------------------------------------------------------------ signing up */
+
+function signupDialog(slotId, entryId) {
+  var sl = S.s.slots[slotId], entry = entryId ? S.s.signups[entryId] : null;
+  if (!sl) return;
+  var name = entry ? entry.name : load(K_NAME, '');
+  var d = document.createElement('dialog'); d.className = 'dlg';
+  d.innerHTML = '<form method="dialog" novalidate><h2>' + esc(sl.label) + '</h2>' + (sl.when ? '<p class="hint">🕘 ' + esc(sl.when) + '</p>' : '') +
+    '<div style="margin-top:14px">' +
+    (entry ? '' : '<label class="fld" style="margin-bottom:8px"><span>Your name</span><input type="text" name="name" maxlength="40" autocomplete="given-name" value="' + esc(name) + '"></label>' +
+      '<div class="chips" id="nameChips" style="margin:0 0 14px"></div>') +
+    '<label class="fld" style="margin:0"><span>Note <span class="opt">(optional)</span></span><input type="text" name="note" maxlength="100" placeholder="e.g. bringing brownies" value="' + esc(entry ? entry.note || '' : '') + '"></label>' +
+    '</div><p class="err" role="alert"></p>' +
+    '<div class="dlgbtns"><button type="submit" class="btn">' + (entry ? 'Save note' : 'Sign me up') + '</button><button type="button" class="btn plain" data-no>Cancel</button></div></form>';
+  document.body.appendChild(d);
+  var f = d.querySelector('form'), err = d.querySelector('.err');
+  function close() { try { d.close(); } catch (e) {} d.remove(); }
+  function chips() {
+    var box = d.querySelector('#nameChips'); if (!box) return;
+    var cur = tidy(f.elements.name.value).toLowerCase();
+    box.innerHTML = '';
+    (load(K_MEM, mem).players || []).filter(function (n) { return n.toLowerCase() !== cur; }).slice(0, 8).forEach(function (n) {
+      var c = document.createElement('span'); c.className = 'chip';
+      var a = document.createElement('button'); a.type = 'button'; a.className = 'add'; a.textContent = n;
+      a.addEventListener('click', function () { f.elements.name.value = n; chips(); f.elements.note.focus(); });
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'forget'; x.textContent = '×'; x.setAttribute('aria-label', 'Forget ' + n);
+      x.addEventListener('click', function () { forgetName(n); chips(); });
+      c.appendChild(a); c.appendChild(x); box.appendChild(c);
+    });
+  }
+  chips();
+  if (f.elements.name) f.elements.name.addEventListener('input', chips);
+  d.querySelector('[data-no]').addEventListener('click', close);
+  d.addEventListener('cancel', function (e) { e.preventDefault(); close(); });
+  f.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var note = tidy(f.elements.note.value, 100);
+    if (entry) {
+      S.doc.change(function (s) { if (s.signups[entryId]) s.signups[entryId].note = note; });
+      close(); toast('Note saved.'); return;
+    }
+    var nm = tidy(f.elements.name.value, 40);
+    if (!nm) { err.textContent = 'Enter your name so people know who’s coming.'; f.elements.name.focus(); return; }
+    if (!S.s.slots[slotId]) { close(); toast('That one was just removed from the sheet.'); return; }
+    if (signupsFor(slotId).length >= spotsOf(S.s.slots[slotId])) { close(); toast('Sorry, that one just filled up.'); rerender(); return; }
+    store(K_NAME, nm); rememberName(nm);
+    var id = PebblyDoc.id(), me = pid();
+    S.doc.change(function (s) { s.signups[id] = { slot: slotId, name: nm, note: note, pid: me, at: Date.now() }; });
+    close(); toast('You’re signed up for ' + sl.label + '.');
+  });
+  if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  if (!entry && !name && f.elements.name) f.elements.name.focus();
+}
+
+function removeSignup(id) {
+  var x = S.s.signups[id]; if (!x) return;
+  var mine = x.pid === pid(), sl = S.s.slots[x.slot];
+  ask({ title: mine ? 'Take your name off?' : 'Remove ' + x.name + '?',
+    text: sl ? (mine ? 'You’ll be removed from “' + sl.label + '”.' : x.name + ' will be removed from “' + sl.label + '”.') : '',
+    ok: 'Remove', danger: true }).then(function (ok) {
+    if (!ok) return;
+    S.doc.change(function (s) { delete s.signups[id]; });
+    toast(mine ? 'Your name was removed.' : x.name + ' was removed.');
+  });
+}
+
+function summary() {
+  var s = S.s, lines = ['📋 ' + s.title];
+  slotList().forEach(function (sl) {
+    var list = signupsFor(sl.id), spots = spotsOf(sl), left = spots - list.length;
+    var names = list.map(function (p) { return p.name + (p.note ? ' (' + p.note + ')' : ''); }).join(', ');
+    lines.push('• ' + sl.label + (sl.when ? ' (' + sl.when + ')' : '') + ': ' + (names || '—') +
+      (left > 0 ? ' [' + plural(left, 'spot') + ' open]' : ''));
+  });
+  lines.push('', 'Sign up here: ' + shareUrl(S.code));
+  return lines.join('\n');
+}
+
+/* ------------------------------------------------------------------ events */
+
+document.addEventListener('submit', function (e) {
+  if (e.target.id === 'createForm') { e.preventDefault(); submitCreate(e.target); }
+  else if (e.target.id === 'addSlots') { e.preventDefault(); addSlots(e.target); }
+});
+$app.addEventListener('change', function (e) { if (e.target.dataset && e.target.dataset.ed && S.doc) editField(e.target); });
+$app.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && e.target.dataset && e.target.dataset.ed && e.target.tagName === 'INPUT') e.target.blur();
+});
+document.addEventListener('click', function (e) {
+  var t = e.target.closest('[data-act]'); if (!t || !$app.contains(t)) return;
+  var act = t.dataset.act, slotEl = t.closest('[data-slot]'), slot = slotEl && slotEl.dataset.slot;
+  switch (act) {
+    case 'retry': case 'reload': location.reload(); break;
+    case 'share': shareLink(S.s ? S.s.title : 'Sign-up sheet', shareUrl(S.code)); break;
+    case 'summary': copyText(summary()).then(function (ok) { toast(ok ? 'Summary copied. Paste it into your group chat.' : 'Couldn’t copy. Try again.'); }); break;
+    case 'copy-host': copyText(PebblyDoc.ownerLink(S.code)).then(function (ok) { toast(ok ? 'Organizer link copied. Keep it private.' : PebblyDoc.ownerLink(S.code)); }); break;
+    case 'lock': PebblyLock.openHost({ app: 'doc', code: S.code, owner: PebblyDoc.owner(S.code), raw: PebblyDoc.raw, what: 'sheet', toast: toast }); break;
+    case 'delete':
+      ask({ title: 'Delete this sheet?', text: 'It will be gone for everyone, with all the sign-ups. This can’t be undone.', ok: 'Delete sheet', danger: true }).then(function (ok) {
+        if (!ok) return;
+        S.doc.remove().then(function () { forget(S.code); S.doc = null; history.pushState(null, '', baseUrl()); route(); toast('Sheet deleted.'); },
+          function (er) { toast(PebblyDoc.message(er)); });
+      });
+      break;
+    case 'edit': S.editing = true; S.justCreated = false; renderSheet(); window.scrollTo(0, 0); break;
+    case 'done': S.editing = false; renderSheet(); window.scrollTo(0, 0); break;
+    case 'signup': signupDialog(slot); break;
+    case 'note': var en = S.s.signups[t.dataset.id]; if (en) signupDialog(en.slot, t.dataset.id); break;
+    case 'remove': removeSignup(t.dataset.id); break;
+    case 'up': moveSlot(slot, -1); break;
+    case 'down': moveSlot(slot, 1); break;
+    case 'rmslot': removeSlot(slot); break;
+  }
+});
+window.addEventListener('popstate', route);
+route();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
