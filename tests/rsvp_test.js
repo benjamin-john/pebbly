@@ -46,7 +46,7 @@ async function bridge(ctx) {
   }
   console.log(PGURL ? 'Mode: real database' : 'Mode: preview (localStorage)');
   const browser = await chromium.launch();
-  const mk = async () => { const c = await browser.newContext({ ...devices['Pixel 7'], acceptDownloads: true, permissions: ['clipboard-read', 'clipboard-write'] }); await bridge(c); return c; };
+  const mk = async () => { const c = await browser.newContext({ ...devices['Pixel 7'], serviceWorkers: 'block', acceptDownloads: true, permissions: ['clipboard-read', 'clipboard-write'] }); await bridge(c); return c; };
   const noHScroll = async (page, where) => check(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), 'no sideways scroll: ' + where);
 
   /* ---- host creates an event */

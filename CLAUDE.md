@@ -30,7 +30,7 @@ database for the apps that share data between people. See README.md for the app 
 | `doc.js` | Shared documents for Sign-up Sheet, Split the Bill, Shared List (doc_* functions): open/change/merge, host keys. Keep lists as objects keyed by id. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
 | `migrate.js` | Merges saved data forwarded from benjamin-john.com (RSVP/Poll/Which Day Works? only). |
-| `sw.js` | Service worker: network-first with `cache: 'no-cache'` (updates show right away), offline fallback. |
+| `sw.js` | Service worker (registered by the homepage and `nav.js`): network-first with `cache: 'no-cache'` (updates show right away); saves every page in `PAGES` plus shared files and Google Fonts up front and refreshes them daily, so all of Pebbly opens offline. |
 | `manifest.webmanifest`, `icons/` | Installable app (PWA). Shortcuts list in the manifest. |
 | `supabase/migrations/` | Database changes; applied automatically on push to `main` (see below). |
 | `tests/` | Playwright helpers and one test per app (`<app>_test.js`); `setup_db.sh` builds a test database. |
@@ -65,7 +65,8 @@ database for the apps that share data between people. See README.md for the app 
    `<script src="/theme.js"></script>` (right after the charset meta, if it has dark mode),
    `<script src="/keepawake.js"></script>` (games), `<script src="/play/sync.js"></script>` (if it
    supports playing together), `<script src="/nav.js"></script>`.
-2. Add a card to `index.html` (Plan or Play), a row to README.md, and optionally a manifest shortcut
+2. Add a card to `index.html` (Plan or Play), a row to README.md, its folder to `PAGES` in `sw.js`
+   (and any new shared file to `FILES`; `tests/sw_test.js` checks), and optionally a manifest shortcut
    (Android shows the first four).
 3. Test (below), then commit and push to `main`.
 
@@ -149,5 +150,7 @@ the repo with `python3 -m http.server <port>` and drive a Pixel 7 viewport.
   Don't use `viewport-fit=cover`.
 - GitHub Pages lets browsers cache pages for 10 minutes; `sw.js` fetches with `cache: 'no-cache'` so
   the installed app updates immediately. Bump `CACHE` in `sw.js` only if cached files must be dropped.
+- Playwright's `route()` and offline switch don't apply to requests made by the service worker, so app
+  tests use `serviceWorkers: 'block'` (pg_bridge does); `tests/sw_test.js` tests offline by stopping its server.
 - Firefox shows a prompt for persistent storage; only request it there from the installed app.
 - In fixed-position headers, account for the "← Pebbly" bar (`nav.js` pads `body`).

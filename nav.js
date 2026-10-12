@@ -5,6 +5,9 @@
 // clearing it on its own when space runs low. Chrome and Edge decide silently; Firefox shows a
 // prompt, so there it's only asked from the installed app.
 (function () {
+  // The offline helper (sw.js) saves every Pebbly page, whichever page someone opens first.
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
+
   var installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
   if (navigator.storage && navigator.storage.persist && (installed || !/Firefox\//.test(navigator.userAgent))) {

@@ -15,7 +15,7 @@ function rpc(db, fn, args) {
   return { status: 200, body: out === undefined ? '' : out };
 }
 async function phone(browser, devices, db, opts) {
-  const c = await browser.newContext({ ...devices['Pixel 7'], ...(opts || {}) });
+  const c = await browser.newContext({ ...devices['Pixel 7'], serviceWorkers: 'block', ...(opts || {}) });  // sw.js has its own test (tests/sw_test.js)
   await c.route('https://xujtuijpbwujduuzlwat.supabase.co/rest/v1/rpc/*', r => { const fn = r.request().url().split('/rpc/')[1]; const res = rpc(db, fn, JSON.parse(r.request().postData() || '{}')); r.fulfill({ status: res.status, contentType: 'application/json', body: res.body }); });
   await c.route('**fonts.g*/**', r => r.abort());
   const p = await c.newPage(); p.errs = []; p.on('pageerror', e => p.errs.push(e.message)); p.on('dialog', d => d.accept());
