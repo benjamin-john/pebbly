@@ -114,11 +114,18 @@ input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid v
 @media (prefers-reduced-motion:reduce){.rolling .die .face{animation:none}}
 .roll{margin-top:12px;min-height:56px;font:800 20px/1 var(--head)}
 .linkbtn{display:block;margin:6px auto 0;border:0;background:none;color:var(--brand);font-weight:600;cursor:pointer;padding:8px}
-.sums{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;padding:0;list-style:none;font-size:15px}
-.sums li{display:flex;align-items:center;gap:6px}
+.sums{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:12px 0 0;padding:0;list-style:none;font-size:14px}
+.sums li{display:flex;align-items:center;justify-content:center;gap:4px;min-height:34px;padding:0 4px;border-radius:10px;border:1.5px solid var(--field);white-space:nowrap}
+.sums li.white{grid-column:1/-1;justify-self:start;padding:0 14px;gap:8px}
+.sums li.red{background:var(--red-t);border-color:var(--red);color:var(--red-i)}
+.sums li.yellow{background:var(--yellow-t);border-color:var(--yellow);color:var(--yellow-i)}
+.sums li.green{background:var(--green-t);border-color:var(--green);color:var(--green-i)}
+.sums li.blue{background:var(--blue-t);border-color:var(--blue);color:var(--blue-i)}
 .sums b{font:800 18px/1 var(--head);font-variant-numeric:tabular-nums}
-.sums small{color:var(--muted)}
-.sums li.off{opacity:.4}
+.sums small{color:var(--muted);font-size:12px}
+.sums li:not(.white) small{color:inherit;opacity:.8}
+.sums li.off{opacity:.4;border-style:dashed}
+@media (max-width:379px){.sums li{gap:2px;padding:0 2px}.sums b{font-size:15px}.sums small{font-size:11px}}
 .dot{width:12px;height:12px;border-radius:50%;flex:none}
 .dot.white{background:#fff;border:1px solid var(--field)} .dot.red{background:var(--red)} .dot.yellow{background:var(--yellow)}
 .dot.green{background:var(--green)} .dot.blue{background:var(--blue)}
@@ -594,11 +601,12 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     });
     var h = '';
     if (R.w1) {
-      h += '<li><span class="dot white"></span><small>Everyone</small><b>' + (R.w1 + R.w2) + '</b></li>';
+      h += '<li class="white"><span class="dot white"></span><small>Everyone</small><b>' + (R.w1 + R.w2) + '</b></li>';
       COLORS.forEach(function (c) {
-        if (!inPlay(c) || !R[c]) { h += '<li class="off"><span class="dot ' + c + '"></span><small>out</small></li>'; return; }
+        var name = c.charAt(0).toUpperCase() + c.slice(1);
+        if (!inPlay(c) || !R[c]) { h += '<li class="' + c + ' off" aria-label="' + name + ': out"><small>out</small></li>'; return; }
         var a = R.w1 + R[c], b = R.w2 + R[c];
-        h += '<li><span class="dot ' + c + '"></span><b>' + Math.min(a, b) + (a !== b ? '</b><small>or</small><b>' + Math.max(a, b) : '') + '</b></li>';
+        h += '<li class="' + c + '" aria-label="' + name + ': ' + Math.min(a, b) + (a !== b ? ' or ' + Math.max(a, b) : '') + '"><b>' + Math.min(a, b) + (a !== b ? '</b><small>or</small><b>' + Math.max(a, b) : '') + '</b></li>';
       });
     }
     $('sums').innerHTML = h;
