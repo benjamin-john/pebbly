@@ -107,6 +107,7 @@ shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI s
   baseline and are reference only. Poll's original setup and the shared admin-password setup
   (`_admin_check`, `admin_config`) were never saved to the repo; to change them, ask Ben for a dump
   (Supabase SQL Editor: `select pg_get_functiondef(…)`) first, as done for Which Day Works?.
+  `_admin_check` has since been dumped: see `supabase/admin_password.md` (also how Ben changes the password).
 - Pages should keep working before a migration is applied (fall back to old functions or show a
   clear message), since deploys of the site and the database aren't simultaneous.
 - **Passwords** (`supabase/migrations/20261012000000_plan_passwords.sql`, `lock.js`): RSVP, Poll and
