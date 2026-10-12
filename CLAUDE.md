@@ -29,6 +29,7 @@ database for the apps that share data between people. See README.md for the app 
 | `play/sync.js`, `play/play.sql` | "Play together": share any game between phones with a 5-letter code. |
 | `doc.js` | Shared documents for Sign-up Sheet, Split the Bill, Shared List (doc_* functions): open/change/merge, host keys. Keep lists as objects keyed by id. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
+| `admin/` | One admin page for every app with an admin mode (shared admin password): a section per app (list, open as host, delete). Add new apps' admin functions to `APPS` there. |
 | `migrate.js` | Merges saved data forwarded from benjamin-john.com (RSVP/Poll/Which Day Works? only). |
 | `sw.js` | Service worker (registered by the homepage and `nav.js`): network-first with `cache: 'no-cache'` (updates show right away); saves every page in `PAGES` plus shared files and Google Fonts up front and refreshes them daily, so all of Pebbly opens offline. |
 | `manifest.webmanifest`, `icons/` | Installable app (PWA). Shortcuts list in the manifest. |

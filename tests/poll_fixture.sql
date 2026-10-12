@@ -76,3 +76,34 @@ do $$ declare r text; begin
       || 'poll_remove_option(text, text, text, uuid) to %I', r);
   end loop;
 end $$;
+
+-- Admin stand-ins (shared password check via _rsvp_admin_ok, like the real ones).
+create or replace function poll_admin_list(p_password text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_err text := _rsvp_admin_ok(p_password);
+begin
+  if v_err is not null then return jsonb_build_object('error', v_err); end if;
+  return jsonb_build_object('polls', coalesce((select jsonb_agg(jsonb_build_object('code', p.code, 'name', p.name, 'created_at', now(),
+    'options', (select count(*) from poll_options o where o.code = p.code), 'voters', 0)) from polls p), '[]'::jsonb));
+end $$;
+create or replace function poll_admin_grant(p_password text, p_code text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_err text := _rsvp_admin_ok(p_password); t text := md5(random()::text) || md5(random()::text);
+begin
+  if v_err is not null then return jsonb_build_object('error', v_err); end if;
+  update polls set owner_hash = encode(sha256(t::bytea), 'hex') where code = lower(btrim(p_code));
+  return jsonb_build_object('owner_token', t);
+end $$;
+create or replace function poll_admin_delete(p_password text, p_code text) returns jsonb
+language plpgsql security definer set search_path = public, pg_temp as $$
+declare v_err text := _rsvp_admin_ok(p_password);
+begin
+  if v_err is not null then return jsonb_build_object('error', v_err); end if;
+  delete from polls where code = lower(btrim(p_code));
+  return jsonb_build_object('ok', true);
+end $$;
+do $$ declare r text; begin
+  for r in select unnest(array['anon', 'authenticated']) loop
+    execute format('grant execute on function poll_admin_list(text), poll_admin_grant(text, text), poll_admin_delete(text, text) to %I', r);
+  end loop;
+end $$;

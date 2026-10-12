@@ -52,6 +52,8 @@
   .theme button { font: inherit; color: inherit; background: none; border: 1px solid transparent; border-radius: 999px;
     padding: 6px 12px; min-height: 32px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
   .theme button[aria-pressed="true"] { border-color: var(--line); color: var(--text); font-weight: 600; }
+  .admin { margin: 10px 0 0; text-align: center; font-size: .8rem; }
+  .admin a { color: var(--muted); text-decoration: none; padding: 8px 10px; display: inline-block; }
   @media (display-mode: standalone) { .install { display: none; } }
 </style>
 </head>
@@ -159,6 +161,7 @@
   <div class="theme" role="group" aria-label="Appearance"><span>Theme</span>
     <button type="button" data-theme="auto">Auto</button><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button>
   </div>
+  <p class="admin"><a href="admin/">Admin</a></p>
 </main>
 <script>
   // Theme switch: Auto follows the phone; Light/Dark apply to every Pebbly app that has a dark look.

@@ -23,6 +23,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/farkle/` | Farkle: dice roller and/or scoreboard, 1+ players, standard or continue-play, editable house rules |
 | `/kwiks/` | Kwiks: color-row dice game, dice roller and/or score cards, 1+ players, rules enforced |
 | `/namegame/` | The Name Game |
+| `/admin/` | Admin: one sign-in to see, open as host, or delete everything in every app with an admin mode |
 | `/install/` | How to add Pebbly to a phone or computer home screen |
 
 - Any folder with an `index.html` becomes a page (`poll/index.html` → `https://pebbly.dev/poll/`).

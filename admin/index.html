@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin | Pebbly</title>
+<meta name="theme-color" content="#2F7A63">
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --no:#B3261E; --no-t:#FBE3E2;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --no:#F07A75; --no-t:#3D2221; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+  --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --no:#F07A75; --no-t:#3D2221; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+main{max-width:720px;margin:0 auto;padding:28px 16px 56px}
+h1{font:800 2rem/1.1 var(--head);margin:0 0 4px}
+h2{font:800 1.2rem/1.2 var(--head);margin:0}
+.lede{color:var(--muted);margin:0 0 18px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.top a{color:var(--brand);font-weight:600;text-decoration:none}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.fld{display:block;margin-bottom:14px}
+.fld span{display:block;font-weight:600;margin-bottom:5px}
+input[type=password],input[type=search]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:0 16px;border-radius:10px;border:2px solid var(--brand);background:var(--surface);color:var(--brand);font:600 15px var(--body);cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn.primary{background:var(--brand);color:var(--brand-ink);min-height:52px;width:100%;font-size:17px}
+.btn.danger{border-color:var(--no);color:var(--no)}
+.btn:disabled{opacity:.55;cursor:default}
+.err{color:var(--no);font-weight:600;margin:10px 0 0;min-height:1em}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 6px}
+.bar input{flex:1 1 220px}
+.sum{color:var(--muted);font-size:14px;margin:4px 0 12px}
+details.app{background:var(--surface);border:1px solid var(--line);border-radius:16px;margin-top:14px;overflow:hidden}
+details.app summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:14px 16px;min-height:56px}
+details.app summary::-webkit-details-marker{display:none}
+details.app summary .ic{font-size:22px}
+details.app summary .n{margin-left:auto;background:var(--brand-t);color:var(--brand);font-weight:700;border-radius:999px;padding:2px 10px;font-size:14px}
+details.app summary .chev{color:var(--muted);transition:transform .2s}
+details.app[open] summary .chev{transform:rotate(90deg)}
+.items{list-style:none;margin:0;padding:0 16px 8px}
+.items li{border-top:1px solid var(--line);padding:12px 0}
+.items .nm{font-weight:700;overflow-wrap:anywhere}
+.items .meta{color:var(--muted);font-size:14px;margin:2px 0 8px}
+.items .row{display:flex;flex-wrap:wrap;gap:8px}
+.empty{color:var(--muted);padding:4px 0 14px;margin:0}
+.secterr{color:var(--no);padding:0 16px 14px;margin:0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:600;max-width:calc(100% - 32px);z-index:9}
+</style>
+<script src="/nav.js"></script>
+</head>
+<body>
+<main>
+  <div class="top"><a href="/">← Pebbly</a></div>
+  <h1>Admin</h1>
+  <section id="login">
+    <p class="lede">One password for every app (the same admin password as before). See everything people have made, open any of it as the host, or delete it.</p>
+    <form id="loginForm" class="panel" novalidate>
+      <label class="fld"><span>Admin password</span><input type="password" id="pw" autocomplete="current-password"></label>
+      <button class="btn primary" type="submit">Sign in</button>
+      <p class="err" id="loginErr" role="alert"></p>
+    </form>
+  </section>
+  <section id="dash" hidden>
+    <div class="bar">
+      <input type="search" id="q" placeholder="Search by name or code" autocomplete="off" aria-label="Search">
+      <button class="btn" type="button" id="refresh">↻ Refresh</button>
+      <button class="btn" type="button" id="signout">Sign out</button>
+    </div>
+    <p class="sum" id="sum"></p>
+    <div id="apps"></div>
+  </section>
+</main>
+<div class="toast" id="toast" hidden></div>
+<script>
+(function () {
+  'use strict';
+  var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
+  var PWKEY = 'pebbly_admin';
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function rpc(fn, args) {
+    var h = { 'Content-Type': 'application/json', apikey: KEY_ };
+    if (/^eyJ/.test(KEY_)) h.Authorization = 'Bearer ' + KEY_;
+    return fetch(URL_ + '/rest/v1/rpc/' + fn, { method: 'POST', headers: h, body: JSON.stringify(args) }).then(function (res) {
+      return res.text().then(function (t) {
+        var d = null; try { d = t ? JSON.parse(t) : null; } catch (e) {}
+        if (!res.ok) throw new Error((d && d.message) || 'http_' + res.status);
+        if (d && d.error) throw new Error(d.error);              // admin functions report problems as {"error": …}
+        return d;
+      });
+    }, function () { throw new Error('network'); });
+  }
+  var MSG = {
+    wrong_password: 'That password isn’t right.',
+    too_many_attempts: 'Too many wrong tries. Wait a while and try again.',
+    admin_not_configured: 'The admin password hasn’t been set up yet.',
+    network: 'Couldn’t reach the server. Check your connection and try again.'
+  };
+  function friendly(e) { var m = (e && e.message) || ''; return MSG[m] || (/function|schema cache|http_404/i.test(m) ? 'This app’s admin isn’t set up in the database yet.' : 'Something went wrong (' + m + ').'); }
+  function toast(t) { var el = $('toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(function () { el.hidden = true; }, 2600); }
+  function ago(ts) {
+    var d = new Date(ts); if (isNaN(d)) return '';
+    var s = (Date.now() - d) / 1000;
+    if (s < 60) return 'just now'; if (s < 3600) return Math.floor(s / 60) + ' min ago'; if (s < 86400) return Math.floor(s / 3600) + ' h ago';
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+  }
+  function n(k, one, many) { return k + ' ' + (k === 1 ? one : many); }
+  function day(s) { var d = new Date(String(s).slice(0, 10) + 'T12:00:00'); return isNaN(d) ? '' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }); }
+
+  // Every app with an admin mode: how to list, open as host, delete, and describe its items.
+  var APPS = [
+    { id: 'live', icon: '📊', name: 'Live Quiz', host: 'Open as organizer',
+      list: function (pw) { return rpc('live_admin_list', { p_password: pw }).then(function (d) { return d.sessions || []; }); },
+      grant: function (pw, c) { return rpc('live_admin_grant', { p_password: pw, p_code: c }).then(function (d) { return '/live/?c=' + c + '&o=' + encodeURIComponent(d.owner_token); }); },
+      del: function (pw, c) { return rpc('live_admin_delete', { p_password: pw, p_code: c }); },
+      title: function (x) { return x.title; }, when: function (x) { return x.updated_at; },
+      meta: function (x) {
+        var ph = x.phase === 'lobby' ? 'Waiting to start' : x.phase === 'done' ? 'Finished' : 'Question ' + (x.qindex + 1) + ' of ' + x.total + (x.phase === 'reveal' ? ' (answer shown)' : '');
+        return [ph, 'code ' + x.code, n(x.people, 'person joined', 'people joined'), n(x.total, 'question', 'questions'), x.require_name ? 'names on' : '', 'last change ' + ago(x.updated_at)];
+      } },
+    { id: 'rsvp', icon: '✉️', name: 'RSVP', host: 'Open as host',
+      list: function (pw) { return rpc('rsvp_admin_list', { p_password: pw }).then(function (d) { return d.events || []; }); },
+      grant: function (pw, c) { return rpc('rsvp_admin_grant', { p_password: pw, p_code: c }).then(function (d) { return '/rsvp/?e=' + c + '&o=' + encodeURIComponent(d.owner_token); }); },
+      del: function (pw, c) { return rpc('rsvp_admin_delete', { p_password: pw, p_code: c }); },
+      title: function (x) { return x.title; }, when: function (x) { return x.created_at; }, view: function (x) { return '/rsvp/?e=' + x.code; },
+      meta: function (x) { return [x.event_date ? day(x.event_date) : 'Date not set', x.host_name ? 'host ' + x.host_name : '', x.going + ' going', n(x.replies, 'reply', 'replies'), n(x.comments, 'comment', 'comments'), 'made ' + ago(x.created_at)]; } },
+    { id: 'wdw', icon: '📅', name: 'Which Day Works?', host: 'Open as organizer',
+      list: function (pw) { return rpc('admin_list_events', { p_password: pw }).then(function (d) { return d.events || []; }); },
+      grant: function (pw, c) { return rpc('wdw_admin_grant', { p_password: pw, p_code: c }).then(function (d) { return '/whichdayworks/?e=' + c + '&o=' + encodeURIComponent(d.owner_token); }); },
+      del: function (pw, c) { return rpc('admin_delete_event', { p_password: pw, p_code: c }); },
+      title: function (x) { return x.name; }, when: function (x) { return x.last_response || x.created_at; }, view: function (x) { return '/whichdayworks/?e=' + x.code; },
+      meta: function (x) { return [x.responses ? n(x.responses, 'response', 'responses') + ', last ' + ago(x.last_response) : 'No answers yet', x.num_days > 1 ? x.num_days + ' days in a row' : '', 'made ' + ago(x.created_at)]; } },
+    { id: 'poll', icon: '🗳️', name: 'Poll', host: 'Open as organizer',
+      list: function (pw) { return rpc('poll_admin_list', { p_password: pw }).then(function (d) { return d.polls || []; }); },
+      grant: function (pw, c) { return rpc('poll_admin_grant', { p_password: pw, p_code: c }).then(function (d) { return '/poll/?p=' + c + '&o=' + encodeURIComponent(d.owner_token); }); },
+      del: function (pw, c) { return rpc('poll_admin_delete', { p_password: pw, p_code: c }); },
+      title: function (x) { return x.name; }, when: function (x) { return x.created_at; }, view: function (x) { return '/poll/?p=' + x.code; },
+      meta: function (x) { return [n(x.options || 0, 'choice', 'choices'), n(x.voters || 0, 'voter', 'voters'), x.winner ? 'winner: ' + x.winner : '', 'made ' + ago(x.created_at)]; } }
+  ];
+  var S = { pw: '', data: {}, errs: {}, open: {} };
+  try { S.open = JSON.parse(sessionStorage.getItem('pebbly_admin_open')) || {}; } catch (e) {}
+
+  function loadAll() {
+    return Promise.all(APPS.map(function (a) {
+      return a.list(S.pw).then(function (items) { S.data[a.id] = items; delete S.errs[a.id]; },
+        function (e) { S.data[a.id] = null; S.errs[a.id] = e; });
+    }));
+  }
+  function render() {
+    var q = $('q').value.trim().toLowerCase(), total = 0;
+    $('apps').innerHTML = APPS.map(function (a) {
+      var items = (S.data[a.id] || []).slice().sort(function (x, y) { return String(a.when(y)).localeCompare(String(a.when(x))); });
+      var shown = items.filter(function (x) { return !q || (a.title(x) || '').toLowerCase().indexOf(q) > -1 || String(x.code).toLowerCase().indexOf(q) > -1; });
+      total += items.length;
+      var open = S.open[a.id] !== false;
+      return '<details class="app" data-app="' + a.id + '"' + (open || q ? ' open' : '') + '><summary><span class="ic" aria-hidden="true">' + a.icon + '</span><h2>' + esc(a.name) + '</h2>' +
+        '<span class="n">' + (S.errs[a.id] ? '!' : q ? shown.length + ' of ' + items.length : items.length) + '</span><span class="chev" aria-hidden="true">›</span></summary>' +
+        (S.errs[a.id] ? '<p class="secterr">' + esc(friendly(S.errs[a.id])) + '</p>' :
+          shown.length ? '<ul class="items">' + shown.map(function (x) {
+            return '<li><div class="nm">' + esc(a.title(x) || '(untitled)') + '</div><div class="meta">' + esc(a.meta(x).filter(Boolean).join(' · ')) + '</div>' +
+              '<div class="row"><button class="btn" type="button" data-act="host" data-app="' + a.id + '" data-code="' + esc(x.code) + '">' + a.host + '</button>' +
+              (a.view ? '<a class="btn" href="' + esc(a.view(x)) + '">View as guest</a>' : '') +
+              '<button class="btn danger" type="button" data-act="del" data-app="' + a.id + '" data-code="' + esc(x.code) + '" data-name="' + esc(a.title(x)) + '">Delete</button></div></li>';
+          }).join('') + '</ul>' : '<ul class="items"><li class="empty">' + (q ? 'Nothing matches.' : 'Nothing here yet.') + '</li></ul>') +
+        '</details>';
+    }).join('');
+    $('sum').textContent = total + ' in all · ' + APPS.length + ' apps';
+  }
+  function show(dash) { $('login').hidden = dash; $('dash').hidden = !dash; }
+  function signOut(msg) {
+    S.pw = ''; S.data = {}; S.errs = {};
+    try { sessionStorage.removeItem(PWKEY); } catch (e) {}
+    show(false); $('loginErr').textContent = msg || ''; $('pw').value = '';
+  }
+  // Check the password with one app first (each wrong try counts against the lockout once, not four times).
+  function signIn(pw) {
+    return APPS[0].list(pw).then(function (items) {
+      S.pw = pw; S.data[APPS[0].id] = items;
+      try { sessionStorage.setItem(PWKEY, pw); } catch (e) {}
+      return loadAll().then(function () { show(true); render(); });
+    });
+  }
+  function authFail(e) {
+    var m = e && e.message;
+    if (m === 'wrong_password' || m === 'too_many_attempts' || m === 'admin_not_configured') { signOut(friendly(e)); return true; }
+    return false;
+  }
+
+  $('loginForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var pw = $('pw').value, btn = this.querySelector('button');
+    if (!pw) { $('loginErr').textContent = 'Enter the password.'; return; }
+    btn.disabled = true; btn.textContent = 'Checking…'; $('loginErr').textContent = '';
+    signIn(pw).catch(function (e) { $('loginErr').textContent = friendly(e); $('pw').value = ''; })
+      .then(function () { btn.disabled = false; btn.textContent = 'Sign in'; });
+  });
+  $('q').addEventListener('input', render);
+  $('refresh').addEventListener('click', function () { loadAll().then(function () { render(); toast('Updated.'); }); });
+  $('signout').addEventListener('click', function () { signOut(''); });
+  $('apps').addEventListener('toggle', function (e) {
+    var d = e.target; if (!d.dataset || !d.dataset.app || $('q').value) return;
+    S.open[d.dataset.app] = d.open;
+    try { sessionStorage.setItem('pebbly_admin_open', JSON.stringify(S.open)); } catch (x) {}
+  }, true);
+  $('apps').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act]'); if (!b) return;
+    var a = APPS.filter(function (x) { return x.id === b.dataset.app; })[0], code = b.dataset.code;
+    if (b.dataset.act === 'host') {
+      b.disabled = true;
+      a.grant(S.pw, code).then(function (url) { location.href = url; },
+        function (err) { b.disabled = false; if (!authFail(err)) toast(friendly(err)); });
+    } else if (b.dataset.act === 'del') {
+      if (!confirm('Delete “' + (b.dataset.name || code) + '” from ' + a.name + ' for everyone? This can’t be undone.')) return;
+      b.disabled = true;
+      a.del(S.pw, code).then(function () {
+        S.data[a.id] = (S.data[a.id] || []).filter(function (x) { return x.code !== code; });
+        render(); toast('Deleted.');
+      }, function (err) { b.disabled = false; if (!authFail(err)) toast(friendly(err)); });
+    }
+  });
+
+  var saved = null; try { saved = sessionStorage.getItem(PWKEY); } catch (e) {}
+  if (saved) signIn(saved).catch(function (e) { signOut(authFail(e) ? friendly(e) : ''); });
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
