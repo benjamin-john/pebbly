@@ -111,6 +111,13 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .stamp{display:block;color:var(--muted);font-size:12px}
 
 .annc{margin-top:18px;display:grid;gap:8px}
+.contact{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.crow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
+.crow:first-of-type{border-top:0}
+.cico{font-size:20px;flex:none}
+.cval{flex:1;min-width:0;overflow-wrap:anywhere;font-weight:600;color:var(--ink);text-decoration:none}
+.cbtns{display:flex;gap:6px;flex:none}
+.cbtns .btn{min-height:44px;display:inline-flex;align-items:center;text-decoration:none}
 .ann{background:#E6F2ED;border:1px solid #BFDCCF;border-left:5px solid var(--brand);border-radius:12px;padding:12px 14px}
 .ann .top{display:flex;justify-content:space-between;gap:10px;font-size:13px;color:var(--muted)}
 .ann p{margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}
@@ -477,12 +484,15 @@ var localApi = {
       emoji: String(p.emoji || '').trim() || '🎉', max_plus_ones: Number(p.max_plus_ones || 0),
       event_date: p.event_date || null, end_date: p.end_date || null, start_time: p.start_time || null, end_time: p.end_time || null, rsvp_by: p.rsvp_by || null,
       hide_guests: !!p.hide_guests, hide_count: !!p.hide_count, guests_add_items: p.guests_add_items !== false,
-      bring_list: p.bring_list !== false, rsvp_lock: p.rsvp_lock !== false, require_phone: !!p.require_phone, questions: [], links: []
+      bring_list: p.bring_list !== false, rsvp_lock: p.rsvp_lock !== false, require_phone: !!p.require_phone, questions: [], links: [],
+      host_phone: this.clean(p.host_phone), host_email: this.clean(p.host_email)
     };
     if (!f.title || this.len(f.title) > 120) throw new ApiError('invalid_title');
     if (this.len(f.host_name) > 40) throw new ApiError('invalid_host');
     if (this.len(f.description) > 4000) throw new ApiError('description_too_long');
     if (this.len(f.location) > 200) throw new ApiError('location_too_long');
+    if (f.host_phone && (this.len(f.host_phone) > 30 || !phoneOk(f.host_phone))) throw new ApiError('invalid_host_phone');
+    if (f.host_email && (this.len(f.host_email) > 120 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(f.host_email))) throw new ApiError('invalid_host_email');
     if (this.len(f.emoji) > 16) throw new ApiError('invalid_emoji');
     if (!(f.max_plus_ones >= 0 && f.max_plus_ones <= 10)) throw new ApiError('invalid_plus_ones');
     if (!f.event_date) { f.start_time = null; f.end_date = null; }
@@ -545,7 +555,7 @@ var localApi = {
         event_date: e.event_date, end_date: e.end_date || null, start_time: e.start_time, end_time: e.end_time, tz: e.tz, theme: e.theme, emoji: e.emoji,
         max_plus_ones: e.max_plus_ones, rsvp_by: e.rsvp_by, rsvp_closed: rsvpClosed(e), hide_guests: e.hide_guests,
         hide_count: e.hide_count, guests_add_items: e.guests_add_items, bring_list: e.bring_list !== false, rsvp_lock: e.rsvp_lock !== false, require_phone: !!e.require_phone,
-        questions: e.questions, links: e.links || [] },
+        questions: e.questions, links: e.links || [], host_phone: e.host_phone || '', host_email: e.host_email || '' },
       is_owner: own, me: me, counts: counts, guests: guests,
       posts: e.posts.map(function (p) { return { id: p.id, kind: p.kind, name: p.name, body: p.body, created_at: p.created_at, mine: !!p.pid && p.pid === pid }; }),
       items: e.items.map(function (i) {
@@ -699,6 +709,8 @@ function friendly(e) {
     event_not_found: 'That event no longer exists.',
     invalid_title: 'Give your event a name (up to 120 characters).',
     invalid_host: 'The host name can be at most 40 characters.',
+    invalid_host_phone: 'Your phone number doesn’t look right. Leave it blank if you don’t want to share it.',
+    invalid_host_email: 'Your email doesn’t look right. Leave it blank if you don’t want to share it.',
     description_too_long: 'The details are too long (4,000 characters at most).',
     location_too_long: 'The location is too long (200 characters at most).',
     invalid_emoji: 'Pick a single emoji.',
@@ -946,6 +958,9 @@ function eventFormHtml(ev) {
     '<p class="hint" id="multiHint" style="font-size:13px;margin:-10px 0 14px"' + (e.end_date ? '' : ' hidden') + '>Multi-day: the start time is on the first day and the end time on the last day.</p>' +
     '<label class="fld"><span>Location (optional)</span><input type="text" name="location" maxlength="200" placeholder="Address or place name" autocomplete="off" value="' + esc(e.location) + '"></label>' +
     '<label class="fld"><span>Hosted by</span><input type="text" name="host_name" maxlength="40" placeholder="Your name" autocomplete="name" value="' + esc(ev ? e.host_name : myName()) + '"></label>' +
+    '<div class="row2"><label class="fld"><span>Your phone (optional)</span><input type="tel" name="host_phone" maxlength="30" placeholder="(612) 555-0134" autocomplete="tel" value="' + esc(ev ? e.host_phone || '' : store.get('rsvp.hostPhone', '')) + '"></label>' +
+      '<label class="fld"><span>Your email (optional)</span><input type="email" name="host_email" maxlength="120" placeholder="you@example.com" autocomplete="email" value="' + esc(ev ? e.host_email || '' : store.get('rsvp.hostEmail', '')) + '"></label></div>' +
+    '<p class="hint" style="font-size:13px;margin:-10px 0 14px">If you add either, guests see it under “Contact the host” so they can reach you.</p>' +
     '<label class="fld"><span>Details (optional)</span><textarea name="description" rows="4" maxlength="4000" placeholder="What to expect, parking, what to wear…">' + esc(e.description) + '</textarea><small>Web addresses become tappable links.</small></label>' +
     '<fieldset><legend>Link buttons (optional)</legend><p class="hint" style="font-size:13px;margin:-2px 0 8px">Shown as buttons at the top, e.g. a registry or a sign-up sheet.</p><div id="linkRows">' + linkRowsHtml() + '</div></fieldset>' +
 
@@ -997,6 +1012,7 @@ function readEventForm(form, ev) {
   });
   return {
     title: f.title.value, host_name: f.host_name.value, description: f.description.value, location: f.location.value,
+    host_phone: f.host_phone.value.trim(), host_email: f.host_email.value.trim(),
     event_date: f.event_date.value || null, end_date: f.end_date.value || null, start_time: f.start_time.value || null, end_time: f.end_time.value || null,
     tz: ev ? ev.tz : viewerTz(), theme: F.theme, emoji: (f.emoji.value || '').trim() || F.emoji || '🎉',
     max_plus_ones: Number(f.max_plus_ones.value || 0), rsvp_by: f.rsvp_by.value || null,
@@ -1039,6 +1055,7 @@ function submitEvent(form) {
   } else {
     api.create(p, items).then(function (res) {
       setOwnerToken(res.code, res.owner_token);
+      store.set('rsvp.hostPhone', p.host_phone); store.set('rsvp.hostEmail', p.host_email);
       var pw = form.elements.lockpw ? form.elements.lockpw.value : '';
       return PebblyLock.afterCreate('rsvp', res.code, res.owner_token, pw, lockRaw).then(function (lockErr) {
         history.pushState(null, '', baseUrl() + '?e=' + res.code);
@@ -1151,13 +1168,14 @@ function renderEvent() {
     '<section id="guests"></section>' +
     '<section id="bring"></section>' +
     '<section id="comments"></section>' +
+    '<section id="contact"></section>' +
     '<section id="host"></section>';
   renderParts();
 }
 
 function renderParts() {
   if (S.mode !== 'view' || !$('#me')) return;
-  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderBring(); renderComments(); renderHost();
+  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderBring(); renderComments(); renderContact(); renderHost();
 }
 
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
@@ -1401,6 +1419,21 @@ function doAddItem() {
   var needed = S.isOwner && $('#newItemNeeded') ? Number($('#newItemNeeded').value) : 1;
   after(api.addItem({ code: S.code, pid: S.pid, owner: S.owner, name: myName(), label: label, needed: needed }), S.isOwner ? 'Added “' + label + '”.' : 'Thanks! You’re bringing “' + label + '”.')
     .then(function (ok) { if (ok) { S.draft.item = ''; S.draft.needed = 1; renderBring(); var n = $('#newItem'); if (n) n.focus(); } });
+}
+
+/* contact the host */
+function renderContact() {
+  var el = $('#contact'), ev = S.ev, ph = ev.host_phone || '', em = ev.host_email || '';
+  if (!el) return;
+  if (!ph && !em) { el.innerHTML = ''; return; }
+  var tel = normPhone(ph) || ph, who = ev.host_name ? esc(ev.host_name) : 'the host';
+  el.innerHTML = '<h3 class="sect">Contact the host</h3><div class="contact">' +
+    '<p class="hint" style="margin:0 0 10px">Questions? Reach ' + who + ' here.</p>' +
+    (ph ? '<div class="crow"><span class="cico" aria-hidden="true">📞</span><a class="cval" href="tel:' + esc(tel) + '">' + esc(fmtPhone(tel)) + '</a>' +
+      '<span class="cbtns"><a class="btn small" href="sms:' + esc(tel) + '">Text</a><a class="btn small" href="tel:' + esc(tel) + '">Call</a></span></div>' : '') +
+    (em ? '<div class="crow"><span class="cico" aria-hidden="true">✉️</span><a class="cval" href="mailto:' + esc(em) + '?subject=' + encodeURIComponent(ev.title) + '">' + esc(em) + '</a>' +
+      '<span class="cbtns"><a class="btn small" href="mailto:' + esc(em) + '?subject=' + encodeURIComponent(ev.title) + '">Email</a></span></div>' : '') +
+    '</div>';
 }
 
 /* comments */

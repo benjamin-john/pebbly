@@ -138,7 +138,7 @@ the repo with `python3 -m http.server <port>` and drive a Pixel 7 viewport.
 - End to end against that database: `tests/pg_bridge.js` routes the page's RPC calls to it via psql
   (`phone(browser, devices, db)` gives a page; use several for multi-phone "play together" tests).
 - Screenshot the result on a phone viewport (light and dark) and look at it before pushing.
-- `tests/rsvp_test.js`: RSVP checks (see its header).
+- `tests/rsvp_test.js`: RSVP checks (see its header); `tests/rsvp_contact_test.js`: host phone/email.
 - `tests/lock_test.js`: passwords in all three Plan apps (see its header; Poll uses the stand-in
   `tests/poll_fixture.sql`).
 
