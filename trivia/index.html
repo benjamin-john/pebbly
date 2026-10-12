@@ -494,10 +494,33 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     }
     return -1;
   }
+  // Fixes mismatched or missing brackets, a common AI slip (e.g. `"..."]}]}` instead of `"..."}]}`):
+  // walks the text outside strings, adds closers that were skipped, drops stray ones, closes what's left open.
+  function balance(x) {
+    var out = '', stack = [], inStr = false, bs = false, pair = { '{': '}', '[': ']' };
+    for (var i = 0; i < x.length; i++) {
+      var c = x[i];
+      if (inStr) { out += c; if (bs) bs = false; else if (c === '\\') bs = true; else if (c === '"') inStr = false; continue; }
+      if (c === '"') { inStr = true; out += c; continue; }
+      if (c === '{' || c === '[') { stack.push(c); out += c; continue; }
+      if (c === '}' || c === ']') {
+        var at = -1;
+        for (var j = stack.length - 1; j >= 0; j--) if (pair[stack[j]] === c) { at = j; break; }
+        if (at < 0) continue;                                   // stray closer: drop it
+        while (stack.length - 1 > at) out += pair[stack.pop()];  // close what was left open inside
+        stack.pop(); out += c; continue;
+      }
+      out += c;
+    }
+    if (inStr) out += '"';
+    while (stack.length) out += pair[stack.pop()];
+    return out;
+  }
   function tryParse(s) {
     var fixes = [function (x) { return x; },
       function (x) { return x.replace(/,\s*([}\]])/g, '$1'); },
-      function (x) { return x.replace(/[“”„‟″]/g, '"').replace(/,\s*([}\]])/g, '$1'); }];
+      function (x) { return x.replace(/[“”„‟″]/g, '"').replace(/,\s*([}\]])/g, '$1'); },
+      function (x) { return balance(x.replace(/[“”„‟″]/g, '"')).replace(/,\s*([}\]])/g, '$1'); }];
     for (var i = 0; i < fixes.length; i++) { try { return JSON.parse(fixes[i](s)); } catch (e) {} }
     return undefined;
   }
@@ -525,6 +548,18 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (looksLikeQ(v)) return { title: '', items: [v] };
     return { title: title, items: [] };
   }
+  // Does the reply stop in the middle (more opened than closed)? Then the AI's answer was cut off.
+  function openAtEnd(x) {
+    var stack = [], inStr = false, bs = false;
+    for (var i = 0; i < x.length; i++) {
+      var c = x[i];
+      if (inStr) { if (bs) bs = false; else if (c === '\\') bs = true; else if (c === '"') inStr = false; continue; }
+      if (c === '"') inStr = true;
+      else if (c === '{' || c === '[') stack.push(c === '{' ? '}' : ']');
+      else if ((c === '}' || c === ']') && stack.lastIndexOf(c) >= 0) stack.length = stack.lastIndexOf(c);   // closes skipped ones too
+    }
+    return inStr || stack.length > 0;
+  }
   function useful(v) { var t = topOf(v); return t.items.some(function (x) { return x && typeof x === 'object'; }); }
   function extractJson(text) {
     var t = String(text || '').replace(/^﻿/, '').replace(/```[A-Za-z]*[ \t]*/g, '').replace(/~~~[A-Za-z]*/g, '');
@@ -542,7 +577,14 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
         var okHere = false;
         for (var k = 0; k < cands.length; k++) {
           var v = tryParse(cands[k]);
-          if (v !== undefined && v && typeof v === 'object') { okHere = true; if (useful(v)) return { value: v }; }
+          if (v !== undefined && v && typeof v === 'object') {
+            okHere = true;
+            if (useful(v)) {
+              // Read only a small piece of a bigger reply? Then something in the rest was broken: say so.
+              var a0 = s.search(/[{[]/), a1 = Math.max(s.lastIndexOf('}'), s.lastIndexOf(']'));
+              return { value: v, partial: cands[k].length < 0.6 * (a1 - a0 + 1) || openAtEnd(s.slice(a0)) };
+            }
+          }
         }
         if (firstFailed === null) firstFailed = !okHere;
       }
@@ -621,7 +663,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       var p = problemOf(q); if (p) q.problem = p;
       return q;
     });
-    return { title: clip(top.title, 60), qs: qs, zero: zero && nums.length > 0, cut: items.length > MAXQ };
+    return { title: clip(top.title, 60), qs: qs, zero: zero && nums.length > 0, cut: items.length > MAXQ, partial: !!x.partial };
   }
   function exportJson(title, qs) {
     return JSON.stringify({ title: title, questions: qs.map(function (q) {
@@ -822,10 +864,11 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (!im) { box.innerHTML = ''; sb.hidden = true; return; }
     if (im.error) { box.innerHTML = '<div class="res no">' + esc(im.error) + '</div>'; sb.hidden = true; return; }
     var good = im.qs.filter(function (q) { return !q.problem; }), bad = im.qs.length - good.length;
-    var h = '<div class="res ' + (bad ? (good.length ? 'warn' : 'no') : 'ok') + '"><b class="big">' +
+    var h = '<div class="res ' + (bad || im.partial ? (good.length ? 'warn' : 'no') : 'ok') + '"><b class="big">' +
       (good.length ? '✓ ' + plural(good.length, 'question') + ' ready' : 'No questions ready yet') + '</b>';
     if (bad) h += plural(bad, 'question') + (bad === 1 ? ' needs' : ' need') + ' fixing:<ul>' + im.qs.map(function (q, i) {
       return q.problem ? '<li>Question ' + (i + 1) + ': ' + esc(q.problem) + '</li>' : ''; }).join('') + '</ul>';
+    if (im.partial) h += '<div class="hint">⚠ Part of the reply couldn’t be read, so some questions may be missing. Ask the AI to send the JSON again.</div>';
     if (im.zero) h += '<div class="hint">Answers given as numbers were read as 0 = first choice.</div>';
     if (im.cut) h += '<div class="hint">Only the first ' + MAXQ + ' questions are used.</div>';
     h += '</div><details><summary>Preview the questions</summary><ol class="pv">' + im.qs.map(function (q, i) {

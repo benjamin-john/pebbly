@@ -33,6 +33,13 @@ const MESSY = 'Sure! Here are your questions:\n```json\n{"title": "Messy Mix", "
   const a = await mk({ permissions: ['clipboard-read', 'clipboard-write'] });
   await a.goto(BASE);
   const parse = t => a.evaluate(t => PebblyTrivia.parse(t), t);
+  { // An AI reply whose last question is missing its "}" ("…stew."]}]}): every question still read.
+    const qs = [1, 2, 3].map(i => `{"q": "Q${i}?", "choices": ["a", "b"], "answer": "b", "explain": "fact ${i}."}`).join(', ');
+    const r = await parse(`{"title": "T", "questions": [${qs.slice(0, -1)}]}]}`);
+    check(r.qs && r.qs.length === 3 && !r.partial && r.qs.every(q => !q.problem), 'mismatched closing brackets are repaired');
+    const m = await parse('{"questions":[{"q":"A?","choices":["x","y"],"answer":"x"}, {"q": "B? "choices": ["x"]}, {"q":"C?","choices":["x","y"],"answer":"y"}]}');
+    check(m.partial === true, 'a reply that is only partly readable is flagged');
+  }
   let r = await parse(MESSY);
   check(r.title === 'Messy Mix' && r.qs.length === 6, 'messy: title and 6 questions ' + JSON.stringify(r).slice(0, 200));
   check(JSON.stringify(r.qs.map(q => q.answer)) === '[1,2,2,-1,-1,1]', 'messy answers: ' + r.qs.map(q => q.answer));
@@ -55,7 +62,9 @@ const MESSY = 'Sure! Here are your questions:\n```json\n{"title": "Messy Mix", "
   r = await parse('I could not do that, sorry.');
   check(!!r.error && /doesn’t look like/.test(r.error), 'plain text → friendly error');
   r = await parse('{"title":"Cut","questions":[{"q":"a?","choices":["x","y"],"ans');
-  check(!!r.error && /cut off/.test(r.error), 'cut off → friendly error');
+  check(!!r.error || r.partial === true, 'cut off → error or "part couldn’t be read" warning');
+  r = await parse('{"title":"Cut","questions":[{"q":"a?","choices":["x","y"],"answer":"x"},{"q":"b?","choi');
+  check(r.qs && r.qs.length === 1 && r.partial === true, 'cut off after one good question → keeps it and warns');
 
   /* ---------------- Start screen + AI prompt */
   if (process.env.VERBOSE) console.log("== Start screen + AI prompt");
