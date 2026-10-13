@@ -1429,7 +1429,7 @@ function renderGuests() {
       return '<li class="g"><div class="grow"><span class="nm">' + esc(x.name) + '</span>' +
         (x.plus_ones && x.status !== 'no' ? '<span class="plus">+' + x.plus_ones + '</span>' : '') + (x.mine ? ' <span class="hint" style="font-size:13px">(you)</span>' : '') +
         (x.note ? '<span class="note">“' + esc(x.note) + '”</span>' : '') + ans +
-        (S.isOwner && x.phone ? '<span class="stamp">📱 ' + esc(fmtPhone(x.phone)) + '</span>' : '') +
+        (S.isOwner && x.phone ? '<span class="stamp">' + esc(fmtPhone(x.phone)) + '</span>' : '') +
         (S.isOwner && x.replied_at ? '<span class="stamp">Replied ' + esc(fmtStampTime(x.replied_at)) +
           (x.updated_at && new Date(x.updated_at) - new Date(x.replied_at) > 60000 ? ' · changed ' + esc(fmtStampTime(x.updated_at)) : '') + '</span>' : '') +
         (S.isOwner ? '<button type="button" class="link danger" data-act="rm-guest" data-id="' + esc(x.id) + '" data-name="' + esc(x.name) + '">Remove</button>' : '') +
@@ -1503,7 +1503,7 @@ function renderInvites() {
     html += '<div class="gbox wait"><div class="ghead">⏳ No reply yet (' + wait.length + ')</div><ul class="glist">' + wait.map(function (r) {
       var i = r.inv, g = r.sugg;
       return '<li class="g"><div class="grow"><span class="nm">' + esc(i.name) + '</span>' +
-        '<span class="stamp">' + (i.phones.length ? '📱 ' + esc(fmtPhone(i.phones[0])) + (i.phones.length > 1 ? ' (+' + (i.phones.length - 1) + ' more)' : '') : 'No phone number') + '</span>' +
+        '<span class="stamp">' + (i.phones.length ? esc(fmtPhone(i.phones[0])) + (i.phones.length > 1 ? ' (+' + (i.phones.length - 1) + ' more)' : '') : 'No phone number') + '</span>' +
         (g ? '<div class="sugg"><span>Is this <b>' + esc(g.name) + '</b> (' + STATUS[g.status].label + ')?</span>' +
           '<button type="button" class="btn small" data-act="inv-yes" data-id="' + esc(i.id) + '" data-guest="' + esc(g.id) + '">Yes</button>' +
           '<button type="button" class="btn small" data-act="inv-no" data-id="' + esc(i.id) + '" data-guest="' + esc(g.id) + '">No</button></div>'
