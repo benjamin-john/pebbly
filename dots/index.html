@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Dots and Boxes</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8;
+  --p0:#2F7A63; --p1:#C2410C; --p2:#2563EB; --p3:#9333EA;
+  --p0t:#D3EBE2; --p1t:#F9DCCB; --p2t:#D6E2FB; --p3t:#EADAF9; --dot:#1F2A27; --ghost:#DDE4E1;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --p0:#6CC4A4; --p1:#F59E6B; --p2:#7AA7F7; --p3:#C69CF5;
+    --p0t:#1F3A31; --p1t:#43281A; --p2t:#1C2A47; --p3t:#33224A; --dot:#E3EBE8; --ghost:#2C3833; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --p0:#6CC4A4; --p1:#F59E6B; --p2:#7AA7F7; --p3:#C69CF5;
+    --p0t:#1F3A31; --p1t:#43281A; --p2t:#1C2A47; --p3t:#33224A; --dot:#E3EBE8; --ghost:#2C3833; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 14px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;line-height:1.15}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:500 17px/1.2 var(--body)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.stack{display:grid;gap:10px}
+
+/* ---------- Setup ---------- */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modes.three{grid-template-columns:1fr 1fr 1fr}
+.mode{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;border:1px solid var(--line);border-radius:14px;cursor:pointer;text-align:center;min-height:48px}
+.mode input{position:absolute;opacity:0}
+.mode b{font-size:16px}
+.mode small{color:var(--muted);font-size:13px;line-height:1.3}
+.mode:has(input:checked){border:2px solid var(--brand);background:var(--brand-t)}
+.mode:has(input:focus-visible){outline:3px solid var(--brand);outline-offset:2px}
+.opt{margin-top:14px}
+.opt>span{display:block;font-weight:600;margin-bottom:8px}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:22px;flex:none;text-align:center}
+.plist input{flex:1;min-width:0}
+.plist .bot{flex:1;min-height:48px;display:flex;align-items:center;padding:0 12px;border:1px dashed var(--field);border-radius:10px;color:var(--muted)}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:5px 0}
+
+/* ---------- Play ---------- */
+.topbar{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.pl{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:0}
+.pl.cur{border:2px solid var(--brand);background:var(--brand-t)}
+.pl .nm{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl .nm small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.pl .sc{font:800 24px/1 var(--head);font-variant-numeric:tabular-nums}
+.dot{flex:none;width:14px;height:14px;border-radius:50%}
+.dot.p0{background:var(--p0)}.dot.p1{background:var(--p1)}.dot.p2{background:var(--p2)}.dot.p3{background:var(--p3)}
+.status{min-height:26px;margin:0 0 8px;font-weight:600;text-align:center}
+.status.good{color:var(--brand)}
+.boardcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px}
+#board{display:block;width:100%;height:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent}
+#board .dt{fill:var(--dot)}
+#board .ln{stroke-linecap:round;stroke-width:10}
+#board .ln.empty{stroke:var(--ghost);stroke-width:4;stroke-dasharray:2 12}
+#board .ln.last{stroke-width:14}
+#board .bx text{font:800 34px var(--head);text-anchor:middle;dominant-baseline:central}
+#board.can{cursor:pointer}
+@keyframes pop{from{opacity:0}to{opacity:1}}
+#board .new{animation:pop .4s ease-out}
+.acts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.ps-wait{margin-top:12px}
+
+/* dialogs */
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+.final{list-style:none;margin:0 0 6px;padding:0}
+.final li{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:17px}
+.final .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.final .tt{font:800 20px/1 var(--head)}
+.final small{color:var(--muted);font-size:13px}
+</style>
+<script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Setup ================= -->
+<main class="wrap" id="setup" hidden>
+  <h1>Dots and Boxes</h1>
+  <p class="lead">Take turns drawing a line between two dots. Close a box to claim it and go again. Most boxes wins.</p>
+  <div id="psJoin"></div>
+
+  <section class="card">
+    <h2>Opponent</h2>
+    <div class="modes">
+      <label class="mode"><input type="radio" name="vs" value="people" checked><b>👥 Each other</b><small>2 to 4 players</small></label>
+      <label class="mode"><input type="radio" name="vs" value="bot"><b>🤖 Computer</b><small>Play against Pebbly</small></label>
+    </div>
+    <div class="opt" id="levelOpt" hidden>
+      <span>Computer</span>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="level" value="easy"><b>Easy</b></label>
+        <label class="mode"><input type="radio" name="level" value="hard" checked><b>Hard</b></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Players</h2>
+    <ul class="plist" id="setupPlayers"></ul>
+    <form class="addrow" id="addPlayerForm" autocomplete="off">
+      <input type="text" id="newPlayer" maxlength="16" placeholder="Add a player" enterkeyhint="done">
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <div class="chips" id="playerChips"></div>
+    <p class="hint" id="playerHint"></p>
+  </section>
+
+  <section class="card">
+    <h2>Board</h2>
+    <div class="modes" style="grid-template-columns:repeat(4,1fr)">
+      <label class="mode"><input type="radio" name="size" value="3"><b>3 × 3</b><small>Quick</small></label>
+      <label class="mode"><input type="radio" name="size" value="4"><b>4 × 4</b></label>
+      <label class="mode"><input type="radio" name="size" value="5" checked><b>5 × 5</b><small>Usual</small></label>
+      <label class="mode"><input type="radio" name="size" value="6"><b>6 × 6</b><small>Long</small></label>
+    </div>
+    <p class="hint">Number of boxes across and down.</p>
+  </section>
+
+  <div id="psSetup"></div>
+  <div class="stack">
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <button class="btn ghost" id="backBtn" type="button" hidden>Back to current game</button>
+  </div>
+</main>
+
+<!-- ================= Play ================= -->
+<main class="wrap" id="play" hidden>
+  <div class="topbar">
+    <div class="title"><h1>Dots and Boxes</h1><div class="sub" id="sub"></div></div>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+  <div id="psBadge" hidden></div>
+  <div class="players" id="players"></div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <div class="boardcard"><svg id="board" role="img" aria-label="Board"></svg></div>
+  <div class="acts" id="acts"></div>
+</main>
+
+<!-- ================= Menu ================= -->
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mRestart">Play again, same players</button>
+      <button class="btn plain" type="button" id="mSetup">Change players or board</button>
+    </div>
+    <h2 style="margin-top:16px">Rules</h2>
+    <ul class="rules" id="menuRules"></ul>
+  </div>
+</dialog>
+
+<dialog id="winDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="winTitle">Game over</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <ol class="final" id="finalList"></ol>
+    <div class="stack" style="margin-top:14px">
+      <button class="btn" type="button" id="wRestart" autofocus>Play again</button>
+      <button class="btn ghost" type="button" id="wSetup">Change players or board</button>
+      <button class="btn plain" type="button" id="wUndo">Undo the last move</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'pebbly_dots', K_UNDO = 'pebbly_dots_undo', K_SET = 'pebbly_dots_settings', K_MEM = 'pebbly_score_memory';
+  var BOT = 'Computer', MAXP = 4, U = 100;   // U: distance between dots in the drawing
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s || '').trim().replace(/\s+/g, ' '); }
+  function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
+  function rnd(n) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+
+  // ================= State =================
+  /* Lines are numbered: first the across lines (row by row, (n+1) rows of n), then the down lines
+     (n rows of n+1). game = { n, players:[{id,name,bot?}], level, first, cur, lines:[0 | player+1],
+     boxes:[0 | player+1] (n×n), moves, last: line|-1, tally:{pid:wins}, over } */
+  var game = load(KEY, null), undo = load(K_UNDO, []);
+  var settings = load(K_SET, { vs: 'people', level: 'hard', n: 5, players: [] });
+  var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
+  var sync = null, playFor = -1, botT = null, shown = -1;
+  function save() { store(KEY, game); store(K_UNDO, undo); if (sync) sync.push(); }
+  function snap() { undo.push(JSON.stringify(game)); if (undo.length > 400) undo.shift(); }
+  function ready() { return game.players.length >= 2; }
+  function cur() { return ready() ? game.players[game.cur] : null; }
+  function myTurn() {
+    var p = cur(); if (!p || game.over || p.bot) return false;
+    return PebblySync.canAct(p.id) || playFor === game.moves;
+  }
+
+  // ================= Geometry and rules =================
+  function nH(n) { return (n + 1) * n; }
+  function nLines(n) { return 2 * n * (n + 1); }
+  // Ends of line i, in dot coordinates [r, c].
+  function ends(n, i) {
+    if (i < nH(n)) { var r = Math.floor(i / n), c = i % n; return [[r, c], [r, c + 1]]; }
+    i -= nH(n); var r2 = Math.floor(i / (n + 1)), c2 = i % (n + 1); return [[r2, c2], [r2 + 1, c2]];
+  }
+  // The four lines around box b: top, bottom, left, right.
+  function sides(n, b) {
+    var r = Math.floor(b / n), c = b % n, h = nH(n);
+    return [r * n + c, (r + 1) * n + c, h + r * (n + 1) + c, h + r * (n + 1) + c + 1];
+  }
+  // Boxes that line i borders.
+  function boxesOf(n, i) {
+    var out = [];
+    if (i < nH(n)) { var r = Math.floor(i / n), c = i % n; if (r > 0) out.push((r - 1) * n + c); if (r < n) out.push(r * n + c); }
+    else { var j = i - nH(n), r2 = Math.floor(j / (n + 1)), c2 = j % (n + 1); if (c2 > 0) out.push(r2 * n + c2 - 1); if (c2 < n) out.push(r2 * n + c2); }
+    return out;
+  }
+  function countSides(n, lines, b) { return sides(n, b).filter(function (s) { return lines[s]; }).length; }
+  // Draw line i for player ix on (lines, boxes). Returns how many boxes it closed.
+  function draw(n, lines, boxes, i, ix) {
+    lines[i] = ix + 1; var got = 0;
+    boxesOf(n, i).forEach(function (b) { if (!boxes[b] && countSides(n, lines, b) === 4) { boxes[b] = ix + 1; got++; } });
+    return got;
+  }
+  function move(i) {
+    if (game.over || game.lines[i]) return 0;
+    var got = draw(game.n, game.lines, game.boxes, i, game.cur);
+    game.moves++; game.last = i;
+    if (game.boxes.every(Boolean)) {
+      game.over = true;
+      var sc = scores(), top = Math.max.apply(null, sc);
+      game.players.forEach(function (q, ix) { if (sc[ix] === top) game.tally[q.id] = (game.tally[q.id] || 0) + 1; });
+    } else if (!got) game.cur = (game.cur + 1) % game.players.length;
+    return got;
+  }
+  function scores(g) {
+    g = g || game; var sc = g.players.map(function () { return 0; });
+    g.boxes.forEach(function (o) { if (o) sc[o - 1]++; }); return sc;
+  }
+
+  // ================= Computer =================
+  // Hard: close any box it can; otherwise draw a line that doesn't hand over a box; when every line
+  // gives something away, give away as few boxes as possible.
+  function giveaway(n, lines, boxes, i) {
+    var L = lines.slice(), B = boxes.slice(); draw(n, L, B, i, 9);
+    var taken = 0, more = true;
+    while (more) {
+      more = false;
+      for (var b = 0; b < n * n; b++) {
+        if (B[b] || countSides(n, L, b) !== 3) continue;
+        var s = sides(n, b).filter(function (x) { return !L[x]; })[0];
+        taken += draw(n, L, B, s, 9); more = true;
+      }
+    }
+    return taken;
+  }
+  function botPick() {
+    var n = game.n, L = game.lines, B = game.boxes, free = [], easy = game.level === 'easy';
+    for (var i = 0; i < L.length; i++) if (!L[i]) free.push(i);
+    var closing = free.filter(function (i) { return boxesOf(n, i).some(function (b) { return !B[b] && countSides(n, L, b) === 3; }); });
+    if (closing.length && (!easy || rnd(10) < 7)) return closing[rnd(closing.length)];
+    var safe = free.filter(function (i) { return boxesOf(n, i).every(function (b) { return B[b] || countSides(n, L, b) < 2; }); });
+    if (easy) { var pool = safe.length && rnd(10) < 6 ? safe : free; return pool[rnd(pool.length)]; }
+    if (safe.length) return safe[rnd(safe.length)];
+    var best = null, bv = 1e9;
+    free.forEach(function (i) { var v = giveaway(n, L, B, i); if (v < bv || (v === bv && rnd(2))) { bv = v; best = i; } });
+    return best;
+  }
+  function botTurn() {
+    clearTimeout(botT); botT = null;
+    if (!game || game.over || !cur() || !cur().bot || $('play').hidden) return;
+    if (PebblySync.active() && !PebblySync.isHost()) return;
+    botT = setTimeout(function () {
+      botT = null;
+      if (!game || game.over || !cur() || !cur().bot) return;
+      move(botPick()); buzz(10); save(); render();
+      if (game.over) setTimeout(showWinner, 600);
+    }, 600);
+  }
+
+  // ================= Setup =================
+  var draft = [];
+  function vs() { return document.querySelector('input[name=vs]:checked').value; }
+  function maxHumans() { return vs() === 'bot' ? MAXP - 1 : MAXP; }
+  function openSetup() {
+    var src = game || settings;
+    var bot = !!(game ? game.players.some(function (p) { return p.bot; }) : settings.vs === 'bot');
+    document.querySelector('input[name=vs][value=' + (bot ? 'bot' : 'people') + ']').checked = true;
+    document.querySelector('input[name=level][value=' + (src.level || 'hard') + ']').checked = true;
+    document.querySelector('input[name=size][value="' + (src.n || 5) + '"]').checked = true;
+    var names = game ? game.players.filter(function (p) { return !p.bot; }).map(function (p) { return p.name; }) : settings.players || [];
+    draft = names.map(function (n) { return { id: uid(), name: n }; });
+    $('backBtn').hidden = !(game && !game.over && ready());
+    $('play').hidden = true; $('setup').hidden = false; keepAwake(false); clearTimeout(botT); scrollTo(0, 0);
+    renderSetup();
+  }
+  function renderSetup() {
+    var bot = vs() === 'bot', shared = !bot && sync && sync.shared(), max = maxHumans();
+    $('levelOpt').hidden = !bot;
+    $('psSetup').hidden = bot;
+    if (bot && sync && sync.box && sync.box.shared()) sync.box.set(false);
+    if (draft.length > max) draft.length = max;
+    if (sync && sync.box) sync.box.redraw();
+    var ul = $('setupPlayers'); ul.innerHTML = '';
+    draft.forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num" aria-hidden="true"><span class="dot p' + i + '" style="display:inline-block"></span></span>';
+      var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 16; inp.value = p.name;
+      inp.setAttribute('aria-label', 'Player ' + (i + 1) + ' name');
+      inp.addEventListener('change', function () { var v = tidy(inp.value); if (v) p.name = v; else inp.value = p.name; if (sync && sync.box) sync.box.redraw(); });
+      li.appendChild(inp);
+      [['↑', -1, 'Move up'], ['↓', 1, 'Move down']].forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'icon-btn'; b.textContent = m[0];
+        b.setAttribute('aria-label', m[2] + ' ' + p.name);
+        var j = i + m[1]; b.disabled = j < 0 || j >= draft.length;
+        b.addEventListener('click', function () { draft.splice(j, 0, draft.splice(i, 1)[0]); renderSetup(); });
+        li.appendChild(b);
+      });
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'icon-btn x'; x.textContent = '✕';
+      x.setAttribute('aria-label', 'Remove ' + p.name);
+      x.addEventListener('click', function () { draft.splice(i, 1); renderSetup(); });
+      li.appendChild(x); ul.appendChild(li);
+    });
+    if (bot) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num" aria-hidden="true"><span class="dot p' + draft.length + '" style="display:inline-block"></span></span><span class="bot">🤖 ' + BOT + '</span>';
+      ul.appendChild(li);
+    }
+    var full = draft.length >= max;
+    $('addPlayerForm').hidden = full;
+    var taken = draft.map(function (p) { return p.name.toLowerCase(); });
+    var left = full ? [] : mem.players.filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 16);
+    var chips = $('playerChips'); chips.innerHTML = '';
+    left.forEach(function (n) {
+      var c = document.createElement('span'); c.className = 'chip';
+      c.innerHTML = '<button type="button" class="add"></button><button type="button" class="forget" aria-label="Forget ' + esc(n) + '">×</button>';
+      c.firstChild.textContent = n;
+      c.firstChild.addEventListener('click', function () { if (draft.length < maxHumans()) draft.push({ id: uid(), name: n }); renderSetup(); });
+      c.lastChild.addEventListener('click', function () { mem.players = mem.players.filter(function (x) { return x !== n; }); store(K_MEM, mem); renderSetup(); });
+      chips.appendChild(c);
+    });
+    var need = bot || shared ? 1 : 2;
+    $('playerHint').textContent = bot ? 'The computer goes last. Add up to ' + (MAXP - 1) + ' people.'
+      : shared ? 'Just add yourself if the others will join from their own phones (up to ' + MAXP + ' players).'
+      : 'Turn order is the order above. Up to ' + MAXP + ' players.';
+    var ok = draft.length >= need;
+    $('startBtn').disabled = !ok;
+    $('startBtn').textContent = ok ? 'Start' : bot ? 'Add your name' : 'Add ' + (need - draft.length) + ' more player' + (need - draft.length === 1 ? '' : 's');
+  }
+  document.querySelectorAll('input[name=vs]').forEach(function (r) { r.addEventListener('change', renderSetup); });
+  $('psSetup').addEventListener('click', function () { setTimeout(renderSetup, 0); });
+  $('addPlayerForm').addEventListener('submit', function (e) {
+    e.preventDefault(); var v = tidy($('newPlayer').value); if (!v) return;
+    if (draft.length < maxHumans()) draft.push({ id: uid(), name: v });
+    $('newPlayer').value = ''; renderSetup(); if (!$('addPlayerForm').hidden) $('newPlayer').focus();
+  });
+  $('backBtn').addEventListener('click', showPlay);
+  $('startBtn').addEventListener('click', function () {
+    var pending = tidy($('newPlayer').value);
+    if (pending && draft.length < maxHumans()) { draft.push({ id: uid(), name: pending }); $('newPlayer').value = ''; }
+    var bot = vs() === 'bot', shared = !bot && sync.shared();
+    if (draft.length < (bot || shared ? 1 : 2)) { renderSetup(); return; }
+    if (game && !game.over && game.moves && !confirm('Start a new game? The current one will be cleared.')) return;
+    var level = document.querySelector('input[name=level]:checked').value, n = +document.querySelector('input[name=size]:checked').value;
+    settings = { vs: bot ? 'bot' : 'people', level: level, n: n, players: draft.map(function (p) { return p.name; }) };
+    store(K_SET, settings);
+    draft.slice().reverse().forEach(function (p) {
+      var i = mem.players.findIndex(function (x) { return x.toLowerCase() === p.name.toLowerCase(); });
+      if (i > -1) mem.players.splice(i, 1); mem.players.unshift(p.name);
+    });
+    mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
+    var players = draft.map(function (p) { return { id: uid(), name: p.name }; });
+    if (bot) players.push({ id: 'bot', name: BOT, bot: true });
+    newGame({ n: n, level: level, players: players, first: 0, tally: {} });
+    sync.started(shared ? game.players[Math.min(sync.box.meIndex(), game.players.length - 1)] : null);
+  });
+
+  // ================= Game flow =================
+  function newGame(cfg) {
+    var lines = new Array(nLines(cfg.n)).fill(0), boxes = new Array(cfg.n * cfg.n).fill(0);
+    game = { n: cfg.n, level: cfg.level, players: cfg.players, first: cfg.first, cur: cfg.first, lines: lines, boxes: boxes,
+             moves: 0, last: -1, tally: cfg.tally || {}, over: false };
+    undo = []; playFor = -1; shown = 0; save(); showPlay();
+  }
+  function restart() {
+    if (!game.over && game.moves && !confirm('Start over with the same players?')) return;
+    $('menuDlg').close(); if ($('winDlg').open) $('winDlg').close();
+    // The next player in turn starts the next game.
+    newGame({ n: game.n, level: game.level, players: game.players, first: (game.first + 1) % game.players.length, tally: game.tally });
+  }
+
+  // ================= Render =================
+  function showPlay() {
+    $('setup').hidden = true; $('play').hidden = false;
+    keepAwake(true); render();
+    if (game.over) setTimeout(showWinner, 100);
+  }
+  function render() {
+    if (!game) return;
+    var n = game.n, p = cur(), mine = myTurn(), sc = scores();
+    var fresh = shown !== game.moves; shown = game.moves;
+    $('undoBtn').disabled = !undo.length;
+    $('sub').textContent = n + ' × ' + n + ' boxes' + (game.players.some(function (q) { return q.bot; }) ? ' · ' + (game.level === 'easy' ? 'Easy' : 'Hard') : '');
+    var ph = '', slots = Math.max(2, game.players.length);
+    for (var ix = 0; ix < slots; ix++) {
+      var q = game.players[ix];
+      ph += '<div class="pl' + (p && q === p && !game.over ? ' cur' : '') + '"><span class="dot p' + ix + '"></span><span class="nm">' +
+        (q ? esc(q.name) : '<i style="font-weight:500;color:var(--muted)">Waiting…</i>') +
+        '<small>' + (q ? (game.tally[q.id] || 0) + ((game.tally[q.id] || 0) === 1 ? ' win' : ' wins') + (PebblySync.me() === q.id ? ' · you' : '') : '&nbsp;') + '</small></span>' +
+        '<span class="sc" title="Boxes">' + (q ? sc[ix] : '') + '</span></div>';
+    }
+    $('players').innerHTML = ph;
+    var st = $('status'), msg = '', lastGot = game.last > -1 && game.lines[game.last] - 1 === game.cur;   // still the same player's turn: they closed a box
+    st.className = 'status';
+    if (!ready()) msg = 'Waiting for others to join with the code…';
+    else if (game.over) { var top = Math.max.apply(null, sc), w = game.players.filter(function (q, i) { return sc[i] === top; });
+      msg = w.length > 1 ? 'It’s a tie!' : '🎉 ' + w[0].name + ' wins!'; st.className = 'status good'; }
+    else if (p.bot) msg = (lastGot ? 'Box! ' : '') + '🤖 ' + BOT + ' is thinking…';
+    else msg = lastGot ? 'Box! ' + p.name + ' goes again.' : p.name + '’s turn: tap between two dots.';
+    st.textContent = msg;
+    // drawing
+    var pad = 14, W = n * U + pad * 2, h = '';
+    game.boxes.forEach(function (o, b) {
+      if (!o) return;
+      var r = Math.floor(b / n), c = b % n, isNew = fresh && game.last > -1 && boxesOf(n, game.last).indexOf(b) > -1;
+      var nm = game.players[o - 1] ? game.players[o - 1].name : '?';
+      h += '<g class="bx' + (isNew ? ' new' : '') + '"><rect x="' + (pad + c * U) + '" y="' + (pad + r * U) + '" width="' + U + '" height="' + U + '" fill="var(--p' + (o - 1) + 't)"/>' +
+        '<text x="' + (pad + c * U + U / 2) + '" y="' + (pad + r * U + U / 2) + '" fill="var(--p' + (o - 1) + ')">' + esc(nm.charAt(0).toUpperCase()) + '</text></g>';
+    });
+    for (var i = 0; i < game.lines.length; i++) {
+      var e = ends(n, i), o2 = game.lines[i];
+      h += '<line class="ln' + (o2 ? '' : ' empty') + (i === game.last ? ' last' : '') + (fresh && i === game.last ? ' new' : '') + '" x1="' + (pad + e[0][1] * U) + '" y1="' + (pad + e[0][0] * U) +
+        '" x2="' + (pad + e[1][1] * U) + '" y2="' + (pad + e[1][0] * U) + '"' + (o2 ? ' stroke="var(--p' + (o2 - 1) + ')"' : '') + '/>';
+    }
+    for (var r = 0; r <= n; r++) for (var c = 0; c <= n; c++) h += '<circle class="dt" cx="' + (pad + c * U) + '" cy="' + (pad + r * U) + '" r="8"/>';
+    var svg = $('board'); svg.setAttribute('viewBox', '0 0 ' + W + ' ' + W); svg.innerHTML = h;
+    svg.classList.toggle('can', mine);
+    var acts = '';
+    if (game.over) acts = '<button class="btn" type="button" data-a="again">Play again</button>';
+    else if (ready() && !p.bot && !mine) {
+      var nm2 = esc(p.name);
+      acts = '<div class="ps-wait">⏳ ' + nm2 + ' is playing on their phone.<br><button type="button" data-a="playfor">Play for ' + nm2 + ' from this phone</button></div>';
+    }
+    $('acts').innerHTML = acts;
+    botTurn();
+  }
+  // The free line nearest to a tap (within about half a box), or -1.
+  function lineAt(x, y) {
+    var n = game.n, best = -1, bd = U * 0.42;
+    for (var i = 0; i < game.lines.length; i++) {
+      if (game.lines[i]) continue;
+      var e = ends(n, i), x1 = e[0][1] * U, y1 = e[0][0] * U, x2 = e[1][1] * U, y2 = e[1][0] * U;
+      var t = Math.max(0, Math.min(1, ((x - x1) * (x2 - x1) + (y - y1) * (y2 - y1)) / (U * U)));
+      var d = Math.hypot(x - (x1 + t * (x2 - x1)), y - (y1 + t * (y2 - y1)));
+      if (d < bd) { bd = d; best = i; }
+    }
+    return best;
+  }
+
+  // ================= Events =================
+  $('board').addEventListener('click', function (e) {
+    if (!myTurn()) return;
+    var svg = $('board'), rect = svg.getBoundingClientRect(), W = game.n * U + 28;
+    var x = (e.clientX - rect.left) / rect.width * W - 14, y = (e.clientY - rect.top) / rect.height * W - 14;
+    var i = lineAt(x, y); if (i < 0) return;
+    snap(); var got = move(i); buzz(got ? [20, 40, 30] : 10); save(); render();
+    if (game.over) setTimeout(showWinner, 600);
+  });
+  $('acts').addEventListener('click', function (e) {
+    var a = e.target.closest('[data-a]'); if (!a) return;
+    if (a.dataset.a === 'playfor') { playFor = game.moves; render(); }
+    else if (a.dataset.a === 'again') restart();
+  });
+  $('undoBtn').addEventListener('click', function () {
+    if (!undo.length) return; clearTimeout(botT);
+    game = JSON.parse(undo.pop()); shown = game.moves; save(); buzz(); if ($('winDlg').open) $('winDlg').close(); render();
+  });
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  });
+  $('menuBtn').addEventListener('click', function () {
+    $('menuRules').innerHTML = [
+      'On your turn, tap between two dots that sit next to each other (across or down) to draw a line.',
+      'If your line closes the fourth side of a box, the box is yours (it shows your initial) and you <b>go again</b>.',
+      'Careful: drawing the third side of a box lets the next player take it.',
+      'When every box is taken, whoever has the most boxes wins.'
+    ].map(function (r) { return '<li>' + r + '</li>'; }).join('');
+    $('menuDlg').showModal();
+  });
+  $('mRestart').addEventListener('click', restart);
+  $('wRestart').addEventListener('click', restart);
+  $('mSetup').addEventListener('click', function () { $('menuDlg').close(); openSetup(); });
+  $('wSetup').addEventListener('click', function () { $('winDlg').close(); openSetup(); });
+  $('wUndo').addEventListener('click', function () { $('winDlg').close(); $('undoBtn').click(); });
+  function showWinner() {
+    if (!game.over || $('winDlg').open || $('play').hidden) return;
+    var sc = scores(), rows = game.players.map(function (q, ix) { return { q: q, ix: ix, s: sc[ix] }; }).sort(function (a, b) { return b.s - a.s; });
+    var top = rows.filter(function (r) { return r.s === rows[0].s; });
+    $('winTitle').textContent = top.length > 1 ? 'It’s a tie!' : '🎉 ' + rows[0].q.name + ' wins!';
+    $('finalList').innerHTML = rows.map(function (r) {
+      var w = game.tally[r.q.id] || 0;
+      return '<li><span class="dot p' + r.ix + '"></span><span class="nm">' + esc(r.q.name) + ' <small>' + w + (w === 1 ? ' win' : ' wins') + ' so far</small></span><span class="tt">' + r.s + ' <small>' + (r.s === 1 ? 'box' : 'boxes') + '</small></span></li>';
+    }).join('');
+    $('wUndo').hidden = !undo.length;
+    $('winDlg').showModal();
+  }
+
+  if (game && game.players && game.lines) { shown = game.moves; showPlay(); } else { game = null; openSetup(); }
+
+  // Play together (see /play/sync.js).
+  sync = PebblySync.wire('dots', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    names: function () { return draft.map(function (p) { return p.name; }); },
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; store(KEY, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: function () { if (game && !$('play').hidden) render(); },
+    showPlay: showPlay,
+    players: function (g) { return (g.players || []).filter(function (p) { return !p.bot; }); },
+    // New players can join until the first line is drawn (then they watch).
+    addPlayer: function (g, id, name) { if (g.players.length < MAXP && !g.moves) g.players.push({ id: id, name: name }); },
+    onRemote: function (prev, next) {
+      if (!prev || !next) return;
+      if (next.moves !== prev.moves) buzz(10);
+      if (!prev.over && next.over) setTimeout(showWinner, 600);
+      if (prev.over && !next.over && $('winDlg').open) $('winDlg').close();
+    }
+  });
+  renderSetup();
+
+  // Exposed for automated checks only.
+  window.__dots = { botPick: botPick, sides: sides, boxesOf: boxesOf, game: function () { return game; } };
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

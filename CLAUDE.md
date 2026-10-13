@@ -88,7 +88,10 @@ sync = PebblySync.wire('<kind>', { setupEl, joinEl, badgeEl, names, getGame, set
 
 New kinds must be added to the list in `_play_check` (in a new migration). Kwiks (`/kwiks/`) keeps the internal kind and storage names `qwixx` / `pebbly_qwixx2*` so saved and
 shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI state
-(e.g. which card is shown) out of the shared game object. `PebblySync.canAct(pid)` / `hasPhone(pid)` /
+(e.g. which card is shown) out of the shared game object.
+Dots and Boxes, Gomoku and Mancala share one setup pattern: "Each other" or "🤖 Computer" (Easy/Hard; the
+computer is a player with `bot: true`, never offered for shared games), and a shared game can start with just the
+host, others joining as players (Dots: until the first line). Their tests: `tests/{dots,gomoku,mancala}_test.js`. `PebblySync.canAct(pid)` / `hasPhone(pid)` /
 `me()` / `isHost()` drive turn guards ("Waiting for Amy…" with a "play for them" override).
 
 ## Supabase

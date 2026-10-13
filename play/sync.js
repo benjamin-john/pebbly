@@ -10,7 +10,8 @@
   'use strict';
   var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
   if (window.PEBBLY_SYNC_CONFIG) { URL_ = window.PEBBLY_SYNC_CONFIG.url; KEY_ = window.PEBBLY_SYNC_CONFIG.key; }
-  var KINDS = { qwixx: 'Kwiks', farkle: 'Farkle', score: 'Score Keeper', darts: 'Darts', namegame: 'Name Game', trivia: 'Trivia', bracket: 'Bracket' };
+  var KINDS = { qwixx: 'Kwiks', farkle: 'Farkle', score: 'Score Keeper', darts: 'Darts', namegame: 'Name Game', trivia: 'Trivia', bracket: 'Bracket',
+               dots: 'Dots and Boxes', gomoku: 'Gomoku', mancala: 'Mancala' };
   // Web folder for each kind (internal names stay the same so saved and shared games keep working).
   var PATHS = { qwixx: 'kwiks' };
   function pathOf(kind) { return PATHS[kind] || kind; }
@@ -33,6 +34,7 @@
     if (m === 'network') return 'Couldn’t reach the server. Check your connection.';
     if (m === 'game_not_found') return 'No game with that code. Check it and try again.';
     if (m === 'game_full') return 'That game is full.';
+    if (m === 'invalid_kind') return 'Playing this game together isn’t ready yet. Try again in a few minutes.';
     if (/find the function|schema cache|does not exist/i.test(m)) return 'Playing together isn’t set up yet: run play/play.sql in Supabase.';
     return 'Something went wrong (' + m + ').';
   }

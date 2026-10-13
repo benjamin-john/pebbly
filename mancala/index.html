@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Mancala</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8;
+  --wood:#D9B47A; --pit:#B98D50; --pit-in:#A97D42; --seed:#F4F0E6; --p0:#2F7A63; --p1:#C2410C;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --wood:#7A5A33; --pit:#5C4224; --pit-in:#4E371D; --seed:#E9E2D2; --p0:#6CC4A4; --p1:#F59E6B; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --wood:#7A5A33; --pit:#5C4224; --pit-in:#4E371D; --seed:#E9E2D2; --p0:#6CC4A4; --p1:#F59E6B; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 14px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;line-height:1.15}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:500 17px/1.2 var(--body)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.stack{display:grid;gap:10px}
+
+/* ---------- Setup ---------- */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modes.three{grid-template-columns:1fr 1fr 1fr}
+.mode{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;border:1px solid var(--line);border-radius:14px;cursor:pointer;text-align:center;min-height:48px}
+.mode input{position:absolute;opacity:0}
+.mode b{font-size:16px}
+.mode small{color:var(--muted);font-size:13px;line-height:1.3}
+.mode:has(input:checked){border:2px solid var(--brand);background:var(--brand-t)}
+.mode:has(input:focus-visible){outline:3px solid var(--brand);outline-offset:2px}
+.opt{margin-top:14px}
+.opt>span{display:block;font-weight:600;margin-bottom:8px}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:22px;flex:none;text-align:center}
+.plist input{flex:1;min-width:0}
+.plist .bot{flex:1;min-height:48px;display:flex;align-items:center;padding:0 12px;border:1px dashed var(--field);border-radius:10px;color:var(--muted)}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:5px 0}
+
+/* ---------- Play ---------- */
+.topbar{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.pl{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:0}
+.pl.cur{border:2px solid var(--brand);background:var(--brand-t)}
+.pl .nm{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl .nm small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.pl .wins{font:800 20px/1 var(--head);font-variant-numeric:tabular-nums}
+.dot{flex:none;width:14px;height:14px;border-radius:50%}
+.dot.p0{background:var(--p0)}.dot.p1{background:var(--p1)}
+.status{min-height:26px;margin:0 0 8px;font-weight:600;text-align:center}
+.status.good{color:var(--brand)}
+
+.mboard{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px;border-radius:22px;background:var(--wood);box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);max-width:420px;margin:0 auto}
+.store{grid-column:1/-1;display:flex;align-items:center;gap:10px;min-height:68px;padding:8px 14px;border-radius:999px;background:var(--pit-in);box-shadow:inset 0 3px 8px rgba(0,0,0,.3);color:#fff}
+.store .who{flex:1;min-width:0;font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:8px}
+.store b{font:800 30px/1 var(--head);font-variant-numeric:tabular-nums}
+.col{display:grid;gap:8px}
+.colhead{text-align:center;color:#fff;font-size:12.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px;min-height:18px}
+.pit{all:unset;box-sizing:border-box;position:relative;display:flex;align-items:center;gap:8px;min-height:58px;padding:6px 10px;border-radius:18px;background:var(--pit);
+  box-shadow:inset 0 3px 7px rgba(0,0,0,.32);cursor:default;-webkit-tap-highlight-color:transparent;touch-action:manipulation;color:#fff}
+.pit b{font:800 22px/1 var(--head);min-width:24px;text-align:center;font-variant-numeric:tabular-nums}
+.seeds{flex:1;display:flex;flex-wrap:wrap;gap:3px;align-content:center}
+.seeds i{width:8px;height:8px;border-radius:50%;background:var(--seed);box-shadow:inset -1px -1px 0 rgba(0,0,0,.25)}
+.pit.can{cursor:pointer;outline:3px solid var(--lead);outline-offset:-3px}
+.pit.can:active{transform:scale(.97)}
+.pit.from{outline:3px dashed rgba(255,255,255,.7);outline-offset:-3px}
+.pit:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+@keyframes drop{0%{box-shadow:inset 0 3px 7px rgba(0,0,0,.32)}40%{box-shadow:inset 0 0 0 3px #fff,inset 0 3px 7px rgba(0,0,0,.32)}100%{box-shadow:inset 0 3px 7px rgba(0,0,0,.32)}}
+@keyframes grab{0%,60%{background:var(--no)}100%{}}
+.hit{animation:drop .5s ease-out both}
+.cap{animation:grab 1.2s ease-out both}
+@media (prefers-reduced-motion:reduce){.hit,.cap{animation:none}}
+.acts{display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px}
+.ps-wait{margin-top:12px}
+
+/* dialogs */
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+.final{list-style:none;margin:0 0 6px;padding:0}
+.final li{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:17px}
+.final .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.final .tt{font:800 20px/1 var(--head)}
+.final small{color:var(--muted);font-size:13px}
+</style>
+<script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Setup ================= -->
+<main class="wrap" id="setup" hidden>
+  <h1>Mancala</h1>
+  <p class="lead">Scoop up the seeds in one of your pits and sow them around the board. Most seeds in your store wins.</p>
+  <div id="psJoin"></div>
+
+  <section class="card">
+    <h2>Opponent</h2>
+    <div class="modes">
+      <label class="mode"><input type="radio" name="vs" value="people" checked><b>👥 Each other</b><small>Two players</small></label>
+      <label class="mode"><input type="radio" name="vs" value="bot"><b>🤖 Computer</b><small>Play against Pebbly</small></label>
+    </div>
+    <div class="opt" id="levelOpt" hidden>
+      <span>Computer</span>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="level" value="easy"><b>Easy</b></label>
+        <label class="mode"><input type="radio" name="level" value="hard" checked><b>Hard</b></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Players</h2>
+    <ul class="plist" id="setupPlayers"></ul>
+    <form class="addrow" id="addPlayerForm" autocomplete="off">
+      <input type="text" id="newPlayer" maxlength="16" placeholder="Add a player" enterkeyhint="done">
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <div class="chips" id="playerChips"></div>
+    <p class="hint" id="playerHint"></p>
+  </section>
+
+  <section class="card">
+    <h2>Seeds in each pit</h2>
+    <div class="modes" style="grid-template-columns:repeat(4,1fr)">
+      <label class="mode"><input type="radio" name="seeds" value="3"><b>3</b></label>
+      <label class="mode"><input type="radio" name="seeds" value="4" checked><b>4</b></label>
+      <label class="mode"><input type="radio" name="seeds" value="5"><b>5</b></label>
+      <label class="mode"><input type="radio" name="seeds" value="6"><b>6</b></label>
+    </div>
+    <p class="hint">4 is the usual game; more seeds make a longer game.</p>
+  </section>
+
+  <div id="psSetup"></div>
+  <div class="stack">
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <button class="btn ghost" id="backBtn" type="button" hidden>Back to current game</button>
+  </div>
+</main>
+
+<!-- ================= Play ================= -->
+<main class="wrap" id="play" hidden>
+  <div class="topbar">
+    <div class="title"><h1>Mancala</h1><div class="sub" id="sub"></div></div>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+  <div id="psBadge" hidden></div>
+  <div class="players" id="players"></div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <div class="mboard" id="board"></div>
+  <div class="acts" id="acts"></div>
+</main>
+
+<!-- ================= Menu ================= -->
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mRestart">Play again, same players</button>
+      <button class="btn plain" type="button" id="mSetup">Change players or seeds</button>
+    </div>
+    <h2 style="margin-top:16px">Rules</h2>
+    <ul class="rules" id="menuRules"></ul>
+  </div>
+</dialog>
+
+<dialog id="winDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="winTitle">Game over</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <p id="winSub" class="hint" style="margin:0 0 8px"></p>
+    <ol class="final" id="finalList"></ol>
+    <div class="stack" style="margin-top:14px">
+      <button class="btn" type="button" id="wRestart" autofocus>Play again</button>
+      <button class="btn ghost" type="button" id="wSetup">Change players or seeds</button>
+      <button class="btn plain" type="button" id="wUndo">Undo the last move</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'pebbly_mancala', K_UNDO = 'pebbly_mancala_undo', K_SET = 'pebbly_mancala_settings', K_MEM = 'pebbly_score_memory';
+  var BOT = 'Computer';
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s || '').trim().replace(/\s+/g, ' '); }
+  function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
+  function rnd(n) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+
+  // ================= State =================
+  /* Pits 0–5 and store 6 belong to player 0, pits 7–12 and store 13 to player 1. Seeds go round
+     counter-clockwise (0 → 6 → 7 → 13 → 0), skipping the other player's store.
+     game = { seeds, players:[{id,name,bot?}], level, first, cur, pits:[14], moves, tally:{pid:wins},
+              last:{by, pit, path:[pits], cap:[pit, across]|null, capN, extra}|null, over, winner: ix | -1 (draw) } */
+  var game = load(KEY, null), undo = load(K_UNDO, []);
+  var settings = load(K_SET, { vs: 'people', level: 'hard', seeds: 4, players: [] });
+  var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
+  var sync = null, playFor = -1, botT = null, shown = -1;
+  function save() { store(KEY, game); store(K_UNDO, undo); if (sync) sync.push(); }
+  function snap() { undo.push(JSON.stringify(game)); if (undo.length > 400) undo.shift(); }
+  function ready() { return game.players.length === 2; }
+  function cur() { return ready() ? game.players[game.cur] : null; }
+  function myTurn() {
+    var p = cur(); if (!p || game.over || p.bot) return false;
+    return PebblySync.canAct(p.id) || playFor === game.moves;
+  }
+
+  // ================= Rules =================
+  function storeOf(ix) { return ix * 7 + 6; }
+  function owns(ix, i) { return i >= ix * 7 && i < ix * 7 + 6; }
+  function sideEmpty(p, ix) { for (var i = ix * 7; i < ix * 7 + 6; i++) if (p[i]) return false; return true; }
+  // Sow from pit for player ix. Changes p; returns what happened.
+  function sow(p, ix, pit) {
+    var n = p[pit], i = pit, path = [], cap = null, capN = 0;
+    p[pit] = 0;
+    while (n) { i = (i + 1) % 14; if (i === storeOf(1 - ix)) continue; p[i]++; n--; path.push(i); }
+    var extra = i === storeOf(ix);
+    if (!extra && owns(ix, i) && p[i] === 1 && p[12 - i] > 0) {
+      capN = 1 + p[12 - i]; cap = [i, 12 - i]; p[storeOf(ix)] += 1 + p[12 - i]; p[i] = 0; p[12 - i] = 0;
+    }
+    var over = false;
+    if (sideEmpty(p, 0) || sideEmpty(p, 1)) {
+      over = true;
+      [0, 1].forEach(function (s) { for (var k = s * 7; k < s * 7 + 6; k++) { p[storeOf(s)] += p[k]; p[k] = 0; } });
+    }
+    return { path: path, cap: cap, capN: capN, extra: extra && !over, over: over };
+  }
+  function move(pit) {
+    var ix = game.cur; if (!owns(ix, pit) || !game.pits[pit] || game.over) return;
+    var r = sow(game.pits, ix, pit);
+    game.moves++;
+    game.last = { by: ix, pit: pit, path: r.path, cap: r.cap, capN: r.capN, extra: r.extra };
+    if (r.over) {
+      game.over = true;
+      var a = game.pits[6], b = game.pits[13];
+      game.winner = a === b ? -1 : a > b ? 0 : 1;
+      if (game.winner > -1) { var w = game.players[game.winner].id; game.tally[w] = (game.tally[w] || 0) + 1; }
+    } else if (!r.extra) game.cur = 1 - ix;
+  }
+
+  // ================= Computer =================
+  // Looks ahead a few moves (minimax): the score is how far ahead the computer's store is.
+  function search(p, turn, me, depth, alpha, beta) {
+    if (depth === 0) return p[storeOf(me)] - p[storeOf(1 - me)];
+    var best = turn === me ? -1e9 : 1e9, any = false;
+    for (var k = 0; k < 6; k++) {
+      var pit = turn * 7 + k; if (!p[pit]) continue; any = true;
+      var q = p.slice(), r = sow(q, turn, pit), v;
+      if (r.over) v = (q[storeOf(me)] - q[storeOf(1 - me)]) * 100;
+      else v = search(q, r.extra ? turn : 1 - turn, me, depth - 1, alpha, beta);
+      if (turn === me) { if (v > best) best = v; if (v > alpha) alpha = v; }
+      else { if (v < best) best = v; if (v < beta) beta = v; }
+      if (alpha >= beta) break;
+    }
+    return any ? best : p[storeOf(me)] - p[storeOf(1 - me)];
+  }
+  function botPick() {
+    var me = game.cur, p = game.pits, opts = [];
+    for (var k = 0; k < 6; k++) if (p[me * 7 + k]) opts.push(me * 7 + k);
+    var easy = game.level === 'easy';
+    if (easy && rnd(10) < 4) return opts[rnd(opts.length)];
+    var depth = easy ? 1 : 9, scored = opts.map(function (pit) {
+      var q = p.slice(), r = sow(q, me, pit);
+      var v = r.over ? (q[storeOf(me)] - q[storeOf(1 - me)]) * 100 : search(q, r.extra ? me : 1 - me, me, depth - 1, -1e9, 1e9);
+      return { pit: pit, v: v };
+    });
+    var top = Math.max.apply(null, scored.map(function (s) { return s.v; }));
+    var best = scored.filter(function (s) { return s.v === top; });
+    return best[rnd(best.length)].pit;
+  }
+  function botTurn() {
+    clearTimeout(botT); botT = null;
+    if (!game || game.over || !cur() || !cur().bot || $('play').hidden) return;
+    if (PebblySync.active() && !PebblySync.isHost()) return;
+    botT = setTimeout(function () {
+      botT = null;
+      if (!game || game.over || !cur() || !cur().bot) return;
+      move(botPick()); buzz(15); save(); render();
+      if (game.over) setTimeout(showWinner, 900);
+    }, game.last && game.last.by === game.cur ? 1100 : 800);
+  }
+
+  // ================= Setup =================
+  var draft = [];
+  function vs() { return document.querySelector('input[name=vs]:checked').value; }
+  function maxHumans() { return vs() === 'bot' ? 1 : 2; }
+  function openSetup() {
+    var src = game || settings;
+    var bot = !!(game ? game.players.some(function (p) { return p.bot; }) : settings.vs === 'bot');
+    document.querySelector('input[name=vs][value=' + (bot ? 'bot' : 'people') + ']').checked = true;
+    document.querySelector('input[name=level][value=' + (src.level || 'hard') + ']').checked = true;
+    document.querySelector('input[name=seeds][value="' + (src.seeds || 4) + '"]').checked = true;
+    var names = game ? game.players.filter(function (p) { return !p.bot; }).map(function (p) { return p.name; }) : settings.players || [];
+    draft = names.map(function (n) { return { id: uid(), name: n }; });
+    $('backBtn').hidden = !(game && !game.over && ready());
+    $('play').hidden = true; $('setup').hidden = false; keepAwake(false); clearTimeout(botT); scrollTo(0, 0);
+    renderSetup();
+  }
+  function renderSetup() {
+    var bot = vs() === 'bot', shared = !bot && sync && sync.shared(), max = maxHumans();
+    $('levelOpt').hidden = !bot;
+    $('psSetup').hidden = bot;
+    if (bot && sync && sync.box && sync.box.shared()) sync.box.set(false);
+    if (draft.length > max) draft.length = max;
+    if (sync && sync.box) sync.box.redraw();
+    var ul = $('setupPlayers'); ul.innerHTML = '';
+    draft.forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num" aria-hidden="true"><span class="dot p' + i + '" style="display:inline-block"></span></span>';
+      var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 16; inp.value = p.name;
+      inp.setAttribute('aria-label', 'Player ' + (i + 1) + ' name');
+      inp.addEventListener('change', function () { var v = tidy(inp.value); if (v) p.name = v; else inp.value = p.name; if (sync && sync.box) sync.box.redraw(); });
+      li.appendChild(inp);
+      [['↑', -1, 'Move up'], ['↓', 1, 'Move down']].forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'icon-btn'; b.textContent = m[0];
+        b.setAttribute('aria-label', m[2] + ' ' + p.name);
+        var j = i + m[1]; b.disabled = j < 0 || j >= draft.length;
+        b.addEventListener('click', function () { draft.splice(j, 0, draft.splice(i, 1)[0]); renderSetup(); });
+        li.appendChild(b);
+      });
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'icon-btn x'; x.textContent = '✕';
+      x.setAttribute('aria-label', 'Remove ' + p.name);
+      x.addEventListener('click', function () { draft.splice(i, 1); renderSetup(); });
+      li.appendChild(x); ul.appendChild(li);
+    });
+    if (bot) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num" aria-hidden="true"><span class="dot p1" style="display:inline-block"></span></span><span class="bot">🤖 ' + BOT + '</span>';
+      ul.appendChild(li);
+    }
+    var full = draft.length >= max;
+    $('addPlayerForm').hidden = full;
+    var taken = draft.map(function (p) { return p.name.toLowerCase(); });
+    var left = full ? [] : mem.players.filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 16);
+    var chips = $('playerChips'); chips.innerHTML = '';
+    left.forEach(function (n) {
+      var c = document.createElement('span'); c.className = 'chip';
+      c.innerHTML = '<button type="button" class="add"></button><button type="button" class="forget" aria-label="Forget ' + esc(n) + '">×</button>';
+      c.firstChild.textContent = n;
+      c.firstChild.addEventListener('click', function () { if (draft.length < maxHumans()) draft.push({ id: uid(), name: n }); renderSetup(); });
+      c.lastChild.addEventListener('click', function () { mem.players = mem.players.filter(function (x) { return x !== n; }); store(K_MEM, mem); renderSetup(); });
+      chips.appendChild(c);
+    });
+    var need = shared ? 1 : max;
+    $('playerHint').textContent = bot ? 'You go first in the first game; after that, whoever lost starts.'
+      : shared && draft.length < 2 ? 'Just add yourself if the other player will join from their own phone.'
+      : 'The first player goes first.';
+    var ok = draft.length >= need;
+    $('startBtn').disabled = !ok;
+    $('startBtn').textContent = ok ? 'Start' : bot ? 'Add your name' : 'Add ' + (need - draft.length) + ' more player' + (need - draft.length === 1 ? '' : 's');
+  }
+  document.querySelectorAll('input[name=vs]').forEach(function (r) { r.addEventListener('change', renderSetup); });
+  $('psSetup').addEventListener('click', function () { setTimeout(renderSetup, 0); });
+  $('addPlayerForm').addEventListener('submit', function (e) {
+    e.preventDefault(); var v = tidy($('newPlayer').value); if (!v) return;
+    if (draft.length < maxHumans()) draft.push({ id: uid(), name: v });
+    $('newPlayer').value = ''; renderSetup(); if (!$('addPlayerForm').hidden) $('newPlayer').focus();
+  });
+  $('backBtn').addEventListener('click', showPlay);
+  $('startBtn').addEventListener('click', function () {
+    var pending = tidy($('newPlayer').value);
+    if (pending && draft.length < maxHumans()) { draft.push({ id: uid(), name: pending }); $('newPlayer').value = ''; }
+    var bot = vs() === 'bot', shared = !bot && sync.shared();
+    if (draft.length < (shared ? 1 : maxHumans())) { renderSetup(); return; }
+    if (game && !game.over && game.moves && !confirm('Start a new game? The current one will be cleared.')) return;
+    var level = document.querySelector('input[name=level]:checked').value, seeds = +document.querySelector('input[name=seeds]:checked').value;
+    settings = { vs: bot ? 'bot' : 'people', level: level, seeds: seeds, players: draft.map(function (p) { return p.name; }) };
+    store(K_SET, settings);
+    draft.slice().reverse().forEach(function (p) {
+      var i = mem.players.findIndex(function (x) { return x.toLowerCase() === p.name.toLowerCase(); });
+      if (i > -1) mem.players.splice(i, 1); mem.players.unshift(p.name);
+    });
+    mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
+    var players = draft.map(function (p) { return { id: uid(), name: p.name }; });
+    if (bot) players.push({ id: 'bot', name: BOT, bot: true });
+    newGame({ seeds: seeds, level: level, players: players, first: 0, tally: {} });
+    sync.started(shared ? game.players[Math.min(sync.box.meIndex(), game.players.length - 1)] : null);
+  });
+
+  // ================= Game flow =================
+  function newGame(cfg) {
+    var pits = []; for (var i = 0; i < 14; i++) pits.push(i % 7 === 6 ? 0 : cfg.seeds);
+    game = { seeds: cfg.seeds, level: cfg.level, players: cfg.players, first: cfg.first, cur: cfg.first, pits: pits, moves: 0,
+             tally: cfg.tally || {}, last: null, over: false, winner: null };
+    undo = []; playFor = -1; shown = 0; save(); showPlay();
+  }
+  function restart() {
+    if (!game.over && game.moves && !confirm('Start over with the same players?')) return;
+    $('menuDlg').close(); if ($('winDlg').open) $('winDlg').close();
+    // Whoever lost starts the next game (after a draw, the other player starts).
+    var first = game.over && game.winner > -1 ? 1 - game.winner : 1 - game.first;
+    newGame({ seeds: game.seeds, level: game.level, players: game.players, first: first, tally: game.tally });
+  }
+
+  // ================= Render =================
+  function showPlay() {
+    $('setup').hidden = true; $('play').hidden = false;
+    keepAwake(true); render();
+    if (game.over) setTimeout(showWinner, 100);
+  }
+  function nameOf(ix) { var q = game.players[ix]; return q ? q.name : 'Player ' + (ix + 1); }
+  function pitHTML(i, mine, anim) {
+    var n = game.pits[i], ix = i < 7 ? 0 : 1, can = mine && ix === game.cur && n > 0, L = game.last, cls = 'pit', style = '';
+    if (can) cls += ' can';
+    if (anim && L) {
+      var k = L.path.indexOf(i);
+      if (L.cap && L.cap.indexOf(i) > -1) { cls += ' cap'; style = 'animation-delay:' + (L.path.length * 90 + 150) + 'ms'; }
+      else if (k > -1) { cls += ' hit'; style = 'animation-delay:' + (k * 90) + 'ms'; }
+    }
+    if (L && L.pit === i && !game.over) cls += ' from';
+    var dots = ''; for (var d = 0; d < Math.min(n, 14); d++) dots += '<i></i>';
+    return '<button type="button" class="' + cls + '" data-pit="' + i + '"' + (style ? ' style="' + style + '"' : '') + (can ? '' : ' disabled') +
+      ' aria-label="' + esc(nameOf(ix)) + '’s pit ' + (i % 7 + 1) + ', ' + n + (n === 1 ? ' seed' : ' seeds') + '"><b>' + n + '</b><span class="seeds" aria-hidden="true">' + dots + '</span></button>';
+  }
+  function storeHTML(ix, anim) {
+    var i = storeOf(ix), L = game.last, cls = 'store', style = '';
+    if (anim && L) { var k = L.path.indexOf(i); if (k > -1) { cls += ' hit'; style = 'animation-delay:' + (k * 90) + 'ms'; } }
+    return '<div class="' + cls + '"' + (style ? ' style="' + style + '"' : '') + '><span class="who"><span class="dot p' + ix + '"></span>' + esc(nameOf(ix)) + '’s store</span><b>' + game.pits[i] + '</b></div>';
+  }
+  function render() {
+    if (!game) return;
+    var p = cur(), mine = myTurn(), L = game.last;
+    var anim = shown !== game.moves; shown = game.moves;
+    $('undoBtn').disabled = !undo.length;
+    $('sub').textContent = game.seeds + ' seeds a pit' + (game.players.some(function (q) { return q.bot; }) ? ' · ' + (game.level === 'easy' ? 'Easy' : 'Hard') : '');
+    var ph = '';
+    [0, 1].forEach(function (ix) {
+      var q = game.players[ix];
+      ph += '<div class="pl' + (p && q === p && !game.over ? ' cur' : '') + '"><span class="dot p' + ix + '"></span><span class="nm">' +
+        (q ? esc(q.name) : '<i style="font-weight:500;color:var(--muted)">Waiting…</i>') + '<small>' + game.pits[storeOf(ix)] + ' in store' + (q && PebblySync.me() === q.id ? ' · you' : '') + '</small></span>' +
+        '<span class="wins" title="Games won">' + (q ? (game.tally[q.id] || 0) : '') + '</span></div>';
+    });
+    $('players').innerHTML = ph;
+    // status
+    var st = $('status'), msg = '', note = '';
+    st.className = 'status';
+    if (L && !game.over) {
+      note = L.cap ? nameOf(L.by) + ' captured ' + L.capN + ' seeds. ' : L.extra ? nameOf(L.by) + ' landed in their store: go again. ' : '';
+    }
+    if (!ready()) msg = 'Waiting for the other player to join with the code…';
+    else if (game.over) { msg = game.winner === -1 ? 'It’s a draw!' : '🎉 ' + nameOf(game.winner) + ' wins!'; st.className = 'status good'; }
+    else if (p.bot) msg = note + '🤖 ' + BOT + ' is thinking…';
+    else msg = note + (note && L.by === game.cur ? '' : p.name + '’s turn: pick a pit.');
+    st.textContent = msg;
+    // board: this phone's player at the bottom (left column, sowing down into the bottom store)
+    var me = PebblySync.me(), b = game.players[1] && game.players[1].id === me ? 1 : 0, o = 1 - b;
+    var h = storeHTML(o, anim);
+    h += '<div class="col"><div class="colhead"><span class="dot p' + b + '"></span>' + esc(nameOf(b)) + ' ↓</div>';
+    for (var k = 0; k < 6; k++) h += pitHTML(b * 7 + k, mine, anim);
+    h += '</div><div class="col"><div class="colhead"><span class="dot p' + o + '"></span>' + esc(nameOf(o)) + ' ↑</div>';
+    for (k = 5; k >= 0; k--) h += pitHTML(o * 7 + k, mine, anim);
+    h += '</div>' + storeHTML(b, anim);
+    $('board').innerHTML = h;
+    var acts = '';
+    if (game.over) acts = '<button class="btn" type="button" data-a="again">Play again</button>';
+    else if (ready() && !p.bot && !mine) {
+      var nm = esc(p.name);
+      acts = '<div class="ps-wait">⏳ ' + nm + ' is playing on their phone.<br><button type="button" data-a="playfor">Play for ' + nm + ' from this phone</button></div>';
+    }
+    $('acts').innerHTML = acts;
+    botTurn();
+  }
+
+  // ================= Events =================
+  $('board').addEventListener('click', function (e) {
+    var t = e.target.closest('.pit.can'); if (!t || !myTurn()) return;
+    snap(); move(+t.dataset.pit); buzz(game.over ? [40, 60, 120] : 15); save(); render();
+    if (game.over) setTimeout(showWinner, 900);
+  });
+  $('acts').addEventListener('click', function (e) {
+    var a = e.target.closest('[data-a]'); if (!a) return;
+    if (a.dataset.a === 'playfor') { playFor = game.moves; render(); }
+    else if (a.dataset.a === 'again') restart();
+  });
+  $('undoBtn').addEventListener('click', function () {
+    if (!undo.length) return; clearTimeout(botT);
+    game = JSON.parse(undo.pop()); shown = game.moves; save(); buzz(); if ($('winDlg').open) $('winDlg').close(); render();
+  });
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  });
+  $('menuBtn').addEventListener('click', function () {
+    $('menuRules').innerHTML = [
+      'On your turn, pick one of your pits. Scoop up all its seeds and drop them one at a time into the next pits, going round the board (the arrows show the way). Drop one in your own store as you pass it, but skip the other player’s store.',
+      'If your last seed lands in <b>your store</b>, you go again.',
+      'If your last seed lands in an <b>empty pit on your side</b> and the pit across has seeds, you capture both: they go in your store.',
+      'When one side has no seeds left, the game ends. Seeds still on the other side go to that side’s player.',
+      'Most seeds in your store wins. In the next game, whoever lost goes first.'
+    ].map(function (r) { return '<li>' + r + '</li>'; }).join('');
+    $('menuDlg').showModal();
+  });
+  $('mRestart').addEventListener('click', restart);
+  $('wRestart').addEventListener('click', restart);
+  $('mSetup').addEventListener('click', function () { $('menuDlg').close(); openSetup(); });
+  $('wSetup').addEventListener('click', function () { $('winDlg').close(); openSetup(); });
+  $('wUndo').addEventListener('click', function () { $('winDlg').close(); $('undoBtn').click(); });
+  function showWinner() {
+    if (!game.over || $('winDlg').open || $('play').hidden) return;
+    $('winTitle').textContent = game.winner === -1 ? 'It’s a draw!' : '🎉 ' + nameOf(game.winner) + ' wins!';
+    $('winSub').textContent = nameOf(0) + ' ' + game.pits[6] + ', ' + nameOf(1) + ' ' + game.pits[13] + '.';
+    $('finalList').innerHTML = game.players.map(function (q, ix) {
+      var w = game.tally[q.id] || 0;
+      return '<li><span class="dot p' + ix + '"></span><span class="nm">' + esc(q.name) + '</span><span class="tt">' + w + ' <small>' + (w === 1 ? 'win' : 'wins') + '</small></span></li>';
+    }).join('');
+    $('wUndo').hidden = !undo.length;
+    $('winDlg').showModal();
+  }
+
+  if (game && game.players && game.pits) { shown = game.moves; showPlay(); } else { game = null; openSetup(); }
+
+  // Play together (see /play/sync.js).
+  sync = PebblySync.wire('mancala', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    names: function () { return draft.map(function (p) { return p.name; }); },
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; store(KEY, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: function () { if (game && !$('play').hidden) render(); },
+    showPlay: showPlay,
+    players: function (g) { return (g.players || []).filter(function (p) { return !p.bot; }); },
+    addPlayer: function (g, id, name) { if (g.players.length < 2) g.players.push({ id: id, name: name }); },
+    onRemote: function (prev, next) {
+      if (!prev || !next) return;
+      if (next.moves !== prev.moves) buzz(15);
+      if (!prev.over && next.over) setTimeout(showWinner, 900);
+      if (prev.over && !next.over && $('winDlg').open) $('winDlg').close();
+    }
+  });
+  renderSetup();
+
+  // Exposed for automated checks only.
+  window.__mancala = { sow: sow, botPick: botPick, game: function () { return game; } };
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
