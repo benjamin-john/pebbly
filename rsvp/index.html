@@ -892,6 +892,11 @@ function fmtPhone(p) {
   return m ? '(' + m[1] + ') ' + m[2] + '-' + m[3] : (p || '');
 }
 function cleanName(v) { return String(v || '').replace(/\s+/g, ' ').trim(); }
+// "amy lee" → "Amy Lee"; names typed with any capitals ("de la Cruz", "McKay") are left alone.
+function nameCase(v) {
+  v = cleanName(v);
+  return v === v.toLowerCase() ? v.replace(/(^|[\s\-'’])(\p{Ll})/gu, function (m, a, b) { return a + b.toUpperCase(); }) : v;
+}
 function myName() {
   if (S.me && S.me.name) return S.me.name;
   var n = savedNames();
@@ -1034,7 +1039,7 @@ function eventFormHtml(ev) {
       '<label class="fld"><span>End time (optional)</span><input type="time" name="end_time" value="' + esc(e.end_time || '') + '"></label></div>' +
     '<p class="hint" id="multiHint" style="font-size:13px;margin:-10px 0 14px"' + (e.end_date ? '' : ' hidden') + '>Multi-day: the start time is on the first day and the end time on the last day.</p>' +
     '<label class="fld"><span>Location (optional)</span><input type="text" name="location" maxlength="200" placeholder="Address or place name" autocomplete="off" value="' + esc(e.location) + '"></label>' +
-    '<label class="fld"><span>Hosted by</span><input type="text" name="host_name" maxlength="40" placeholder="Your name" autocomplete="name" value="' + esc(ev ? e.host_name : myName()) + '"></label>' +
+    '<label class="fld"><span>Hosted by</span><input type="text" name="host_name" maxlength="40" autocapitalize="words" placeholder="Your name" autocomplete="name" value="' + esc(ev ? e.host_name : myName()) + '"></label>' +
     '<label class="fld"><span>Your phone (optional)</span><input type="tel" name="host_phone" maxlength="30" placeholder="(612) 555-0134" autocomplete="tel" value="' + esc(ev ? e.host_phone || '' : store.get('rsvp.hostPhone', '')) + '"></label>' +
     '<label class="fld"><span>Your email (optional)</span><input type="email" name="host_email" maxlength="120" placeholder="you@example.com" autocomplete="email" value="' + esc(ev ? e.host_email || '' : store.get('rsvp.hostEmail', '')) + '"></label>' +
     '<p class="hint" style="font-size:13px;margin:-10px 0 14px">If you add either, guests see it under “Contact the host” so they can reach you.</p>' +
@@ -1347,8 +1352,8 @@ function renderMe() {
     el.innerHTML = '<h2>' + (m ? 'Change your RSVP' : 'Will you be there?') + '</h2>' +
       statusButtons(f.status) +
       '<form id="rsvpForm" class="rform" novalidate>' +
-        '<div class="row2"><label class="fld"><span>First name</span><input type="text" id="rFirst" maxlength="30" autocomplete="given-name" value="' + esc(f.first) + '"></label>' +
-          '<label class="fld"><span>Last name</span><input type="text" id="rLast" maxlength="30" autocomplete="family-name" value="' + esc(f.last) + '"></label></div>' +
+        '<div class="row2"><label class="fld"><span>First name</span><input type="text" id="rFirst" maxlength="30" autocapitalize="words" autocomplete="given-name" value="' + esc(f.first) + '"></label>' +
+          '<label class="fld"><span>Last name</span><input type="text" id="rLast" maxlength="30" autocapitalize="words" autocomplete="family-name" value="' + esc(f.last) + '"></label></div>' +
         '<label class="fld"><span>Mobile number' + (ev.require_phone ? '' : ' (optional)') + '</span><input type="tel" id="rPhone" maxlength="25" autocomplete="tel" inputmode="tel" placeholder="(612) 555-0123" value="' + esc(fmtPhone(f.phone)) + '">' +
           '<small>Only the host sees it, for event texts.</small></label>' +
         (ev.max_plus_ones > 0 && f.status !== 'no' ? '<label class="fld"><span>Bringing anyone?</span><select id="rPlus">' +
@@ -1388,7 +1393,7 @@ function statusButtons(cur) {
 
 function submitRsvp() {
   var f = S.form, btn = $('#rsvpForm button[type=submit]');
-  f.first = cleanName($('#rFirst').value); f.last = cleanName($('#rLast').value);
+  f.first = nameCase($('#rFirst').value); f.last = nameCase($('#rLast').value);
   if (!f.first) { toast('Enter your first name.'); $('#rFirst').focus(); return; }
   if (!f.last) { toast('Enter your last name.'); $('#rLast').focus(); return; }
   f.phone = normPhone($('#rPhone').value);
@@ -1495,7 +1500,7 @@ function renderInvites() {
     (!pick && !m.rows.length ? '<p class="hint" style="font-size:13px;margin-top:6px">Picking people from your contacts works in Chrome on Android. Here you can type them in.</p>' : '');
   if (S.invForm) {
     html += '<form id="invForm" class="invform" novalidate><div class="row2">' +
-      '<label class="fld"><span>Name</span><input type="text" id="invName" maxlength="80" autocomplete="off" value="' + esc(S.invName) + '"></label>' +
+      '<label class="fld"><span>Name</span><input type="text" id="invName" maxlength="80" autocapitalize="words" autocomplete="off" value="' + esc(S.invName) + '"></label>' +
       '<label class="fld"><span>Mobile (optional)</span><input type="tel" id="invPhone" maxlength="25" inputmode="tel" autocomplete="off" placeholder="(612) 555-0123" value="' + esc(S.invPhone) + '"></label></div>' +
       '<div class="invbtns" style="margin-top:0"><button type="submit" class="btn small primary">Add</button><button type="button" class="btn small" data-act="inv-manual-close">Done</button></div></form>';
   }
@@ -1545,7 +1550,7 @@ function pickContacts() {
   }, function () { toast('Couldn’t open your contacts.'); });
 }
 function submitInvite() {
-  var name = cleanName(S.invName), ph = normPhone(S.invPhone);
+  var name = nameCase(S.invName), ph = normPhone(S.invPhone);
   if (!name) { toast('Enter a name.'); $('#invName').focus(); return; }
   if (ph && !phoneOk(ph)) { toast(friendly(new ApiError('invalid_phone'))); $('#invPhone').focus(); return; }
   addInvites([{ name: name, phones: ph ? [ph] : [] }]).then(function (ok) {
@@ -1642,8 +1647,8 @@ function renderComments() {
         (p.mine || S.isOwner ? '<button type="button" class="link danger" data-act="del-post" data-id="' + esc(p.id) + '">Delete</button>' : '') + '</div></li>';
     }).join('') + '</ul>' : '<p class="hint">No comments yet.</p>') +
     '<form id="cmtForm" class="cform" novalidate>' +
-      (named ? '' : '<div class="row2"><label class="fld"><span>First name</span><input type="text" id="cFirst" maxlength="30" autocomplete="given-name" value="' + esc(S.draft.cfirst) + '"></label>' +
-        '<label class="fld"><span>Last name</span><input type="text" id="cLast" maxlength="30" autocomplete="family-name" value="' + esc(S.draft.clast) + '"></label></div>') +
+      (named ? '' : '<div class="row2"><label class="fld"><span>First name</span><input type="text" id="cFirst" maxlength="30" autocapitalize="words" autocomplete="given-name" value="' + esc(S.draft.cfirst) + '"></label>' +
+        '<label class="fld"><span>Last name</span><input type="text" id="cLast" maxlength="30" autocapitalize="words" autocomplete="family-name" value="' + esc(S.draft.clast) + '"></label></div>') +
       '<label class="fld"><span>' + (named ? 'Add a comment as ' + esc(myName()) : 'Comment') + '</span><textarea id="cBody" rows="2" maxlength="500" placeholder="Say something to everyone">' + esc(S.draft.comment) + '</textarea></label>' +
       '<button type="submit" class="btn">Post</button></form>';
 }
@@ -1651,7 +1656,7 @@ function renderComments() {
 function doComment() {
   var body = S.draft.comment.trim(), name = myName();
   if (!name) {
-    var cf = cleanName(S.draft.cfirst), cl = cleanName(S.draft.clast);
+    var cf = nameCase(S.draft.cfirst), cl = nameCase(S.draft.clast);
     if (!cf || !cl) { toast('Enter your first and last name.'); var n = $(cf ? '#cLast' : '#cFirst'); if (n) n.focus(); return; }
     saveNames(cf, cl); name = cf + ' ' + cl;
   }

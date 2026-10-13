@@ -59,7 +59,7 @@ async function rsvp(b, code, first, last, tel, status) {
   check(true, 'duplicates skipped');
   // by hand
   await host.click('[data-act=inv-manual]');
-  await host.fill('#invName', 'Dan Wu'); await host.fill('#invPhone', '12');
+  await host.fill('#invName', 'dan wu'); await host.fill('#invPhone', '12');
   await host.click('#invForm button[type=submit]');
   await host.waitForFunction(() => /doesn’t look right/.test(document.querySelector('#toast').textContent));
   await host.fill('#invPhone', '612-555-0105');
@@ -74,7 +74,7 @@ async function rsvp(b, code, first, last, tel, status) {
   check(/phone/i.test(await amy.evaluate(() => document.body.textContent)), 'guest page loads');
   await rsvp(b, code, 'Michael', 'Smith', '612 555 7777', 'maybe');          // different number, similar name
   await rsvp(b, code, 'Cara', 'Diaz', '612 555 8888', 'no');                 // same name, different number
-  await rsvp(b, code, 'Nana', 'Jones', '612 555 6666', 'going');             // Grandma, picked by hand
+  await rsvp(b, code, 'nana', 'jones', '612 555 6666', 'going');             // Grandma, picked by hand
 
   await host.click('[data-act=refresh]');
   await host.waitForFunction(() => /2 replied/.test(document.querySelector('#invites').textContent));
