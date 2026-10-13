@@ -1,4 +1,5 @@
-// Farkle (/farkle/): Undo after rolling on puts the turn back exactly as it was (no double-counted points).
+// Farkle (/farkle/): Undo after rolling on puts the turn back exactly as it was (no double-counted points);
+// Three 1s = 300 (old saved rules on the former 1000 default move over once).
 // Fixed dice: crypto.getRandomValues is fed from a queue (window.__dice).
 // Serve the repo root on port 8785 (python3 -m http.server 8785), then:
 //   NODE_PATH=$(npm root -g) node tests/farkle_test.js
@@ -32,7 +33,7 @@ function check(ok, msg) { if (ok) pass++; else { fail++; console.log('FAIL: ' + 
   await p.click('[data-a=roll]');
   for (const i of [0, 1, 2, 3]) await p.click('#dice .die[data-i="' + i + '"]');
   const pts1 = await p.textContent('#tPts');
-  check(pts1 === '1,100' || pts1 === '1100', 'four 1s show 1100 (got ' + pts1 + ')');
+  check(pts1.replace(',', '') === '1000', 'four 1s show 1000 (four of a kind beats three 1s + a 1 = 400; got ' + pts1 + ')');
 
   // Roll the other two: 2 and 3 → Farkle.
   await p.evaluate(() => { window.__dice = [2, 3]; });
@@ -51,7 +52,33 @@ function check(ok, msg) { if (ok) pass++; else { fail++; console.log('FAIL: ' + 
   await p.click('[data-a=roll]');
   await p.click('#dice .die[data-i="0"]');
   const pts3 = await p.textContent('#tPts');
-  check(pts3.replace(',', '') === '1150', 'rolling again after Undo: 1100 + 50 = 1150 (got ' + pts3 + ')');
+  check(pts3.replace(',', '') === '1050', 'rolling again after Undo: 1000 + 50 = 1050 (got ' + pts3 + ')');
+
+  // Saved rules from before (Three 1s = 1000, the old default) move to 300 once; three 1s then score 300.
+  await p.evaluate(() => {
+    const st = JSON.parse(localStorage.getItem('pebbly_farkle_settings')); delete st.v; st.R.three1 = 1000;
+    localStorage.setItem('pebbly_farkle_settings', JSON.stringify(st));
+    const g = JSON.parse(localStorage.getItem('pebbly_farkle')); g.R.three1 = 1000;
+    localStorage.setItem('pebbly_farkle', JSON.stringify(g));
+  });
+  await p.reload();
+  check(await p.evaluate(() => JSON.parse(localStorage.getItem('pebbly_farkle_settings')).R.three1) === 300, 'saved rules moved to 300');
+  check(await p.evaluate(() => JSON.parse(localStorage.getItem('pebbly_farkle')).R.three1) === 300, 'game on screen moved to 300');
+  // A rule someone picked on purpose stays (only the old default moves, and only once).
+  await p.evaluate(() => {
+    const st = JSON.parse(localStorage.getItem('pebbly_farkle_settings')); st.R.three1 = 1000;
+    localStorage.setItem('pebbly_farkle_settings', JSON.stringify(st));
+  });
+  await p.reload();
+  check(await p.evaluate(() => JSON.parse(localStorage.getItem('pebbly_farkle_settings')).R.three1) === 1000, 'a 1000 chosen later is kept');
+  await p.evaluate(() => { const st = JSON.parse(localStorage.getItem('pebbly_farkle_settings')); st.R.three1 = 300; localStorage.setItem('pebbly_farkle_settings', JSON.stringify(st)); });
+
+  // New game: three 1s + junk scores 300.
+  await p.click('#menuBtn'); await p.click('#mSetup'); await p.click('#startBtn');
+  await p.evaluate(() => { window.__dice = [1, 1, 1, 2, 3, 4]; });
+  await p.click('[data-a=roll]');
+  for (const i of [0, 1, 2]) await p.click('#dice .die[data-i="' + i + '"]');
+  check((await p.textContent('#tPts')) === '300', 'three 1s score 300 (got ' + await p.textContent('#tPts') + ')');
 
   check(!errs.length, 'no page errors: ' + errs.join('; '));
   await browser.close();

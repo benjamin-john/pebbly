@@ -346,7 +346,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   // ================= House rules =================
   var DEFAULTS = { target: 10000, minBoard: 500, threeFarkles: false, threeFarklePenalty: 1000,
-    one: 100, five: 50, three1: 1000, threeX: 100, four: 1000, five5: 2000, six: 3000,
+    one: 100, five: 50, three1: 300, threeX: 100, four: 1000, five5: 2000, six: 3000,
     straight: 1500, threePairs: 1500, fourPair: 1500, twoTriplets: 2500 };
   var RULE_FIELDS = [
     ['sec', 'Game'],
@@ -412,6 +412,12 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   var game = load(KEY, null), undo = load(K_UNDO, []);
   var settings = load(K_SET, { dice: true, score: true, style: 'standard', R: DEFAULTS, players: [] });
   settings.R = Object.assign({}, DEFAULTS, settings.R || {});
+  // Three 1s used to default to 1000; move saved rules (and the game on screen) still on that default to 300, once.
+  if (!settings.v) {
+    if (settings.R.three1 === 1000) settings.R.three1 = 300;
+    if (game && game.R && game.R.three1 === 1000) { game.R.three1 = 300; store(KEY, game); }
+    settings.v = 2; store(K_SET, settings);
+  }
   var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
   var sync = null, playFor = -1;
   function save() { store(KEY, game); store(K_UNDO, undo); if (sync) sync.push(); }
@@ -504,7 +510,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (!(d || s) || (s && !draft.length)) return;
     if (game && !game.over && game.log.length && !confirm('Start a new game? The current one will be cleared.')) return;
     var style = document.querySelector('input[name=style]:checked').value;
-    settings = { dice: d, score: s, style: style, R: draftR, players: draft.map(function (p) { return p.name; }) };
+    settings = { v: 2, dice: d, score: s, style: style, R: draftR, players: draft.map(function (p) { return p.name; }) };
     var keep = draft.slice();
     store(K_SET, settings);
     draft.slice().reverse().forEach(function (p) {
