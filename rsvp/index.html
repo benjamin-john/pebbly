@@ -1442,16 +1442,19 @@ function renderGuests() {
 /* invite list (host) */
 function contactsOk() { return !!(navigator.contacts && navigator.contacts.select && window.ContactsManager); }
 function nameKey(v) { return String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
-// Could this RSVP be this contact? Same last name ("Mike Smith" / "Michael Smith"), or for a one-word
-// contact ("Mike"), first names that start alike. The host confirms, so a loose guess is fine.
+// Could this RSVP be this contact? The last name matches exactly and a first name starts with the same two
+// letters ("Mike Smith" / "Michael Smith", "Mike & Sarah Smith" / "Sarah Smith"). A one-word contact ("Mike")
+// needs first names that start alike (3+ letters). The host confirms each suggestion.
 function nameLike(invName, g) {
   var it = nameKey(invName).split(' '), f = nameKey(g.first_name || g.name.split(' ')[0]), last = nameKey(g.last_name || '');
   if (!f || !it[0]) return 0;
   function close(a, b) { return a === b || (a.length >= 3 && b.length >= 3 && (a.indexOf(b) === 0 || b.indexOf(a) === 0)); }
-  var first = it.some(function (t) { return close(t, f); });
-  if (it.length === 1) return first ? 1 : 0;
-  if (!last || !last.split(' ').every(function (t) { return it.indexOf(t) >= 0; })) return 0;
-  return first ? 3 : it[0].charAt(0) === f.charAt(0) ? 2 : 1;
+  if (it.length === 1) return close(it[0], f) ? 1 : 0;
+  var lt = last ? last.split(' ') : [];
+  if (!lt.length || !lt.every(function (t) { return it.indexOf(t) >= 0; })) return 0;
+  var firsts = it.filter(function (t) { return lt.indexOf(t) < 0; });
+  if (firsts.some(function (t) { return close(t, f); })) return 3;
+  return f.length >= 2 && firsts.some(function (t) { return t.slice(0, 2) === f.slice(0, 2); }) ? 2 : 0;
 }
 function invNo() { return store.get('rsvp.invNo.' + S.code, []); }
 // Each invite with the RSVP that answers it: confirmed link, same phone number, or the very same name.
