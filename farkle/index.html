@@ -549,13 +549,13 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   function rollDice() {
     var t = game.turn;
+    var s = t.roll ? selScore() : 0; if (s === null) return;
+    snap();   // before changing anything, so Undo goes back to exactly this roll
     if (t.offer) t.offer = null;   // rolling fresh turns the offer down
     if (t.roll) {   // set aside the selected dice first
-      var s = selScore(); if (s === null) return;
       t.pts += s; t.kept.push(selDice()); t.left -= t.sel.length;
       if (t.left === 0) { t.left = 6; t.kept.push('hot'); }
     }
-    snap();
     t.roll = []; for (var i = 0; i < t.left; i++) t.roll.push(rand());
     t.sel = [];
     t.farkle = isFarkle(t.roll, game.R);
