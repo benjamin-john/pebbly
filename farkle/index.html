@@ -347,7 +347,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   // ================= House rules =================
   var DEFAULTS = { target: 10000, minBoard: 500, threeFarkles: false, threeFarklePenalty: 1000,
     one: 100, five: 50, three1: 300, threeX: 100, four: 1000, five5: 2000, six: 3000,
-    straight: 1500, threePairs: 1500, fourPair: 1500, twoTriplets: 2500 };
+    straight: 1500, threePairs: 1500, fourPair: 1500, twoTriplets: 2500, v: 2 };
   var RULE_FIELDS = [
     ['sec', 'Game'],
     ['target', 'Points to win'], ['minBoard', 'Minimum turn to get on the board (0 = none)'],
@@ -411,13 +411,12 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
               lastBank:{pid, pts, left}|null, final:{by}|null, over, log:[] } */
   var game = load(KEY, null), undo = load(K_UNDO, []);
   var settings = load(K_SET, { dice: true, score: true, style: 'standard', R: DEFAULTS, players: [] });
-  settings.R = Object.assign({}, DEFAULTS, settings.R || {});
-  // Three 1s used to default to 1000; move saved rules (and the game on screen) still on that default to 300, once.
-  if (!settings.v) {
-    if (settings.R.three1 === 1000) settings.R.three1 = 300;
-    if (game && game.R && game.R.three1 === 1000) { game.R.three1 = 300; store(KEY, game); }
-    settings.v = 2; store(K_SET, settings);
-  }
+  // Three 1s used to default to 1000: rules from before (no v) still on it move to 300, once per set of rules.
+  // Covers saved settings, the game, its Undo snapshots and shared games from phones not yet updated.
+  function fixR(g) { var R = g && g.R; if (R && !R.v) { if (R.three1 === 1000) R.three1 = 300; R.v = 2; } return g; }
+  fixR(settings); settings.R = Object.assign({}, DEFAULTS, settings.R || {}); store(K_SET, settings);
+  fixR(game); undo = undo.map(function (u) { return JSON.stringify(fixR(JSON.parse(u))); });
+  if (game) { store(KEY, game); store(K_UNDO, undo); }
   var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
   var sync = null, playFor = -1;
   function save() { store(KEY, game); store(K_UNDO, undo); if (sync) sync.push(); }
@@ -510,7 +509,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (!(d || s) || (s && !draft.length)) return;
     if (game && !game.over && game.log.length && !confirm('Start a new game? The current one will be cleared.')) return;
     var style = document.querySelector('input[name=style]:checked').value;
-    settings = { v: 2, dice: d, score: s, style: style, R: draftR, players: draft.map(function (p) { return p.name; }) };
+    settings = { dice: d, score: s, style: style, R: draftR, players: draft.map(function (p) { return p.name; }) };
     var keep = draft.slice();
     store(K_SET, settings);
     draft.slice().reverse().forEach(function (p) {
@@ -867,7 +866,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
     names: function () { return draft.map(function (p) { return p.name; }); },
     getGame: function () { return game; },
-    setGame: function (g) { game = g; store(KEY, game); },
+    setGame: function (g) { game = fixR(g); store(KEY, game); },
     clearUndo: function () { undo = []; store(K_UNDO, undo); },
     render: function () { if (game && !$('play').hidden) render(); },
     showPlay: showPlay,

@@ -54,24 +54,32 @@ function check(ok, msg) { if (ok) pass++; else { fail++; console.log('FAIL: ' + 
   const pts3 = await p.textContent('#tPts');
   check(pts3.replace(',', '') === '1050', 'rolling again after Undo: 1000 + 50 = 1050 (got ' + pts3 + ')');
 
-  // Saved rules from before (Three 1s = 1000, the old default) move to 300 once; three 1s then score 300.
-  await p.evaluate(() => {
-    const st = JSON.parse(localStorage.getItem('pebbly_farkle_settings')); delete st.v; st.R.three1 = 1000;
+  // Rules from before (Three 1s = 1000, the old default, no v) move to 300: saved settings, the game and its Undo copies.
+  const old = R => { delete R.v; R.three1 = 1000; return R; };
+  await p.evaluate(old => {
+    old = eval(old);
+    const st = JSON.parse(localStorage.getItem('pebbly_farkle_settings')); old(st.R); delete st.v;
     localStorage.setItem('pebbly_farkle_settings', JSON.stringify(st));
-    const g = JSON.parse(localStorage.getItem('pebbly_farkle')); g.R.three1 = 1000;
+    const g = JSON.parse(localStorage.getItem('pebbly_farkle')); old(g.R);
     localStorage.setItem('pebbly_farkle', JSON.stringify(g));
-  });
+    const u = JSON.parse(localStorage.getItem('pebbly_farkle_undo')).map(x => { const y = JSON.parse(x); old(y.R); return JSON.stringify(y); });
+    localStorage.setItem('pebbly_farkle_undo', JSON.stringify(u));
+  }, old.toString());
   await p.reload();
   check(await p.evaluate(() => JSON.parse(localStorage.getItem('pebbly_farkle_settings')).R.three1) === 300, 'saved rules moved to 300');
   check(await p.evaluate(() => JSON.parse(localStorage.getItem('pebbly_farkle')).R.three1) === 300, 'game on screen moved to 300');
-  // A rule someone picked on purpose stays (only the old default moves, and only once).
+  await p.click('#menuBtn');
+  check(/Three 1s[^<]*<\/[^>]+>\s*<[^>]+>\s*300|Three 1s\D*300/.test(await p.innerHTML('#menuDlg')), 'menu shows Three 1s = 300');
+  await p.click('#menuDlg [data-close]');
+  await p.click('#undoBtn');
+  check(await p.evaluate(() => JSON.parse(localStorage.getItem('pebbly_farkle')).R.three1) === 300, 'after Undo still 300');
+  // A 1000 picked on purpose (rules already moved over) is kept.
   await p.evaluate(() => {
     const st = JSON.parse(localStorage.getItem('pebbly_farkle_settings')); st.R.three1 = 1000;
     localStorage.setItem('pebbly_farkle_settings', JSON.stringify(st));
   });
   await p.reload();
   check(await p.evaluate(() => JSON.parse(localStorage.getItem('pebbly_farkle_settings')).R.three1) === 1000, 'a 1000 chosen later is kept');
-  await p.evaluate(() => { const st = JSON.parse(localStorage.getItem('pebbly_farkle_settings')); st.R.three1 = 300; localStorage.setItem('pebbly_farkle_settings', JSON.stringify(st)); });
 
   // New game: three 1s + junk scores 300.
   await p.click('#menuBtn'); await p.click('#mSetup'); await p.click('#startBtn');
