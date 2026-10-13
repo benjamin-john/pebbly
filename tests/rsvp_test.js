@@ -219,7 +219,7 @@ async function bridge(ctx) {
   const smsHref = await host.getAttribute('#textList a[data-text]', 'href');
   check(smsHref === 'sms:+16129786322?body=' + encodeURIComponent('See you Saturday!\n\n' + share), 'sms link: ' + smsHref);
   await host.check('.aud input[data-aud=no]');
-  check((await host.textContent('#textList')).includes('didn’t give a number: Bo Diaz'), 'people without numbers listed');
+  check((await host.textContent('#textList')).includes('person has no number: Bo Diaz'), 'people without numbers listed');
   await host.uncheck('.aud input[data-aud=no]');
   await host.uncheck('#smsLink');
   check((await host.getAttribute('#textList a[data-text]', 'href')) === 'sms:+16129786322?body=See%20you%20Saturday!', 'link can be left off');

@@ -119,6 +119,10 @@ shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI s
   old reference scripts (`rsvp/*.sql`, `whichdayworks/*.sql`, `play/play.sql`) contain such grants:
   don't re-run them in Supabase. Poll's owner check works by deleting the poll inside a rolled-back
   savepoint, because Poll's tables aren't in the repo.
+- **RSVP invite list** (`rsvp_invites`, `rsvp_invite_*`): host-only, added from Android's Contact Picker
+  (`navigator.contacts.select`; Chrome on Android only, so there's also "Add by hand"). The page matches
+  RSVPs to invites (confirmed `guest_id`, any shared phone number, or the identical name) and suggests
+  similar names for the host to confirm. Adding anyone with a number turns on "Require a phone number".
 - **Secret Santa** (`santa_*`): the draw and pairs live only in the database; `santa_get` returns just
   the calling phone's match (by its participant id). Never add a function that returns all pairs.
 - **Live Quiz** (`live_*`, `/live/`): built for a room of phones, so each answer is its own row in
@@ -149,6 +153,7 @@ the repo with `python3 -m http.server <port>` and drive a Pixel 7 viewport.
   (`phone(browser, devices, db)` gives a page; use several for multi-phone "play together" tests).
 - Screenshot the result on a phone viewport (light and dark) and look at it before pushing.
 - `tests/rsvp_test.js`: RSVP checks (see its header); `tests/rsvp_contact_test.js`: host phone/email.
+  `tests/rsvp_invites_test.js`: invite list (stubbed contact picker).
 - `tests/lock_test.js`: passwords in all three Plan apps (see its header; Poll uses the stand-in
   `tests/poll_fixture.sql`).
 

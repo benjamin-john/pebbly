@@ -152,6 +152,14 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .glist{list-style:none;margin:4px 0 0;padding:0}
 .ghead{font-weight:700;font-size:15px;color:var(--muted)}
 .gbox.going .ghead{color:#1D5E3A}.gbox.maybe .ghead{color:#6E5108}.gbox.no .ghead{color:#8A2723}
+.gbox.wait{border-color:#B9C7C1;background:var(--surface)}
+.gbox.replied summary{cursor:pointer;min-height:36px;list-style-position:inside}
+.gbox.replied[open]{padding-bottom:4px}
+.sugg{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:6px;padding:8px 10px;border-radius:10px;background:var(--brand-t);font-size:14px}
+.sugg span{flex:1 1 160px}
+.invpick{margin-top:6px;min-height:40px;padding:6px 10px;font-size:14px;color:var(--muted)}
+.invbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.invform{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .g{display:flex;gap:12px;align-items:flex-start;padding:10px 0;border-top:1px solid rgba(0,0,0,.1)}
 .g:first-child{border-top:0}
 .g .nm{font-weight:600;overflow-wrap:anywhere}
@@ -460,6 +468,10 @@ var remoteApi = {
   addItem: function (a) { return this.rpc('rsvp_item_add', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_name: a.name, p_label: a.label, p_needed: a.needed }); },
   editItem: function (a) { return this.rpc('rsvp_item_edit', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_item: a.item, p_label: a.label, p_needed: a.needed }); },
   removeItem: function (a) { return this.rpc('rsvp_item_remove', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_item: a.item }); },
+  invites: function (a) { return this.rpc('rsvp_invites', { p_code: a.code, p_owner_token: a.owner }); },
+  inviteAdd: function (a) { return this.rpc('rsvp_invite_add', { p_code: a.code, p_owner_token: a.owner, p_people: a.people }); },
+  inviteRemove: function (a) { return this.rpc('rsvp_invite_remove', { p_code: a.code, p_owner_token: a.owner, p_invite: a.invite }); },
+  inviteLink: function (a) { return this.rpc('rsvp_invite_link', { p_code: a.code, p_owner_token: a.owner, p_invite: a.invite, p_guest: a.guest }); },
   claim: function (a) { return this.rpc('rsvp_item_claim', { p_code: a.code, p_participant: a.pid, p_name: a.name, p_item: a.item, p_claim: a.claim }); },
   // Admin functions report problems as {error: "..."} so failed guesses stay counted server-side.
   unwrap: function (p, key, dflt) {
@@ -612,6 +624,7 @@ var localApi = {
     var g = e.guests.filter(function (x) { return x.id === a.guest; })[0];
     if (!g) return this.fail('guest_not_found');
     e.guests = e.guests.filter(function (x) { return x !== g; });
+    (e.invites || []).forEach(function (i) { if (i.guest_id === g.id) i.guest_id = null; });
     e.items.forEach(function (i) { i.claims = i.claims.filter(function (c) { return c.pid !== g.pid; }); });
     this.put(db); return this.ok();
   },
@@ -695,6 +708,56 @@ var localApi = {
     }
     this.put(c.db); return this.ok();
   },
+  // invite list (host only), same rules as rsvp_invite_add
+  ownedEvent: function (a) {
+    var db = this.db(), e = this.find(db, a.code);
+    if (!e) return { err: 'event_not_found' };
+    if (!this.isOwner(e, a.owner)) return { err: 'not_owner' };
+    if (!e.invites) e.invites = [];
+    return { db: db, e: e };
+  },
+  invites: function (a) {
+    var c = this.ownedEvent(a); if (c.err) return this.fail(c.err);
+    return this.ok(c.e.invites.map(function (i) { return { id: i.id, name: i.name, phones: i.phones.slice(), guest_id: i.guest_id || null, created_at: i.created_at }; }));
+  },
+  inviteAdd: function (a) {
+    var c = this.ownedEvent(a), self = this, added = 0, skipped = 0, anyPhone = false;
+    if (c.err) return this.fail(c.err);
+    if (!Array.isArray(a.people) || a.people.length > 500) return this.fail('invalid_invites');
+    for (var k = 0; k < a.people.length; k++) {
+      var p = a.people[k], name = this.clean(p.name).slice(0, 80), phones = [];
+      (Array.isArray(p.phones) ? p.phones : []).forEach(function (t) {
+        var ph = normPhone(t);
+        if (phones.length < 4 && ph && phoneOk(ph) && phones.indexOf(ph) < 0) phones.push(ph);
+      });
+      if (!name) name = phones[0] || '';
+      if (!name) { skipped++; continue; }
+      var dup = c.e.invites.some(function (i) {
+        return i.phones.some(function (x) { return phones.indexOf(x) >= 0; }) || (!phones.length && !i.phones.length && i.name.toLowerCase() === name.toLowerCase());
+      });
+      if (dup) { skipped++; continue; }
+      if (c.e.invites.length >= 500) return this.fail('too_many_invites');
+      c.e.invites.push({ id: uuid(), name: name, phones: phones, guest_id: null, created_at: new Date().toISOString() });
+      added++; if (phones.length) anyPhone = true;
+    }
+    if (anyPhone) c.e.require_phone = true;
+    self.put(c.db); return this.ok({ added: added, skipped: skipped });
+  },
+  inviteRemove: function (a) {
+    var c = this.ownedEvent(a); if (c.err) return this.fail(c.err);
+    var n = c.e.invites.length;
+    c.e.invites = c.e.invites.filter(function (i) { return i.id !== a.invite; });
+    if (c.e.invites.length === n) return this.fail('invite_not_found');
+    this.put(c.db); return this.ok();
+  },
+  inviteLink: function (a) {
+    var c = this.ownedEvent(a); if (c.err) return this.fail(c.err);
+    var inv = c.e.invites.filter(function (i) { return i.id === a.invite; })[0];
+    if (!inv) return this.fail('invite_not_found');
+    if (a.guest && !c.e.guests.some(function (g) { return g.id === a.guest; })) return this.fail('guest_not_found');
+    inv.guest_id = a.guest || null;
+    this.put(c.db); return this.ok();
+  },
   adminList: function () { return this.fail('admin_needs_supabase'); },
   adminGrant: function () { return this.fail('admin_needs_supabase'); },
   adminDelete: function () { return this.fail('admin_needs_supabase'); }
@@ -738,6 +801,9 @@ function friendly(e) {
     answer_too_long: 'Each answer can be at most 300 characters.',
     event_full: 'This event already has the maximum number of replies (300).',
     not_owner: 'Only the host can do that.',
+    too_many_invites: 'The invite list can have up to 500 people.',
+    invalid_invites: 'Add up to 500 people at a time.',
+    invite_not_found: 'That person is no longer on the invite list.',
     not_allowed: 'You can only change things you added.',
     guest_not_found: 'That guest was already removed.',
     invalid_announcement: 'An announcement needs 1 to 1,000 characters.',
@@ -772,7 +838,8 @@ function resetState() {
   S = { code: '', pid: '', owner: null, isOwner: false, ev: null, me: null, counts: null, guests: null, posts: [], items: [],
     justCreated: false, fromAdmin: !!A.events, rsvpOpen: false, form: null, editingItem: null, editItemText: '', editItemNeeded: 1,
     draft: { comment: '', ann: '', item: '', needed: 1, cfirst: '', clast: '', sms: '' },
-    aud: { going: true, maybe: true, no: false }, smsLink: true, texted: {}, calOpen: false, mode: 'view' };
+    aud: { going: true, maybe: true, no: false, invited: false }, smsLink: true, texted: {}, calOpen: false, mode: 'view',
+    invites: null, invForm: false, invName: '', invPhone: '', repliedOpen: false };
 }
 var A = { pw: '', events: null }; // the admin password lives only in memory, never saved
 
@@ -848,13 +915,21 @@ function route() {
 function applyData(d) {
   S.ev = d.event; S.isOwner = !!d.is_owner; S.me = d.me || null; S.counts = d.counts || null;
   S.guests = d.guests || null; S.posts = d.posts || []; S.items = d.items || [];
+  S.invites = d.invites || null;
+}
+// The event, plus the invite list for the host (null if the database doesn't have it yet).
+function fetchEvent(code) {
+  return api.get(code, S.pid, S.owner).then(function (d) {
+    if (!d || !d.is_owner) return d;
+    return api.invites({ code: code, owner: S.owner }).then(function (list) { d.invites = list || []; return d; }, function () { d.invites = null; return d; });
+  });
 }
 
 function loadEvent(code, justCreated) {
   resetState();
   S.code = code; S.pid = getPid(); S.owner = getOwnerToken(code); S.justCreated = !!justCreated;
   $app.innerHTML = '<p class="hint">Loading…</p>';
-  api.get(code, S.pid, S.owner).then(function (d) {
+  fetchEvent(code).then(function (d) {
     if (!d) { renderNotFound(); return; }
     applyData(d);
     rememberEvent(S.ev);
@@ -867,7 +942,7 @@ function loadEvent(code, justCreated) {
 }
 
 function reload() {
-  return api.get(S.code, S.pid, S.owner).then(function (d) {
+  return fetchEvent(S.code).then(function (d) {
     if (!d) throw new ApiError('event_not_found');
     applyData(d);
   });
@@ -1171,6 +1246,7 @@ function renderEvent() {
     '<hr class="rule">' +
     '<section id="me" class="panel me"></section>' +
     '<section id="guests"></section>' +
+    '<section id="invites"></section>' +
     '<section id="bring"></section>' +
     '<section id="comments"></section>' +
     '<section id="contact"></section>' +
@@ -1180,7 +1256,7 @@ function renderEvent() {
 
 function renderParts() {
   if (S.mode !== 'view' || !$('#me')) return;
-  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderBring(); renderComments(); renderContact(); renderHost();
+  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderInvites(); renderBring(); renderComments(); renderContact(); renderHost();
 }
 
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
@@ -1363,6 +1439,119 @@ function renderGuests() {
   el.innerHTML = html;
 }
 
+/* invite list (host) */
+function contactsOk() { return !!(navigator.contacts && navigator.contacts.select && window.ContactsManager); }
+function nameKey(v) { return String(v || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+// Could this RSVP be this contact? Same last name ("Mike Smith" / "Michael Smith"), or for a one-word
+// contact ("Mike"), first names that start alike. The host confirms, so a loose guess is fine.
+function nameLike(invName, g) {
+  var it = nameKey(invName).split(' '), f = nameKey(g.first_name || g.name.split(' ')[0]), last = nameKey(g.last_name || '');
+  if (!f || !it[0]) return 0;
+  function close(a, b) { return a === b || (a.length >= 3 && b.length >= 3 && (a.indexOf(b) === 0 || b.indexOf(a) === 0)); }
+  var first = it.some(function (t) { return close(t, f); });
+  if (it.length === 1) return first ? 1 : 0;
+  if (!last || !last.split(' ').every(function (t) { return it.indexOf(t) >= 0; })) return 0;
+  return first ? 3 : it[0].charAt(0) === f.charAt(0) ? 2 : 1;
+}
+function invNo() { return store.get('rsvp.invNo.' + S.code, []); }
+// Each invite with the RSVP that answers it: confirmed link, same phone number, or the very same name.
+// Unanswered invites get a suggestion when an unmatched RSVP has a similar name.
+function inviteRows() {
+  var guests = S.guests || [], byId = {}, used = {}, no = invNo();
+  guests.forEach(function (g) { byId[g.id] = g; });
+  var rows = (S.invites || []).map(function (inv) {
+    var g = inv.guest_id && byId[inv.guest_id], how = g ? 'linked' : '';
+    if (!g) { g = guests.filter(function (x) { return x.phone && inv.phones.indexOf(x.phone) >= 0; })[0]; if (g) how = 'phone'; }
+    if (g) used[g.id] = true;
+    return { inv: inv, guest: g || null, how: how, sugg: null };
+  });
+  rows.forEach(function (r) {
+    if (r.guest) return;
+    var k = nameKey(r.inv.name), same = guests.filter(function (x) { return !used[x.id] && nameKey(x.name) === k; });
+    if (same.length === 1) { r.guest = same[0]; r.how = 'name'; used[same[0].id] = true; }
+  });
+  rows.forEach(function (r) {
+    if (r.guest) return;
+    var best = 0;
+    guests.forEach(function (x) {
+      var sc = used[x.id] || no.indexOf(r.inv.id + ':' + x.id) >= 0 ? 0 : nameLike(r.inv.name, x);
+      if (sc > best) { best = sc; r.sugg = x; }
+    });
+  });
+  return { rows: rows, free: guests.filter(function (x) { return !used[x.id]; }) };
+}
+function renderInvites() {
+  var el = $('#invites');
+  if (!el) return;
+  if (!S.isOwner || !S.invites) { el.innerHTML = ''; return; }
+  var m = inviteRows(), wait = m.rows.filter(function (r) { return !r.guest; }), done = m.rows.filter(function (r) { return r.guest; }), pick = contactsOk();
+  var html = '<h3 class="sect">Invited</h3><p class="hint" style="font-size:14px">' +
+    (m.rows.length ? m.rows.length + ' invited · ' + done.length + ' replied · ' + wait.length + ' no reply yet. ' : 'Keep track of who you invited, then text a reminder to anyone who hasn’t replied. ') + 'Only you see this.</p>' +
+    '<div class="invbtns">' + (pick ? '<button type="button" class="btn small primary" data-act="inv-contacts">📇 Add from contacts</button>' : '') +
+      (S.invForm ? '' : '<button type="button" class="btn small" data-act="inv-manual">＋ Add by hand</button>') + '</div>' +
+    (!pick && !m.rows.length ? '<p class="hint" style="font-size:13px;margin-top:6px">Picking people from your contacts works in Chrome on Android. Here you can type them in.</p>' : '');
+  if (S.invForm) {
+    html += '<form id="invForm" class="invform" novalidate><div class="row2">' +
+      '<label class="fld"><span>Name</span><input type="text" id="invName" maxlength="80" autocomplete="off" value="' + esc(S.invName) + '"></label>' +
+      '<label class="fld"><span>Mobile (optional)</span><input type="tel" id="invPhone" maxlength="25" inputmode="tel" autocomplete="off" placeholder="(612) 555-0123" value="' + esc(S.invPhone) + '"></label></div>' +
+      '<div class="invbtns" style="margin-top:0"><button type="submit" class="btn small primary">Add</button><button type="button" class="btn small" data-act="inv-manual-close">Done</button></div></form>';
+  }
+  if (wait.length) {
+    html += '<div class="gbox wait"><div class="ghead">⏳ No reply yet (' + wait.length + ')</div><ul class="glist">' + wait.map(function (r) {
+      var i = r.inv, g = r.sugg;
+      return '<li class="g"><div class="grow"><span class="nm">' + esc(i.name) + '</span>' +
+        '<span class="stamp">' + (i.phones.length ? '📱 ' + esc(fmtPhone(i.phones[0])) + (i.phones.length > 1 ? ' (+' + (i.phones.length - 1) + ' more)' : '') : 'No phone number') + '</span>' +
+        (g ? '<div class="sugg"><span>Is this <b>' + esc(g.name) + '</b> (' + STATUS[g.status].label + ')?</span>' +
+          '<button type="button" class="btn small" data-act="inv-yes" data-id="' + esc(i.id) + '" data-guest="' + esc(g.id) + '">Yes</button>' +
+          '<button type="button" class="btn small" data-act="inv-no" data-id="' + esc(i.id) + '" data-guest="' + esc(g.id) + '">No</button></div>'
+        : m.free.length ? '<select class="invpick" data-inv-pick="' + esc(i.id) + '" aria-label="Match ' + esc(i.name) + ' to an RSVP"><option value="">Replied under another name?</option>' +
+          m.free.map(function (x) { return '<option value="' + esc(x.id) + '">' + esc(x.name) + ' · ' + STATUS[x.status].label + '</option>'; }).join('') + '</select>' : '') +
+        '<button type="button" class="link danger" data-act="inv-rm" data-id="' + esc(i.id) + '" data-name="' + esc(i.name) + '">Remove</button></div></li>';
+    }).join('') + '</ul></div>';
+  }
+  if (done.length) {
+    html += '<details class="gbox replied"' + (S.repliedOpen ? ' open' : '') + '><summary class="ghead">✅ Replied (' + done.length + ')</summary><ul class="glist">' + done.map(function (r) {
+      var i = r.inv, g = r.guest;
+      return '<li class="g"><div class="grow"><span class="nm">' + esc(i.name) + '</span>' +
+        '<span class="stamp">' + STATUS[g.status].e + ' ' + STATUS[g.status].label + (nameKey(g.name) !== nameKey(i.name) ? ' · as ' + esc(g.name) : '') + '</span>' +
+        (r.how === 'linked' ? '<button type="button" class="link" data-act="inv-unlink" data-id="' + esc(i.id) + '">Not them</button>' : '') +
+        '<button type="button" class="link danger" data-act="inv-rm" data-id="' + esc(i.id) + '" data-name="' + esc(i.name) + '">Remove</button></div></li>';
+    }).join('') + '</ul></details>';
+  }
+  el.innerHTML = html;
+}
+function addInvites(people) {
+  var had = S.ev.require_phone;
+  return api.inviteAdd({ code: S.code, owner: S.owner, people: people.slice(0, 500) }).then(function (r) {
+    r = r || { added: 0, skipped: 0 };
+    return reload().then(function () {
+      renderParts();
+      var msg = r.added ? 'Added ' + r.added + (r.added === 1 ? ' person' : ' people') + ' to the invite list.' : 'Nobody new to add.';
+      if (r.skipped) msg += ' ' + r.skipped + ' already on it.';
+      if (!had && S.ev.require_phone) msg += ' Guests now need to give a phone number so replies can be matched.';
+      toast(msg);
+      return true;
+    });
+  }, function (e) { toast(friendly(e)); return false; });
+}
+function pickContacts() {
+  navigator.contacts.select(['name', 'tel'], { multiple: true }).then(function (list) {
+    var people = (list || []).map(function (c) { return { name: (c.name || [])[0] || '', phones: (c.tel || []).slice(0, 8) }; })
+      .filter(function (p) { return p.name || p.phones.length; });
+    if (people.length) addInvites(people);
+  }, function () { toast('Couldn’t open your contacts.'); });
+}
+function submitInvite() {
+  var name = cleanName(S.invName), ph = normPhone(S.invPhone);
+  if (!name) { toast('Enter a name.'); $('#invName').focus(); return; }
+  if (ph && !phoneOk(ph)) { toast(friendly(new ApiError('invalid_phone'))); $('#invPhone').focus(); return; }
+  addInvites([{ name: name, phones: ph ? [ph] : [] }]).then(function (ok) {
+    if (!ok) return;
+    S.invName = ''; S.invPhone = ''; renderInvites();
+    var n = $('#invName'); if (n) n.focus();
+  });
+}
+
 /* bring list */
 function itemById(id) { return S.items.filter(function (i) { return i.id === id; })[0] || null; }
 function needSelect(id, cur) {
@@ -1485,7 +1674,7 @@ function renderHost() {
     '<p class="hint" style="font-size:13px;margin-top:2px">Each “Text” button opens Messages on your phone with the message ready. Tap Send, come back, and do the next one. Texts come from your number.</p>' +
     '<div class="aud" role="group" aria-label="Who to text">' + ['going', 'maybe', 'no'].map(function (k) {
       return '<label><input type="checkbox" data-aud="' + k + '"' + (S.aud[k] ? ' checked' : '') + '>' + STATUS[k].label + '</label>';
-    }).join('') + '</div>' +
+    }).join('') + (S.invites && S.invites.length ? '<label><input type="checkbox" data-aud="invited"' + (S.aud.invited ? ' checked' : '') + '>Invited, no reply yet</label>' : '') + '</div>' +
     '<label class="fld" style="margin-bottom:6px"><span>Message</span><textarea id="smsBody" rows="3" maxlength="600" placeholder="Hi! Quick reminder…">' + esc(S.draft.sms) + '</textarea></label>' +
     '<label class="check" style="min-height:0;padding:4px"><input type="checkbox" id="smsLink"' + (S.smsLink ? ' checked' : '') + '><span>Add the event link at the end</span></label>' +
     '<div id="textList"></div>' +
@@ -1493,6 +1682,7 @@ function renderHost() {
     '<p class="hint" style="font-size:13px;margin-top:2px">Spreadsheet files (CSV) that open in Excel, Numbers or Google Sheets.</p>' +
     '<div class="row"><button type="button" class="btn small primary" data-act="dl" data-id="all">Everything (.zip)</button>' +
       '<button type="button" class="btn small" data-act="dl" data-id="guests">Responses</button>' +
+      (S.invites && S.invites.length ? '<button type="button" class="btn small" data-act="dl" data-id="invited">Invite list</button>' : '') +
       (S.ev.bring_list !== false ? '<button type="button" class="btn small" data-act="dl" data-id="bring">Bring list</button>' : '') +
       '<button type="button" class="btn small" data-act="dl" data-id="comments">Comments</button>' +
       '<button type="button" class="btn small" data-act="dl" data-id="announcements">Announcements</button>' +
@@ -1508,19 +1698,23 @@ function smsBody() {
 function renderTextList() {
   var el = $('#textList');
   if (!el) return;
-  var list = (S.guests || []).filter(function (g) { return S.aud[g.status]; });
+  var list = (S.guests || []).filter(function (g) { return S.aud[g.status]; })
+    .map(function (g) { return { key: g.id, name: g.name, phone: g.phone, label: STATUS[g.status].label }; });
+  if (S.aud.invited && S.invites) inviteRows().rows.forEach(function (r) {
+    if (!r.guest) list.push({ key: 'i' + r.inv.id, name: r.inv.name, phone: r.inv.phones[0] || '', label: 'No reply yet' });
+  });
   var withPhone = list.filter(function (g) { return g.phone; }), without = list.length - withPhone.length, body = smsBody();
   if (!list.length) { el.innerHTML = '<p class="hint" style="margin-top:8px">Nobody to text yet.</p>'; return; }
-  var sent = withPhone.filter(function (g) { return S.texted[g.id]; }).length;
+  var sent = withPhone.filter(function (g) { return S.texted[g.key]; }).length;
   el.innerHTML = (withPhone.length ? '<p class="hint" style="margin-top:8px;font-size:14px">' + sent + ' of ' + withPhone.length + ' opened' +
       (sent ? ' · <button type="button" class="link" style="padding:0;font-size:14px" data-act="texts-reset">Start over</button>' : '') + '</p>' : '') +
     '<ul class="texts">' + withPhone.map(function (g) {
       var href = 'sms:' + g.phone + '?body=' + encodeURIComponent(body);
-      return '<li' + (S.texted[g.id] ? ' class="done"' : '') + '><span class="who"><b>' + (S.texted[g.id] ? '✓ ' : '') + esc(g.name) + '</b><small>' + esc(fmtPhone(g.phone)) + ' · ' + STATUS[g.status].label + '</small></span>' +
-        (body ? '<a class="btn small" href="' + esc(href) + '" data-text="' + esc(g.id) + '">' + (S.texted[g.id] ? 'Again' : 'Text') + '</a>' : '') + '</li>';
+      return '<li' + (S.texted[g.key] ? ' class="done"' : '') + '><span class="who"><b>' + (S.texted[g.key] ? '✓ ' : '') + esc(g.name) + '</b><small>' + esc(fmtPhone(g.phone)) + ' · ' + esc(g.label) + '</small></span>' +
+        (body ? '<a class="btn small" href="' + esc(href) + '" data-text="' + esc(g.key) + '">' + (S.texted[g.key] ? 'Again' : 'Text') + '</a>' : '') + '</li>';
     }).join('') + '</ul>' +
     (!body && withPhone.length ? '<p class="hint" style="font-size:14px;margin-top:6px">Write a message to get the Text buttons.</p>' : '') +
-    (without ? '<p class="hint" style="font-size:14px;margin-top:6px">' + without + (without === 1 ? ' person' : ' people') + ' didn’t give a number: ' +
+    (without ? '<p class="hint" style="font-size:14px;margin-top:6px">' + without + (without === 1 ? ' person has' : ' people have') + ' no number: ' +
       list.filter(function (g) { return !g.phone; }).map(function (g) { return esc(g.name); }).join(', ') + '.</p>' : '');
 }
 
@@ -1554,6 +1748,14 @@ function exportFiles() {
   var cm = [['Name', 'Posted', 'Comment']], an = [['Posted', 'Announcement']];
   S.posts.forEach(function (p) { if (p.kind === 'comment') cm.push([p.name, csvStamp(p.created_at), p.body]); else an.push([csvStamp(p.created_at), p.body]); });
   files.comments = toCsv(cm); files.announcements = toCsv(an);
+  if (S.invites && S.invites.length) {
+    var inv = [['Name', 'Phone', 'Other numbers', 'Reply', 'RSVP name']];
+    inviteRows().rows.forEach(function (r) {
+      inv.push([r.inv.name, fmtPhone(r.inv.phones[0] || ''), r.inv.phones.slice(1).map(fmtPhone).join('; '),
+        r.guest ? STATUS[r.guest.status].label.replace('’', "'") : 'No reply yet', r.guest ? r.guest.name : '']);
+    });
+    files.invited = toCsv(inv);
+  }
   var w = whenText(ev), c = S.counts || {};
   var info = [['Field', 'Value'], ['Event', ev.title], ['When', w.when + (w.sub ? ' · ' + w.sub : '')], ['Location', ev.location], ['Hosted by', ev.host_name],
     ['RSVP by', ev.rsvp_by || ''], ['Details', ev.description], ['Link', shareUrl(S.code)],
@@ -1605,12 +1807,12 @@ function doDownload(which) {
   reload().then(function () {
     renderParts();
     var f = exportFiles(), base = fileBase();
-    var names = { guests: 'responses', bring: 'bring-list', comments: 'comments', announcements: 'announcements', event: 'event-details' };
+    var names = { guests: 'responses', invited: 'invite-list', bring: 'bring-list', comments: 'comments', announcements: 'announcements', event: 'event-details' };
     if (which === 'all') {
-      var list = Object.keys(names).filter(function (k) { return k !== 'bring' || S.ev.bring_list !== false; })
+      var list = Object.keys(names).filter(function (k) { return f[k] && (k !== 'bring' || S.ev.bring_list !== false); })
         .map(function (k) { return { name: base + '-' + names[k] + '.csv', text: f[k] }; });
       saveBlob(makeZip(list), base + '-rsvp.zip');
-    } else {
+    } else if (f[which]) {
       saveBlob(new Blob([f[which]], { type: 'text/csv;charset=utf-8' }), base + '-' + names[which] + '.csv');
     }
   }, function (e) { toast(friendly(e)); });
@@ -1625,6 +1827,8 @@ $app.addEventListener('click', function (e) {
     setTimeout(function () { S.texted[gid] = true; renderTextList(); }, 400);
     return;
   }
+  var sm = e.target.closest('.replied summary');
+  if (sm) { S.repliedOpen = !sm.parentNode.open; return; }
   var t = e.target.closest('[data-act]');
   if (!t || !$app.contains(t)) return;
   var id = t.dataset.id;
@@ -1658,6 +1862,15 @@ $app.addEventListener('click', function (e) {
       if (confirm('Delete this post?')) after(api.delPost({ code: S.code, pid: S.pid, owner: S.owner, post: id }), 'Deleted.');
       break;
     case 'claim': doClaim(id); break;
+    case 'inv-contacts': pickContacts(); break;
+    case 'inv-manual': S.invForm = true; renderInvites(); var inn = $('#invName'); if (inn) inn.focus(); break;
+    case 'inv-manual-close': S.invForm = false; S.invName = ''; S.invPhone = ''; renderInvites(); break;
+    case 'inv-yes': after(api.inviteLink({ code: S.code, owner: S.owner, invite: id, guest: t.dataset.guest }), 'Matched.'); break;
+    case 'inv-no': var nl = invNo(); nl.push(id + ':' + t.dataset.guest); store.set('rsvp.invNo.' + S.code, nl); renderInvites(); renderTextList(); break;
+    case 'inv-unlink': after(api.inviteLink({ code: S.code, owner: S.owner, invite: id, guest: null }), 'Moved back to “No reply yet”.'); break;
+    case 'inv-rm':
+      if (confirm('Take ' + t.dataset.name + ' off the invite list?')) after(api.inviteRemove({ code: S.code, owner: S.owner, invite: id }), 'Removed from the invite list.');
+      break;
     case 'item-edit': var it = itemById(id); if (it) { S.editingItem = id; S.editItemText = it.label; S.editItemNeeded = it.needed; renderBring(); var ie = $('#itemEdit'); if (ie) ie.focus(); } break;
     case 'item-edit-cancel': S.editingItem = null; renderBring(); break;
     case 'item-rm':
@@ -1705,11 +1918,14 @@ $app.addEventListener('input', function (e) {
   else if (t.id === 'smsBody') { S.draft.sms = t.value; renderTextList(); }
   else if (t.id === 'newItem') S.draft.item = t.value;
   else if (t.id === 'itemEdit') S.editItemText = t.value;
+  else if (t.id === 'invName') S.invName = t.value;
+  else if (t.id === 'invPhone') S.invPhone = t.value;
 });
 
 $app.addEventListener('change', function (e) {
   var t = e.target;
   if (t.dataset.aud) { S.aud[t.dataset.aud] = t.checked; renderTextList(); return; }
+  if (t.dataset.invPick) { if (t.value) after(api.inviteLink({ code: S.code, owner: S.owner, invite: t.dataset.invPick, guest: t.value }), 'Matched.'); return; }
   if (t.id === 'smsLink') { S.smsLink = t.checked; renderTextList(); return; }
   if (t.name === 'bring_list' && t.form) { $('#bringOpts').hidden = !t.checked; return; }
   if (t.name === 'end_date' && t.form) { $('#multiHint').hidden = !t.value; return; }
@@ -1725,6 +1941,7 @@ $app.addEventListener('submit', function (e) {
   else if (id === 'rsvpForm') submitRsvp();
   else if (id === 'itemForm') doAddItem();
   else if (id === 'cmtForm') doComment();
+  else if (id === 'invForm') submitInvite();
   else if (id === 'annForm') {
     var body = S.draft.ann.trim();
     if (!body) { $('#annBody').focus(); return; }
