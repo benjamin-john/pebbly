@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Codebreaker</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8;
+  --hole:#E9EEEC;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --hole:#141A18; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --hole:#141A18; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 14px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;line-height:1.15}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:500 17px/1.2 var(--body)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.stack{display:grid;gap:10px}
+
+/* ---------- Setup ---------- */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modes.three{grid-template-columns:1fr 1fr 1fr}
+.mode{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;border:1px solid var(--line);border-radius:14px;cursor:pointer;text-align:center;min-height:48px}
+.mode input{position:absolute;opacity:0}
+.mode b{font-size:16px}
+.mode small{color:var(--muted);font-size:13px;line-height:1.3}
+.mode:has(input:checked){border:2px solid var(--brand);background:var(--brand-t)}
+.mode:has(input:focus-visible){outline:3px solid var(--brand);outline-offset:2px}
+.opt{margin-top:14px}
+.opt>span{display:block;font-weight:600;margin-bottom:8px}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:22px;flex:none;text-align:center}
+.plist input{flex:1;min-width:0}
+.plist .bot{flex:1;min-height:48px;display:flex;align-items:center;padding:0 12px;border:1px dashed var(--field);border-radius:10px;color:var(--muted)}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:5px 0}
+
+/* ---------- Play ---------- */
+.topbar{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.pl{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:0;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pl.cur{border:2px solid var(--brand);background:var(--brand-t)}
+.pl[aria-pressed="true"]{box-shadow:0 0 0 2px var(--lead) inset}
+.pl .nm{flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pl .nm small{display:block;font-weight:400;font-size:12.5px;color:var(--muted)}
+.pl .wins{font:800 20px/1 var(--head);font-variant-numeric:tabular-nums}
+.pl:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.status{min-height:26px;margin:0 0 8px;font-weight:600;text-align:center}
+.status.good{color:var(--brand)}
+
+/* pegs */
+.peg{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;font:700 12px/1 var(--body);color:#fff;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 1px 2px rgba(0,0,0,.2)}
+.peg.c0{background:#E5484D}.peg.c1{background:#F2911B}.peg.c2{background:#F5D90A;color:#3A3000}.peg.c3{background:#30A46C}
+.peg.c4{background:#0090FF}.peg.c5{background:#8E4EC6}.peg.c6{background:#E93D82}.peg.c7{background:#8B5A2B}
+.peg.empty{background:var(--hole);box-shadow:inset 0 2px 3px rgba(0,0,0,.18);color:var(--muted)}
+.peg.hid{background:var(--ink);color:var(--bg);font-size:15px}
+
+.boardcard{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px}
+.bhead{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600}
+.bhead .t{flex:1;min-width:0}
+.bhead .t small{display:block;color:var(--muted);font-weight:400;font-size:13px}
+.rows{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:12px;background:var(--bg)}
+.row .n{width:20px;flex:none;color:var(--muted);font-size:13px;text-align:right}
+.row .pegs{display:flex;gap:6px;flex:1}
+.row.secret{background:transparent;border:1.5px dashed var(--field)}
+.row.win{background:var(--brand-t)}
+.keys{display:grid;grid-template-columns:repeat(2,10px);gap:3px;flex:none;width:36px;justify-content:end}
+.keys.k5{grid-template-columns:repeat(3,10px)}
+.keys i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink)}
+.keys i.b{background:var(--ink)}
+.keys i.o{border-color:var(--line)}
+.legend{display:flex;gap:14px;justify-content:center;margin-top:8px;color:var(--muted);font-size:13px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--ink)}
+.legend i.b{background:var(--ink)}
+.empty-msg{color:var(--muted);text-align:center;font-size:14.5px;margin:6px 0}
+
+.entry{margin-top:12px}
+.slots{display:flex;gap:8px;justify-content:center;margin-bottom:10px}
+.slot{all:unset;box-sizing:border-box;cursor:pointer;border-radius:50%;-webkit-tap-highlight-color:transparent}
+.slot .peg{width:48px;height:48px;font-size:15px}
+.slot.next .peg.empty{box-shadow:0 0 0 3px var(--brand)}
+.slot:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.palette{display:grid;gap:8px;justify-items:center}
+.palette button{all:unset;box-sizing:border-box;cursor:pointer;border-radius:50%;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.palette .peg{width:46px;height:46px;font-size:15px}
+.palette button:active .peg{transform:scale(.92)}
+.palette button:disabled{opacity:.3;cursor:default}
+.palette button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.acts{display:grid;grid-template-columns:1fr 1.7fr;gap:8px;margin-top:12px}
+.acts .btn{white-space:nowrap}
+.acts.one{grid-template-columns:1fr}
+.ps-wait{margin-top:12px}
+.cover{text-align:center;padding:24px 8px}
+.cover .big{font-size:52px;line-height:1;margin-bottom:10px}
+.cover h2{font:800 22px/1.2 var(--head);text-transform:none;letter-spacing:0;color:var(--ink);margin:0 0 6px}
+.cover p{color:var(--muted);margin:0 0 16px}
+.setlist{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:6px}
+.setlist li{display:flex;justify-content:space-between;padding:8px 10px;border-radius:10px;background:var(--bg);font-weight:600}
+
+/* dialogs */
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+.final{list-style:none;margin:0 0 6px;padding:0}
+.final li{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);font-size:17px;flex-wrap:wrap}
+.final .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.final .tt{font:800 20px/1 var(--head)}
+.final small{color:var(--muted);font-size:13px}
+.final .pegs{display:flex;gap:4px;width:100%}
+.final .pegs .peg{width:24px;height:24px;font-size:11px}
+</style>
+<script src="/keepawake.js"></script>
+<script src="/play/sync.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Setup ================= -->
+<main class="wrap" id="setup" hidden>
+  <h1>Codebreaker</h1>
+  <p class="lead">Each player hides a secret color code. Take turns guessing each other’s; clues tell you how close you are. Fewest guesses wins.</p>
+  <div id="psJoin"></div>
+
+  <section class="card">
+    <h2>Opponent</h2>
+    <div class="modes">
+      <label class="mode"><input type="radio" name="vs" value="people" checked><b>👥 Each other</b><small>Two players</small></label>
+      <label class="mode"><input type="radio" name="vs" value="bot"><b>🤖 Computer</b><small>Race the computer</small></label>
+    </div>
+    <div class="opt" id="levelOpt" hidden>
+      <span>Computer</span>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="level" value="easy"><b>Easy</b></label>
+        <label class="mode"><input type="radio" name="level" value="hard" checked><b>Hard</b></label>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Players</h2>
+    <ul class="plist" id="setupPlayers"></ul>
+    <form class="addrow" id="addPlayerForm" autocomplete="off">
+      <input type="text" id="newPlayer" maxlength="16" placeholder="Add a player" enterkeyhint="done">
+      <button class="btn" type="submit">Add</button>
+    </form>
+    <div class="chips" id="playerChips"></div>
+    <p class="hint" id="playerHint"></p>
+  </section>
+
+  <section class="card">
+    <h2>Code</h2>
+    <div class="opt" style="margin-top:0">
+      <span>Pegs in a code</span>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="len" value="4" checked><b>4</b><small>Classic</small></label>
+        <label class="mode"><input type="radio" name="len" value="5"><b>5</b><small>Harder</small></label>
+      </div>
+    </div>
+    <div class="opt">
+      <span>Colors</span>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="colors" value="6" checked><b>6</b><small>Classic</small></label>
+        <label class="mode"><input type="radio" name="colors" value="8"><b>8</b><small>Harder</small></label>
+      </div>
+    </div>
+    <div class="opt">
+      <span>Same color more than once?</span>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="rep" value="1" checked><b>Allowed</b></label>
+        <label class="mode"><input type="radio" name="rep" value="0"><b>Not allowed</b><small>Easier</small></label>
+      </div>
+    </div>
+    <p class="hint">Each player gets up to 10 guesses.</p>
+  </section>
+
+  <div id="psSetup"></div>
+  <div class="stack">
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <button class="btn ghost" id="backBtn" type="button" hidden>Back to current game</button>
+  </div>
+</main>
+
+<!-- ================= Play ================= -->
+<main class="wrap" id="play" hidden>
+  <div class="topbar">
+    <div class="title"><h1>Codebreaker</h1><div class="sub" id="sub"></div></div>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+  <div id="psBadge" hidden></div>
+  <div class="players" id="players"></div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <section class="boardcard" id="boardCard"></section>
+  <div id="entry"></div>
+</main>
+
+<!-- ================= Menu ================= -->
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mPeek">Show my secret code</button>
+      <button class="btn plain" type="button" id="mRestart">Play again, same players</button>
+      <button class="btn plain" type="button" id="mSetup">Change players or code</button>
+    </div>
+    <h2 style="margin-top:16px">Rules</h2>
+    <ul class="rules" id="menuRules"></ul>
+  </div>
+</dialog>
+
+<dialog id="peekDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="peekTitle">Your code</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="slots" id="peekPegs"></div>
+    <button class="btn" type="button" data-close>Hide it</button>
+  </div>
+</dialog>
+
+<dialog id="winDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="winTitle">Game over</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <p id="winSub" class="hint" style="margin:0 0 8px"></p>
+    <ol class="final" id="finalList"></ol>
+    <div class="stack" style="margin-top:14px">
+      <button class="btn" type="button" id="wRestart" autofocus>Play again</button>
+      <button class="btn ghost" type="button" id="wSetup">Change players or code</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'pebbly_codebreaker', K_UNDO = 'pebbly_codebreaker_undo', K_SET = 'pebbly_codebreaker_settings', K_MEM = 'pebbly_score_memory';
+  var BOT = 'Computer', MAXG = 10;
+  var CNAMES = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown'];
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
+  function tidy(s) { return String(s || '').trim().replace(/\s+/g, ' '); }
+  function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
+  function rnd(n) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+
+  // ================= State =================
+  /* game = { len, colors, rep (repeats allowed), players:[{id,name,bot?}] (2 once everyone's in), level,
+              phase:'set'|'play'|'over', secrets:{pid: hidden code}, guesses:{pid:[{g:[colors], b, w}]}
+              (the guesses pid made at the OTHER player's code), first, cur, tally:{pid:wins}, winner: ix | -1 }
+     Secrets are stored lightly scrambled so they don't show up on screen or at a glance. */
+  var game = load(KEY, null), undo = load(K_UNDO, []);
+  var settings = load(K_SET, { vs: 'people', level: 'hard', len: 4, colors: 6, rep: true, players: [] });
+  var mem = load(K_MEM, { players: [], games: [] }); if (!mem.players) mem.players = [];
+  var sync = null, playFor = -1, botT = null;
+  var entry = [], view = null, cover = null;   // per-phone: the guess being built, whose board is shown, pass-the-phone screen
+  function save() { store(KEY, game); store(K_UNDO, undo); if (sync) sync.push(); }
+  function snap() { undo.push(JSON.stringify(game)); if (undo.length > 200) undo.shift(); }
+  function ready() { return game.players.length === 2; }
+  function cur() { return ready() ? game.players[game.cur] : null; }
+  function other(ix) { return game.players[1 - ix]; }
+  function hasBot() { return game.players.some(function (q) { return q.bot; }); }
+  function gl(pid) { return (game.guesses && game.guesses[pid]) || []; }
+  function solved(pid) { var l = gl(pid); return !!l.length && l[l.length - 1].b === game.len; }
+  function totalGuesses() { return game.players.reduce(function (s, q) { return s + gl(q.id).length; }, 0); }
+  function myTurn() {
+    var p = cur(); if (!p || game.phase !== 'play' || p.bot) return false;
+    return PebblySync.canAct(p.id) || playFor === totalGuesses();
+  }
+  function hide(code, pid) { return code.map(function (c, i) { return String.fromCharCode(97 + ((c + i * 3 + pid.length) % 26)); }).join(''); }
+  function reveal(s, pid) { return s ? s.split('').map(function (ch, i) { return ((ch.charCodeAt(0) - 97 - i * 3 - pid.length) % 26 + 26) % 26; }) : null; }
+  function secretOf(pid) { return reveal(game.secrets[pid], pid); }
+
+  // ================= Rules =================
+  // Clue for a guess: b = right color in the right spot, w = right color in the wrong spot.
+  function score(secret, guess) {
+    var b = 0, cs = {}, cg = {};
+    for (var i = 0; i < secret.length; i++) {
+      if (secret[i] === guess[i]) b++;
+      else { cs[secret[i]] = (cs[secret[i]] || 0) + 1; cg[guess[i]] = (cg[guess[i]] || 0) + 1; }
+    }
+    var w = 0; for (var k in cg) w += Math.min(cg[k], cs[k] || 0);
+    return { b: b, w: w };
+  }
+  function validCode(code) {
+    if (code.length !== game.len || code.some(function (c) { return c == null || c < 0 || c >= game.colors; })) return false;
+    return game.rep || new Set(code).size === code.length;
+  }
+  function randomCode(len, colors, rep) {
+    var c = [];
+    while (c.length < len) { var x = rnd(colors); if (rep || c.indexOf(x) < 0) c.push(x); }
+    return c;
+  }
+  function setSecret(pid, code) {
+    game.secrets[pid] = hide(code, pid);
+    if (ready() && game.players.every(function (q) { return game.secrets[q.id]; })) game.phase = 'play';
+  }
+  function makeGuess(code) {
+    var p = cur(), o = other(game.cur), r = score(secretOf(o.id), code);
+    if (!game.guesses[p.id]) game.guesses[p.id] = [];
+    game.guesses[p.id].push({ g: code, b: r.b, w: r.w });
+    // Both players always get the same number of guesses: the round ends after the second player's turn.
+    var a = game.players[game.first], b = game.players[1 - game.first];
+    var na = gl(a.id).length, nb = gl(b.id).length;
+    if (na === nb && (solved(a.id) || solved(b.id) || na >= MAXG)) {
+      game.phase = 'over';
+      var sa = solved(a.id), sb = solved(b.id);
+      game.winner = sa === sb ? -1 : sa ? game.first : 1 - game.first;
+      if (game.winner > -1) { var w = game.players[game.winner].id; game.tally[w] = (game.tally[w] || 0) + 1; }
+    } else game.cur = 1 - game.cur;
+    return r;
+  }
+
+  // ================= Computer =================
+  var allCache = {};
+  function allCodes(len, colors, rep) {
+    var k = len + '/' + colors + '/' + rep; if (allCache[k]) return allCache[k];
+    var out = [], c = new Array(len).fill(0);
+    for (var n = 0; n < Math.pow(colors, len); n++) {
+      var x = n; for (var i = 0; i < len; i++) { c[i] = x % colors; x = Math.floor(x / colors); }
+      if (rep || new Set(c).size === len) out.push(c.slice());
+    }
+    return (allCache[k] = out);
+  }
+  function sample(arr, n) {
+    if (arr.length <= n) return arr.slice();
+    var out = [], used = {};
+    while (out.length < n) { var i = rnd(arr.length); if (!used[i]) { used[i] = 1; out.push(arr[i]); } }
+    return out;
+  }
+  // Hard: only codes that fit every clue so far, and of those (plus a few others) the guess whose
+  // worst possible clue leaves the fewest codes (Knuth's method, sampled to stay quick).
+  // Easy: a random code that fits some of the clues.
+  function botGuess(history) {
+    var all = allCodes(game.len, game.colors, game.rep), easy = game.level === 'easy';
+    var rows = history;
+    if (easy && history.length > 1) rows = history.filter(function (h, i) { return i === history.length - 1 || rnd(2); });
+    var S = all.filter(function (c) { return rows.every(function (h) { var r = score(c, h.g); return r.b === h.b && r.w === h.w; }); });
+    if (!S.length) S = all;
+    if (easy || S.length <= 2) return S[rnd(S.length)];
+    if (!history.length) {
+      if (game.rep && game.len === 4) { var a = rnd(game.colors), b = (a + 1 + rnd(game.colors - 1)) % game.colors; return [a, a, b, b]; }
+      return S[rnd(S.length)];
+    }
+    var targets = sample(S, 600), pool = sample(S, 250).concat(S.length > 30 ? [] : sample(all, 200));
+    var inS = new Set(S.map(function (c) { return c.join(); }));
+    var best = null, bestWorst = Infinity, bestIn = false;
+    pool.forEach(function (g) {
+      var parts = {}, worst = 0;
+      for (var i = 0; i < targets.length; i++) { var r = score(targets[i], g), k = r.b * 10 + r.w; parts[k] = (parts[k] || 0) + 1; if (parts[k] > worst) worst = parts[k]; }
+      var isIn = inS.has(g.join());
+      if (worst < bestWorst || (worst === bestWorst && isIn && !bestIn)) { best = g; bestWorst = worst; bestIn = isIn; }
+    });
+    return best;
+  }
+  function botTurn() {
+    clearTimeout(botT); botT = null;
+    if (!game || game.phase !== 'play' || !cur() || !cur().bot || $('play').hidden) return;
+    if (PebblySync.active() && !PebblySync.isHost()) return;
+    botT = setTimeout(function () {
+      botT = null;
+      if (!game || game.phase !== 'play' || !cur() || !cur().bot) return;
+      var me = cur(); makeGuess(botGuess(gl(me.id))); view = null; buzz(10); save(); render();
+      if (game.phase === 'over') setTimeout(showWinner, 700);
+    }, 900);
+  }
+
+  // ================= Setup =================
+  var draft = [];
+  function vs() { return document.querySelector('input[name=vs]:checked').value; }
+  function maxHumans() { return vs() === 'bot' ? 1 : 2; }
+  function openSetup() {
+    var src = game || settings;
+    var bot = !!(game ? hasBot() : settings.vs === 'bot');
+    document.querySelector('input[name=vs][value=' + (bot ? 'bot' : 'people') + ']').checked = true;
+    document.querySelector('input[name=level][value=' + (src.level || 'hard') + ']').checked = true;
+    document.querySelector('input[name=len][value="' + (src.len || 4) + '"]').checked = true;
+    document.querySelector('input[name=colors][value="' + (src.colors || 6) + '"]').checked = true;
+    document.querySelector('input[name=rep][value="' + (src.rep === false ? 0 : 1) + '"]').checked = true;
+    var names = game ? game.players.filter(function (p) { return !p.bot; }).map(function (p) { return p.name; }) : settings.players || [];
+    draft = names.map(function (n) { return { id: uid(), name: n }; });
+    $('backBtn').hidden = !(game && game.phase !== 'over' && ready());
+    $('play').hidden = true; $('setup').hidden = false; keepAwake(false); clearTimeout(botT); scrollTo(0, 0);
+    renderSetup();
+  }
+  function renderSetup() {
+    var bot = vs() === 'bot', shared = !bot && sync && sync.shared(), max = maxHumans();
+    $('levelOpt').hidden = !bot;
+    $('psSetup').hidden = bot;
+    if (bot && sync && sync.box && sync.box.shared()) sync.box.set(false);
+    if (draft.length > max) draft.length = max;
+    if (sync && sync.box) sync.box.redraw();
+    var ul = $('setupPlayers'); ul.innerHTML = '';
+    draft.forEach(function (p, i) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num">' + (i + 1) + '</span>';
+      var inp = document.createElement('input'); inp.type = 'text'; inp.maxLength = 16; inp.value = p.name;
+      inp.setAttribute('aria-label', 'Player ' + (i + 1) + ' name');
+      inp.addEventListener('change', function () { var v = tidy(inp.value); if (v) p.name = v; else inp.value = p.name; if (sync && sync.box) sync.box.redraw(); });
+      li.appendChild(inp);
+      [['↑', -1, 'Move up'], ['↓', 1, 'Move down']].forEach(function (m) {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'icon-btn'; b.textContent = m[0];
+        b.setAttribute('aria-label', m[2] + ' ' + p.name);
+        var j = i + m[1]; b.disabled = j < 0 || j >= draft.length;
+        b.addEventListener('click', function () { draft.splice(j, 0, draft.splice(i, 1)[0]); renderSetup(); });
+        li.appendChild(b);
+      });
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'icon-btn x'; x.textContent = '✕';
+      x.setAttribute('aria-label', 'Remove ' + p.name);
+      x.addEventListener('click', function () { draft.splice(i, 1); renderSetup(); });
+      li.appendChild(x); ul.appendChild(li);
+    });
+    if (bot) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="num">2</span><span class="bot">🤖 ' + BOT + '</span>';
+      ul.appendChild(li);
+    }
+    var full = draft.length >= max;
+    $('addPlayerForm').hidden = full;
+    var taken = draft.map(function (p) { return p.name.toLowerCase(); });
+    var left = full ? [] : mem.players.filter(function (n) { return taken.indexOf(n.toLowerCase()) < 0; }).slice(0, 16);
+    var chips = $('playerChips'); chips.innerHTML = '';
+    left.forEach(function (n) {
+      var c = document.createElement('span'); c.className = 'chip';
+      c.innerHTML = '<button type="button" class="add"></button><button type="button" class="forget" aria-label="Forget ' + esc(n) + '">×</button>';
+      c.firstChild.textContent = n;
+      c.firstChild.addEventListener('click', function () { if (draft.length < maxHumans()) draft.push({ id: uid(), name: n }); renderSetup(); });
+      c.lastChild.addEventListener('click', function () { mem.players = mem.players.filter(function (x) { return x !== n; }); store(K_MEM, mem); renderSetup(); });
+      chips.appendChild(c);
+    });
+    var need = shared ? 1 : max;
+    $('playerHint').textContent = bot ? 'You and the computer each hide a code, then race to crack the other’s. You guess first; after that, you take turns going first.'
+      : shared && draft.length < 2 ? 'Just add yourself if the other player will join from their own phone.'
+      : 'The first player guesses first. On one phone, you’ll pass it so each player can hide a code in secret.';
+    var ok = draft.length >= need;
+    $('startBtn').disabled = !ok;
+    $('startBtn').textContent = ok ? 'Start' : bot ? 'Add your name' : 'Add ' + (need - draft.length) + ' more player' + (need - draft.length === 1 ? '' : 's');
+  }
+  document.querySelectorAll('input[name=vs]').forEach(function (r) { r.addEventListener('change', renderSetup); });
+  $('psSetup').addEventListener('click', function () { setTimeout(renderSetup, 0); });
+  $('addPlayerForm').addEventListener('submit', function (e) {
+    e.preventDefault(); var v = tidy($('newPlayer').value); if (!v) return;
+    if (draft.length < maxHumans()) draft.push({ id: uid(), name: v });
+    $('newPlayer').value = ''; renderSetup(); if (!$('addPlayerForm').hidden) $('newPlayer').focus();
+  });
+  $('backBtn').addEventListener('click', showPlay);
+  $('startBtn').addEventListener('click', function () {
+    var pending = tidy($('newPlayer').value);
+    if (pending && draft.length < maxHumans()) { draft.push({ id: uid(), name: pending }); $('newPlayer').value = ''; }
+    var bot = vs() === 'bot', shared = !bot && sync.shared();
+    if (draft.length < (shared ? 1 : maxHumans())) { renderSetup(); return; }
+    if (game && game.phase === 'play' && totalGuesses() && !confirm('Start a new game? The current one will be cleared.')) return;
+    var level = document.querySelector('input[name=level]:checked').value;
+    var len = +document.querySelector('input[name=len]:checked').value, colors = +document.querySelector('input[name=colors]:checked').value;
+    var rep = document.querySelector('input[name=rep]:checked').value === '1';
+    settings = { vs: bot ? 'bot' : 'people', level: level, len: len, colors: colors, rep: rep, players: draft.map(function (p) { return p.name; }) };
+    store(K_SET, settings);
+    draft.slice().reverse().forEach(function (p) {
+      var i = mem.players.findIndex(function (x) { return x.toLowerCase() === p.name.toLowerCase(); });
+      if (i > -1) mem.players.splice(i, 1); mem.players.unshift(p.name);
+    });
+    mem.players.length = Math.min(mem.players.length, 40); store(K_MEM, mem);
+    var players = draft.map(function (p) { return { id: uid(), name: p.name }; });
+    if (bot) players.push({ id: 'bot', name: BOT, bot: true });
+    newGame({ len: len, colors: colors, rep: rep, level: level, players: players, first: 0, tally: {} });
+    sync.started(shared ? game.players[Math.min(sync.box.meIndex(), game.players.length - 1)] : null);
+  });
+
+  // ================= Game flow =================
+  function newGame(cfg) {
+    game = { len: cfg.len, colors: cfg.colors, rep: cfg.rep, level: cfg.level, players: cfg.players, phase: 'set',
+             secrets: {}, guesses: {}, first: cfg.first, cur: cfg.first, tally: cfg.tally || {}, winner: null };
+    game.players.forEach(function (q) { if (q.bot) game.secrets[q.id] = hide(randomCode(game.len, game.colors, game.rep), q.id); });
+    undo = []; playFor = -1; entry = []; view = null; cover = null; save(); showPlay();
+  }
+  function restart() {
+    if (game.phase === 'play' && totalGuesses() && !confirm('Start over with the same players?')) return;
+    $('menuDlg').close(); if ($('winDlg').open) $('winDlg').close();
+    newGame({ len: game.len, colors: game.colors, rep: game.rep, level: game.level, players: game.players,
+              first: 1 - game.first, tally: game.tally });
+  }
+
+  // ================= Render =================
+  function showPlay() {
+    $('setup').hidden = true; $('play').hidden = false;
+    keepAwake(true); render();
+    if (game.phase === 'over') setTimeout(showWinner, 100);
+  }
+  function peg(c, cls, label) {
+    if (c == null) return '<span class="peg empty ' + (cls || '') + '"></span>';
+    return '<span class="peg c' + c + ' ' + (cls || '') + '"' + (label ? ' aria-label="' + CNAMES[c] + '"' : '') + '>' + (c + 1) + '</span>';
+  }
+  function keysHTML(b, w) {
+    var h = '';
+    for (var i = 0; i < game.len; i++) h += '<i class="' + (i < b ? 'b' : i < b + w ? '' : 'o') + '"></i>';
+    return '<span class="keys' + (game.len > 4 ? ' k5' : '') + '" aria-hidden="true">' + h + '</span>';
+  }
+  function clueText(b, w) {
+    return b === game.len ? 'cracked it' : b + ' in the right spot, ' + w + ' right color in the wrong spot';
+  }
+  // The player whose secret this phone may set now (on one phone: the next one without a code).
+  function setter() {
+    var me = PebblySync.me(), list = game.players.filter(function (q) { return !q.bot && !game.secrets[q.id] && PebblySync.canAct(q.id); });
+    return list.filter(function (q) { return q.id === me; })[0] || list[0] || null;
+  }
+  function render() {
+    if (!game) return;
+    $('undoBtn').disabled = !undo.length;
+    $('sub').textContent = game.len + ' pegs · ' + game.colors + ' colors' + (game.rep ? '' : ' · no repeats') + (hasBot() ? ' · ' + (game.level === 'easy' ? 'Easy' : 'Hard') : '');
+    var p = cur(), shownIx = view != null ? view : game.phase === 'set' ? -1 : game.cur;
+    var ph = '';
+    [0, 1].forEach(function (ix) {
+      var q = game.players[ix], n = q ? gl(q.id).length : 0;
+      var small = !q ? '&nbsp;' : game.phase === 'set' ? (game.secrets[q.id] ? 'code hidden ✓' : 'hiding a code…')
+        : solved(q.id) ? '✓ cracked in ' + n : n + ' of ' + MAXG + ' guesses';
+      ph += '<button type="button" class="pl' + (p && q === p && game.phase === 'play' ? ' cur' : '') + '" data-view="' + ix + '" aria-pressed="' + (shownIx === ix) + '"' + (q ? '' : ' disabled') + '><span class="nm">' +
+        (q ? esc(q.name) : '<i style="font-weight:500;color:var(--muted)">Waiting…</i>') + (q && PebblySync.me() === q.id ? ' <small style="display:inline">(you)</small>' : '') + '<small>' + small + '</small></span>' +
+        '<span class="wins" title="Games won">' + (q ? (game.tally[q.id] || 0) : '') + '</span></button>';
+    });
+    $('players').innerHTML = ph;
+    var st = $('status'); st.className = 'status';
+    if (!ready() && game.phase !== 'set') { st.textContent = 'Waiting for the other player to join with the code…'; $('boardCard').innerHTML = ''; $('entry').innerHTML = ''; return; }
+    if (game.phase === 'set') return renderSet();
+    if (game.phase === 'over') {
+      st.textContent = game.winner === -1 ? 'It’s a tie!' : '🎉 ' + game.players[game.winner].name + ' wins!'; st.className = 'status good';
+    } else if (p.bot) st.textContent = '🤖 ' + BOT + ' is guessing…';
+    else {
+      var o = other(game.cur);
+      st.textContent = solved(o.id) ? o.name + ' cracked it! ' + p.name + ', one last guess to tie.' : p.name + '’s turn: crack ' + o.name + '’s code';
+    }
+    renderBoard(shownIx);
+    renderEntry(shownIx);
+    botTurn();
+  }
+  function renderBoard(ix) {
+    var q = game.players[ix], o = other(ix), list = gl(q.id), over = game.phase === 'over';
+    var code = over ? secretOf(o.id) : null, h = '';
+    h += '<div class="bhead"><span class="t">' + esc(q.name) + '’s guesses<small>at ' + esc(o.name) + '’s secret code</small></span></div><ul class="rows">';
+    h += '<li class="row secret"><span class="n">🔒</span><span class="pegs">';
+    for (var i = 0; i < game.len; i++) h += code ? peg(code[i], '', true) : '<span class="peg hid" aria-hidden="true">?</span>';
+    h += '</span><span class="keys"></span></li>';
+    list.forEach(function (r, k) {
+      h += '<li class="row' + (r.b === game.len ? ' win' : '') + '" aria-label="Guess ' + (k + 1) + ': ' + r.g.map(function (c) { return CNAMES[c]; }).join(', ') + '. ' + clueText(r.b, r.w) + '">' +
+        '<span class="n">' + (k + 1) + '</span><span class="pegs">' + r.g.map(function (c) { return peg(c); }).join('') + '</span>' + keysHTML(r.b, r.w) + '</li>';
+    });
+    h += '</ul>';
+    if (!list.length) h += '<p class="empty-msg">No guesses yet.</p>';
+    h += '<div class="legend"><span><i class="b"></i>right spot</span><span><i></i>right color, wrong spot</span></div>';
+    $('boardCard').innerHTML = h;
+  }
+  function paletteHTML(disabledFn) {
+    var per = game.colors === 8 ? 4 : 6, h = '<div class="palette" style="grid-template-columns:repeat(' + per + ',1fr)">';
+    for (var c = 0; c < game.colors; c++) h += '<button type="button" data-color="' + c + '" aria-label="' + CNAMES[c] + '"' + (disabledFn && disabledFn(c) ? ' disabled' : '') + '>' + peg(c) + '</button>';
+    return h + '</div>';
+  }
+  function slotsHTML() {
+    var h = '<div class="slots" id="slots">', next = firstEmpty();
+    for (var i = 0; i < game.len; i++) h += '<button type="button" class="slot' + (i === next ? ' next' : '') + '" data-slot="' + i + '" aria-label="Spot ' + (i + 1) + (entry[i] != null ? ', ' + CNAMES[entry[i]] + ', tap to clear' : ', empty') + '">' + peg(entry[i]) + '</button>';
+    return h + '</div>';
+  }
+  function firstEmpty() { for (var i = 0; i < game.len; i++) if (entry[i] == null) return i; return -1; }
+  function usedColor(c) { return !game.rep && entry.indexOf(c) > -1; }
+  function renderEntry(shownIx) {
+    var el = $('entry'), p = cur();
+    if (game.phase === 'over') { el.innerHTML = '<div class="acts one"><button class="btn" type="button" data-a="again">Play again</button></div>'; return; }
+    if (p.bot) { el.innerHTML = ''; return; }
+    if (!myTurn()) {
+      var nm = esc(p.name);
+      el.innerHTML = '<div class="ps-wait">⏳ ' + nm + ' is guessing on their phone.<br><button type="button" data-a="playfor">Play for ' + nm + ' from this phone</button></div>';
+      return;
+    }
+    if (shownIx !== game.cur) { el.innerHTML = '<div class="acts one"><button class="btn ghost" type="button" data-view="' + game.cur + '">Back to ' + esc(p.name) + '’s guesses</button></div>'; return; }
+    var full = firstEmpty() < 0;
+    el.innerHTML = '<div class="card entry">' + slotsHTML() + paletteHTML(usedColor) +
+      '<div class="acts"><button class="btn plain" type="button" data-a="clear"' + (entry.some(function (c) { return c != null; }) ? '' : ' disabled') + '>Clear</button>' +
+      '<button class="btn" type="button" data-a="guess"' + (full ? '' : ' disabled') + '>' + (full ? 'Guess' : 'Pick ' + game.len + ' colors') + '</button></div></div>';
+  }
+  function renderSet() {
+    var st = $('status'), s = setter(), waiting = game.players.filter(function (q) { return !game.secrets[q.id]; });
+    if (cover && (!s || cover !== s.id)) cover = null;
+    st.textContent = ready() ? 'Hide your secret codes' : 'Waiting for the other player to join with the code…';
+    var h = '<ul class="setlist">' + game.players.map(function (q) {
+      return '<li><span>' + esc(q.name) + '</span><span>' + (game.secrets[q.id] ? '✓ code hidden' : 'not yet') + '</span></li>';
+    }).join('') + '</ul>';
+    $('boardCard').innerHTML = h;
+    var el = $('entry');
+    if (!s && !ready()) { el.innerHTML = ''; return; }
+    if (!s) {
+      el.innerHTML = '<div class="card cover"><div class="big">⏳</div><h2>Waiting for ' + esc(waiting.map(function (q) { return q.name; }).join(' and ')) + '</h2><p>They’re hiding their code on their own phone.</p></div>';
+      return;
+    }
+    // No pass-the-phone screen on your own phone, or against the computer.
+    var direct = (PebblySync.active() && PebblySync.me() === s.id) || hasBot();
+    if (!direct && cover !== s.id) {
+      el.innerHTML = '<div class="card cover"><div class="big">🤫</div><h2>Pass the phone to ' + esc(s.name) + '</h2><p>' + (other(game.players.indexOf(s)) ? esc(other(game.players.indexOf(s)).name) + ', no' : 'No') + ' peeking!</p>' +
+        '<button class="btn" type="button" data-a="cover" data-pid="' + esc(s.id) + '">I’m ' + esc(s.name) + ': hide my code</button></div>';
+      return;
+    }
+    var full = firstEmpty() < 0;
+    el.innerHTML = '<div class="card entry"><h2 style="text-align:center">' + esc(s.name) + ', pick your secret code</h2>' + slotsHTML() + paletteHTML(usedColor) +
+      '<div class="acts"><button class="btn plain" type="button" data-a="random">🎲 Random</button>' +
+      '<button class="btn" type="button" data-a="lock" data-pid="' + esc(s.id) + '"' + (full ? '' : ' disabled') + '>' + (full ? 'Hide this code' : 'Pick ' + game.len + ' colors') + '</button></div></div>';
+  }
+
+  // ================= Events =================
+  $('play').addEventListener('click', function (e) {
+    var v = e.target.closest('[data-view]');
+    if (v && game.phase !== 'set') { var ix = +v.dataset.view; view = ix === game.cur && game.phase === 'play' ? null : ix; render(); return; }
+    var col = e.target.closest('[data-color]');
+    if (col && !col.disabled) { var i = firstEmpty(); if (i > -1 && !usedColor(+col.dataset.color)) { entry[i] = +col.dataset.color; buzz(5); render(); } return; }
+    var sl = e.target.closest('[data-slot]');
+    if (sl) { entry[+sl.dataset.slot] = null; render(); return; }
+    var a = e.target.closest('[data-a]'); if (!a || a.disabled) return;
+    switch (a.dataset.a) {
+      case 'clear': entry = []; render(); break;
+      case 'random': entry = randomCode(game.len, game.colors, game.rep); render(); break;
+      case 'cover': cover = a.dataset.pid; entry = []; render(); break;
+      case 'lock':
+        if (!validCode(entry)) return;
+        snap(); setSecret(a.dataset.pid, entry.slice()); entry = []; cover = null; buzz(20); save(); render(); break;
+      case 'guess':
+        if (!myTurn() || !validCode(entry)) return;
+        snap(); var r = makeGuess(entry.slice()); entry = []; view = null;
+        buzz(r.b === game.len ? [40, 60, 120] : 15); save(); render();
+        if (game.phase === 'over') setTimeout(showWinner, 700);
+        break;
+      case 'playfor': playFor = totalGuesses(); render(); break;
+      case 'again': restart(); break;
+    }
+  });
+  $('undoBtn').addEventListener('click', function () {
+    if (!undo.length) return; clearTimeout(botT);
+    game = JSON.parse(undo.pop()); entry = []; view = null; cover = null; save(); buzz(); if ($('winDlg').open) $('winDlg').close(); render();
+  });
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  });
+  $('menuBtn').addEventListener('click', function () {
+    $('menuRules').innerHTML = [
+      'Each player hides a secret code of <b>' + game.len + '</b> colored pegs' + (game.rep ? ' (a color can be used more than once)' : ' (no color twice)') + '.',
+      'Take turns guessing the other player’s code. After each guess you get a clue: a <b>filled dot</b> for each peg that’s the right color in the right spot, and an <b>open dot</b> for each one that’s the right color but in the wrong spot. The dots don’t say which pegs they mean.',
+      'Both players always get the same number of guesses. If the first player cracks the code, the second player gets one last guess to tie.',
+      'Fewest guesses wins. Nobody cracks it in ' + MAXG + ' guesses? It’s a tie.',
+      'Tap a player’s name to look at their guesses.'
+    ].map(function (r) { return '<li>' + r + '</li>'; }).join('');
+    var mine = myPeekId();
+    $('mPeek').hidden = !mine;
+    $('menuDlg').showModal();
+  });
+  // Whose code this phone may show: on a shared game, this phone's player; on one phone, the player whose turn it is.
+  function myPeekId() {
+    if (!game || !ready()) return null;
+    var me = PebblySync.me(); if (me && game.secrets[me]) return me;
+    var p = cur(); return p && !p.bot && game.secrets[p.id] && !PebblySync.active() ? p.id : null;
+  }
+  $('mPeek').addEventListener('click', function () {
+    var id = myPeekId(); if (!id) return;
+    var q = game.players.filter(function (x) { return x.id === id; })[0];
+    if (!confirm('Show ' + q.name + '’s secret code? Make sure nobody else is looking.')) return;
+    $('menuDlg').close();
+    $('peekTitle').textContent = q.name + '’s secret code';
+    $('peekPegs').innerHTML = secretOf(id).map(function (c) { return '<span class="slot">' + peg(c, '', true) + '</span>'; }).join('');
+    $('peekDlg').showModal();
+  });
+  $('mRestart').addEventListener('click', restart);
+  $('wRestart').addEventListener('click', restart);
+  $('mSetup').addEventListener('click', function () { $('menuDlg').close(); openSetup(); });
+  $('wSetup').addEventListener('click', function () { $('winDlg').close(); openSetup(); });
+  function showWinner() {
+    if (game.phase !== 'over' || $('winDlg').open || $('play').hidden) return;
+    $('winTitle').textContent = game.winner === -1 ? 'It’s a tie!' : '🎉 ' + game.players[game.winner].name + ' wins!';
+    var sv = game.players.filter(function (q) { return solved(q.id); });
+    $('winSub').textContent = !sv.length ? 'Nobody cracked a code in ' + MAXG + ' guesses.' : sv.length === 2 ? 'Both cracked it in ' + gl(sv[0].id).length + ' guesses.'
+      : sv[0].name + ' cracked it in ' + gl(sv[0].id).length + (gl(sv[0].id).length === 1 ? ' guess.' : ' guesses.');
+    $('finalList').innerHTML = game.players.map(function (q, ix) {
+      var w = game.tally[q.id] || 0, n = gl(q.id).length;
+      return '<li><span class="nm">' + esc(q.name) + ' <small>' + (solved(q.id) ? 'cracked it in ' + n : 'not cracked') + ' · ' + w + (w === 1 ? ' win' : ' wins') + '</small></span>' +
+        '<span class="pegs" aria-label="' + esc(q.name) + '’s code">' + secretOf(q.id).map(function (c) { return peg(c, '', true); }).join('') + '</span></li>';
+    }).join('');
+    $('winDlg').showModal();
+  }
+
+  if (game && game.players && game.secrets) showPlay(); else { game = null; openSetup(); }
+
+  // Play together (see /play/sync.js).
+  sync = PebblySync.wire('codebreaker', {
+    setupEl: $('psSetup'), joinEl: $('psJoin'), badgeEl: $('psBadge'),
+    names: function () { return draft.map(function (p) { return p.name; }); },
+    getGame: function () { return game; },
+    setGame: function (g) { game = g; store(KEY, game); },
+    clearUndo: function () { undo = []; store(K_UNDO, undo); },
+    render: function () { if (game && !$('play').hidden) render(); },
+    showPlay: showPlay,
+    players: function (g) { return (g.players || []).filter(function (p) { return !p.bot; }); },
+    addPlayer: function (g, id, name) { if (g.players.length < 2 && g.phase === 'set') g.players.push({ id: id, name: name }); },
+    onRemote: function (prev, next) {
+      if (!prev || !next) return;
+      if (totalGuessesOf(next) !== totalGuessesOf(prev)) { view = null; buzz(15); }
+      if (prev.phase !== 'over' && next.phase === 'over') setTimeout(showWinner, 700);
+      if (prev.phase === 'over' && next.phase !== 'over') { entry = []; if ($('winDlg').open) $('winDlg').close(); }
+    }
+  });
+  function totalGuessesOf(g) { return Object.keys(g.guesses || {}).reduce(function (s, k) { return s + g.guesses[k].length; }, 0); }
+  renderSetup();
+
+  // Exposed for automated checks only.
+  window.__cb = { score: score, botGuess: botGuess, secretOf: secretOf, allCodes: allCodes, game: function () { return game; } };
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

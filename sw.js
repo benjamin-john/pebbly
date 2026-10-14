@@ -13,7 +13,7 @@ const CACHE = 'pebbly-v3';
 const FONTS = 'pebbly-fonts';
 const PAGES = ['/', '/install/',
   '/rsvp/', '/whichdayworks/', '/poll/', '/signup/', '/bill/', '/list/', '/santa/',
-  '/bracket/', '/darts/', '/dots/', '/farkle/', '/gomoku/', '/mancala/', '/timer/', '/kwiks/', '/namegame/', '/score/', '/teams/', '/trivia/', '/live/', '/join/', '/admin/',
+  '/bracket/', '/codebreaker/', '/darts/', '/dots/', '/farkle/', '/gomoku/', '/mancala/', '/timer/', '/kwiks/', '/namegame/', '/score/', '/teams/', '/trivia/', '/live/', '/join/', '/admin/',
   '/qwixx/'];
 const FILES = ['/theme.js', '/nav.js', '/keepawake.js', '/play/sync.js', '/lock.js', '/doc.js', '/migrate.js',
   '/rsvp/config.js', '/poll/config.js', '/whichdayworks/config.js',

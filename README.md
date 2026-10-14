@@ -20,6 +20,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/trivia/` | Trivia: family quiz; sets made by hand or imported from AI-written JSON; one phone or everyone's phones |
 | `/score/` | Score Keeper: per-round scores for any game |
 | `/darts/` | Darts Scorer: '01 (301/501/701/901, straight/double/master out, double in) and Cricket (standard or cut-throat) |
+| `/codebreaker/` | Codebreaker (Mastermind-style duel): each hides a color code, fewest guesses to crack the other's wins; a friend or the computer, play together |
 | `/dots/` | Dots and Boxes: 2–4 players or the computer, 3×3 to 6×6 boxes, play together |
 | `/gomoku/` | Gomoku: five in a row on 13/15/19 boards, a friend or the computer, play together |
 | `/mancala/` | Mancala (Kalah): sowing, captures and extra turns, a friend or the computer, play together |
