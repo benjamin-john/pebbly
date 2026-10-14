@@ -16,18 +16,18 @@
   color-scheme:light dark;
   --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
   --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8;
-  --hit:#3E9B5C; --near:#D1A421; --miss:#7C8784; --key:#DCE3E0; --tile-line:#C9D2CE;
+  --hit:#3E9B5C; --near:#D1A421; --miss:#7C8784; --key:#DCE3E0; --key-ink:#1F2A27; --key-off:#7C8784; --key-off-ink:#E9EEEC; --tile-line:#C9D2CE;
   --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
     --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
-    --hit:#3E8E57; --near:#B38B1D; --miss:#3E4846; --key:#33403B; --tile-line:#3E4C46; color-scheme:dark; }
+    --hit:#3E8E57; --near:#B38B1D; --miss:#3E4846; --key:#5E6C67; --key-ink:#FFFFFF; --key-off:#1A201E; --key-off-ink:#56625E; --tile-line:#3E4C46; color-scheme:dark; }
 }
 :root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
     --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
-    --hit:#3E8E57; --near:#B38B1D; --miss:#3E4846; --key:#33403B; --tile-line:#3E4C46; color-scheme:dark; }
+    --hit:#3E8E57; --near:#B38B1D; --miss:#3E4846; --key:#5E6C67; --key-ink:#FFFFFF; --key-off:#1A201E; --key-off-ink:#56625E; --tile-line:#3E4C46; color-scheme:dark; }
 :root[data-theme=light]{color-scheme:light;}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
@@ -118,11 +118,12 @@ input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid v
 .kb{display:grid;gap:6px;user-select:none;-webkit-user-select:none;max-width:500px;margin:0 auto}
 .kr{display:flex;gap:5px;justify-content:center}
 .k{all:unset;box-sizing:border-box;flex:1 1 0;max-width:44px;height:var(--key-h,52px);display:grid;place-items:center;border-radius:7px;background:var(--key);
-  font:700 16px/1 var(--body);text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;color:var(--ink)}
+  font:700 16px/1 var(--body);text-transform:uppercase;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;color:var(--key-ink)}
 .k.wide{flex:1.6 1 0;max-width:70px;font-size:13px}
 .k:active{filter:brightness(.88)}
-.k.h,.k.n,.k.m{color:#fff}
-.k.h{background:var(--hit)}.k.n{background:var(--near)}.k.m{background:var(--miss)}
+.k.h,.k.n{color:#fff}
+.k.h{background:var(--hit)}.k.n{background:var(--near)}
+.k.m{background:var(--key-off);color:var(--key-off-ink)}   /* not in the word: greyed out */
 .k:focus-visible{outline:3px solid var(--brand);outline-offset:1px}
 .after{display:grid;gap:8px;margin-top:8px}
 .ps-badge{margin-bottom:6px}
@@ -332,7 +333,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   // ================= Guessing =================
   function canType() { var me = myId(); return !!me && !!game.boards[me] && !roundOver() && !solvedBy(me) && !outOf(me); }
-  function addLetter(ch) { if (!canType() || typed.length >= 5) return; typed += ch; buzz(5); render(); var t = document.querySelector('.grow.cur .tile:nth-child(' + typed.length + ')'); if (t) t.classList.add('pop'); }
+  function addLetter(ch) { if (!canType() || typed.length >= 5) return; typed += ch; render(); var t = document.querySelector('.grow.cur .tile:nth-child(' + typed.length + ')'); if (t) t.classList.add('pop'); }
   function backspace() { if (!canType() || !typed) return; typed = typed.slice(0, -1); render(); }
   function submit() {
     if (!canType()) return;
@@ -343,7 +344,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     if (typed === word()) { b.at = Date.now(); }
     revealRow = b.g.length - 1; typed = '';
     if (game.mode === 'solo' && (solvedBy(me) || outOf(me))) recordSolo(solvedBy(me), b.g.length);
-    buzz(solvedBy(me) ? [40, 60, 120] : 12); save(); render();
+    if (solvedBy(me)) buzz([40, 60, 120]); save(); render();
     if (roundOver() || (game.mode === 'solo' && (solvedBy(me) || outOf(me)))) setTimeout(showEnd, 1700);
     else if (outOf(me)) msg('Out of guesses. Watch the others…', 'bad');
   }

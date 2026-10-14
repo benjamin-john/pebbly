@@ -14,7 +14,7 @@ const shot = (p, name, full) => process.env.SHOTS ? p.screenshot({ path: process
 async function mk(browser) {
   const p = await phone(browser, devices, DB);
   await p.context().route('**cloudflareinsights**', r => r.abort());
-  await p.context().addInitScript(() => { navigator.vibrate = () => true; });
+  await p.context().addInitScript(() => { window.__vib = 0; navigator.vibrate = () => { window.__vib++; return true; }; });
   return p;
 }
 async function waitFor(p, fn, arg, ms) { try { await p.waitForFunction(fn, arg, { timeout: ms || 8000 }); return true; } catch (e) { return false; } }
@@ -52,7 +52,9 @@ const wrong = (p, avoid) => p.evaluate(a => window.__wd.ANSWERS.find(x => x !== 
   check((await p.textContent('#status')).includes('Not in the word list'), 'not a word refused');
   await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace'); await p.keyboard.press('Backspace');
   const w1 = await wrong(p, w);
+  await p.evaluate(() => { window.__vib = 0; });
   await tapWord(p, w1);
+  check(await p.evaluate(() => window.__vib) === 0, 'no vibration while typing or on an ordinary guess');
   check(await p.locator('.grow:first-child .tile.m').count() === 5, 'first guess: all gray (' + w1 + ' vs ' + w + ')');
   check(await p.locator('.k.m').count() === new Set(w1).size, 'keyboard grays the used letters');
   await shot(p, 'wd-solo');
@@ -83,6 +85,10 @@ const wrong = (p, avoid) => p.evaluate(a => window.__wd.ANSWERS.find(x => x !== 
   await p.click('[data-a=next]');
   await typeWord(p, 'crane'); await typeWord(p, 'moist');
   check(await p.evaluate(() => getComputedStyle(document.body).backgroundColor) === 'rgb(20, 26, 24)', 'dark mode');
+  // letters not in the word stand out from unused keys (clearly darker in dark mode)
+  const lum = await p.evaluate(() => { const L = el => { const m = getComputedStyle(el).backgroundColor.match(/\d+/g).map(Number); return 0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]; };
+    return [L(document.querySelector('.k.m')), L(document.querySelector('.k:not(.m):not(.h):not(.n):not(.wide)'))]; });
+  check(lum[1] - lum[0] > 50, 'dark mode: wrong letters greyed out (' + lum.map(Math.round) + ')');
   await shot(p, 'wd-dark');
   await p.evaluate(() => localStorage.removeItem('pebbly_theme'));
   // small phone: everything fits without scrolling
