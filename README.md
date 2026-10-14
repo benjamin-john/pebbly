@@ -11,6 +11,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/signup/` | Sign-up Sheet: slots people sign up for from a link, live (Supabase, doc.js) |
 | `/bill/` | Split the Bill: shared expenses (equal or exact splits), balances and fewest payments to settle up (Supabase, doc.js) |
 | `/list/` | Shared List: groceries/packing/to-do list everyone edits live, with sections (Supabase, doc.js) |
+| `/babynames/` | Baby Names: two people swipe names (stars for likes), see the ones they both like, reorder and comment; 2,700+ built-in US names with nicknames and popularity, own suggestions, AI imports (Supabase, doc.js) |
 | `/santa/` | Secret Santa: names, exclusions and a private draw; each phone sees only its own match (Supabase) |
 | `/teams/` | Team Picker: random teams, pick someone, shuffle turn order |
 | `/timer/` | Game Timer: turn clock (time bank or per turn) and countdown with buzzer |
