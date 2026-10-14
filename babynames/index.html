@@ -3367,7 +3367,8 @@ function cardHtml(e, back) {
     '<span class="stamp like" aria-hidden="true">LIKE</span><span class="stamp nope" aria-hidden="true">NOPE</span>' +
     gTag(e.g) + '<div class="big' + (e.n.length > 9 ? ' long' : '') + '">' + esc(e.n) + '</div>' +
     (e.alt.length ? '<div class="alts">Also: <b>' + e.alt.map(esc).join('</b> · <b>') + '</b></div>' : '<div class="alts">No common nicknames</div>') +
-    popHtml(e) + (src ? '<div class="src">' + src + '</div>' : '') + '</div>';
+    popHtml(e) + (src ? '<div class="src">' + src + '</div>' : '') +
+    (back ? '' : '<button type="button" class="addnote" data-act="detail" data-k="' + esc(e.k) + '" data-alt="1">＋ Add a nickname</button>') + '</div>';
 }
 function renderSwipe(info) {
   var vw = $('#view');
@@ -3411,7 +3412,7 @@ function bindCard(el) {
   }
   function reset() { dragging = false; el.style.transition = 'transform .2s'; set(0); }
   el.addEventListener('pointerdown', function (ev) {
-    if (ev.button || busy || gone) return;
+    if (ev.button || busy || gone || ev.target.closest('button')) return;
     pid = ev.pointerId; sx = ev.clientX; sy = ev.clientY; dx = 0; dragging = true; el.style.transition = 'none';
     try { el.setPointerCapture(pid); } catch (e) {}
   });
@@ -3620,9 +3621,12 @@ function closeDialogs() { openDlgs.slice().forEach(function (d) { try { d.close(
 function head(t) { return '<div class="dlghead"><h2>' + t + '</h2><button type="button" class="icon-btn" data-close aria-label="Close">✕</button></div>'; }
 
 // One name: details, your rating (or change your mind), the other person's, and comments.
-function openName(k, toNote) {
+function openName(k, toNote, toAlt) {
   var e = ent(k); if (!e) { toast('That name was removed.'); return; }
   var d = dialog('<div class="in">' + head(esc(e.n)) + '<div id="dTop"></div>' +
+    '<div class="dsec"><h3>Nicknames and other spellings</h3><div id="dAlts"></div>' +
+    '<form id="altForm" class="linkbox" novalidate autocomplete="off" style="margin-top:8px"><input type="text" name="alt" maxlength="60" placeholder="Add one, e.g. Beck" aria-label="Add a nickname" autocapitalize="words">' +
+    '<button type="submit" class="btn primary small">Add</button></form></div>' +
     '<div class="dsec"><h3>Comments</h3><div id="dNotes"></div>' +
     '<form id="noteForm" novalidate autocomplete="off" style="margin-top:8px"><textarea name="t" rows="2" maxlength="' + MAX_NOTE + '" placeholder="Middle name ideas, who it’s after, how it sounds with our last name…" style="min-height:64px"></textarea>' +
     '<div class="dlgbtns"><button type="submit" class="btn primary small">Add comment</button></div></form></div><div id="dFoot"></div></div>');
@@ -3630,7 +3634,6 @@ function openName(k, toNote) {
     e = ent(k); if (!e) { d.close(); return; }
     var mv = vote(me(), k), ov = vote(other(), k), c = own(S.names, k);
     $('#dTop', d).innerHTML = '<div class="dinfo">' + gTag(e.g) + (mv >= 1 && ov >= 1 ? '<span class="tag">💚 You both like it</span>' : '') + '</div>' +
-      '<p style="text-align:center;margin-top:8px;color:var(--muted)">' + (e.alt.length ? 'Also: <b style="color:var(--ink)">' + e.alt.map(esc).join(' · ') + '</b>' : 'No common nicknames') + '</p>' +
       '<div style="display:flex;justify-content:center;margin-top:10px">' + popHtml(e) + '</div>' +
       (e.by ? '<p class="hint" style="text-align:center;margin-top:8px">' + (e.ai ? '✨ From the AI list “' + esc((own(S.lists, e.ai) || {}).label || 'AI') + '”, added by ' : '💡 Suggested by ') + esc(who(e.by)) + '</p>' : '') +
       '<div class="dsec"><h3>Your rating</h3><div class="myrate"><div class="stars sm">' + starRow(mv >= 1 ? mv : 0, 'data-rate') + '</div>' +
@@ -3639,6 +3642,12 @@ function openName(k, toNote) {
       '<div class="dsec"><h3>' + esc(who(other())) + '</h3><p>' + (mv === undefined && ov !== undefined ? '<span class="hint">Rate it first to see what ' + esc(who(other())) + ' thought.</span>' :
         ov >= 1 ? stars5(ov) : ov === 0 ? 'Not a fan (swiped left)' : '<span class="hint">Hasn’t seen it yet.</span>') + '</p></div>';
     $('#dNotes', d).innerHTML = notesHtml(k) || '<p class="hint">No comments yet.</p>';
+    var added = c && Array.isArray(c.alt) ? c.alt.map(key) : [], builtIn = own(CAT, k);
+    $('#dAlts', d).innerHTML = e.alt.length ? '<div class="chiplist" style="padding:0">' + e.alt.map(function (a) {
+      var mine = added.indexOf(key(a)) > -1 && !(builtIn && builtIn.alt.some(function (x) { return key(x) === key(a); }));
+      return '<span class="nchip" style="cursor:default">' + esc(a) + (mine ? '<button type="button" class="x" data-delalt="' + esc(a) + '" aria-label="Remove ' + esc(a) + '" ' +
+        'style="border:0;background:none;color:var(--muted);cursor:pointer;min-width:28px;min-height:32px;padding:0;margin-right:-6px">✕</button>' : '') + '</span>';
+    }).join('') + '</div>' : '<p class="hint">None yet.</p>';
     $('#dFoot', d).innerHTML = c && c.n && !own(CAT, k) && c.by === me() ? '<div class="dlgbtns" style="margin-top:18px"><button type="button" class="btn small danger" data-x="remove">Remove this name</button></div>' : '';
   }
   fill();
@@ -3652,12 +3661,34 @@ function openName(k, toNote) {
       toast(v ? 'Rated ' + v + ' star' + (v > 1 ? 's' : '') + '.' : 'Marked as not for us.');
       return;
     }
+    var da = ev.target.closest('[data-delalt]');
+    if (da) {
+      var ak = key(da.getAttribute('data-delalt'));
+      change(function (s) {
+        var c = s.names[k]; if (!c || !Array.isArray(c.alt)) return;
+        c.alt = c.alt.filter(function (a) { return key(a) !== ak; });
+        if (!c.alt.length && own(CAT, k) && Object.keys(c).length === 1) delete s.names[k];
+      });
+      fill(); return;
+    }
     var dn = ev.target.closest('[data-act=delnote]');
     if (dn) { delNote(dn.getAttribute('data-k'), dn.getAttribute('data-id')); fill(); return; }
     if (ev.target.closest('[data-x=remove]')) {
       if (!confirm('Remove “' + e.n + '” for both of you?')) return;
       if (change(function (s) { delete s.names[k]; delete s.votes.a[k]; delete s.votes.b[k]; delete s.rank[k]; delete s.notes[k];
         Object.keys(s.lists).forEach(function (id) { var l = s.lists[id]; if (l && Array.isArray(l.keys)) l.keys = l.keys.filter(function (x) { return x !== k; }); }); })) { d.close(); toast('Removed.'); }
+    }
+  });
+  var af = $('#altForm', d);
+  af.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var have = {}; ent(k).alt.forEach(function (a) { have[key(a)] = 1; }); have[k] = 1;
+    var add = String(af.alt.value || '').split(/[,;\/]/).map(function (a) { return cap(a).slice(0, 30); })
+      .filter(function (a) { var ak = key(a); if (!ak || have[ak]) return false; have[ak] = 1; return true; });
+    if (!add.length) { af.alt.value = ''; af.alt.focus(); return; }
+    if (change(function (s) { var c = s.names[k] = s.names[k] || {}; c.alt = (Array.isArray(c.alt) ? c.alt : []).concat(add).slice(0, 12); })) {
+      af.alt.value = ''; fill(); toast('Added ' + add.join(', ') + '.');
+      if (view() === 'swipe' && shownKey === k) renderSwipe({ force: true });
     }
   });
   var f = $('#noteForm', d);
@@ -3667,7 +3698,7 @@ function openName(k, toNote) {
     var by = me();
     if (change(function (s) { s.notes[k] = s.notes[k] || {}; s.notes[k][PebblyDoc.id()] = { by: by, t: t, at: Date.now() }; })) { f.t.value = ''; fill(); toast('Comment added.'); }
   });
-  if (toNote) f.t.focus();
+  if (toNote) f.t.focus(); else if (toAlt) af.alt.focus();
 }
 function delNote(k, id) { change(function (s) { if (s.notes[k]) { delete s.notes[k][id]; if (!Object.keys(s.notes[k]).length) delete s.notes[k]; } }); }
 
@@ -4005,7 +4036,7 @@ $app.addEventListener('click', function (ev) {
     case 'undo': undo(); break;
     case 'suggest': openSuggest(t.getAttribute('data-n') || ''); break;
     case 'ai': openAI(); break;
-    case 'detail': openName(k, !!t.getAttribute('data-note')); break;
+    case 'detail': openName(k, !!t.getAttribute('data-note'), !!t.getAttribute('data-alt')); break;
     case 'delnote': delNote(k, t.getAttribute('data-id')); break;
     case 'up': move(k, -1); break;
     case 'down': move(k, 1); break;
