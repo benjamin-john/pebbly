@@ -92,7 +92,9 @@ shared games keep working (`/qwixx/` forwards to `/kwiks/`). Keep per-phone UI s
 Codebreaker, Dots and Boxes, Gomoku and Mancala share one setup pattern: "Each other" or "🤖 Computer" (Easy/Hard; the
 computer is a player with `bot: true`, never offered for shared games), and a shared game can start with just the
 host, others joining as players (Dots: until the first line). Their tests: `tests/{codebreaker,dots,gomoku,mancala}_test.js`. Codebreaker keeps
-secrets in the shared game (lightly scrambled, never shown), so it's a family game, not a secure one. `PebblySync.canAct(pid)` / `hasPhone(pid)` /
+secrets in the shared game (lightly scrambled, never shown), so it's a family game, not a secure one.
+Color Stack (`/colorstack/`) is a solo puzzle (no players, no play together); its solver checks that deals can be
+finished and gives hints (`tests/colorstack_test.js`). `PebblySync.canAct(pid)` / `hasPhone(pid)` /
 `me()` / `isHost()` drive turn guards ("Waiting for Amy…" with a "play for them" override).
 
 ## Supabase

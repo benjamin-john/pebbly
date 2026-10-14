@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Color Stack</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --lead:#F2C230; --lead-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8;
+  --rod:#B98D50; --base:#8B6435;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --rod:#8C6B3C; --base:#5C4224; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --lead:#E3B23C; --lead-t:#3A3218; --no:#F07A75; --no-t:#3D2221;
+    --rod:#8C6B3C; --base:#5C4224; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.wrap{max-width:640px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-inset-bottom))}
+h1{font:800 28px/1.15 var(--head);margin:8px 0 4px}
+h2{font:600 13px/1 var(--body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:0 0 12px}
+.lead{margin:0 0 16px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 14px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;text-align:center;line-height:1.15}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.4;cursor:default;transform:none}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.btn:focus-visible,.icon-btn:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+input[type=text]{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font:500 17px/1.2 var(--body)}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;background:var(--surface);
+  color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.icon-btn:disabled{opacity:.3;cursor:default}
+.icon-btn.x{color:var(--no)}
+.hint{color:var(--muted);font-size:14px;margin:8px 0 0}
+.stack{display:grid;gap:10px}
+
+/* ---------- Setup ---------- */
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modes.three{grid-template-columns:1fr 1fr 1fr}
+.mode{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:12px 8px;border:1px solid var(--line);border-radius:14px;cursor:pointer;text-align:center;min-height:48px}
+.mode input{position:absolute;opacity:0}
+.mode b{font-size:16px}
+.mode small{color:var(--muted);font-size:13px;line-height:1.3}
+.mode:has(input:checked){border:2px solid var(--brand);background:var(--brand-t)}
+.mode:has(input:focus-visible){outline:3px solid var(--brand);outline-offset:2px}
+.opt{margin-top:14px}
+.opt>span{display:block;font-weight:600;margin-bottom:8px}
+.plist{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.plist li{display:flex;gap:6px;align-items:center}
+.plist .num{width:22px;flex:none;text-align:center}
+.plist input{flex:1;min-width:0}
+.plist .bot{flex:1;min-height:48px;display:flex;align-items:center;padding:0 12px;border:1px dashed var(--field);border-radius:10px;color:var(--muted)}
+.addrow{display:flex;gap:8px;margin-top:10px}
+.addrow input{flex:1;min-width:0}
+.addrow .btn{width:auto;min-height:48px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;min-height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);font-size:15px;overflow:hidden}
+.chip .add{padding:0 6px 0 12px;min-height:36px;border:0;background:none;cursor:pointer;font-weight:500}
+.chip .add::before{content:"+ ";color:var(--brand);font-weight:700}
+.chip .forget{width:32px;min-height:36px;border:0;background:none;color:var(--muted);cursor:pointer}
+.rules{margin:0;padding-left:20px;color:var(--muted);font-size:14.5px}
+.rules li{margin:5px 0}
+
+/* ---------- Setup extras ---------- */
+.chooser{display:flex;flex-wrap:wrap;gap:8px}
+.chooser .mode{flex:1 1 0;min-width:52px;padding:10px 6px}
+
+/* ---------- Play ---------- */
+.topbar{display:flex;align-items:center;gap:10px;margin:4px 0 10px}
+.topbar .title{flex:1;min-width:0}
+.topbar h1{font-size:24px;margin:0}
+.topbar .sub{color:var(--muted);font-size:13.5px}
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px}
+.stat{padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface);text-align:center}
+.stat b{display:block;font:800 22px/1.1 var(--head);font-variant-numeric:tabular-nums}
+.stat span{color:var(--muted);font-size:12.5px}
+.status{min-height:24px;margin:0 0 8px;font-weight:600;text-align:center}
+.status.good{color:var(--brand)}
+.status.bad{color:var(--no)}
+
+.table{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 6px 10px;display:grid;gap:18px;touch-action:manipulation}
+.rodrow{display:flex;justify-content:center;gap:6px}
+.rod{all:unset;box-sizing:border-box;position:relative;flex:0 1 64px;min-width:44px;display:flex;flex-direction:column-reverse;align-items:center;
+  padding:0 0 12px;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:12px}
+.rod::before{content:"";position:absolute;left:50%;bottom:8px;width:8px;margin-left:-4px;height:calc(var(--h) * var(--bead) + 14px);border-radius:4px 4px 0 0;background:var(--rod)}
+.rod::after{content:"";position:absolute;left:6%;right:6%;bottom:0;height:10px;border-radius:5px;background:var(--base)}
+.rod .space{height:calc(var(--bead) + 10px)}
+.rod.sel{background:var(--lead-t)}
+.rod.can{background:var(--brand-t)}
+.rod.done::after{background:var(--brand)}
+.rod.hint{box-shadow:0 0 0 3px var(--lead) inset}
+.rod:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.bead{position:relative;z-index:1;width:min(42px,90%);height:var(--bead);margin-top:-1px;border-radius:999px;display:grid;place-items:center;
+  font:700 12px/1 var(--body);color:#fff;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),inset 0 3px 0 rgba(255,255,255,.25),0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.bead.up{transform:translateY(calc(-1 * var(--lift)))}
+@keyframes drop{from{transform:translateY(-14px)}to{transform:none}}
+.bead.drop{animation:drop .18s ease-out}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.rod.nope{animation:shake .25s}
+@media (prefers-reduced-motion:reduce){.bead,.bead.drop,.rod.nope{animation:none;transition:none}}
+.c0{background:#E5484D}.c1{background:#F2911B}.c2{background:#F5D90A;color:#3A3000 !important}.c3{background:#30A46C}
+.c4{background:#0090FF}.c5{background:#8E4EC6}.c6{background:#E93D82}.c7{background:#8B5A2B}
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+
+/* dialogs */
+dialog{width:min(560px,calc(100% - 24px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:18px;background:var(--bg);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+.dlg{padding:16px;overflow:auto;max-height:calc(100dvh - 40px)}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
+.big{font:800 40px/1 var(--head);text-align:center;margin:6px 0 4px}
+</style>
+<script src="/keepawake.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+
+<!-- ================= Setup ================= -->
+<main class="wrap" id="setup" hidden>
+  <h1>Color Stack</h1>
+  <p class="lead">Rods of mixed-up beads. Move one bead at a time from the top of a rod to another rod until every rod holds just one color.</p>
+
+  <section class="card">
+    <h2>Quick pick</h2>
+    <div class="modes three">
+      <button type="button" class="mode" data-preset="easy"><b>Easy</b><small>4 colors</small></button>
+      <button type="button" class="mode" data-preset="medium"><b>Medium</b><small>6 colors</small></button>
+      <button type="button" class="mode" data-preset="hard"><b>Hard</b><small>8 colors, one spare</small></button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Puzzle</h2>
+    <div class="opt" style="margin-top:0">
+      <span>Colors</span>
+      <div class="chooser" id="colorsPick">
+        <label class="mode"><input type="radio" name="colors" value="3"><b>3</b></label>
+        <label class="mode"><input type="radio" name="colors" value="4"><b>4</b></label>
+        <label class="mode"><input type="radio" name="colors" value="5" checked><b>5</b></label>
+        <label class="mode"><input type="radio" name="colors" value="6"><b>6</b></label>
+        <label class="mode"><input type="radio" name="colors" value="7"><b>7</b></label>
+        <label class="mode"><input type="radio" name="colors" value="8"><b>8</b></label>
+      </div>
+    </div>
+    <div class="opt">
+      <span>Beads on each rod</span>
+      <div class="modes three">
+        <label class="mode"><input type="radio" name="h" value="3"><b>3</b></label>
+        <label class="mode"><input type="radio" name="h" value="4" checked><b>4</b></label>
+        <label class="mode"><input type="radio" name="h" value="5"><b>5</b></label>
+      </div>
+    </div>
+    <div class="opt">
+      <span>Empty rods to start</span>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="spare" value="2" checked><b>2</b><small>Usual</small></label>
+        <label class="mode"><input type="radio" name="spare" value="1"><b>1</b><small>Tricky</small></label>
+      </div>
+    </div>
+    <div class="opt">
+      <span>Where can a bead go?</span>
+      <div class="modes">
+        <label class="mode"><input type="radio" name="rule" value="free" checked><b>Any rod with room</b><small>Like the wooden toy</small></label>
+        <label class="mode"><input type="radio" name="rule" value="match"><b>Same color only</b><small>Onto a matching bead or an empty rod</small></label>
+      </div>
+    </div>
+  </section>
+
+  <div class="stack">
+    <button class="btn" id="startBtn" type="button">Start</button>
+    <button class="btn ghost" id="backBtn" type="button" hidden>Back to current puzzle</button>
+  </div>
+</main>
+
+<!-- ================= Play ================= -->
+<main class="wrap" id="play" hidden>
+  <div class="topbar">
+    <div class="title"><h1>Color Stack</h1><div class="sub" id="sub"></div></div>
+    <button class="icon-btn" id="undoBtn" type="button" aria-label="Undo" title="Undo">↶</button>
+    <button class="icon-btn" id="menuBtn" type="button" aria-label="Menu" title="Menu">☰</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><b id="moves">0</b><span>moves</span></div>
+    <div class="stat"><b id="time">0:00</b><span>time</span></div>
+    <div class="stat"><b id="best">–</b><span>best moves</span></div>
+  </div>
+  <p class="status" id="status" aria-live="polite"></p>
+  <div class="table" id="table" role="group" aria-label="Rods"></div>
+  <div class="acts">
+    <button class="btn plain" type="button" id="hintBtn">💡 Hint</button>
+    <button class="btn ghost" type="button" id="newBtn">New puzzle</button>
+  </div>
+</main>
+
+<!-- ================= Menu ================= -->
+<dialog id="menuDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3>Menu</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="stack">
+      <button class="btn plain" type="button" id="mRestart">Start this puzzle over</button>
+      <button class="btn plain" type="button" id="mNew">New puzzle, same settings</button>
+      <button class="btn plain" type="button" id="mSetup">Change colors or rules</button>
+    </div>
+    <h2 style="margin-top:16px">How to play</h2>
+    <ul class="rules" id="menuRules"></ul>
+  </div>
+</dialog>
+
+<dialog id="winDlg">
+  <div class="dlg">
+    <div class="dlghead"><h3 id="winTitle">🎉 Sorted!</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
+    <div class="big" id="winMoves"></div>
+    <p class="hint" id="winSub" style="text-align:center;margin:0 0 14px"></p>
+    <div class="stack">
+      <button class="btn" type="button" id="wNew" autofocus>Next puzzle</button>
+      <button class="btn ghost" type="button" id="wRestart">Try this one again</button>
+      <button class="btn plain" type="button" id="wSetup">Change colors or rules</button>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  'use strict';
+  var KEY = 'pebbly_colorstack', K_UNDO = 'pebbly_colorstack_undo', K_SET = 'pebbly_colorstack_settings', K_BEST = 'pebbly_colorstack_best';
+  var CNAMES = ['red', 'orange', 'yellow', 'green', 'blue', 'purple', 'pink', 'brown'];
+  var PRESETS = { easy: { colors: 4, h: 4, spare: 2, rule: 'free' }, medium: { colors: 6, h: 4, spare: 2, rule: 'free' }, hard: { colors: 8, h: 4, spare: 1, rule: 'free' } };
+  var $ = function (id) { return document.getElementById(id); };
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  function buzz(ms) { if (navigator.vibrate) navigator.vibrate(ms || 8); }
+  function rnd(n) { var a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; }
+  function clock(ms) { var s = Math.floor(ms / 1000); return Math.floor(s / 60) + ':' + ('0' + s % 60).slice(-2); }
+
+  // ================= State =================
+  /* game = { colors, h, spare, rule:'free'|'match', start:[[bead, …] bottom first, per rod], rods (now), moves, ms, solved }
+     A bead is its color number. */
+  var game = load(KEY, null), undo = load(K_UNDO, []);
+  var settings = load(K_SET, { colors: 5, h: 4, spare: 2, rule: 'free' });
+  var best = load(K_BEST, {});
+  var sel = -1, hintMove = null, plan = null, dropAt = -1;
+  function save() { store(KEY, game); store(K_UNDO, undo); }
+  function bestKey(g) { return g.colors + '/' + g.h + '/' + g.spare + '/' + g.rule; }
+
+  // ================= Rules =================
+  function top(r) { return r.length ? r[r.length - 1] : -1; }
+  function canMove(rods, from, to, h, rule) {
+    if (from === to || !rods[from].length || rods[to].length >= h) return false;
+    return rule === 'free' || !rods[to].length || top(rods[to]) === top(rods[from]);
+  }
+  function isSolved(rods, h) {
+    return rods.every(function (r) { return !r.length || (r.length === h && r.every(function (b) { return b === r[0]; })); });
+  }
+  function rodDone(r, h) { return r.length === h && r.every(function (b) { return b === r[0]; }); }
+
+  // ================= Dealing =================
+  // Returns the rods, or null if no solvable deal turned up (the "same color only" rule with one empty
+  // rod often has none).
+  function deal(cfg) {
+    var rods;
+    for (var tries = 0; tries < 400; tries++) {
+      var beads = [];
+      for (var c = 0; c < cfg.colors; c++) for (var k = 0; k < cfg.h; k++) beads.push(c);
+      for (var i = beads.length - 1; i > 0; i--) { var j = rnd(i + 1), t = beads[i]; beads[i] = beads[j]; beads[j] = t; }
+      rods = [];
+      for (c = 0; c < cfg.colors; c++) rods.push(beads.slice(c * cfg.h, (c + 1) * cfg.h));
+      for (k = 0; k < cfg.spare; k++) rods.push([]);
+      // No rod that's already sorted at the start.
+      if (rods.some(function (r) { return r.length && r.every(function (b) { return b === r[0]; }); })) continue;
+      // Make sure it can be solved (the "same color only" rule and a single spare rod can make dead ends).
+      if ((cfg.rule === 'match' || cfg.spare < 2) && !solve(rods, cfg.h, cfg.rule, tries < 50 ? 60000 : 8000)) continue;
+      return rods;
+    }
+    return null;
+  }
+
+  // ================= Solver (for hints and to check deals) =================
+  // Best-first search: prefers positions where more beads sit in finished runs at the bottom of rods.
+  function keyOf(rods) { return rods.map(function (r) { return r.join(''); }).sort().join('|'); }
+  function score(rods, h) {
+    var bad = 0, runOwner = {};
+    rods.forEach(function (r) {
+      var run = 0; while (run < r.length && r[run] === r[0]) run++;
+      bad += r.length - run;
+      if (r.length) {   // the same color sitting at the bottom of two rods: the shorter run will have to move
+        if (runOwner[r[0]] != null) bad += Math.min(runOwner[r[0]], run); runOwner[r[0]] = Math.max(runOwner[r[0]] || 0, run);
+      }
+    });
+    return bad;
+  }
+  function solve(start, h, rule, limit) {
+    var heap = [], seen = new Set(), n = 0;
+    function push(node) { heap.push(node); var i = heap.length - 1; while (i > 0) { var p = (i - 1) >> 1; if (heap[p].f <= heap[i].f) break; var t = heap[p]; heap[p] = heap[i]; heap[i] = t; i = p; } }
+    function pop() {
+      var top = heap[0], last = heap.pop();
+      if (heap.length) { heap[0] = last; var i = 0; for (;;) { var l = 2 * i + 1, r = l + 1, m = i;
+        if (l < heap.length && heap[l].f < heap[m].f) m = l; if (r < heap.length && heap[r].f < heap[m].f) m = r;
+        if (m === i) break; var t = heap[m]; heap[m] = heap[i]; heap[i] = t; i = m; } }
+      return top;
+    }
+    var s0 = start.map(function (r) { return r.slice(); });
+    push({ rods: s0, g: 0, f: score(s0, h), path: null });
+    seen.add(keyOf(s0));
+    while (heap.length && n++ < (limit || 80000)) {
+      var cur = pop(), rods = cur.rods;
+      if (isSolved(rods, h)) { var out = []; for (var p = cur.path; p; p = p.prev) out.unshift(p.m); return out; }
+      for (var a = 0; a < rods.length; a++) {
+        if (!rods[a].length || rodDone(rods[a], h)) continue;
+        var mono = rods[a].every(function (b) { return b === rods[a][0]; });
+        var emptyTried = false;
+        for (var b = 0; b < rods.length; b++) {
+          if (!canMove(rods, a, b, h, rule)) continue;
+          if (!rods[b].length) { if (mono || emptyTried) continue; emptyTried = true; }   // one empty rod is as good as another
+          var next = rods.map(function (r) { return r; });
+          next[a] = rods[a].slice(0, -1); next[b] = rods[b].concat(top(rods[a]));
+          var k = keyOf(next); if (seen.has(k)) continue; seen.add(k);
+          push({ rods: next, g: cur.g + 1, f: score(next, h) * 2 + (cur.g + 1) * 0.5, path: { m: [a, b], prev: cur.path } });
+        }
+      }
+    }
+    return null;
+  }
+
+  // ================= Setup =================
+  function radio(name, v) { var el = document.querySelector('input[name=' + name + '][value="' + v + '"]'); if (el) el.checked = true; }
+  function pick(name) { return document.querySelector('input[name=' + name + ']:checked').value; }
+  function openSetup() {
+    var s = game || settings;
+    radio('colors', s.colors); radio('h', s.h); radio('spare', s.spare); radio('rule', s.rule);
+    $('backBtn').hidden = !(game && !game.solved);
+    $('play').hidden = true; $('setup').hidden = false; keepAwake(false); scrollTo(0, 0);
+  }
+  document.querySelectorAll('[data-preset]').forEach(function (b) {
+    b.addEventListener('click', function () { var p = PRESETS[b.dataset.preset]; radio('colors', p.colors); radio('h', p.h); radio('spare', p.spare); radio('rule', p.rule); start(); });
+  });
+  $('startBtn').addEventListener('click', start);
+  $('backBtn').addEventListener('click', showPlay);
+  function start() {
+    settings = { colors: +pick('colors'), h: +pick('h'), spare: +pick('spare'), rule: pick('rule') };
+    store(K_SET, settings);
+    newPuzzle(settings);
+  }
+  function newPuzzle(cfg) {
+    if (game && !game.solved && game.moves && !confirm('Start a new puzzle? This one will be lost.')) return false;
+    var rods = window.__cs && window.__cs._noDeal ? null : deal(cfg), spare = cfg.spare;
+    if (!rods) { spare++; rods = deal({ colors: cfg.colors, h: cfg.h, spare: spare, rule: cfg.rule }) || rods; }
+    game = { colors: cfg.colors, h: cfg.h, spare: cfg.spare, rule: cfg.rule, extra: spare > cfg.spare, start: rods, rods: rods.map(function (r) { return r.slice(); }), moves: 0, ms: 0, solved: false };
+    undo = []; sel = -1; hintMove = null; plan = null; save(); showPlay(); msg('');
+    if (game.extra) msg('These settings rarely give a puzzle that can be finished, so you get an extra empty rod.');
+    return true;
+  }
+
+  // ================= Play =================
+  function showPlay() {
+    $('setup').hidden = true; $('play').hidden = false; keepAwake(true); render();
+    if (game.solved) setTimeout(showWin, 100);
+  }
+  function msg(text, cls) { var s = $('status'); s.textContent = text || ''; s.className = 'status' + (cls ? ' ' + cls : ''); }
+  function render() {
+    var g = game, n = g.rods.length, perRow = n <= 6 ? n : Math.ceil(n / 2);
+    var width = Math.min($('play').clientWidth - 46, 600);
+    var rodW = Math.min(64, (width - (perRow - 1) * 6) / perRow);
+    var bead = Math.max(26, Math.min(36, Math.floor(rodW * 0.6)));
+    var t = $('table'); t.style.setProperty('--bead', bead + 'px'); t.style.setProperty('--lift', (bead + 8) + 'px'); t.style.setProperty('--h', g.h);
+    $('sub').textContent = g.colors + ' colors · ' + g.h + ' high · ' + (g.rule === 'free' ? 'any rod' : 'same color only');
+    $('moves').textContent = g.moves;
+    $('time').textContent = clock(g.ms);
+    var b = best[bestKey(g)]; $('best').textContent = b ? b.moves : '–';
+    $('undoBtn').disabled = !undo.length;
+    $('hintBtn').disabled = g.solved;
+    var h = '';
+    for (var row = 0; row * perRow < n; row++) {
+      h += '<div class="rodrow">';
+      for (var i = row * perRow; i < Math.min(n, (row + 1) * perRow); i++) {
+        var r = g.rods[i], cls = 'rod';
+        if (i === sel) cls += ' sel';
+        else if (sel > -1 && canMove(g.rods, sel, i, g.h, g.rule)) cls += ' can';
+        if (rodDone(r, g.h)) cls += ' done';
+        if (hintMove && hintMove.indexOf(i) > -1) cls += ' hint';
+        h += '<button type="button" class="' + cls + '" data-rod="' + i + '" aria-label="Rod ' + (i + 1) + ': ' +
+          (r.length ? r.map(function (c) { return CNAMES[c]; }).join(', ') + ' (bottom to top)' : 'empty') + (i === sel ? ', top bead lifted' : '') + '">';
+        r.forEach(function (c, k) {
+          var up = i === sel && k === r.length - 1, dr = i === dropAt && k === r.length - 1;
+          h += '<span class="bead c' + c + (up ? ' up' : '') + (dr ? ' drop' : '') + '" aria-hidden="true">' + (c + 1) + '</span>';
+        });
+        h += '<span class="space" aria-hidden="true" style="margin-top:' + ((g.h - r.length) * bead) + 'px"></span></button>';
+      }
+      h += '</div>';
+    }
+    t.innerHTML = h; dropAt = -1;
+  }
+  function tick() {
+    if (!game || game.solved || !game.moves || $('play').hidden || document.visibilityState !== 'visible') return;
+    game.ms += 1000; $('time').textContent = clock(game.ms); store(KEY, game);
+  }
+  setInterval(tick, 1000);
+
+  function nope(i, why) {
+    var el = document.querySelector('.rod[data-rod="' + i + '"]');
+    if (el) { el.classList.remove('nope'); void el.offsetWidth; el.classList.add('nope'); }
+    buzz([30, 40, 30]); msg(why, 'bad');
+  }
+  function doMove(a, b) {
+    undo.push(JSON.stringify(game)); if (undo.length > 500) undo.shift();
+    var bead = game.rods[a].pop(); game.rods[b].push(bead); game.moves++;
+    if (plan && plan.length && plan[0][0] === a && plan[0][1] === b) plan.shift(); else plan = null;
+    sel = -1; hintMove = null; dropAt = b;
+    var done = rodDone(game.rods[b], game.h);
+    if (isSolved(game.rods, game.h)) {
+      game.solved = true;
+      var k = bestKey(game), was = best[k];
+      if (!was || game.moves < was.moves || (game.moves === was.moves && game.ms < was.ms)) { best[k] = { moves: game.moves, ms: game.ms }; game.record = true; store(K_BEST, best); }
+      buzz([40, 60, 120]); save(); render(); msg('🎉 Sorted in ' + game.moves + ' moves!', 'good');
+      setTimeout(showWin, 500); return;
+    }
+    buzz(done ? [20, 40, 20] : 10); save(); render();
+    msg(done ? 'A rod is done! ✓' : '');
+  }
+  $('table').addEventListener('click', function (e) {
+    var el = e.target.closest('.rod'); if (!el || game.solved) return;
+    var i = +el.dataset.rod, g = game;
+    if (sel < 0) {
+      if (!g.rods[i].length) { nope(i, 'That rod is empty. Tap a rod with beads first.'); return; }
+      sel = i; buzz(5); msg('Now tap the rod to put it on.'); render(); return;
+    }
+    if (i === sel) { sel = -1; msg(''); render(); return; }
+    if (canMove(g.rods, sel, i, g.h, g.rule)) { doMove(sel, i); return; }
+    if (g.rods[i].length >= g.h) nope(i, 'That rod is full.');
+    else nope(i, 'Only onto the same color, or an empty rod.');
+  });
+
+  $('hintBtn').addEventListener('click', function () {
+    if (game.solved) return;
+    sel = -1;
+    if (!plan || !plan.length) {
+      msg('Thinking…'); $('hintBtn').disabled = true;
+      setTimeout(function () {
+        plan = solve(game.rods, game.h, game.rule, 120000);
+        $('hintBtn').disabled = false;
+        if (!plan) { msg('No way out found from here. Try Undo or start this puzzle over.', 'bad'); render(); return; }
+        showHint();
+      }, 30);
+      return;
+    }
+    showHint();
+  });
+  function showHint() {
+    hintMove = plan[0];
+    render();
+    msg('Try moving the top bead from rod ' + (hintMove[0] + 1) + ' to rod ' + (hintMove[1] + 1) + '. About ' + plan.length + ' moves to go.');
+  }
+
+  $('undoBtn').addEventListener('click', function () {
+    if (!undo.length) return;
+    var ms = game.ms; game = JSON.parse(undo.pop()); game.ms = ms; game.solved = false;
+    sel = -1; hintMove = null; plan = null; save(); buzz(); if ($('winDlg').open) $('winDlg').close(); msg(''); render();
+  });
+  function restartSame() {
+    if (game.moves && !game.solved && !confirm('Start this puzzle over from the beginning?')) return;
+    game.rods = game.start.map(function (r) { return r.slice(); }); game.moves = 0; game.ms = 0; game.solved = false; game.record = false;
+    undo = []; sel = -1; hintMove = null; plan = null; save(); closeAll(); msg(''); render();
+  }
+  function closeAll() { ['menuDlg', 'winDlg'].forEach(function (d) { if ($(d).open) $(d).close(); }); }
+  $('newBtn').addEventListener('click', function () { newPuzzle(game); });
+  $('mNew').addEventListener('click', function () { closeAll(); newPuzzle(game); });
+  $('wNew').addEventListener('click', function () { closeAll(); newPuzzle(game); });
+  $('mRestart').addEventListener('click', restartSame);
+  $('wRestart').addEventListener('click', restartSame);
+  $('mSetup').addEventListener('click', function () { closeAll(); openSetup(); });
+  $('wSetup').addEventListener('click', function () { closeAll(); openSetup(); });
+  document.querySelectorAll('dialog').forEach(function (d) {
+    d.addEventListener('click', function (e) { if (e.target === d || e.target.closest('[data-close]')) d.close(); });
+  });
+  $('menuBtn').addEventListener('click', function () {
+    $('menuRules').innerHTML = [
+      'Tap a rod to lift its top bead, then tap another rod to drop it there. Tap the same rod again to put it back.',
+      game.rule === 'free' ? 'A bead can go on any rod that has room (up to ' + game.h + ' beads).'
+        : 'A bead can only go onto a bead of the <b>same color</b>, or onto an empty rod. Rods hold up to ' + game.h + ' beads.',
+      'You’re done when every rod holds just one color (a finished rod’s base turns green).',
+      'Stuck? 💡 Hint shows a good next move, and ↶ takes moves back.'
+    ].map(function (r) { return '<li>' + r + '</li>'; }).join('');
+    $('menuDlg').showModal();
+  });
+  function showWin() {
+    if (!game.solved || $('winDlg').open || $('play').hidden) return;
+    var b = best[bestKey(game)];
+    $('winTitle').textContent = game.record ? '🏆 New best!' : '🎉 Sorted!';
+    $('winMoves').textContent = game.moves + ' moves';
+    $('winSub').textContent = 'in ' + clock(game.ms) + (b && !game.record ? ' · your best: ' + b.moves + ' moves' : '') + '.';
+    $('winDlg').showModal();
+  }
+  addEventListener('resize', function () { if (game && !$('play').hidden) render(); });
+
+  if (game && game.rods) showPlay(); else { game = null; openSetup(); }
+
+  // Exposed for automated checks only.
+  window.__cs = { solve: solve, deal: deal, isSolved: isSolved, canMove: canMove, game: function () { return game; } };
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
