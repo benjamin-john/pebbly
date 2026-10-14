@@ -94,7 +94,11 @@ computer is a player with `bot: true`, never offered for shared games), and a sh
 host, others joining as players (Dots: until the first line). Their tests: `tests/{codebreaker,dots,gomoku,mancala}_test.js`. Codebreaker keeps
 secrets in the shared game (lightly scrambled, never shown), so it's a family game, not a secure one.
 Color Stack (`/colorstack/`) is a solo puzzle (no players, no play together); its solver checks that deals can be
-finished and gives hints (`tests/colorstack_test.js`). `PebblySync.canAct(pid)` / `hasPhone(pid)` /
+finished and gives hints (`tests/colorstack_test.js`).
+Word Dash (`/worddash/`) races all phones on one word at once (no turns): each phone only writes its own
+`boards[pid]`, and the winner (earliest solve time) and round end are worked out from the boards, never stored,
+so simultaneous pushes merge cleanly. Answer words are a curated common list; guesses check a larger list
+(MIT `word-list` package), both inline in the page (`tests/worddash_test.js`). `PebblySync.canAct(pid)` / `hasPhone(pid)` /
 `me()` / `isHost()` drive turn guards ("Waiting for Amy…" with a "play for them" override).
 
 ## Supabase

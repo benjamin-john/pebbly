@@ -11,7 +11,7 @@
   var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
   if (window.PEBBLY_SYNC_CONFIG) { URL_ = window.PEBBLY_SYNC_CONFIG.url; KEY_ = window.PEBBLY_SYNC_CONFIG.key; }
   var KINDS = { qwixx: 'Kwiks', farkle: 'Farkle', score: 'Score Keeper', darts: 'Darts', namegame: 'Name Game', trivia: 'Trivia', bracket: 'Bracket',
-               dots: 'Dots and Boxes', gomoku: 'Gomoku', mancala: 'Mancala', codebreaker: 'Codebreaker' };
+               dots: 'Dots and Boxes', gomoku: 'Gomoku', mancala: 'Mancala', codebreaker: 'Codebreaker', worddash: 'Word Dash' };
   // Web folder for each kind (internal names stay the same so saved and shared games keep working).
   var PATHS = { qwixx: 'kwiks' };
   function pathOf(kind) { return PATHS[kind] || kind; }
@@ -158,7 +158,9 @@
       setStatus('live');
       if (r.conflict) {
         if (++s.tries > 8) { s.tries = 0; s.inflight = false; return; }
-        var mine = diff(s.base, state), merged = apply(clone(r.state), mine);
+        // Diff against what's on this phone now, not what was sent: moves made while the push was on its
+        // way would otherwise be lost.
+        var mine = diff(s.base, s.h.getState()), merged = apply(clone(r.state), mine);
         s.base = clone(r.state); s.ver = r.version;
         s.h.applyRemote(merged, { foreign: true, merged: true });
         return send(s);

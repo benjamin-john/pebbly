@@ -27,6 +27,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/mancala/` | Mancala (Kalah): sowing, captures and extra turns, a friend or the computer, play together |
 | `/farkle/` | Farkle: dice roller and/or scoreboard, 1+ players, standard or continue-play, editable house rules |
 | `/kwiks/` | Kwiks: color-row dice game, dice roller and/or score cards, 1+ players, rules enforced |
+| `/worddash/` | Word Dash: guess the five-letter word in six; practice alone (stats, streaks) or race everyone's phones on the same word, no turns |
 | `/namegame/` | The Name Game |
 | `/admin/` | Admin: one sign-in to see, open as host, or delete everything in every app with an admin mode |
 | `/install/` | How to add Pebbly to a phone or computer home screen |
