@@ -3230,8 +3230,8 @@ function renderHome() {
     '<h1 style="margin-top:8px">🍼 Baby Names</h1>' +
     '<p class="lede">Swipe right on names you like and left on the rest, each on your own phone. Pebbly shows you the names you both love, in your own order.</p>' +
     '<form id="createForm" class="card" novalidate autocomplete="off">' +
-      '<label class="fld"><span>Your name</span><input type="text" name="a" maxlength="30" placeholder="Ben"></label>' +
-      '<label class="fld"><span>Your partner’s name <span class="pl-opt">(optional)</span></span><input type="text" name="b" maxlength="30" placeholder="Sam">' +
+      '<label class="fld"><span>Your name</span><input type="text" name="a" maxlength="30"></label>' +
+      '<label class="fld"><span>Your partner’s name <span class="pl-opt">(optional)</span></span><input type="text" name="b" maxlength="30">' +
         '<small>They can add it when they open the link.</small></label>' +
       '<fieldset><legend>Looking for</legend>' + genderSeg('gender', 'any', { g: 'Girl names', b: 'Boy names', any: 'Both' }) +
         '<small class="hint" style="display:block;margin-top:6px">You can change this any time.</small></fieldset>' +
@@ -3631,7 +3631,7 @@ function openName(k, toNote, toAlt) {
   var e = ent(k); if (!e) { toast('That name was removed.'); return; }
   var d = dialog('<div class="in">' + head(esc(e.n)) + '<div id="dTop"></div>' +
     '<div class="dsec"><h3>Nicknames and other spellings</h3><div id="dAlts"></div>' +
-    '<form id="altForm" class="linkbox" novalidate autocomplete="off" style="margin-top:8px"><input type="text" name="alt" maxlength="60" placeholder="Add one, e.g. Beck" aria-label="Add a nickname" autocapitalize="words">' +
+    '<form id="altForm" class="linkbox" novalidate autocomplete="off" style="margin-top:8px"><input type="text" name="alt" maxlength="60" placeholder="Add a nickname or spelling" aria-label="Add a nickname" autocapitalize="words">' +
     '<button type="submit" class="btn primary small">Add</button></form></div>' +
     '<div class="dsec"><h3>Comments</h3><div id="dNotes"></div>' +
     '<form id="noteForm" novalidate autocomplete="off" style="margin-top:8px"><textarea name="t" rows="2" maxlength="' + MAX_NOTE + '" placeholder="Middle name ideas, who it’s after, how it sounds with our last name…" style="min-height:64px"></textarea>' +
@@ -3749,7 +3749,7 @@ function openFilters() {
 /* ---------- add your own name */
 function openSuggest(start) {
   var d = dialog('<form novalidate autocomplete="off">' + head('Add a name') +
-    '<label class="fld"><span>Name</span><input type="text" name="n" maxlength="30" placeholder="e.g. James" autocapitalize="words"></label>' +
+    '<label class="fld"><span>Name</span><input type="text" name="n" maxlength="30" placeholder="Type a name" autocapitalize="words"></label>' +
     '<div id="sgInfo"></div>' +
     '<div id="sgNew" hidden><fieldset><legend>For a</legend>' + genderSeg('g', S.gender === 'any' ? 'any' : S.gender, { g: 'Girl', b: 'Boy', any: 'Either' }) + '</fieldset>' +
       '<label class="fld"><span>Nicknames or other spellings <span class="pl-opt">(optional)</span></span><input type="text" name="alt" maxlength="120" placeholder="Separate with commas"></label></div>' +
