@@ -3227,7 +3227,7 @@ function renderHome() {
   CODE = '';
   var owners = load('pebbly_doc_owners', {}) || {}, list = recent();
   $app.innerHTML =
-    '<h1 style="margin-top:8px">👶 Baby Names</h1>' +
+    '<h1 style="margin-top:8px">🍼 Baby Names</h1>' +
     '<p class="lede">Swipe right on names you like and left on the rest, each on your own phone. Pebbly shows you the names you both love, in your own order.</p>' +
     '<form id="createForm" class="card" novalidate autocomplete="off">' +
       '<label class="fld"><span>Your name</span><input type="text" name="a" maxlength="30" placeholder="Ben"></label>' +
@@ -3241,7 +3241,7 @@ function renderHome() {
     '</form>' +
     '<p class="hint">' + CAT_KEYS.length.toLocaleString() + ' names built in, with nicknames and how popular each one is in the US right now. Add your own, or ask an AI for ideas in a style you like.</p>' +
     (list.length ? '<section class="recent"><h2>Your shortlists</h2><ul>' + list.map(function (r) {
-      return '<li><a href="?d=' + esc(r.code) + '"><span aria-hidden="true">👶</span><span class="t">' + esc(r.title || 'Baby names') + '</span>' +
+      return '<li><a href="?d=' + esc(r.code) + '"><span aria-hidden="true">🍼</span><span class="t">' + esc(r.title || 'Baby names') + '</span>' +
         (owners[r.code] ? '<span class="tag">host</span>' : '') + '</a></li>';
     }).join('') + '</ul></section>' : '');
 }
@@ -3301,7 +3301,7 @@ function render(info) {
       '<button type="button" class="btn primary small" data-act="share">Share</button></div></section>';
   }
   var n = matchKeys().length, v = view();
-  top += '<header class="apphead"><h1>👶 ' + esc(title()) + '</h1><button type="button" class="icon-btn" data-act="menu" aria-label="More options">⋯</button></header>' +
+  top += '<header class="apphead"><h1>🍼 ' + esc(title()) + '</h1><button type="button" class="icon-btn" data-act="menu" aria-label="More options">⋯</button></header>' +
     '<div class="tabs" role="tablist"><button type="button" role="tab" data-act="tab" data-v="swipe" aria-selected="' + (v === 'swipe') + '">Swipe</button>' +
     '<button type="button" role="tab" data-act="tab" data-v="list" aria-selected="' + (v === 'list') + '">💚 Our list <span class="n" id="matchN">' + (n ? '(' + n + ')' : '') + '</span></button></div>' +
     '<p class="mebar"><span>Swiping as <b>' + esc(who(me())) + '</b></span><button type="button" class="link" data-act="switch">Not you?</button></p>';
@@ -3314,7 +3314,7 @@ function render(info) {
 function renderWho() {
   var a = S.p.a, b = S.p.b;
   $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">＋ New shortlist</a></nav>' +
-    '<div class="state" style="padding-top:20px"><div class="e" aria-hidden="true">👶</div><h1>' + esc(title()) + '</h1>' +
+    '<div class="state" style="padding-top:20px"><div class="e" aria-hidden="true">🍼</div><h1>' + esc(title()) + '</h1>' +
     '<p class="lede">Swipe through baby names and see the ones you both love. Who’s swiping on this phone?</p></div>' +
     '<div class="card"><div class="menu">' +
       '<button type="button" class="btn" data-act="iam" data-slot="a">I’m ' + esc(who('a')) + '</button>' +
@@ -3595,7 +3595,7 @@ function move(k, dir) {
   setTimeout(function () { var b = $('#view [data-act="' + (dir < 0 ? 'up' : 'down') + '"][data-k="' + CSS.escape(k) + '"]'); if (b && !b.disabled) b.focus(); }, 0);
 }
 function listText() {
-  var lines = ['👶 ' + title() + ': names we both like', ''];
+  var lines = ['🍼 ' + title() + ': names we both like', ''];
   ordered(matchKeys()).forEach(function (k, i) {
     lines.push((i + 1) + '. ' + ENT[k].n + ' (' + who('a') + ' ' + vote('a', k) + '★, ' + who('b') + ' ' + vote('b', k) + '★)');
     var ns = own(S.notes, k) || {};
