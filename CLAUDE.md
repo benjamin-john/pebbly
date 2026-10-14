@@ -142,6 +142,11 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   Attendees use `/join/` (code box + answering only; old `/live/?c=` links forward there). Organizer
   link `?c=&o=`, display-only screen `?c=&d=` (`live_display`, answer only after reveal), admin at
   `/live/?admin` (shared admin password; `live_admin_*`). Extra organizer/display keys live in `live_keys`.
+- **Baby Names** (`/babynames/`, doc kind `names`): one shared document per couple; votes are compact
+  (`votes.a/b[key] = 0` for no, 1–5 stars). Names are keyed by `key()` (lower case, letters only). The built-in
+  catalog (US SSA data, nicknames from the `nicknames-curated` package) is inline in the page; the document only holds
+  names the couple added, extra nicknames, AI lists, order, comments. New names (typed or from AI) match an existing
+  row by name, then by nickname (`findMatch`). Test: `tests/babynames_test.js`.
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)

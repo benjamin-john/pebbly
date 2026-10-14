@@ -1,0 +1,4043 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<meta name="description" content="Swipe through baby names together and see the ones you both love.">
+<title>Baby Names</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED;
+  --good:#23704A; --good-t:#DCEFE3; --bad:#B8362F; --bad-t:#F8E1DF; --warn-t:#FBF0CC; --warn-line:#E5CB6B;
+  --girl:#A8345F; --girl-t:#FBE4EE; --boy:#2A64A0; --boy-t:#E1EDF8; --star:#E0A100;
+  --shadow:0 8px 24px rgba(20,42,34,.22); --lift:0 10px 30px rgba(20,42,34,.14);
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31;
+    --good:#6CC48F; --good-t:#1C3326; --bad:#F07A75; --bad-t:#3A2120; --warn-t:#3A3218; --warn-line:#6B5A22;
+    --girl:#F29CC2; --girl-t:#3A2230; --boy:#8DBDF0; --boy-t:#1E2C3D; --star:#F2C14E;
+    --shadow:0 8px 24px rgba(0,0,0,.5); --lift:0 10px 30px rgba(0,0,0,.45); color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31;
+    --good:#6CC48F; --good-t:#1C3326; --bad:#F07A75; --bad-t:#3A2120; --warn-t:#3A3218; --warn-line:#6B5A22;
+    --girl:#F29CC2; --girl-t:#3A2230; --boy:#8DBDF0; --boy-t:#1E2C3D; --star:#F2C14E;
+    --shadow:0 8px 24px rgba(0,0,0,.5); --lift:0 10px 30px rgba(0,0,0,.45); color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;overflow-x:hidden}
+body{overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+[hidden]{display:none !important}
+.wrap{max-width:620px;margin:0 auto;padding:12px 16px calc(64px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--head);line-height:1.15;margin:0}
+h1{font-size:30px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+h2{font-size:20px;font-weight:800}
+p{margin:0}
+a{color:var(--brand)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hint{color:var(--muted);font-size:14px}
+.lede{margin:8px 0 18px;font-size:17px;color:var(--muted);max-width:46ch}
+.err{color:var(--bad);font-weight:600;margin-top:10px;min-height:1.4em}
+.err:empty{min-height:0;margin:0}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border-radius:12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:16px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.ghost{background:transparent;border:1.5px solid var(--brand);color:var(--brand)}
+.btn.danger{background:transparent;border:1.5px solid var(--bad);color:var(--bad)}
+.btn.small{min-height:44px;padding:0 14px;font-size:15px;border-radius:10px}
+.btn.wide{width:100%}
+.link{background:none;border:0;padding:10px 4px;min-height:44px;color:var(--brand);font-weight:600;cursor:pointer;font-size:15px}
+.icon-btn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--line);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;padding:0}
+.icon-btn:disabled{opacity:.3;cursor:default}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.card>h2{margin-bottom:10px}
+.cardhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.cardhead h2{margin:0}
+.fld{display:block;margin-bottom:16px}
+.fld>span,.lbl{display:block;font-weight:600;margin-bottom:6px;font-size:15px}
+.fld small{display:block;color:var(--muted);margin-top:5px;font-size:13px}
+input[type=text],input[type=search],select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;
+  background:var(--surface);color:var(--ink);font-size:17px}
+textarea{width:100%;min-height:96px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font-size:17px;resize:vertical}
+fieldset{border:0;margin:0 0 16px;padding:0;min-width:0}
+legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
+.seg{display:grid;grid-template-columns:repeat(var(--n,3),1fr);gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px}
+.seg label{position:relative;display:flex}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg span{flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;border-radius:9px;font-weight:600;color:var(--muted);cursor:pointer;text-align:center;padding:0 4px;font-size:15px}
+.seg input:checked + span{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.seg input:focus-visible + span{outline:3px solid var(--brand)}
+.opts{display:grid;gap:8px}
+.opt{position:relative;display:flex}
+.opt input{position:absolute;opacity:0;pointer-events:none}
+.opt span{flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:6px 14px;border:1px solid var(--line);border-radius:12px;cursor:pointer;font-weight:600}
+.opt span small{color:var(--muted);font-weight:500;font-size:13px;white-space:nowrap}
+.opt input:checked + span{border:2px solid var(--brand);background:var(--brand-t);padding:5px 13px}
+.opt input:focus-visible + span{outline:3px solid var(--brand);outline-offset:2px}
+
+/* ---------- top of a page ---------- */
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px;font-size:15px;min-height:44px}
+.topnav a{display:inline-flex;align-items:center;min-height:44px;font-weight:600;text-decoration:none}
+.sync{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap}
+.sync::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--good)}
+.sync.saving::before{background:#D9A520}
+.sync.offline{color:var(--bad)}
+.sync.offline::before{background:var(--bad)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.banner{background:var(--warn-t);border:1px solid var(--warn-line);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:15px}
+.created{background:var(--brand-t);border-color:var(--brand)}
+.created .cardhead{margin-bottom:4px}
+.linkbox{display:flex;gap:8px;margin-top:10px}
+.linkbox input{flex:1;min-width:0;font-size:15px}
+.recent{margin-top:26px}
+.recent h2{margin-bottom:8px}
+.recent ul{list-style:none;padding:0;margin:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.recent li+li{border-top:1px solid var(--line)}
+.recent a{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 16px;color:var(--ink);text-decoration:none}
+.recent a .t{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.tag{font-size:12px;font-weight:700;background:var(--brand-t);color:var(--brand);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.state{text-align:center;padding:40px 8px}
+.state .e{font-size:48px;line-height:1;margin-bottom:10px}
+.state .lede{margin:8px auto 18px}
+
+.apphead{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.apphead h1{flex:1;min-width:0;font-size:24px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:12px}
+.tabs button{min-height:46px;border:0;border-radius:10px;background:none;font-weight:700;color:var(--muted);cursor:pointer;font-size:16px}
+.tabs button[aria-selected=true]{background:var(--brand);color:var(--brand-ink)}
+.tabs .n{font-weight:600;opacity:.85}
+.mebar{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:14px;margin:-4px 0 6px}
+.mebar b{color:var(--ink)}
+
+/* ---------- swiping ---------- */
+.filterbtn{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:0 12px;border:1px dashed var(--field);border-radius:12px;background:none;cursor:pointer;
+  font-size:15px;color:var(--ink);text-align:left}
+.filterbtn .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filterbtn b{font-weight:700}
+.stack{position:relative;height:360px;margin:12px 0 14px}
+.ncard{position:absolute;inset:0;background:var(--surface);border:1px solid var(--line);border-radius:22px;box-shadow:var(--lift);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:28px 20px 22px;
+  touch-action:pan-y;user-select:none;-webkit-user-select:none;cursor:grab;will-change:transform;overflow:hidden}
+.ncard.back{transform:translateY(12px) scale(.94);opacity:.6;pointer-events:none;box-shadow:none}
+.ncard.back > *{visibility:hidden}
+.ncard .big{font:800 54px/1.02 var(--head);letter-spacing:-.01em;overflow-wrap:anywhere;max-width:100%}
+.ncard .big.long{font-size:40px}
+.ncard .alts{color:var(--muted);font-size:16px;max-width:30ch}
+.ncard .alts b{color:var(--ink);font-weight:600}
+.ncard .src{font-size:13px;color:var(--muted)}
+.stamp{position:absolute;top:22px;padding:2px 12px;border:3px solid;border-radius:10px;font:800 26px/1.2 var(--head);pointer-events:none;letter-spacing:.04em}
+.stamp.like{left:18px;color:var(--good);opacity:var(--like,0);transform:rotate(-12deg)}
+.stamp.nope{right:18px;color:var(--bad);opacity:var(--nope,0);transform:rotate(12deg)}
+.g{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:700;border-radius:999px;padding:3px 10px;white-space:nowrap;background:var(--brand-t);color:var(--brand)}
+.g.g-g{background:var(--girl-t);color:var(--girl)}
+.g.g-b{background:var(--boy-t);color:var(--boy)}
+.pop{width:min(260px,100%)}
+.pop .row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:4px;gap:8px}
+.pop .row b{color:var(--ink)}
+.pop .bar{height:8px;border-radius:999px;background:var(--line);overflow:hidden}
+.pop .bar i{display:block;height:100%;background:var(--brand);border-radius:999px}
+.acts{display:flex;justify-content:center;align-items:center;gap:22px}
+.round{display:grid;place-items:center;width:72px;height:72px;border-radius:50%;font-size:32px;border:2px solid var(--line);background:var(--surface);
+  cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:0;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.round:active{transform:scale(.94)}
+.round.no{color:var(--bad);border-color:var(--bad)}
+.round.yes{color:var(--good);border-color:var(--good)}
+.round.undo{width:54px;height:54px;font-size:22px;color:var(--muted)}
+.round:disabled{opacity:.35;cursor:default;transform:none}
+.seen{text-align:center;color:var(--muted);font-size:14px;margin-top:14px}
+.done{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:10px;padding:20px;
+  border:2px dashed var(--line);border-radius:22px}
+.done .e{font-size:44px;line-height:1}
+.done .tools{justify-content:center}
+
+.stars{display:flex;gap:4px;justify-content:center}
+.star{width:52px;height:56px;font-size:38px;line-height:1;border:0;background:none;color:var(--line);cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.star.on{color:var(--star)}
+.star:active{transform:scale(.9)}
+.stars.sm .star{width:44px;height:44px;font-size:30px}
+.nobtn{min-height:44px}
+.nobtn[aria-pressed=true]{border:2px solid var(--bad);background:var(--bad-t);color:var(--bad)}
+.ratehead{text-align:center;margin-bottom:6px}
+.ratehead .big{font:800 34px/1.1 var(--head);overflow-wrap:anywhere}
+.s5{color:var(--star);letter-spacing:1px;white-space:nowrap}
+.s5 i{font-style:normal;color:var(--line)}
+
+/* ---------- our list ---------- */
+.sec{margin:0 0 18px}
+.sec>h2{font-size:13px;font-family:var(--body);font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 8px 4px;
+  display:flex;justify-content:space-between;gap:8px}
+.sec>h2 span{font-weight:600;letter-spacing:0}
+.rows{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.rows>li+li{border-top:1px solid var(--line)}
+.nrow{display:flex;align-items:flex-start;gap:4px;padding:6px 6px 6px 0}
+.nrow .pos{flex:none;width:36px;text-align:center;font:800 18px/44px var(--head);color:var(--brand)}
+.nrow .main{flex:1;min-width:0;padding:4px 0}
+.nrow .open{display:block;width:100%;border:0;background:none;text-align:left;padding:4px 4px 2px 0;cursor:pointer;min-height:44px}
+.nrow .open b{font:800 22px/1.2 var(--head);margin-right:6px;overflow-wrap:anywhere}
+.nrow .open small{display:block;color:var(--muted);font-size:14px;overflow-wrap:anywhere}
+.nrow .rates{display:flex;flex-wrap:wrap;gap:2px 12px;font-size:14px;color:var(--muted);margin-top:2px}
+.nrow .rates b{color:var(--ink);font-weight:600}
+.nrow .mv{flex:none;display:flex;flex-direction:column;gap:4px}
+.nrow .mv .icon-btn{border:0;background:var(--bg)}
+.nrow.lone .pos{width:12px}
+.notes{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
+.notes li{background:var(--bg);border-radius:10px;padding:6px 10px;font-size:15px;overflow-wrap:anywhere}
+.notes li b{font-weight:700;margin-right:4px}
+.notes li .x{float:right;border:0;background:none;color:var(--muted);cursor:pointer;min-width:32px;min-height:28px;padding:0;margin:-4px -6px 0 4px;font-size:15px}
+.addnote{display:inline-flex;align-items:center;min-height:40px;border:0;background:none;color:var(--brand);font-weight:600;cursor:pointer;padding:0;font-size:14px}
+.empty{text-align:center;padding:26px 12px;color:var(--muted)}
+.empty .e{font-size:40px;line-height:1;margin-bottom:8px}
+.empty b{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+.note{background:var(--brand-t);border-radius:12px;padding:10px 14px;font-size:15px;margin:0 0 18px}
+.chiplist{display:flex;flex-wrap:wrap;gap:6px;padding:12px}
+.nchip{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:999px;background:var(--bg);cursor:pointer;font-weight:600;font-size:15px}
+.nchip small{color:var(--star);font-weight:700}
+.nchip.x small{color:var(--bad)}
+details.more{margin:0 0 18px}
+details.more>summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;min-height:44px;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);padding:0 4px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::after{content:"▾";font-size:16px}
+details.more[open]>summary::after{content:"▴"}
+.find{margin-top:4px}
+.find .res{list-style:none;margin:8px 0 0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.find .res:empty{display:none}
+.find .res li+li{border-top:1px solid var(--line)}
+.find .res button{display:flex;align-items:center;gap:8px;width:100%;min-height:52px;padding:6px 14px;border:0;background:none;text-align:left;cursor:pointer}
+.find .res button b{font-weight:700}
+.find .res button small{flex:1;min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.find .res .v{font-size:14px;white-space:nowrap}
+
+/* ---------- dialogs ---------- */
+dialog.dlg{width:min(560px,calc(100% - 24px));max-height:calc(100% - 32px);padding:0;border:0;border-radius:18px;background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog.dlg::backdrop{background:rgba(10,20,16,.55)}
+.dlg>form,.dlg>.in{padding:16px}
+.dlghead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.dlghead h2{flex:1;margin:0;font-size:22px;overflow-wrap:anywhere}
+.dlghead .icon-btn{border:0;background:var(--bg)}
+.dlgbtns{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.dlgbtns .btn{flex:1 1 auto}
+.menu{display:grid;gap:8px}
+.menu .btn{justify-content:flex-start;width:100%;padding:10px 16px;text-align:left}
+.menu .btn small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.menu h3{font-size:13px;font-family:var(--body);text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:10px 0 0 4px}
+.dsec{margin-top:16px}
+.dsec>h3{font-size:15px;font-family:var(--body);font-weight:700;margin-bottom:8px}
+.dinfo{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin-top:8px}
+.myrate{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px}
+.preview{background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin:0 0 14px}
+.preview .t{font-weight:700}
+.preview .alts{color:var(--muted);font-size:14px}
+.prompt{white-space:pre-wrap;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0 0;overflow-wrap:anywhere;max-height:240px;overflow:auto}
+details>summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--brand);font-weight:600}
+.step{font:800 15px var(--head);color:var(--brand);margin-bottom:6px}
+.chk{display:flex;gap:10px;align-items:center;min-height:44px;margin-bottom:12px;cursor:pointer}
+.chk input{width:22px;height:22px;accent-color:var(--brand)}
+.result{background:var(--good-t);border-radius:12px;padding:12px 14px;margin-top:12px}
+
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;font-size:15px;font-weight:500;text-align:center}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.match{background:var(--good);color:#fff;font-weight:700;font-size:17px}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+@media (max-width:359px){ h1{font-size:26px} .ncard .big{font-size:44px} .stack{height:330px} .star{width:46px} .acts{gap:16px} }
+</style>
+<script src="/lock.js"></script>
+<script src="/doc.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+<main id="app" class="wrap"><p class="hint">Loading…</p></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This page needs JavaScript to work.</p></noscript>
+
+<!-- Built-in names: US Social Security baby name data (names in the top 1,000 for a recent year, 2015–2024,
+     plus classics that were in the top 150 any year since 1900). Name|gender (g girl, b boy, u either)|popularity
+     (0–100 from the 2022–2024 rank: 100 − 25 × log10(rank), so 75 ≈ top 10, 50 ≈ top 100, 25 ≈ top 1,000)|
+     nicknames and full forms (from the nicknames-curated package, same gender, common names only). -->
+<script type="text/plain" id="catalog">
+Liam|b|100
+Olivia|g|100|Ollie,Livia
+Emma|g|92|Emily,Emmy,Emeline
+Noah|b|92
+Charlotte|g|88|Sherry,Lottie
+Oliver|b|88|Ollie
+Amelia|g|85|Emily,Amy,Millie,Mel
+James|b|85|Jamie,Jimmy,Jim,Jimmie,Jamey
+Elijah|b|83|Eli
+Sophia|g|83|Sophie
+Mia|g|81
+Theodore|b|81|Ted,Teddy,Theo
+Henry|b|79|Harry,Hal,Hank
+Isabella|g|79|Bella,Belle
+Ava|g|77
+Mateo|b|77
+Evelyn|g|76|Eve,Evelina
+William|b|76|Willie,Billy,Bill,Will,Willy
+Lucas|b|75|Luke
+Luna|g|75
+Benjamin|b|74|Jamie,Ben,Bennie,Benny
+Harper|g|74
+Camila|g|73
+Levi|b|73|Lee
+Sebastian|b|72
+Sofia|g|72
+Daniel|b|71|Danny,Dan
+Eleanor|g|71|Ellen,Elaine,Nora,Ellie,Helena,Lenora
+Elizabeth|g|71|Betty,Lisa,Beth,Bessie,Eliza,Betsy
+Jack|b|71|John,Jackson
+Michael|b|70|Mike,Miguel,Micah,Mickey,Micky
+Violet|g|70
+Aurora|g|69
+Ezra|b|69
+Samuel|b|69|Sam,Sammy
+Scarlett|g|69
+Asher|b|68
+Chloe|g|68
+Ethan|b|67
+Gianna|g|67
+Hazel|g|67
+Leo|b|67|Leonard,Leon
+Alexander|b|66|Alex,Alec,Al
+Aria|g|66
+Emily|g|66|Emma,Amelia,Millie,Emmy,Mel,Emeline
+Owen|b|66
+Hudson|b|65
+John|b|65|Jonathan,Jack,Johnny,Ian,Jon,Ivan
+Lily|g|65|Lilly
+Luca|b|65
+Nora|g|65|Eleanor,Lenora,Elnora,Leonora
+Penelope|g|65|Penny
+David|b|64|Dave,Davey
+Ellie|g|64|Helen,Danielle,Eleanor,Helene,Elly,Elmira
+Joseph|b|64|Joe,Jody,Joey
+Mila|g|64
+Abigail|g|63|Gail,Abby,Abbie,Abbey
+Avery|g|63
+Ella|g|63|Helen,Ellen,Gabrielle,Gabriella,Helene,Luella
+Jackson|b|63|Jack
+Julian|b|63|Jules,Jule
+Mason|b|63
+Eliana|g|62
+Elias|b|62|Lee,Eli
+Layla|g|62
+Luke|b|62|Lucas,Luther
+Matthew|b|62|Matt
+Nova|g|62
+Aiden|b|61
+Dylan|b|61
+Grace|g|61
+Isla|g|61
+Jacob|b|61|Jay,Jake
+Madison|g|61|Mattie
+Maverick|b|61
+Zoe|g|61
+Gabriel|b|60|Gabe
+Ivy|g|60|Iva
+Logan|b|60
+Lucy|g|60|Lucille,Lucia,Lucinda
+Willow|g|60
+Wyatt|b|60
+Emilia|g|59
+Grayson|b|59
+Isaac|b|59|Zeke,Ike
+Naomi|g|59
+Riley|u|59
+Santiago|b|59
+Thomas|b|59|Tommy,Tom
+Victoria|g|59|Vicki,Vickie,Vicky,Tori,Tory,Torrie
+Anthony|b|58|Tony
+Caleb|b|58|Cal
+Carter|b|58
+Elena|g|58|Helen
+Hannah|g|58|Susan,Anna,Joanna,Nan,Susannah
+Jayden|b|58
+Maya|g|58
+Miles|b|58
+Stella|g|58|Estelle,Estella
+Valentina|g|58
+Charles|b|57|Carl,Charlie,Chuck
+Cooper|b|57
+Delilah|g|57|Lila,Della,Dell
+Ezekiel|b|57|Zeke
+Josiah|b|57
+Leah|g|57|Ashley
+Lillian|g|57|Lilly
+Zoey|g|57
+Addison|g|56|Addie
+Christopher|b|56|Chris,Kit
+Genesis|g|56
+Isaiah|b|56
+Joshua|b|56|Joe,Josh
+Lainey|g|56
+Leilani|g|56|Lani
+Lincoln|b|56
+Madelyn|g|56
+Nathan|b|56|Jonathan,Nathaniel,Johnathan,Nate
+Paisley|g|56
+Roman|b|56
+Alice|g|55|Lisa,Elsie,Allie
+Andrew|b|55|Randy,Andy,Drew
+Angel|b|55
+Cameron|b|55|Ron,Ronny,Cam
+Josephine|g|55|Jo,Jody,Josie,Josey
+Kai|b|55
+Natalie|g|55|Nettie
+Nolan|b|55
+Ruby|g|55
+Sadie|g|55|Sarah,Mercedes
+Sophie|g|55|Sophia
+Waylon|b|55
+Aaron|b|54|Ronnie,Ron
+Adeline|g|54|Lena,Ada,Delia,Aline,Dell
+Adrian|b|54|Rian
+Audrey|g|54|Dee,Audree
+Bennett|b|54
+Brooks|b|54
+Claire|g|54|Clara,Clare,Clair
+Emery|g|54
+Everly|g|54
+Ian|b|54|John
+Kinsley|g|54
+Wesley|b|54|Wes
+Aaliyah|g|53
+Autumn|g|53
+Axel|b|53
+Beau|b|53
+Christian|b|53|Chris,Kit
+Eli|b|53|Elijah,Elias,Elisha
+Eloise|g|53|Louise
+Iris|g|53
+Kennedy|g|53
+Maeve|g|53
+Maria|g|53|Mariah,Marietta
+Rowan|u|53
+Thiago|b|53
+Weston|b|53
+Anna|g|52|Ann,Hannah,Annie,Anne,Savannah,Annette
+Athena|g|52
+Brooklyn|g|52
+Caroline|g|52|Carol,Carrie,Lynn,Carole,Cassie
+Everett|b|52
+Jade|g|52
+Jaxon|b|52
+Jonathan|b|52|John,Nathan,Jon,Johnathan,Jonathon,Johnathon
+Leonardo|b|52
+Liliana|g|52
+Quinn|u|52
+Ryan|b|52
+Silas|b|52
+Theo|b|52|Theodore
+Vivian|g|52
+Walker|b|52
+Ayla|g|51
+Clara|g|51|Claire,Clarissa,Clare
+Colton|b|51
+Cora|g|51|Corinne
+Easton|b|51
+Eden|g|51
+Enzo|b|51
+Hailey|g|51|Hayley,Haylee
+Jeremiah|b|51|Jerry
+Jose|b|51
+Madeline|g|51|Lena,Maggie,Madge,Maddie,Maud
+Micah|b|51|Michael
+Parker|b|51
+Robert|b|51|Billy,Bobby,Bill,Bob,Robby,Rob
+Sarah|g|51|Sara,Sally,Sadie
+Savannah|g|51|Anna,Savanna
+Adam|b|50
+Allison|g|50|Allie,Ally
+Amir|b|50
+Ariana|g|50
+August|b|50|Augustus,Augustine,Gus
+Bella|g|50|Isabella,Isabel,Isabelle,Arabella,Belle
+Daisy|g|50|Margaret,Margarita
+Gabriella|g|50|Ella
+Gael|b|50
+Jameson|b|50
+Jordan|b|50
+Landon|b|50
+Luka|b|50
+Lydia|g|50
+Lyla|g|50
+Melody|g|50
+Natalia|g|50
+Xavier|b|50
+Atlas|b|49
+Aubrey|g|49|Bree
+Austin|b|49|Augustus,Augustine
+Damian|b|49
+Dominic|b|49
+Eva|g|49|Eve
+Greyson|b|49
+Hunter|b|49
+Jace|b|49
+Josie|g|49|Josephine
+Juniper|g|49
+Lucia|g|49|Lucy
+Millie|g|49|Emily,Amelia,Camille
+Myles|b|49
+Nevaeh|g|49
+Nicholas|b|49|Nick,Nico,Nicky,Nickie
+Raelynn|g|49
+River|u|49
+Serenity|g|49
+Skylar|g|49
+Adriel|b|48
+Alaia|g|48
+Amara|g|48
+Archer|b|48
+Carson|b|48
+Charlie|u|48|Charles,Chuck
+Declan|b|48
+Eliza|g|48|Elizabeth,Louise,Louisa
+Emmett|b|48
+Giovanni|b|48
+Hadley|g|48
+Harrison|b|48|Harry
+Julia|g|48|Julie,Jill,Jules
+Kayden|b|48
+Margaret|g|48|Peggy,Rita,Daisy,Maggie,Margie,Gretchen
+Milo|b|48
+Rose|g|48|Rosa,Rosemary,Rosie,Roxanne,Rosalyn,Roseann
+Ryder|b|48
+Rylee|g|48
+Samantha|g|48
+Vincent|b|48|Vince
+Arthur|b|47|Art
+Arya|g|47
+Ashley|g|47|Leah,Ashly
+Brielle|g|47
+Cecilia|g|47|Sheila,Celia
+Connor|b|47
+Diego|b|47
+Elliana|g|47
+Emiliano|b|47
+Esther|g|47|Essie,Hester
+Evan|b|47
+Everleigh|g|47
+George|b|47
+Georgia|g|47|Georgiana
+Jasper|b|47|Casper
+Jaxson|b|47
+Jonah|b|47
+Lorenzo|b|47|Loren
+Luis|b|47
+Mary|g|47|Marie,Marilyn,Marion,Molly,Rosemary,Maureen
+Melanie|g|47
+Piper|g|47
+Remi|g|47
+Sawyer|b|47
+Sienna|g|47
+Zion|b|47
+Adalynn|g|46
+Alina|g|46
+Bryson|b|46
+Calvin|b|46|Cal
+Carlos|b|46
+Catalina|g|46
+Chase|b|46
+Cole|b|46
+Emersyn|g|46
+Freya|g|46
+Graham|b|46
+Jason|b|46
+Juan|b|46
+Juliette|g|46
+Kingston|b|46|King
+Legend|b|46
+Leon|b|46|Leonard,Leo,Lionel,Leonidas,Napoleon
+Magnolia|g|46
+Malachi|b|46
+Nathaniel|b|46|Nathan,Nate
+Peyton|u|46
+Sage|u|46
+Sloane|g|46
+Summer|g|46
+Valeria|g|46
+Valerie|g|46
+Ace|b|45
+Amari|u|45
+Amira|g|45
+Anastasia|g|45|Stacy,Ana
+Arlo|b|45
+Ashton|b|45
+Blakely|g|45
+Brayden|b|45
+Dawson|b|45
+Dean|b|45
+Elliot|b|45
+Ember|g|45
+Emerson|u|45
+Genevieve|g|45|Jean,Jenny,Eve
+Hayden|u|45
+Isabel|g|45|Bella,Belle
+Isabelle|g|45|Bella,Belle
+Ivan|b|45|John
+Jayce|b|45
+Jude|b|45|Judah
+June|g|45
+Kehlani|g|45
+Margot|g|45
+Matteo|b|45
+Oakley|u|45
+Oaklynn|g|45
+Rhett|b|45|Garrett
+Ximena|g|45
+Alan|b|44|Allen,Allan,Al
+Alana|g|44
+Alani|g|44
+Amaya|g|44
+Andrea|g|44|Andi
+Antonio|b|44|Tony
+Bailey|g|44
+Braxton|b|44
+Brianna|g|44|Bryanna
+Callie|g|44
+Elliott|b|44
+Elsie|g|44|Alice,Alicia
+Emilio|b|44
+Emmanuel|b|44|Immanuel
+Jesus|b|44
+Judah|b|44|Jude
+Kaiden|b|44
+Katherine|g|44|Kathy,Cathy,Lena,Kay,Kate,Cassie
+Mackenzie|g|44
+Matias|b|44
+Max|b|44|Maxwell,Maximilian,Maximillian
+Maxwell|b|44|Max
+Olive|g|44|Ollie,Livia
+Reagan|g|44
+Reese|g|44
+Rosalie|g|44
+Ruth|g|44
+Ryker|b|44
+Tyler|b|44
+Zachary|b|44|Zack,Zeke
+Ada|g|43|Adeline,Adaline
+Adalyn|g|43
+Alejandro|b|43
+Alexandra|g|43|Sandra,Sandy
+Annie|g|43|Anna,Stephanie,Ann,Anne,Leanne
+Arianna|g|43
+Ariella|g|43
+Ayden|b|43
+Beckett|b|43
+Beckham|b|43
+Bentley|b|43
+Camden|b|43
+Felix|b|43
+Finn|b|43
+Gemma|g|43
+Hallie|g|43
+Hayes|b|43
+Jasmine|g|43
+Jesse|b|43
+Jett|b|43
+Justin|b|43|Justus
+Kaia|g|43
+Kaylee|g|43
+Kevin|b|43
+Kylie|g|43
+Lilah|g|43
+Messiah|b|43
+Miguel|b|43|Michael,Mike
+Myla|g|43
+Nicolas|b|43|Nick,Nico,Nicky,Nickie
+Phoebe|g|43
+Sara|g|43|Sarah
+Stetson|b|43
+Wren|g|43
+Wrenley|g|43
+Zayden|b|43
+Abel|b|42|Abe
+Abraham|b|42|Abe
+Adaline|g|42|Lena,Ada,Delia,Dell
+Adonis|b|42
+Alaina|g|42
+Alex|b|42|Alexander,Al
+Amy|g|42|Amelia
+Ana|g|42|Anastasia,Bryanna
+Andres|b|42
+Arabella|g|42|Bella,Belle,Ara
+Aspen|g|42
+Barrett|b|42|Garrett
+Brody|b|42|Brady,Broderick
+Caden|b|42
+Callum|b|42
+Edward|b|42|Eddie,Ted,Teddy,Ed,Ned,Eddy
+Evangeline|g|42
+Joel|b|42
+Journee|g|42
+Khloe|g|42
+Knox|b|42
+Lia|g|42
+Lila|g|42|Delilah
+Maddox|b|42
+Molly|g|42|Mary,Marietta
+Noelle|g|42
+Norah|g|42
+Oscar|b|42
+Peter|b|42|Patrick,Pete
+Presley|g|42
+Saylor|g|42
+Sutton|u|42
+Timothy|b|42|Tim,Timmy
+Tucker|b|42
+Victor|b|42
+Xander|b|42
+Zuri|g|42
+Aitana|g|41
+Aliyah|g|41
+Alora|g|41
+Brandon|b|41
+Brynlee|g|41
+Daphne|g|41
+Delaney|g|41
+Diana|g|41
+Eric|b|41|Ricky,Derrick,Rick
+Faith|g|41|Fay
+Gavin|b|41
+Grant|b|41
+Griffin|b|41
+Harmony|g|41
+Haven|g|41
+Javier|b|41
+Juliana|g|41
+Kairo|b|41
+Karter|b|41
+Kiara|g|41
+Kimberly|g|41|Kim,Kimberley,Kimberli
+Kyrie|b|41
+Lennon|u|41
+Louis|b|41|Lewis,Lou,Louie
+Malakai|b|41
+Nico|b|41|Nicholas,Nicolas,Nikolas
+Nyla|g|41
+Patrick|b|41|Peter,Pat
+Rafael|b|41
+Richard|b|41|Ricky,Rick,Dick,Richie,Dickie,Rich
+Rory|u|41
+Selena|g|41
+Stevie|g|41|Stephanie
+Tate|b|41
+Tatum|u|41
+Tristan|b|41
+Vera|g|41
+Vivienne|g|41
+Zara|g|41
+Angela|g|40|Angie
+Aziel|b|40
+Blair|g|40
+Blake|b|40
+Camille|g|40|Millie,Cammie
+Celeste|g|40|Celia,Lessie
+Cohen|b|40
+Collins|g|40
+Colt|b|40
+Crew|b|40
+Dahlia|g|40
+Dallas|b|40
+Elaina|g|40
+Elian|b|40
+Elise|g|40
+Gracie|g|40
+Ismael|b|40
+Israel|b|40
+Jeremy|b|40
+Kailani|g|40
+Kamila|g|40
+Kash|b|40
+Kaylani|g|40
+King|b|40|Kingston,Kingsley
+Lane|b|40
+Leia|g|40
+Leila|g|40
+Lena|g|40|Helen,Kathleen,Catherine,Katherine,Ellen,Darlene
+Lennox|u|40
+Lilith|g|40
+Lilly|g|40|Lillian,Lily
+Lukas|b|40
+Marcus|b|40|Mark,Marc
+Mariana|g|40
+Mark|b|40|Marcus
+Milan|u|40
+Milani|g|40
+Miriam|g|40|Mitzi,Mimi
+Morgan|g|40
+Nash|b|40
+Omar|b|40
+Paul|b|40
+Rachel|g|40|Shelly,Rachael
+Ryleigh|g|40
+Simon|b|40
+Steven|b|40|Steve
+Zayn|b|40
+Adelaide|g|39|Heidi,Della,Adele,Dell
+Ariel|g|39
+Atticus|b|39
+Bryce|b|39
+Cade|b|39
+Cash|b|39
+Cataleya|g|39
+Celine|g|39
+Cyrus|b|39|Cy
+Dakota|u|39
+Daniela|g|39
+Derek|b|39|Ricky,Rick,Derrek
+Ellis|u|39
+Evie|g|39
+Finley|u|39
+Gia|g|39
+Harlow|g|39
+Holden|b|39
+Jane|g|39|Virginia,Jean,Jessie,Jeanne,Jennie,Janie
+Jordyn|g|39
+Jorge|b|39
+Kaden|b|39
+Kaleb|b|39
+Kali|g|39|Kalli
+Kayson|b|39
+Kenneth|b|39|Kenny,Kendrick,Ken
+Lola|g|39|Delores
+Londyn|g|39
+Lucille|g|39|Lucy,Lou,Lu
+Mabel|g|39
+Marley|g|39
+Maximiliano|b|39
+Muhammad|b|39
+Noa|g|39
+Octavia|g|39
+Ophelia|g|39
+Palmer|u|39
+Paxton|b|39
+Phoenix|u|39
+Preston|b|39
+Remington|u|39
+Ronan|b|39
+Talia|g|39
+Taylor|g|39
+Tobias|b|39|Toby
+Walter|b|39|Wally
+Zane|b|39
+Adelyn|g|38
+Aidan|b|38
+Ailany|g|38
+Alayna|g|38
+Alessia|g|38
+Ali|b|38
+Amina|g|38
+Angelina|g|38|Angie,Lina
+Angelo|b|38
+Antonella|g|38
+Aubree|g|38
+Bodhi|b|38
+Brady|b|38|Brody,Broderick
+Brian|b|38|Bryan,Bryant
+Brooke|g|38
+Bryan|b|38|Brian
+Callan|b|38
+Clayton|b|38
+Cody|b|38
+Colter|b|38
+Elianna|g|38
+Francisco|b|38
+Gabriela|g|38
+Harvey|b|38
+Hendrix|b|38
+Hope|g|38
+Jax|b|38
+Jaylen|b|38
+Jaziel|b|38
+Jensen|b|38
+Josue|b|38
+Juliet|g|38
+Kayla|g|38|Makayla,Kay
+Kendall|g|38
+Kyler|b|38
+Maggie|g|38|Margaret,Madeline,Margarita,Magdalena
+Maisie|g|38|Margarita
+Malcolm|b|38|Mac
+Malia|g|38
+Martin|b|38|Marty
+Maximus|b|38
+Niko|b|38
+Otto|b|38
+Rebecca|g|38|Becky,Reba,Becca
+Reid|b|38
+Romeo|b|38
+Samara|g|38
+Selah|g|38
+Shiloh|u|38
+Sydney|g|38
+Teagan|g|38
+Tessa|g|38|Teresa,Theresa
+Vanessa|g|38
+Warren|b|38
+Adriana|g|37
+Alyssa|g|37|Ally
+Amora|g|37
+Anderson|b|37|Andy
+Andre|b|37
+Annabelle|g|37
+Briggs|b|37
+Cairo|b|37
+Camilla|g|37
+Casey|u|37|Catherine,Cathleen
+Catherine|g|37|Kathy,Casey,Cathy,Lena,Kay,Cassie
+Cayden|b|37
+Colin|b|37
+Colson|b|37
+Cristian|b|37
+Cruz|b|37
+Damien|b|37
+Danna|g|37
+Dante|b|37
+Dream|g|37
+Eithan|b|37
+Erick|b|37|Frederick,Roderick
+Esme|g|37
+Evelynn|g|37
+Ezequiel|b|37
+Fatima|g|37
+Fernando|b|37
+Gideon|b|37
+Joanna|g|37|Joan,Hannah,Jo,Jody,Jodi
+Joaquin|b|37
+Jocelyn|g|37
+Journey|g|37
+Julianna|g|37
+Kade|b|37
+Khalil|b|37
+Koa|b|37
+Laila|g|37
+Lauren|g|37|Laurie,Ren
+Leonel|b|37
+London|g|37
+Luciana|g|37
+Manuel|b|37|Emanuel,Immanuel,Manny
+McKenna|g|37|Kenna
+Mya|g|37
+Nayeli|g|37
+Nicole|g|37|Nikki,Nicky,Nicki
+Nina|g|37
+Onyx|b|37
+Orion|b|37
+Paige|g|37
+Payton|u|37
+Poppy|g|37
+Regina|g|37|Gina
+Rosemary|g|37|Mary,Marie,Rose,Rosemarie
+Saint|b|37
+Thea|g|37
+Wade|b|37
+Zander|b|37
+Zyaire|b|37
+Adelina|g|36
+Alivia|g|36
+Archie|b|36|Archibald
+Ari|u|36|Ariadne
+Ariyah|g|36
+Azalea|g|36
+Baker|b|36
+Banks|b|36
+Bowen|b|36
+Bradley|b|36|Brad
+Brantley|b|36
+Briella|g|36
+Cesar|b|36
+Chance|b|36
+Charlee|g|36
+Daxton|b|36
+Desmond|b|36
+Eduardo|b|36|Eddie,Ed,Eddy
+Edwin|b|36|Eddie,Ed,Ned,Eddy
+Emory|u|36
+Esmeralda|g|36
+Fiona|g|36
+Francesca|g|36
+Giselle|g|36
+Harley|u|36
+Hector|b|36
+Heidi|g|36|Adelaide
+Iker|b|36
+Jaden|b|36
+Jared|b|36
+Jayla|g|36
+Julius|b|36
+Kalani|g|36
+Kamari|u|36
+Karson|b|36
+Killian|b|36
+Laura|g|36
+Leighton|u|36
+Lilliana|g|36
+Luciano|b|36
+Madilyn|g|36
+Malani|g|36
+Mariah|g|36|Mary,Maria,Marietta
+Mathias|b|36
+Meadow|g|36
+Navy|g|36
+Prince|b|36
+Raven|g|36
+Raya|g|36
+Raymond|b|36|Ray
+Rhys|b|36
+Ricardo|b|36|Ricky,Rick
+Rosie|g|36|Rose,Roseann,Roseanna
+Rylan|b|36
+Serena|g|36|Rena
+Sonny|b|36|Jefferson,Judson
+Spencer|b|36
+Stephen|b|36|Steve
+Sullivan|b|36|Van
+Titus|b|36
+Travis|b|36
+Trinity|g|36
+Viviana|g|36
+Winter|g|36
+Wynter|g|36
+Adelynn|g|35
+Aisha|g|35
+Alanna|g|35
+Alaya|g|35
+Alayah|g|35
+Alessandra|g|35
+Anaya|g|35
+Aniyah|g|35
+Ares|b|35
+Armani|u|35
+Astrid|g|35
+Aurelia|g|35|Ora
+Aylin|g|35
+Baylor|u|35
+Bodie|b|35
+Brooklynn|g|35
+Brynn|g|35
+Dariel|b|35
+Demi|g|35
+Elaine|g|35|Helen,Eleanor,Helena
+Everlee|g|35
+Frances|g|35|Frankie,Fanny,Fran
+Franklin|b|35|Frank
+Gracelynn|g|35
+Grady|b|35
+Gwendolyn|g|35|Wendy,Gwen
+Hattie|g|35|Harriet
+Helen|g|35|Ella,Ellen,Elaine,Eileen,Lena,Elena
+Hugo|b|35
+Ibrahim|b|35
+Itzel|g|35
+Jay|b|35|Jacob,Jalen
+Julieta|g|35
+Kameron|b|35
+Kane|b|35
+Kashton|b|35
+Kobe|b|35
+Kohen|b|35
+Kylo|b|35
+Lana|g|35
+Lawson|b|35
+Malik|b|35
+Marco|b|35
+Mario|b|35
+Marshall|b|35
+Maryam|g|35
+Melissa|g|35|Lisa,Missy,Mel,Lissa,Milly
+Michelle|g|35|Shelly,Shelley,Shellie
+Odin|b|35
+Pablo|b|35
+Raegan|g|35
+Raelyn|g|35
+Raiden|b|35
+Reign|u|35
+Remy|u|35
+Royal|u|35
+Russell|b|35|Rusty,Russ
+Sabrina|g|35
+Santino|b|35
+Scottie|g|35
+Sergio|b|35
+Shepherd|b|35
+Sterling|b|35
+Sylvia|g|35
+Sylvie|g|35
+Veronica|g|35|Ronna,Vonnie
+Wilder|b|35
+Willa|g|35
+Winston|b|35
+Ailani|g|34
+Alexandria|g|34|Sandra
+Alexis|g|34|Lexi
+Alicia|g|34|Lisa,Elsie,Allie
+Alijah|b|34
+Annalise|g|34
+Anya|g|34
+Apollo|b|34
+Arielle|g|34|Arie
+Augustus|b|34|Austin,August,Gus
+Bianca|g|34
+Cali|g|34|Kalli
+Callahan|b|34
+Carmen|g|34
+Carolina|g|34
+Clark|b|34
+Colette|g|34
+Corbin|b|34
+Daleyza|g|34
+Damon|b|34
+Destiny|g|34
+Devin|b|34
+Edgar|b|34|Eddie,Ed,Eddy
+Elisa|g|34|Lisa
+Elle|g|34
+Elora|g|34
+Emely|g|34
+Erik|b|34
+Esteban|b|34
+Fabian|b|34
+Forrest|b|34
+Francis|b|34|Frank,Frankie
+Frank|b|34|Francis,Franklin,Frankie
+Gianni|b|34
+Gunner|b|34
+Hank|b|34|Henry
+Helena|g|34|Eleanor,Ellen,Elaine,Eileen,Lena,Nellie
+Holly|g|34
+Isaias|b|34
+Izabella|g|34
+Jake|b|34|Jacob,Jakob
+Johnny|b|34|John,Jon
+Joy|g|34|Joyce
+Kian|b|34
+Kira|g|34
+Koda|b|34
+Kyle|b|34
+Kylian|b|34
+Kyson|b|34
+Liana|g|34
+Lorelai|g|34
+Madeleine|g|34
+Maia|g|34
+Mallory|g|34
+Matilda|g|34|Maud
+McKenzie|g|34
+Mira|g|34|Miranda,Elmira
+Miracle|g|34
+Nasir|b|34
+Nehemiah|b|34
+Noel|b|34
+Nylah|g|34
+Pedro|b|34
+Raphael|b|34|Ralph
+Reed|b|34
+Ronin|b|34
+Royce|b|34
+Saige|g|34
+Salem|u|34
+Sarai|g|34
+Sean|b|34
+Skye|g|34
+Solomon|b|34|Saul,Sol,Sal
+Sunny|g|34
+Tanner|b|34
+Tyson|b|34
+Wells|b|34
+Xiomara|g|34
+Zariah|g|34
+Zayne|b|34
+Adan|b|33
+Alison|g|33|Allie
+Alma|g|33
+Amanda|g|33|Mandy
+Amirah|g|33
+Amiyah|g|33
+Anahi|g|33
+Andy|b|33|Andrew,Anderson
+Asa|b|33
+Bo|b|33
+Bonnie|g|33
+Caiden|b|33
+Callen|b|33
+Camilo|b|33
+Camryn|g|33
+Cassidy|g|33|Cassie
+Charli|g|33
+Collin|b|33
+Dalton|b|33
+Daniella|g|33
+Danielle|g|33|Ellie,Dani
+Denver|u|33
+Donovan|b|33|Don,Donnie,Donny
+Dorothy|g|33|Dora,Dolly,Dottie,Dortha
+Emanuel|b|33|Manuel,Manny
+Emmy|g|33|Emily,Emma,Emeline
+Felicity|g|33
+Fernanda|g|33
+Finnegan|b|33
+Frederick|b|33|Fred,Ricky,Freddie,Rick,Erick,Freddy
+Garrett|b|33|Gary,Jerry,Garry,Rhett,Barrett,Garret
+Gracelyn|g|33
+Haisley|g|33
+Heaven|g|33
+Ivory|g|33
+Jaiden|b|33
+Jalen|b|33|Jay,Jaylin,Al,Lenny,Lennie,Len
+Jasiah|b|33
+Jeffrey|b|33|Jeff
+Johnathan|b|33|John,Jonathan,Nathan,Jon,Jonathon,Johnathon
+Katalina|g|33
+Kate|g|33|Katherine,Kathryn,Katelyn,Kay,Katy,Katelin
+Kayce|u|33
+Kendrick|b|33|Kenneth,Kent,Kenny,Ken
+Kieran|b|33
+Kora|g|33
+Leonidas|b|33|Lee,Leon
+Lewis|b|33|Louis
+Lorelei|g|33|Lori,Laurie,Lorrie
+Lyra|g|33
+Macie|g|33
+Maddison|g|33|Maddie
+Madelynn|g|33
+Makayla|g|33|Kayla
+Makenna|g|33
+Marcelo|b|33
+Marcos|b|33
+Marlee|g|33
+Matthias|b|33|Matt
+Miley|g|33
+Moshe|b|33
+Mylah|g|33
+Nadia|g|33
+Oaklee|g|33
+Opal|g|33
+Paris|g|33
+Philip|b|33|Phil
+Reece|b|33
+Renata|g|33
+Rodrigo|b|33
+Rowen|b|33
+Ruben|b|33
+Rylie|g|33
+Scarlet|g|33
+Stephanie|g|33|Annie,Stevie,Stephany,Stephani
+Sylas|b|33
+Tadeo|b|33
+Tripp|b|33
+Troy|b|33
+Uriel|b|33
+Valentino|b|33
+Zaire|b|33
+Alessandro|b|32
+Allie|g|32|Alice,Allison,Alicia,Alison,Alberta,Allyson
+Alondra|g|32
+Alonzo|b|32|Al,Lon,Lonzo
+Amiri|u|32
+April|g|32
+Ariah|g|32
+Ariya|g|32
+Arleth|g|32
+Atreus|b|32
+Avianna|g|32
+Ayaan|b|32
+Blaire|g|32
+Briana|g|32|Bryanna
+Briar|u|32
+Brinley|g|32
+Bruce|b|32
+Calliope|g|32
+Cecelia|g|32
+Clementine|g|32
+Conrad|b|32
+Dax|b|32
+Dayana|g|32
+Deacon|b|32
+Dominick|b|32|Nick,Nicky
+Drew|b|32|Andrew,Woodrow
+Edith|g|32|Edie
+Eliam|b|32
+Emelia|g|32
+Estella|g|32|Stella
+Faye|g|32
+Florence|g|32|Flora
+Ford|b|32|Clifford,Brad,Bradford
+Gabrielle|g|32|Ella
+Gregory|b|32|Greg
+Hanna|g|32
+Hezekiah|b|32
+Imani|g|32
+Jacqueline|g|32|Jackie
+Jamari|b|32
+Jamir|b|32
+Jaxton|b|32
+Jazlyn|g|32
+Jennifer|g|32|Jennie,Jenny,Jenni
+Jessica|g|32|Jessie
+Jimena|g|32
+Jolene|g|32
+Jonas|b|32
+Kaison|b|32
+Kaliyah|g|32
+Kamryn|g|32
+Kason|b|32
+Kolton|b|32
+Kylan|b|32
+Lawrence|b|32|Larry,Lon,Lonny,Lorne
+Leandro|b|32
+Legacy|u|32
+Leland|b|32
+Leona|g|32
+Lexi|g|32|Alexis
+Lucca|b|32
+Lucian|b|32
+Lyric|g|32
+Mack|b|32|Mac
+Mae|g|32|Mary,Marie,May,Marietta
+Major|b|32
+Makai|b|32
+Maliyah|g|32
+Maren|g|32
+Mariam|g|32
+Memphis|b|32
+Meredith|g|32
+Miller|b|32
+Moises|b|32
+Monroe|g|32
+Moses|b|32|Amos,Mose
+Murphy|u|32
+Porter|b|32
+Ridge|b|32
+Rio|u|32
+Roberto|b|32|Rob
+Rocco|b|32
+Rome|b|32
+Royalty|g|32
+Saul|b|32|Solomon
+Seth|b|32
+Soren|b|32
+Virginia|g|32|Jane,Jennie,Ginger,Ginny
+Wrenlee|g|32
+Yusuf|b|32
+Zaiden|b|32
+Ainsley|g|31
+Alejandra|g|31
+Alia|g|31
+Allen|b|31|Alan,Allan,Al
+Amalia|g|31
+Amber|g|31
+Anakin|b|31
+Ander|b|31
+Arjun|b|31
+Armando|b|31
+Arturo|b|31
+Augustine|b|31|Austin,August,Gus
+Averie|g|31
+Azariah|u|31
+Beatrice|g|31|Trisha
+Benson|b|31
+Boone|b|31
+Braylen|b|31
+Bristol|g|31
+Capri|g|31
+Cassius|b|31
+Chaya|g|31
+Cillian|b|31
+Clay|b|31
+Dorian|b|31
+Elodie|g|31
+Emerie|g|31
+Emir|b|31
+Enrique|b|31
+Eve|g|31|Evelyn,Eva,Genevieve
+Frankie|u|31|Frank,Frances,Francis
+Gerardo|b|31
+Hadassah|g|31
+Halo|g|31
+Hamza|b|31
+Holland|g|31
+Indie|g|31|India
+Ivanna|g|31
+Izaiah|b|31
+Jaime|b|31
+Jayceon|b|31
+Jayson|b|31
+Johan|b|31
+Julio|b|31
+Kasen|b|31
+Katie|g|31|Kathryn,Katy,Katia
+Kaysen|b|31
+Keanu|b|31
+Keegan|b|31
+Keira|g|31
+Kenzie|g|31
+Kenzo|b|31
+Kinley|g|31
+Kyla|g|31
+Ledger|b|31
+Leyla|g|31
+Lian|b|31
+Lilian|g|31
+Lina|g|31|Paula,Angelina,Paulina
+Lionel|b|31|Leon
+Louise|g|31|Lois,Eloise,Eliza,Lou,Elouise
+Lylah|g|31
+Makenzie|g|31
+Mara|g|31
+Marceline|g|31
+Margo|g|31|Margarita
+Maximilian|b|31|Max
+Maxine|g|31
+Melany|g|31
+Mina|g|31|Wilhelmina
+Miranda|g|31|Mandy,Randi,Mira
+Mohamed|b|31
+Mohammad|b|31
+Myra|g|31
+Nalani|g|31
+Nellie|g|31|Ellen,Helena,Leonora
+Nikolai|b|31
+Oakleigh|g|31
+Oaklyn|g|31
+Omari|b|31
+Ozzy|b|31|Waldo,Oswald
+Paislee|g|31
+Pierce|b|31
+Princeton|b|31
+Raul|b|31
+Rayan|b|31
+Reyna|g|31
+Rhea|g|31
+Romina|g|31
+Ronald|b|31|Ronnie,Ron,Ronny
+Rosalia|g|31
+Roy|b|31|Leroy
+Samir|b|31
+Samson|b|31|Sam,Sammy
+Scott|b|31|Scotty
+Sevyn|u|31
+Shane|b|31
+Sierra|g|31
+Sincere|b|31
+Trevor|b|31
+Winnie|g|31|Winifred,Winnifred
+Yara|g|31
+Yaretzi|g|31
+Zachariah|b|31|Zack,Zeke
+Zahra|g|31
+Zain|b|31
+Abby|g|30|Abigail,Abbigail,Abigale
+Ahmad|b|30
+Albert|b|30|Elbert,Bert,Al
+Alden|b|30
+Alexa|g|30
+Aliana|g|30
+Amaia|g|30
+Amani|g|30
+Amos|b|30|Moses
+Amoura|g|30
+Angelica|g|30|Angie,Angelique
+Anne|g|30|Anna,Ann,Annie,Nan
+Boston|b|30
+Braylon|b|30
+Brixton|b|30
+Caspian|b|30
+Cassandra|g|30|Sandra,Sandy,Cassie
+Cassian|b|30
+Chaim|b|30
+Charleigh|g|30
+Cleo|g|30
+Colby|b|30
+Conor|b|30
+Corey|b|30
+Creed|b|30
+Danny|b|30|Daniel
+Dario|b|30
+Davina|g|30
+Davis|b|30
+Della|g|30|Delores,Delilah,Adelaide,Adela,Dell
+Drake|b|30
+Eileen|g|30|Helen,Helena
+Elio|b|30
+Ellianna|g|30
+Elowyn|g|30
+Emberly|g|30
+Emmitt|b|30
+Estrella|g|30
+Finnley|u|30
+Fletcher|b|30
+Gloria|g|30|Glory
+Gunnar|b|30
+Gustavo|b|30
+Halle|g|30
+Huxley|b|30
+Irene|g|30|Rena
+Isabela|g|30
+Iyla|g|30
+Jamie|u|30|James,Benjamin,Jamey
+Jamison|b|30
+Jase|b|30
+Jaylani|g|30
+Jenna|g|30
+Journi|g|30
+Jovie|g|30
+Kaitlyn|g|30
+Kaizen|b|30
+Kamden|b|30
+Kareem|b|30
+Kataleya|g|30
+Kayleigh|g|30
+Kennedi|g|30
+Krew|b|30
+Layton|b|30
+Leslie|g|30
+Louie|b|30|Louis
+Mac|b|30|Malcolm,Mack
+Madden|b|30
+Marie|g|30|Mary,Rosemary,Mae,Marietta
+Marina|g|30
+Marvin|b|30
+Mauricio|b|30
+Mavis|g|30
+Maximo|b|30
+Melina|g|30
+Michaela|g|30
+Mohammed|b|30
+Musa|b|30
+Nia|g|30
+Nikolas|b|30|Nick,Nico,Nicky,Nickie
+Noemi|g|30
+Ocean|u|30
+Phillip|b|30|Phil
+Priscilla|g|30
+Reina|g|30
+Roland|b|30|Orlando,Lanny
+Rosa|g|30|Rose,Rosalyn,Rosalinda
+Sam|b|30|Samuel,Sammy,Samson,Sampson
+Sariyah|g|30
+Sasha|g|30
+Shawn|b|30|Shaun
+Shelby|g|30
+Skyler|u|30
+Thalia|g|30
+Tiana|g|30
+Tru|u|30
+Vicente|b|30
+Vienna|g|30
+Westin|b|30
+Yosef|b|30
+Zakai|b|30
+Zariyah|g|30
+Zeke|b|30|Zachary,Isaac,Ezekiel,Zachariah,Zachery
+Aarav|b|29
+Abdiel|b|29
+Abram|b|29|Abe
+Addilyn|g|29
+Adley|g|29
+Adrianna|g|29
+Ahmed|b|29
+Aleena|g|29
+Alisson|g|29
+Aliza|g|29
+Amayah|g|29
+Amias|b|29
+Analia|g|29
+Angie|g|29|Angela,Angelina,Angelica
+Arlet|g|29
+Arlette|g|29
+Axton|b|29
+Aya|g|29
+Azrael|b|29
+Azriel|b|29
+Bellamy|u|29
+Bethany|g|29
+Braelynn|g|29
+Bruno|b|29
+Cal|b|29|Caleb,Calvin
+Cannon|b|29
+Carmelo|b|29
+Case|b|29
+Chandler|b|29
+Charley|g|29
+Chosen|b|29
+Chris|b|29|Christopher,Christian,Kristopher,Kris,Kristofer,Kristoffer
+Christina|g|29|Tina,Christy,Kristy,Chrissy
+Clover|g|29
+Clyde|b|29
+Conner|b|29
+Coraline|g|29
+Dani|g|29|Danielle
+Darius|b|29
+Dennis|b|29|Denny,Dennie
+Dexter|b|29
+Donald|b|29|Don,Donnie,Donny
+Duke|b|29
+Dustin|b|29
+Eliseo|b|29
+Erin|g|29
+Estelle|g|29|Stella
+Fallon|g|29
+Flora|g|29|Florence
+Freyja|g|29
+Galilea|g|29
+Goldie|g|29
+Haley|g|29
+Harlan|b|29
+Hassan|b|29
+Houston|b|29
+Ila|g|29
+Jakai|b|29
+Jakari|b|29
+Jaliyah|g|29
+Janelle|g|29
+Jazmin|g|29
+Jenesis|g|29
+Jream|g|29
+Julien|b|29
+Karla|g|29|Carla,Carly
+Karsyn|g|29
+Kathryn|g|29|Kathy,Katie,Kate
+Keilani|g|29
+Keith|b|29
+Kelsey|g|29
+Kendra|g|29|Kay
+Kenna|g|29|McKenna
+Kensley|g|29
+Khaleesi|g|29
+Koen|b|29
+Kyra|g|29
+Kyree|b|29
+Kyro|b|29
+Laney|g|29
+Laurel|g|29|Laurie
+Layne|u|29
+Lee|b|29|Levi,Leroy,Elias,Leonidas
+Leonard|b|29|Leo,Leon,Lenny,Len
+Lillie|g|29
+Maci|g|29
+Macy|g|29
+Madilynn|g|29
+Marcel|b|29
+Marilyn|g|29|Mary
+Martha|g|29|Patsy,Mattie,Patty
+McKinley|g|29
+Mikayla|g|29
+Mylo|b|29
+Nathanael|b|29
+Nola|g|29
+Otis|b|29
+Penny|g|29|Penelope
+Quincy|b|29
+Raylan|b|29
+Rhodes|b|29
+Riggs|b|29
+Ryland|b|29
+Salvador|b|29|Sal
+Santana|u|29
+Selene|g|29
+Siena|g|29
+Sloan|g|29
+Taytum|g|29
+Tomas|b|29
+Tommy|b|29|Thomas,Tom
+Trace|b|29
+Trey|b|29
+Truett|b|29
+Uriah|b|29
+Vincenzo|b|29|Vince
+Violeta|g|29
+Westley|b|29|Wes,West
+Wilson|b|29|Willie,Will,Willy
+Zaid|b|29
+Zayd|b|29
+Zelda|g|29
+Zyair|b|29
+Abdullah|b|28
+Adalee|g|28
+Adhara|g|28
+Aila|g|28
+Aileen|g|28|Lena,Allie,Helena
+Alberto|b|28
+Aleah|g|28
+Alena|g|28
+Alfredo|b|28
+Alonso|b|28
+Alvaro|b|28
+Alvin|b|28
+Ambrose|b|28
+Andi|g|28|Andrea
+Aries|u|28
+Aron|b|28|Ronnie,Ron
+Aryan|b|28
+Avi|b|28
+Aviana|g|28
+Avyaan|b|28
+Azael|b|28
+Azaria|g|28
+Belen|g|28
+Ben|b|28|Benjamin,Benedict
+Benicio|b|28
+Birdie|g|28|Roberta,Bertha
+Bjorn|b|28
+Blaze|b|28
+Brayan|b|28
+Bridger|b|28
+Bridget|g|28
+Brock|b|28
+Brycen|b|28
+Brynleigh|g|28
+Casen|b|28
+Cayson|b|28
+Chana|g|28
+Chelsea|g|28
+Cheyenne|g|28
+Crue|b|28
+Dakari|b|28
+Derrick|b|28|Eric,Ricky,Rick
+Dilan|b|28
+Dillon|b|28
+Dior|u|28
+Dulce|g|28
+Dutton|b|28
+Eliel|b|28
+Elyse|g|28
+Emerald|g|28
+Emmie|g|28
+Enoch|b|28
+Evander|b|28
+Flynn|b|28
+Forest|b|28
+Franco|b|28
+Gage|b|28
+Georgina|g|28
+Gwen|g|28|Wendy,Gwendolyn
+Hana|g|28
+Harry|b|28|Henry,Harold,Harrison
+Hugh|b|28|Hubert
+Idris|b|28
+Issac|b|28
+Jayleen|g|28
+Jefferson|b|28|Jeff,Sonny
+Jemma|g|28
+Julie|g|28|Julia,Jules,Jule
+Junior|b|28
+Kaiser|b|28
+Karim|b|28
+Karina|g|28
+Kiana|g|28
+Kylee|g|28
+Lacey|g|28
+Lachlan|b|28
+Lakelynn|g|28
+Landen|b|28
+Lara|g|28
+Leilany|g|28
+Liv|g|28
+Loretta|g|28|Etta,Lorie,Lorrie
+Lottie|g|28|Charlotte,Carlotta
+Louisa|g|28|Lois,Eliza,Lou
+Love|g|28
+Loyal|b|28
+Magnus|b|28
+Malaya|g|28
+Malaysia|g|28
+Marigold|g|28
+Marisol|g|28
+Marlowe|g|28
+Megan|g|28|Margarita,Meg
+Milana|g|28
+Milena|g|28
+Misael|b|28
+Monica|g|28
+Noe|b|28
+Noor|g|28
+Novah|g|28
+Novalee|g|28
+Paula|g|28|Polly,Lina
+Paulina|g|28|Polly,Lina
+Pearl|g|28
+Persephone|g|28
+Promise|g|28
+Quentin|b|28
+Ramona|g|28|Mona
+Ray|b|28|Raymond
+Rayden|b|28
+Rayna|g|28
+Rex|b|28
+Rivka|g|28
+Robin|u|28
+Roger|b|28|Bobby,Rodger,Rod
+Samira|g|28
+Sky|g|28
+Theodora|g|28|Dora
+Tony|b|28|Anthony,Antonio,Clifton,Shelton
+Ty|b|28
+Valentin|b|28
+Veda|g|28
+Waylen|b|28
+Wayne|b|28
+Wes|b|28|Wesley,Westley
+Whitley|g|28
+Wylder|b|28
+Yareli|g|28
+Yehuda|b|28
+Zahir|b|28
+Zamir|b|28
+Zaria|g|28
+Zaylee|g|28
+Adele|g|27|Adelaide,Dell
+Alec|b|27|Alexander
+Alexia|g|27
+Alfred|b|27|Fred,Freddy,Al
+Aliya|g|27
+Allan|b|27|Alan,Allen,Al
+Amelie|g|27
+Anais|g|27
+Anders|b|27
+Anika|g|27
+Araceli|g|27
+Arian|b|27
+Ashlyn|g|27
+Aspyn|g|27
+Ayan|b|27
+Aylani|g|27
+Ayleen|g|27
+Bear|b|27
+Berkley|g|27
+Billie|g|27
+Boden|b|27
+Brittany|g|27|Britt
+Byron|b|27
+Calum|b|27
+Carly|g|27|Carla,Karla
+Cason|b|27
+Castiel|b|27
+Celia|g|27|Cecilia,Celeste
+Cynthia|g|27|Cindy
+Dalia|g|27
+Damir|b|27
+Dereck|b|27
+Douglas|b|27|Doug
+Edison|b|27
+Elina|g|27
+Elisha|u|27|Eli
+Emberlynn|g|27
+Ensley|g|27
+Everest|b|27
+Ezrah|b|27
+Gatlin|b|27
+Gian|b|27
+Giana|g|27
+Grey|b|27
+Guillermo|b|27
+Henley|g|27
+Iliana|g|27
+Inaya|g|27
+Izan|b|27
+Jagger|b|27
+Jahmir|b|27
+Jaxxon|b|27
+Jedidiah|b|27|Jed
+Jerry|b|27|Gerald,Jeremiah,Garrett,Gerry
+Jessie|u|27|Jessica,Janet,Jane,Jeanette,Jess
+Jimmy|b|27|James
+Jiraiya|b|27
+Johanna|g|27|Jo
+Jolie|g|27
+Judith|g|27|Judy,Judi,Judie
+Kaiya|g|27
+Kannon|b|27
+Keaton|b|27
+Kelly|g|27|Kelley
+Kenji|b|27
+Keyla|g|27
+Khai|b|27
+Khaza|b|27
+Kiaan|b|27
+Kimber|g|27
+Kingsley|u|27|King
+Kinslee|g|27
+Kolson|b|27
+Kori|g|27
+Kyaire|b|27
+Lance|b|27
+Langston|b|27
+Lea|g|27|Leanne
+Lenora|g|27|Eleanor,Nora
+Leroy|b|27|Roy,Lee
+Liberty|g|27
+Linda|g|27|Lynn,Melinda,Belinda,Rosalyn,Rosalinda,Lindy
+Livia|g|27|Olivia,Olive
+Lochlan|b|27
+Luz|g|27
+Maddie|g|27|Madeline,Maddison
+Maisy|g|27
+Marcellus|b|27
+Marianna|g|27|Marian
+Marleigh|g|27
+Meilani|g|27
+Melvin|b|27|Mel
+Mercy|g|27|Mercedes,Marietta
+Mikaela|g|27
+Mitchell|b|27|Mitch
+Mustafa|b|27
+Nala|g|27
+Naya|g|27
+Neil|b|27|Cornelius
+Nelson|b|27|Nels
+Nixon|b|27
+Nyomi|g|27
+Orlando|b|27|Roland
+Quinton|b|27
+Ramon|b|27
+Rayne|g|27
+Reuben|b|27
+Rey|b|27
+Ricky|b|27|Richard,Eric,Frederick,Derek,Ricardo,Derrick
+Rocky|b|27
+Rohan|b|27
+Rosalina|g|27
+Rudy|b|27|Rudolph
+Ryatt|b|27
+Santos|b|27
+Savanna|g|27|Savannah
+Scout|u|27
+Seven|u|27
+Skyla|g|27
+Sol|u|27|Solomon
+Stanley|b|27
+Stormi|g|27
+Tallulah|g|27
+Teo|b|27
+Teresa|g|27|Tessa,Tess,Tessie
+Thaddeus|b|27|Thad
+Treasure|g|27
+Trenton|b|27
+Vada|g|27
+Valery|g|27
+Watson|b|27
+Waverly|g|27
+Westyn|b|27
+Winona|g|27
+Yael|u|27
+Yahir|b|27
+Yahya|b|27
+Yousef|b|27
+Zaniyah|g|27
+Zayla|g|27
+Zendaya|g|27
+Zoya|g|27
+Aden|b|26
+Agustin|b|26
+Ahmir|b|26
+Alfonso|b|26
+Alianna|g|26
+Alistair|b|26
+Allyson|g|26|Allie,Ally
+Amaris|g|26
+Ameer|b|26
+Andie|g|26
+Annika|g|26
+Artemis|g|26
+Asaiah|b|26
+Ashlynn|g|26
+Aurelio|b|26
+Axl|b|26
+Azari|u|26
+Bailee|g|26
+Barbara|g|26|Bobbie,Barbie
+Baylee|g|26
+Benedict|b|26|Ben,Bennie
+Bode|b|26
+Braelyn|g|26
+Brendan|b|26
+Bria|g|26
+Brodie|b|26
+Cadence|g|26
+Cain|b|26
+Chozen|b|26
+Cielo|g|26
+Coleson|b|26
+Colten|b|26
+Curtis|b|26|Curt
+Damari|b|26
+Dane|b|26
+Darren|b|26
+Darwin|b|26
+Dash|b|26
+Deborah|g|26|Debbie,Debby
+Devon|b|26
+Eddie|b|26|Edward,Edwin,Edgar,Eduardo,Edmund,Edmond
+Eleanora|g|26
+Elia|g|26
+Emiliana|g|26
+Eren|b|26
+Ermias|b|26
+Ernesto|b|26
+Eugene|b|26|Gene
+Felipe|b|26
+Fisher|b|26
+Giovanna|g|26
+Giuliana|g|26
+Greta|g|26|Margarita
+Hadlee|g|26
+Harlee|g|26
+Harlem|u|26
+Harmoni|g|26
+Harold|b|26|Harry,Hal
+Hayley|g|26|Hailey,Haylee
+Heath|b|26
+Henrik|b|26
+Ignacio|b|26
+Indigo|g|26
+Indy|u|26|India
+Ira|u|26
+Ishaan|b|26
+Ivey|g|26
+Izael|b|26
+Jairo|b|26
+Janiyah|g|26
+Jasiel|b|26
+Jaycee|g|26
+Jazmine|g|26
+Jeremias|b|26
+Jericho|b|26
+Jesiah|b|26
+Jianna|g|26
+Jireh|u|26
+Joe|b|26|Joseph,Joshua,Joey
+Joelle|g|26
+Joey|b|26|Joseph,Joe
+Jon|b|26|John,Jonathan,Johnny,Johnathan,Jonathon,Johnathon
+Jones|b|26
+Jovanni|b|26
+Joziah|b|26
+Jrue|b|26
+Judson|b|26|Sonny
+Justice|u|26
+Kaeli|g|26
+Kahlani|g|26
+Kaisen|b|26
+Kallie|g|26
+Kamiyah|g|26
+Kara|g|26|Carol
+Kartier|b|26
+Kase|b|26
+Kassidy|g|26
+Katelyn|g|26|Kay,Kate,Kaye
+Keily|g|26
+Kellan|b|26
+Kellen|b|26
+Kenai|b|26
+Khalani|g|26
+Khari|u|26
+Kylen|b|26
+Lakelyn|g|26
+Landyn|b|26
+Laylani|g|26
+Leanna|g|26
+Leif|b|26
+Lilianna|g|26
+Lilyana|g|26
+Lisa|g|26|Elizabeth,Melissa,Alice,Alicia,Elisa,Liz
+Luella|g|26|Ella,Lula,Lu
+Luisa|g|26
+Madalyn|g|26
+Magdalena|g|26|Lena,Maggie
+Malayah|g|26
+Massimo|b|26
+Matheo|b|26
+Mathew|b|26|Matt
+McCoy|b|26
+Meir|b|26
+Mordechai|b|26
+Nancy|g|26|Ann,Nan
+Nataly|g|26
+Natasha|g|26|Tasha
+Neriah|g|26
+Nori|g|26
+Raina|g|26
+Rebekah|g|26
+Rosalyn|g|26|Linda,Rose,Rosa
+Roselyn|g|26
+Rowyn|g|26
+Ruthie|g|26
+Salma|g|26
+Salvatore|b|26
+Sarahi|g|26
+Seraphina|g|26
+Shepard|b|26
+Shmuel|b|26
+Solana|g|26
+Soleil|g|26
+Tiffany|g|26
+Titan|b|26
+Van|b|26|Sullivan
+Vihaan|b|26
+Wesson|b|26
+Xyla|g|26
+Yamileth|g|26
+Yasmin|g|26
+Yisroel|b|26
+Zainab|g|26
+Zavier|b|26
+Zechariah|b|26
+Zen|b|26
+Zev|b|26
+Zhuri|g|26
+Zora|g|26
+Zyon|b|26
+Aadhya|g|25
+Abner|b|25
+Adler|b|25
+Ainara|g|25
+Ainhoa|g|25
+Alaiya|g|25
+Alaric|b|25
+Aldo|b|25|Al
+Amyra|g|25
+Angelique|g|25|Angelica
+Araya|g|25
+Arely|g|25
+Atharv|b|25
+Aubrie|g|25
+Aubriella|g|25
+Aubrielle|g|25
+Aura|g|25
+Avalynn|g|25
+Avani|g|25
+Avayah|g|25
+Averi|g|25
+Ayah|g|25
+Ayra|g|25
+Azaiah|b|25
+Belle|g|25|Isabella,Isabel,Isabelle,Bella,Belinda,Arabella
+Benny|b|25|Benjamin
+Bexley|g|25
+Billy|b|25|Robert,William,Fred,Bill
+Boaz|b|25
+Brecken|b|25
+Brennan|b|25
+Bronson|b|25
+Bryant|b|25|Brian
+Brylee|g|25
+Campbell|u|25|Cam
+Canaan|b|25
+Carl|b|25|Charles,Carlton
+Carla|g|25|Karla,Carly
+Casper|b|25|Jasper
+Cedric|b|25|Ricky,Rick
+Celina|g|25
+Clare|g|25|Clara,Claire
+Cullen|b|25
+Dana|g|25
+Dangelo|b|25
+Dania|g|25
+Darcy|g|25
+Darian|b|25
+Deandre|b|25
+Demetrius|b|25
+Dimitri|b|25
+Dion|b|25
+Dominik|b|25
+Duncan|b|25
+Eiden|b|25
+Eliezer|b|25
+Elisabeth|g|25
+Ellen|g|25|Helen,Eleanor,Ella,Lena,Nellie,Helena
+Elouise|g|25|Louise
+Elowen|g|25
+Elsa|g|25
+Emmalyn|g|25
+Emmeline|g|25
+Ephraim|b|25
+Esperanza|g|25
+Etta|g|25|Loretta,Henrietta
+Foster|b|25
+Gary|b|25|Garrett,Gareth
+Gordon|b|25
+Guadalupe|g|25
+Guinevere|g|25
+Hadleigh|g|25
+Hollis|u|25
+Howard|b|25|Hal
+Imran|b|25
+Itzayana|g|25
+Jabari|b|25
+Jada|g|25
+Jadiel|b|25
+Jaxx|b|25
+Jayda|g|25
+Jettson|b|25
+Joyce|g|25|Joy
+Julissa|g|25
+Kabir|b|25
+Kailany|g|25
+Kairi|g|25
+Kaya|g|25
+Kaydence|g|25
+Kelvin|b|25
+Kenia|g|25
+Keziah|g|25
+Khalid|b|25
+Kiera|g|25
+Kimora|g|25
+Kolter|b|25
+Kooper|b|25
+Korbin|b|25
+Kristian|b|25
+Kya|g|25
+Kye|b|25
+Kyren|b|25
+Laith|b|25
+Larry|b|25|Lawrence,Laurence
+Lauryn|g|25|Laurie
+Laylah|g|25
+Lilia|g|25
+Lucien|b|25
+Lyanna|g|25
+Madisyn|g|25
+Malka|g|25
+Marlon|b|25
+Maurice|b|25
+Maylee|g|25
+Mazie|g|25
+Mekhi|b|25
+Mike|b|25|Michael,Miguel,Micheal,Micky
+Nazir|b|25
+Neo|b|25
+Nyra|g|25
+Ollie|u|25|Olivia,Oliver,Olive
+Osiris|b|25
+Osman|b|25
+Ozias|b|25
+Paloma|g|25
+Paola|g|25
+Princess|g|25
+Randy|b|25|Andrew,Randall,Randolph,Bertrand
+Raquel|g|25
+Rene|b|25
+Reya|g|25
+Rishi|b|25
+Ronnie|b|25|Ronald,Aaron,Ron,Aron
+Rosalee|g|25
+Rowdy|b|25
+Ryann|g|25
+Saanvi|g|25
+Saoirse|g|25
+Sapphire|g|25
+Sariah|g|25
+Scarlette|g|25
+Shai|u|25
+Shay|u|25|Sharon,Shaina
+Shimon|b|25
+Shlomo|b|25
+Simone|g|25
+Soraya|g|25
+Stefan|b|25
+Stone|b|25
+Talon|b|25
+Teddy|b|25|Edward,Theodore,Ted
+Thatcher|b|25
+Tilly|g|25|Matilda
+True|u|25
+Ulises|b|25
+Vance|b|25
+Veer|b|25
+Vida|g|25
+Violette|g|25
+Wallace|b|25|Wally
+Whitney|g|25
+Winifred|g|25|Winnie
+Wrenleigh|g|25
+Yaakov|b|25
+Yadiel|b|25
+Yitzchok|b|25
+Zaylen|b|25
+Zyla|g|25
+Aarya|g|24
+Abril|g|24
+Adrien|b|24
+Agnes|g|24|Inez
+Aiyana|g|24
+Akira|g|24
+Aleia|g|24
+Alessio|b|24
+Aleyna|g|24
+Aminah|g|24
+Anaiah|g|24
+Aniya|g|24
+Ann|g|24|Nancy,Anna,Annie,Anne,Antoinette,Roxanne
+Antonia|g|24|Ann
+Arden|u|24
+Arisbeth|g|24
+Austyn|u|24
+Avah|g|24
+Ayana|g|24
+Azai|b|24
+Betty|g|24|Elizabeth,Beth
+Beverly|g|24
+Bishop|b|24
+Blaine|b|24
+Blaise|b|24
+Blessing|g|24
+Bobby|b|24|Robert,Roger,Bob,Bert,Rodger,Rob
+Bowie|u|24
+Braden|b|24
+Branson|b|24
+Braylee|g|24
+Brett|b|24
+Carlo|b|24
+Cartier|b|24
+Cattleya|g|24
+Chanel|g|24
+Clarissa|g|24|Clara
+Claudia|g|24
+Coen|b|24
+Colsen|b|24
+Cordelia|g|24|Delia
+Corinne|g|24|Cora,Ora
+Cory|b|24
+Cristiano|b|24
+Crosby|b|24
+Crystal|g|24
+Dafne|g|24
+Davian|b|24
+Davion|b|24
+Dayton|b|24
+Decker|b|24
+Desiree|g|24
+Dhruv|b|24
+Egypt|g|24
+Elani|g|24
+Ellison|g|24
+Emani|g|24
+Emi|g|24
+Erika|g|24
+Ernest|b|24|Ernie
+Fox|b|24
+Gerald|b|24|Jerry,Gerry
+Gianluca|b|24
+Giavanna|g|24
+Granger|b|24
+Graysen|b|24
+Harriet|g|24|Hattie
+Honey|g|24
+Ida|g|24
+Ingrid|g|24
+Isael|b|24
+Ivaan|b|24
+Jair|b|24
+Jakob|b|24|Jake
+Jamal|b|24
+Jaylah|g|24
+Jazlynn|g|24
+Jillian|g|24|Jill
+Joan|u|24|Jo,Joanna
+Jordy|b|24
+Kace|b|24
+Kacey|u|24
+Kailey|g|24
+Kaisley|g|24
+Kalel|b|24
+Kanan|b|24
+Kathleen|g|24|Kathy,Cathy,Lena,Kay,Cassie,Trina
+Kody|b|24
+Kole|b|24
+Kristopher|b|24|Chris,Kris
+Krue|b|24
+Kyleigh|g|24
+Kynlee|g|24
+Landry|u|24
+Lavender|g|24
+Lettie|g|24|Letitia,Violetta
+Lexie|g|24
+Libby|g|24|Elizabeth
+Lizbeth|g|24
+Lux|u|24
+Lyle|b|24
+Mael|b|24
+Maelynn|g|24
+Makari|b|24
+Maleah|g|24
+Marc|b|24|Marcus
+Marian|g|24|Marion,Marianna
+Mariella|g|24
+Marjorie|g|24|Margie
+Mattie|g|24|Martha,Madison
+Maxton|b|24
+Melani|g|24
+Merrick|b|24
+Miah|g|24
+Mikael|b|24
+Nathalia|g|24
+Nathalie|g|24
+Niklaus|b|24
+Paisleigh|g|24
+Ramiro|b|24
+Reginald|b|24|Reggie,Reynold
+Renee|g|24
+Rodney|b|24|Rod
+Rogelio|b|24
+Romy|g|24
+Salome|g|24
+Sandra|g|24|Alexandra,Cassandra,Alexandria,Sandy
+Semaj|b|24
+Siya|g|24
+Susan|g|24|Hannah,Sue,Susie,Suzie
+Taliyah|g|24
+Tara|g|24
+Terry|b|24|Terence
+Tinsley|g|24
+Turner|b|24
+Viola|g|24|Ola
+Yusra|g|24
+Zola|g|24
+Zymir|b|24
+Aarna|g|23
+Achilles|b|23
+Addie|g|23|Addison,Adrienne
+Addilynn|g|23
+Addisyn|g|23
+Addyson|g|23
+Alisha|g|23
+Alitzel|g|23
+Alyson|g|23
+Angeline|g|23
+Annabella|g|23
+Annalee|g|23
+Ansley|g|23
+Ariadne|g|23|Ari,Arie
+Aydin|b|23
+Brenda|g|23|Brandy
+Bryer|b|23
+Cara|g|23
+Carolyn|g|23|Carrie,Lynn,Cassie
+Christine|g|23|Tina,Christy,Kristy,Chrissy
+Coleman|b|23
+Dalary|g|23
+Draven|b|23
+Edmund|b|23|Eddie,Ted,Ed,Ned,Eddy
+Elmer|b|23
+Elon|b|23
+Emil|b|23
+Emmaline|g|23
+Evalyn|g|23
+Evren|b|23
+Farrah|g|23
+Frida|g|23
+Gilbert|b|23|Bert,Wilber,Gil
+Gus|b|23|August,Augustus,Augustine
+Hailee|g|23
+Hakeem|b|23
+Harris|b|23
+Haylee|g|23|Hailey,Hayley
+Heavenly|g|23
+Immanuel|b|23|Manuel,Emmanuel
+India|g|23|Indie
+Jacoby|b|23
+Jad|b|23
+Jakobe|b|23
+Jana|g|23
+Javon|b|23
+Jaxtyn|b|23
+Jayde|g|23
+Jaylee|g|23
+Jaylene|g|23
+Jean|u|23|Jane,Jeanette,Genevieve,Jeannie
+Jeffery|b|23|Jeff
+Jerome|b|23
+Jewel|g|23
+Jovani|b|23
+Julietta|g|23
+Kamdyn|u|23
+Kamilah|g|23
+Karen|g|23
+Kassandra|g|23
+Kaylie|g|23
+Keenan|b|23
+Kolby|b|23
+Kyng|b|23
+Lailah|g|23
+Loyalty|g|23
+Madalynn|g|23
+Maison|b|23
+Malakhi|b|23
+Mazikeen|g|23
+Meghan|g|23|Meg
+Mollie|g|23|Marietta
+Moriah|g|23
+Nathaly|g|23
+Patricia|g|23|Patsy,Pat,Patty,Patti,Trisha,Tricia
+Perla|g|23
+Ralph|b|23|Raphael
+Raylee|g|23
+Riya|g|23
+Rolando|b|23
+Sally|g|23|Sarah
+Sekani|b|23
+Sharon|g|23|Shay
+Simeon|b|23
+Tatiana|g|23
+Terrance|b|23
+Toby|b|23|Tobias
+Tori|g|23|Victoria
+Torin|b|23
+Trent|b|23
+Vaughn|b|23
+Wendy|g|23|Gwendolyn,Gwen
+Will|b|23|William,Willie,Fred,Bill,Wilbur,Wilson
+Xzavier|b|23
+Yeshua|b|23
+Aayan|b|22
+Adrienne|g|22|Addie
+Aislinn|g|22
+Amia|g|22
+Amiya|g|22
+Analeia|g|22
+Annette|g|22|Anna,Nettie
+Anson|b|22
+Aranza|g|22
+Beatrix|g|22
+Bentlee|b|22
+Benton|b|22
+Bernard|b|22|Barney,Bernie
+Britney|g|22
+Cassie|g|22|Carol,Kathleen,Catherine,Katherine,Carolyn,Carrie
+Ciara|g|22
+Clifford|b|22|Ford,Cliff
+Cristopher|b|22
+Dixie|g|22
+Dwayne|b|22
+Ean|b|22
+Emilie|g|22
+Emryn|g|22
+Erica|g|22
+Freddy|b|22|Frederick,Alfred,Ferdinand
+Giancarlo|b|22
+Giovani|b|22
+Harleigh|g|22
+Heather|g|22
+Icelynn|g|22
+Jadon|b|22
+Jaelyn|g|22
+Jaelynn|g|22
+Janessa|g|22
+Jaxen|b|22
+Jaylin|u|22|Jalen
+Jenny|g|22|Jennifer,Genevieve
+Jermaine|b|22
+Joselyn|g|22
+Juelz|b|22
+Kenny|b|22|Kenneth,Kent,Kendrick,Ken
+Kolten|b|22
+Korbyn|b|22
+Krish|b|22
+Lillianna|g|22
+Lindsey|g|22|Lindsay
+Lorraine|g|22|Lorie,Lorrie
+Maddux|b|22
+Malaki|b|22
+Maliah|g|22
+Markus|b|22
+Marlene|g|22
+Maxim|b|22
+Mayson|b|22
+Micheal|b|22|Mike
+Milton|b|22
+Miya|g|22
+Norman|b|22
+Osvaldo|b|22
+Perry|u|22
+Randall|b|22|Randy
+Rita|g|22|Margaret,Margarita
+Ross|b|22|Roscoe
+Saniyah|g|22
+Seamus|b|22
+Sidney|u|22
+Sonia|g|22
+Tristen|b|22
+Tyrone|b|22
+Willie|b|22|William,Fred,Bill,Wilbur,Wilson,Will
+Zackary|b|22
+Zoie|g|22
+Aimee|g|21
+Alannah|g|21
+Alisa|g|21
+Alyvia|g|21
+Anita|g|21
+Anniston|g|21
+Anton|b|21
+Aydan|b|21
+Barry|b|21
+Braydon|b|21
+Brent|b|21
+Camdyn|u|21
+Clarence|b|21
+Dale|b|21
+Danica|g|21
+Darrell|b|21
+Deshawn|b|21
+Dominique|u|21
+Eason|b|21
+Emmalynn|g|21
+Emmarie|g|21
+Emmet|b|21
+Glenn|b|21|Glen
+Haiden|u|21
+Jasmin|g|21
+Javion|b|21
+Jonathon|b|21|John,Jonathan,Jon,Johnathan,Johnathon,Jonnie
+Jurnee|g|21
+Justus|b|21|Justin
+Kadence|g|21
+Kailyn|g|21
+Karlee|g|21
+Kaylin|g|21
+Kaylynn|g|21
+Kenley|g|21
+Kristen|g|21
+Kyndall|g|21
+Lamar|b|21
+Lori|g|21|Lorelei
+Marissa|g|21
+Marquis|b|21
+May|g|21|Mae,Marietta
+Monserrat|g|21
+Montserrat|g|21
+Myah|g|21
+Nickolas|b|21
+Paityn|g|21
+Percy|b|21
+Quintin|b|21
+Reyansh|b|21
+Rodolfo|b|21
+Stacy|g|21|Stacey,Anastasia,Stacie,Staci
+Tabitha|g|21
+Terrell|b|21
+Terrence|b|21
+Vivaan|b|21
+Yaritza|g|21
+Adilynn|g|20
+Alexzander|b|20
+Alissa|g|20
+Annabel|g|20
+Antoine|b|20
+Arnold|b|20
+Asia|g|20
+Avalyn|g|20
+Brentley|b|20
+Bryleigh|g|20
+Carlee|g|20
+Caylee|g|20
+Cecil|b|20
+Chad|b|20
+Cherish|g|20
+Clinton|b|20
+Craig|b|20
+Deangelo|b|20
+Denise|g|20
+Diamond|g|20
+Emilee|g|20
+Gannon|b|20
+Geneva|g|20
+Gibson|b|20
+Greysen|b|20
+Guy|b|20
+Inez|g|20|Agnes
+Jamar|b|20
+Jamarion|b|20
+Kaelyn|g|20
+Karl|b|20
+Keagan|b|20
+Kent|b|20|Kenny,Kendrick,Ken
+Kenya|g|20
+Kristina|g|20
+Kymani|b|20
+Lilyanna|g|20
+Lois|g|20|Louise,Lou,Louisa
+Luther|b|20|Luke
+Melania|g|20
+Paulette|g|20
+Queen|g|20
+Rashad|b|20
+Riaan|b|20
+Shaun|b|20|Shawn
+Shayla|g|20
+Shirley|g|20|Sherry
+Steve|b|20|Steven,Stephen,Stephan
+Tenley|g|20
+Theresa|g|20|Tracy,Tessa,Traci,Tracie,Tess,Tessie
+Todd|b|20
+Tristian|b|20
+Truman|b|20
+Vernon|b|20
+Virgil|b|20
+Yesenia|g|20
+Aarush|b|19
+Ally|g|19|Allison,Alyssa,Allyson,Althea,Allyssa
+Alton|b|19
+Amare|b|19
+Amya|g|19
+Arlene|g|19|Lena
+Aryana|g|19
+Aryanna|g|19
+Ashanti|g|19
+Belinda|g|19|Linda,Belle
+Brayson|b|19
+Breanna|g|19|Bree
+Briley|g|19
+Brysen|b|19
+Channing|u|19
+Chester|b|19|Chet
+Chevy|b|19
+Cindy|g|19|Cynthia,Lucinda
+Clifton|b|19|Tony,Cliff
+Constance|g|19|Connie
+Dan|b|19|Daniel
+Darryl|b|19
+Don|b|19|Donald,Donovan,Donato
+Fred|b|19|Willie,Billy,Frederick,Alfred,Bill,Will
+Geraldine|g|19|Dina,Gerry,Gerri
+Ireland|g|19
+Irving|b|19|Irvin
+Janiya|g|19
+Jaylynn|g|19
+Judy|g|19|Judith
+Kaeden|b|19
+Kailee|g|19
+Kamron|b|19
+Kari|g|19|Carol
+Karlie|g|19
+Katrina|g|19
+Lester|b|19|Les
+Lloyd|b|19|Floyd
+Lonnie|b|19
+Marion|u|19|Mary,Marian,Marietta
+Mariyah|g|19
+Morris|b|19
+Tamara|g|19
+Wendell|b|19
+Woodrow|b|19|Drew,Woody
+Yvette|g|19
+America|g|18
+Aubri|g|18
+Audrina|g|18
+Brenna|g|18
+Bryanna|g|18|Anna,Brianna,Ana,Briana
+Caitlyn|g|18
+Camron|b|18
+Charlene|g|18
+Courtney|g|18
+Darlene|g|18|Lena
+Denisse|g|18
+Donna|g|18|Dona
+Donnie|b|18|Donald,Donovan
+Eunice|g|18
+Freddie|b|18|Frederick,Ferdinand
+Gene|b|18|Eugene
+Gina|g|18|Regina
+Iva|g|18|Ivy
+Jessa|g|18
+Joslyn|g|18
+Julianne|g|18
+Kaelynn|g|18
+Konnor|b|18
+Krystal|g|18
+Lindsay|g|18|Lindsey
+Lula|g|18|Luella
+Milania|g|18
+Mildred|g|18|Milly
+Natalee|g|18
+Shannon|g|18
+Sheila|g|18|Cecilia
+Sonya|g|18
+Taya|g|18
+Tegan|u|18
+Tinley|g|18
+Truce|b|18
+Anabella|g|17
+Braiden|b|17
+Caitlin|g|17
+Dave|b|17|David
+Dawn|g|17
+Deanna|g|17
+Duane|b|17
+Earl|b|17
+Edna|g|17
+Emmalee|g|17
+Jan|b|17
+Janet|g|17|Jessie,Jeanette
+Janice|g|17
+Jaydon|b|17
+Jennie|g|17|Jennifer,Virginia,Jane
+Jocelynn|g|17
+Johnnie|b|17
+Jordynn|g|17
+Kamren|b|17
+Kurt|b|17
+Lela|g|17
+Madyson|g|17
+Marianne|g|17
+Maryann|g|17
+Melinda|g|17|Linda,Lynn,Mindy,Lindy,Mel
+Mindy|g|17|Melinda
+Neymar|b|17
+Pamela|g|17|Pam
+Sylvester|b|17|Vester
+Toni|g|17
+Braeden|b|16
+Brantlee|b|16
+Brenden|b|16
+Brice|b|16
+Camren|b|16
+Chace|b|16
+Charlize|g|16
+Diane|g|16|Dianne,Dian
+Doris|g|16|Dora
+Effie|g|16
+Elin|g|16
+Floyd|b|16|Lloyd
+Glen|b|16|Glenn
+Henrietta|g|16|Nettie,Etta
+Herbert|b|16|Bert
+Jackie|u|16|Jacqueline
+Konner|b|16
+Lizzie|g|16|Elizabeth,Liz
+Marguerite|g|16|Peggy
+Norma|g|16
+Susie|g|16|Susan,Suzanne,Sue,Susannah,Suzie
+Urijah|b|16
+Yvonne|g|16
+Zhavia|g|16
+Anabelle|g|15
+Bennie|b|15|Benjamin,Benedict
+Carol|g|15|Carrie,Caroline,Lynn,Carole,Kara,Kari
+Colleen|g|15
+Davin|b|15
+Dora|g|15|Dorothy,Doris,Dorothea,Theodora,Dorinda,Isadora
+Dwight|b|15
+Herman|b|15
+Hillary|g|15|Hilary
+Irma|g|15
+Jaclyn|g|15
+Jaida|g|15
+Joanne|g|15|Jo
+Juanita|g|15|Nettie,Nita
+Katelynn|g|15
+Kensington|g|15
+Kirk|b|15
+Tina|g|15|Christine,Christina,Kristine,Ernestine,Martina,Augusta
+Tom|b|15|Thomas,Tommy
+Tracy|u|15|Theresa
+Triston|b|15
+Willis|b|15|Bill,Willy
+Bobbie|g|14|Barbara,Roberta
+Carrie|g|14|Carol,Carolyn,Caroline,Cassie
+Dolores|g|14
+Gauge|b|14
+Jeanette|g|14|Janet,Jean,Jessie,Nettie
+Joann|g|14|Jo
+Kathy|g|14|Kathleen,Catherine,Katherine,Kathryn,Cathy,Cathleen
+Kerry|u|14|Kerri
+Kiley|g|14
+Mable|g|14
+Rickey|b|14
+Roberta|g|14|Bobbie,Bertie,Birdie
+Sandy|g|14|Sandra,Alexandra,Cassandra
+Suzanne|g|14|Sue,Susie
+Yolanda|g|14
+Candace|g|13|Candy
+Essie|g|13|Esther
+Fannie|g|13
+Gladys|g|13
+Hilda|g|13
+Jeff|b|13|Jeffrey,Jeffery,Geoffrey,Jefferson,Jefferey
+Jimmie|b|13|James,Jim
+Lynn|g|13|Linda,Carol,Carolyn,Caroline,Melinda,Lindy
+Minnie|g|13|Marietta,Minerva,Wilhelmina
+Olga|g|13
+Pauline|g|13|Polly
+Rick|b|13|Richard,Eric,Frederick,Derek,Ricky,Ricardo
+Stacey|g|13|Stacy,Stacie,Staci
+Ted|b|13|Edward,Theodore,Edmund,Teddy
+Tim|b|13|Timothy,Timmy
+Willard|b|13
+Aubrianna|g|12
+Brandy|g|12|Brenda
+Brittney|g|12|Britt
+Christy|g|12|Christine,Christina,Kristine,Christiana
+Claude|b|12
+Connie|g|12|Constance
+Kaitlynn|g|12
+Laurie|g|12|Lauren,Laurel,Lauryn,Lorelei
+Monique|g|12
+Nichole|g|12
+Rachael|g|12|Rachel
+Tanya|g|12
+Wilbur|b|12|Willie,Will,Willy
+Beth|g|11|Elizabeth,Betty,Betsy
+Brandi|g|11
+Darin|b|11
+Darrin|b|11
+Homer|b|11
+Jodi|g|11|Joanna
+Kay|g|11|Kathleen,Catherine,Katherine,Kayla,Katelyn,Kendra
+Krista|g|11
+Kristine|g|11|Tina,Christy,Kristy
+Lowell|b|11
+Marisa|g|11
+Ora|g|11|Corinne,Aurelia
+Ashlee|g|10
+Bernice|g|10
+Brad|b|10|Bradley,Bradford,Ford
+Cheryl|g|10
+Debra|g|10|Debbie
+Felicia|g|10
+Hubert|b|10|Hugh,Bert
+Jim|b|10|James,Jimmie
+Jo|g|10|Joan,Josephine,Joanne,Joann,Joanna,Jody
+Kim|g|10|Kimberly,Kimberley
+Lucile|g|10
+Mandy|g|10|Amanda,Miranda
+Marcia|g|10|Marsha
+Maude|g|10
+Maureen|g|10|Mary,Marietta
+Roosevelt|b|10
+Rudolph|b|10|Rudy,Rolf
+Wilma|g|10|Wilhelmina
+Becky|g|9|Rebecca
+Bill|b|9|Robert,William,Willie,Billy,Fred,Willis
+Chelsey|g|9|Chelsie
+Dewey|b|9
+Gertrude|g|9|Trudy,Gertie
+Jeanne|g|9|Jane,Jeannie
+Kristin|g|9
+Michele|g|9
+Muriel|g|9
+Rufus|b|9
+Vicky|g|9|Victoria,Vicki
+Bertha|g|8|Bertie,Birdie
+Debbie|g|8|Deborah,Debra,Debora,Debby
+Earnest|b|8|Ernie
+Greg|b|8|Gregory
+Kaitlin|g|8
+Misty|g|8
+Tammy|g|8|Tami,Tammie
+Thelma|g|8
+Verna|g|8|Laverne
+Candice|g|7
+Christie|g|7
+Ebony|g|7
+Ethel|g|7
+Garry|b|7|Garrett
+Horace|b|7
+Kristy|g|7|Christine,Christina,Kristine,Christiana
+Shelly|g|7|Michelle,Rachel
+Sherry|g|7|Shirley,Charlotte,Sheryl
+Terri|g|7|Teri,Terrie
+Wanda|g|7
+Aaden|b|6
+Cathy|g|6|Kathleen,Catherine,Katherine,Kathy,Cathleen
+Delbert|b|6|Bert,Del
+Glenda|g|6
+Jill|g|6|Julia,Jillian
+Jonael|b|6
+Kelli|g|6|Kelley
+Mamie|g|6|Mary,Marietta
+Margie|g|6|Margaret,Marjorie
+Sallie|g|6
+Stefanie|g|6
+Beulah|g|5
+Dianne|g|5|Diane
+Doreen|g|5
+Erma|g|5
+Kellie|g|5|Kelley
+Lynda|g|5
+Nettie|g|5|Natalie,Juanita,Annette,Jeanette,Henrietta,Monet
+Shawna|g|5
+Sheryl|g|5|Sherry,Sherri,Sheri,Cheri,Cherie,Sherryl
+Velma|g|5
+Delores|g|4|Lola,Della,Dee,Dell
+Gail|g|4|Abigail,Abbigail,Abigale
+Marsha|g|4|Mary,Marcia,Marcie
+Orville|b|4
+Patsy|g|4|Patricia,Martha,Patty
+Peggy|g|4|Margaret,Marguerite
+Stacie|g|4|Stacy,Stacey,Staci
+Tasha|g|4|Natasha
+Eula|g|3
+Ola|g|3|Viola
+Rhonda|g|3
+Sheena|g|3
+Tracey|u|3
+Bert|b|2|Albert,Bobby,Herbert,Gilbert,Bob,Hubert
+Bessie|g|2|Elizabeth,Bess
+Tonya|g|2
+Bette|g|1
+Janis|g|1
+Kristi|g|1
+Meagan|g|1
+Phyllis|g|1
+Alberta|g|0|Allie,Bertie
+Blanche|g|0
+Bob|b|0|Robert,Bobby,Bert,Rob
+Carole|g|0|Carol,Caroline,Carolann
+Dick|b|0|Richard,Ricky,Rick,Rich
+Ed|b|0|Edward,Edwin,Eddie,Edgar,Eduardo,Edmund
+Flossie|g|0
+Gayle|g|0
+Johnie|b|0
+Katina|g|0
+Kristie|g|0
+Krystle|g|0
+Latasha|g|0
+Latoya|g|0
+Lynne|g|0
+Marquita|g|0
+Myrna|g|0
+Myrtle|g|0
+Nannie|g|0
+Pam|g|0|Pamela
+Pat|u|0|Patricia,Patrick,Patience
+Patti|g|0|Patricia
+Patty|g|0|Patricia,Martha,Patsy,Patience,Mathilda
+Shanna|g|0
+Shari|g|0
+Shelley|g|0|Michelle
+Sheri|g|0|Sheryl
+Sherri|g|0|Sheryl
+Sue|g|0|Susan,Suzanne,Susie,Susannah
+Tamika|g|0
+Traci|g|0|Theresa
+Tracie|g|0|Theresa
+Tricia|g|0|Patricia
+Vicki|g|0|Victoria,Vickie,Vicky
+Vickie|g|0|Victoria,Vicki
+</script>
+<script>
+(function () {
+'use strict';
+
+/* ------------------------------------------------------------------ helpers */
+var $app = document.getElementById('app');
+var K_RECENT = 'pebbly_names_recent', K_PREF = 'pebbly_names_prefs';
+var MAX_BYTES = 280000, MAX_NOTE = 300;
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function tidy(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
+function own(o, k) { return o && Object.prototype.hasOwnProperty.call(o, k) ? o[k] : undefined; }
+function plural(n, one, many) { return n.toLocaleString() + ' ' + (n === 1 ? one : (many || one + 's')); }
+function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
+function shareUrl(code) { return baseUrl() + '?d=' + code; }
+var toastTimer, $toast = document.getElementById('toast');
+function toast(msg, cls) {
+  $toast.textContent = msg; $toast.className = 'show' + (cls ? ' ' + cls : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { $toast.className = ''; }, cls ? 2600 : 3000);
+}
+function copyText(text) {
+  function fallback() {
+    var el = document.createElement('textarea'); el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select(); var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(el); return ok;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function () { return true; }, fallback);
+  return Promise.resolve(fallback());
+}
+function share(title, url) {
+  if (navigator.share) { navigator.share({ title: title, text: title, url: url }).catch(function () {}); return; }
+  copyText(url).then(function (ok) { toast(ok ? 'Link copied. Send it to your partner.' : url); });
+}
+function hash(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; }
+
+/* ------------------------------------------------------------------ names
+   Every name has a key: lower case, accents and anything but letters removed ("Zoë" and "zoe" are one name).
+   Built-in names (CAT) come from the catalog above; the shortlist adds its own (state.names). */
+function key(s) {
+  var t = tidy(s), k = t.normalize ? t.normalize('NFD').replace(/[̀-ͯ]/g, '') : t;
+  k = k.toLowerCase().replace(/[^a-z]/g, '');
+  return k || t.toLowerCase().replace(/[\s"'<>&]/g, '').slice(0, 40);
+}
+function cap(s) { s = tidy(s); return s.charAt(0).toUpperCase() + s.slice(1); }
+var CAT = {}, CAT_KEYS = [];
+document.getElementById('catalog').textContent.split('\n').forEach(function (l) {
+  var f = l.trim().split('|'); if (f.length < 3) return;
+  var k = key(f[0]); if (own(CAT, k)) return;
+  CAT[k] = { n: f[0], g: f[1], p: +f[2], alt: f[3] ? f[3].split(',') : [] }; CAT_KEYS.push(k);
+});
+var GENDER = { g: 'Girl', b: 'Boy', u: 'Either' };
+function gTag(g) { return '<span class="g g-' + esc(g) + '">' + (g === 'g' ? '👧 Girl' : g === 'b' ? '👦 Boy' : '🧒 Either') + '</span>'; }
+function popWord(p) { return p == null ? 'Not known' : p >= 75 ? 'Top 10' : p >= 50 ? 'Top 100' : p >= 38 ? 'Top 300' : p >= 25 ? 'Top 1,000' : p >= 10 ? 'Uncommon' : 'Rare'; }
+function popHtml(e) {
+  return '<div class="pop"><div class="row"><span>Popularity' + (e.est && e.p != null ? ' (AI guess)' : '') + '</span><span><b>' +
+    (e.p == null ? '–' : e.p + '/100') + '</b> · ' + popWord(e.p) + '</span></div><div class="bar"><i style="width:' + (e.p || 0) + '%"></i></div></div>';
+}
+function fitsGender(e, g) { return !g || g === 'any' || e.g === g || e.g === 'u'; }
+function stars5(v) { var s = ''; for (var i = 1; i <= 5; i++) s += i <= v ? '★' : '<i>★</i>'; return '<span class="s5" aria-label="' + v + ' of 5 stars">' + s + '</span>'; }
+
+/* ------------------------------------------------------------------ the shortlist
+   state: { v, p: { a: name, b: name }, gender: 'g' | 'b' | 'any',
+     votes: { a: { key: 0 (no) | 1–5 (yes, stars) }, b: {…} },
+     names: { key: { n, alt: [], g, p, by: 'a'|'b', ai: listId, at } }  (names not built in; or extras for built-in ones:
+                                                                            alternates, who suggested it, which AI list)
+     lists: { id: { label, g, at, by, keys: [] } },                        (AI imports)
+     rank: { key: position },                                              (our own order for the names we both like)
+     notes: { key: { id: { by, t, at } } } } */
+var D = null, S = null, CODE = '', justCreated = false, gone = null;
+var ENT = {}, KEYS = [], ALT = {};          // every name (built in + ours), and alternate name → keys
+
+function normalize(s) {
+  s = s || {};
+  s.p = s.p || {}; s.p.a = s.p.a || ''; s.p.b = s.p.b || '';
+  if (['g', 'b', 'any'].indexOf(s.gender) < 0) s.gender = 'any';
+  s.votes = s.votes || {}; s.votes.a = s.votes.a || {}; s.votes.b = s.votes.b || {};
+  s.names = s.names || {}; s.lists = s.lists || {}; s.rank = s.rank || {}; s.notes = s.notes || {};
+  return s;
+}
+function makeEntry(k, st) {
+  var b = own(CAT, k), c = own(st.names, k);
+  if (!b && !(c && c.n)) return null;
+  var alt = (b ? b.alt : []).slice(), seen = {};
+  alt.forEach(function (a) { seen[key(a)] = 1; });
+  if (c && Array.isArray(c.alt)) c.alt.forEach(function (a) { var ak = key(a); if (ak && !seen[ak] && ak !== k) { seen[ak] = 1; alt.push(a); } });
+  return { k: k, n: b ? b.n : c.n, g: b ? b.g : (GENDER[c.g] ? c.g : 'u'), p: b ? b.p : (typeof c.p === 'number' ? c.p : null), est: !b,
+    alt: alt, by: c && c.by, ai: c && c.ai };
+}
+function index() {
+  ENT = {}; KEYS = []; ALT = {};
+  CAT_KEYS.forEach(function (k) { ENT[k] = makeEntry(k, S); KEYS.push(k); });
+  Object.keys(S.names).forEach(function (k) {
+    if (own(CAT, k)) { ENT[k] = makeEntry(k, S); return; }
+    var e = makeEntry(k, S); if (e) { ENT[k] = e; KEYS.push(k); }
+  });
+  KEYS.forEach(function (k) { ENT[k].alt.forEach(function (a) { var ak = key(a); if (ak !== k) (ALT[ak] = ALT[ak] || []).push(k); }); });
+}
+function ent(k) { return own(ENT, k) || null; }
+
+// Is this name already here? 1) the same name; 2) it's a nickname/alternate of a name that's here;
+// 3) one of its alternates is a name here that lists it back (two spellings of one name).
+function findMatch(name, alts) {
+  var k = key(name);
+  if (!k) return null;
+  if (ent(k)) return { k: k, how: 'name' };
+  var via = (own(ALT, k) || []).slice().sort(function (a, b) { return (ENT[b].p || 0) - (ENT[a].p || 0); });
+  if (via.length) return { k: via[0], how: 'alt' };
+  for (var i = 0; i < (alts || []).length; i++) {
+    var e = ent(key(alts[i]));
+    if (e && e.alt.some(function (x) { return key(x) === k; })) return { k: e.k, how: 'alt' };
+  }
+  return null;
+}
+
+/* ------------------------------------------------------------------ this phone */
+function recent() { var r = load(K_RECENT, []); return Array.isArray(r) ? r : []; }
+function rememberList(code, title) {
+  var list = recent().filter(function (r) { return r.code !== code; });
+  list.unshift({ code: code, title: title, at: Date.now() });
+  store(K_RECENT, list.slice(0, 20));
+}
+function forgetList(code) { store(K_RECENT, recent().filter(function (r) { return r.code !== code; })); }
+function prefs() { var all = load(K_PREF, {}) || {}; var p = all[CODE] || {}; if (!p.seed) { p.seed = Math.random().toString(36).slice(2, 8); all[CODE] = p; store(K_PREF, all); } return p; }
+function setPref(k, v) { var all = load(K_PREF, {}) || {}; var p = all[CODE] || {}; if (v === undefined) delete p[k]; else p[k] = v; all[CODE] = p; store(K_PREF, all); }
+function me() { var m = prefs().me; return m === 'a' || m === 'b' ? m : ''; }
+function other() { return me() === 'b' ? 'a' : 'b'; }
+function who(slot) { return (S && S.p[slot]) || (slot === 'a' ? 'Parent 1' : 'Your partner'); }
+function title() { return S.p.a && S.p.b ? S.p.a + ' & ' + S.p.b : S.p.a ? S.p.a + '’s baby names' : 'Baby names'; }
+function vote(slot, k) { return own(S.votes[slot], k); }
+
+var MSG = {
+  network: 'Couldn’t reach the server. Check your connection and try again.',
+  doc_not_found: 'This shortlist doesn’t exist anymore. It may have been deleted.',
+  invalid_state: 'Your shortlist has got too big to save. Try removing an AI list.',
+  invalid_kind: 'Baby Names isn’t set up in the database yet. Try again in a few minutes.',
+  not_owner: 'Only the person who started this shortlist can do that.'
+};
+function friendly(e) { var m = (e && e.message) || e || ''; return PebblyLock.message(m) || MSG[m] || PebblyDoc.message(e); }
+
+/* ------------------------------------------------------------------ routes */
+function route() {
+  closeDialogs();
+  if (D) { D.close(); D = null; }
+  S = null; gone = null; shownKey = null; undoStack = [];
+  var q = new URLSearchParams(location.search), code = q.get('d');
+  if (!code) { renderHome(); return; }
+  openList(code.trim().toLowerCase());
+}
+function openList(code) {
+  CODE = code;
+  PebblyDoc.takeOwnerFromUrl(code);
+  $app.innerHTML = '<div class="state"><p class="hint">Loading…</p></div>';
+  PebblyDoc.open(code, {
+    kind: 'names', el: $app, what: 'list',
+    onState: function (s, info) { if (CODE !== code) return; S = normalize(s); index(); render(info); },
+    onStatus: function () { showStatus(); },
+    onGone: function (why) { gone = why; if (why === 'doc_not_found') forgetList(code); closeDialogs(); render({}); }
+  }).then(function (d) {
+    if (CODE !== code) { if (d) d.close(); return; }
+    if (!d) { forgetList(code); renderNotFound(); return; }
+    D = d;
+    if (d.isOwner && !me()) setPref('me', 'a');
+  }, function (e) {
+    $app.innerHTML = '<div class="state"><div class="e" aria-hidden="true">📶</div><h1>Couldn’t open this shortlist</h1><p class="lede">' + esc(friendly(e)) + '</p>' +
+      '<button type="button" class="btn primary" data-act="retry">Try again</button></div>';
+  });
+}
+function renderNotFound() {
+  document.title = 'Not found | Baby Names';
+  $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">＋ New shortlist</a></nav>' +
+    '<div class="state"><div class="e" aria-hidden="true">🔍</div><h1>Shortlist not found</h1>' +
+    '<p class="lede">That link doesn’t match a shortlist. It may have been deleted, or part of the link is missing.</p>' +
+    '<a class="btn primary" href="' + esc(baseUrl()) + '">Start a new one</a></div>';
+}
+
+/* ------------------------------------------------------------------ home / create */
+function genderSeg(name, cur, labels) {
+  labels = labels || { g: 'Girl', b: 'Boy', any: 'Either' };
+  return '<div class="seg" style="--n:3">' + ['g', 'b', 'any'].map(function (g) {
+    return '<label><input type="radio" name="' + name + '" value="' + g + '"' + (g === cur ? ' checked' : '') + '><span>' + labels[g] + '</span></label>';
+  }).join('') + '</div>';
+}
+function renderHome() {
+  document.title = 'Baby Names';
+  CODE = '';
+  var owners = load('pebbly_doc_owners', {}) || {}, list = recent();
+  $app.innerHTML =
+    '<h1 style="margin-top:8px">👶 Baby Names</h1>' +
+    '<p class="lede">Swipe right on names you like and left on the rest, each on your own phone. Pebbly shows you the names you both love, in your own order.</p>' +
+    '<form id="createForm" class="card" novalidate autocomplete="off">' +
+      '<label class="fld"><span>Your name</span><input type="text" name="a" maxlength="30" placeholder="Ben"></label>' +
+      '<label class="fld"><span>Your partner’s name <span class="pl-opt">(optional)</span></span><input type="text" name="b" maxlength="30" placeholder="Sam">' +
+        '<small>They can add it when they open the link.</small></label>' +
+      '<fieldset><legend>Looking for</legend>' + genderSeg('gender', 'any', { g: 'Girl names', b: 'Boy names', any: 'Both' }) +
+        '<small class="hint" style="display:block;margin-top:6px">You can change this any time.</small></fieldset>' +
+      PebblyLock.fieldHtml('list') +
+      '<button class="btn primary wide" type="submit">Start swiping</button>' +
+      '<p class="err" id="formErr" role="alert"></p>' +
+    '</form>' +
+    '<p class="hint">' + CAT_KEYS.length.toLocaleString() + ' names built in, with nicknames and how popular each one is in the US right now. Add your own, or ask an AI for ideas in a style you like.</p>' +
+    (list.length ? '<section class="recent"><h2>Your shortlists</h2><ul>' + list.map(function (r) {
+      return '<li><a href="?d=' + esc(r.code) + '"><span aria-hidden="true">👶</span><span class="t">' + esc(r.title || 'Baby names') + '</span>' +
+        (owners[r.code] ? '<span class="tag">host</span>' : '') + '</a></li>';
+    }).join('') + '</ul></section>' : '');
+}
+function submitCreate(form) {
+  var f = form.elements, err = $('#formErr'), btn = form.querySelector('[type=submit]');
+  err.textContent = '';
+  var a = tidy(f.a.value).slice(0, 30), b = tidy(f.b.value).slice(0, 30);
+  if (!a) { err.textContent = 'Add your name, so your partner knows who liked what.'; f.a.focus(); return; }
+  var st = { v: 1, p: { a: a, b: b }, gender: f.gender.value, votes: { a: {}, b: {} }, names: {}, lists: {}, rank: {}, notes: {} };
+  btn.disabled = true; btn.textContent = 'Starting…';
+  PebblyDoc.create('names', st).then(function (r) {
+    rememberList(r.code, b ? a + ' & ' + b : a + '’s baby names');
+    var all = load(K_PREF, {}) || {}; all[r.code] = { me: 'a', seed: Math.random().toString(36).slice(2, 8) }; store(K_PREF, all);
+    return PebblyLock.afterCreate('doc', r.code, r.owner_token, f.lockpw ? f.lockpw.value : '', PebblyDoc.raw).then(function (lockErr) {
+      history.pushState(null, '', baseUrl() + '?d=' + r.code);
+      justCreated = true;
+      route();
+      if (lockErr) toast(lockErr);
+    });
+  }, function (e) { btn.disabled = false; btn.textContent = 'Start swiping'; err.textContent = friendly(e); });
+}
+
+/* ------------------------------------------------------------------ the page */
+function showStatus() {
+  var el = $('#sync'); if (!el) return;
+  var t = !D ? ['', 'Loading…'] : ({ live: ['', 'Saved'], saving: ['saving', 'Saving…'], offline: ['offline', 'Offline – will retry'] }[D.status] || ['', '']);
+  el.className = 'sync ' + t[0]; el.textContent = t[1];
+}
+function view() { return prefs().view === 'list' ? 'list' : 'swipe'; }
+function matchKeys() {
+  return KEYS.filter(function (k) { return vote('a', k) >= 1 && vote('b', k) >= 1; });
+}
+// The page is built once per shortlist; #top, #view are redrawn. The swipe card only changes when it has to.
+function render(info) {
+  if (!S) return;
+  info = info || {};
+  document.title = title() + ' | Baby Names';
+  rememberList(CODE, title());
+  if (!me()) { renderWho(); return; }
+  if (!$('#view')) {
+    $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">＋ New shortlist</a><span id="sync" class="sync" role="status"></span></nav>' +
+      '<div id="top"></div><div id="view"></div>';
+    shownKey = null;
+  }
+  var top = '';
+  if (gone) {
+    top += '<div class="banner" role="alert">' + (gone === 'doc_not_found' ? '<b>This shortlist was deleted.</b> Changes can’t be saved anymore.' :
+      '<b>This shortlist now needs a password.</b> Reload to enter it.') +
+      '<div class="tools"><button type="button" class="btn small" data-act="reload">Reload</button></div></div>';
+  }
+  if (justCreated) {
+    top += '<section class="card created"><div class="cardhead"><h2>Ready to swipe 🎉</h2>' +
+      '<button type="button" class="icon-btn" data-act="hide-created" aria-label="Close">✕</button></div>' +
+      '<p>Send this link to ' + (S.p.b ? esc(S.p.b) : 'your partner') + (PebblyLock.key('doc', CODE) ? ', and tell them the password' : '') +
+      '. You each swipe on your own phone, and names you both like show up under <b>Our list</b>.</p>' +
+      '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(CODE)) + '" aria-label="Shortlist link">' +
+      '<button type="button" class="btn primary small" data-act="share">Share</button></div></section>';
+  }
+  var n = matchKeys().length, v = view();
+  top += '<header class="apphead"><h1>👶 ' + esc(title()) + '</h1><button type="button" class="icon-btn" data-act="menu" aria-label="More options">⋯</button></header>' +
+    '<div class="tabs" role="tablist"><button type="button" role="tab" data-act="tab" data-v="swipe" aria-selected="' + (v === 'swipe') + '">Swipe</button>' +
+    '<button type="button" role="tab" data-act="tab" data-v="list" aria-selected="' + (v === 'list') + '">💚 Our list <span class="n" id="matchN">' + (n ? '(' + n + ')' : '') + '</span></button></div>' +
+    '<p class="mebar"><span>Swiping as <b>' + esc(who(me())) + '</b></span><button type="button" class="link" data-act="switch">Not you?</button></p>';
+  $('#top').innerHTML = top;
+  if (v === 'swipe') renderSwipe(info); else renderList(info);
+  showStatus();
+}
+
+/* ------------------------------------------------------------------ who's on this phone */
+function renderWho() {
+  var a = S.p.a, b = S.p.b;
+  $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">＋ New shortlist</a></nav>' +
+    '<div class="state" style="padding-top:20px"><div class="e" aria-hidden="true">👶</div><h1>' + esc(title()) + '</h1>' +
+    '<p class="lede">Swipe through baby names and see the ones you both love. Who’s swiping on this phone?</p></div>' +
+    '<div class="card"><div class="menu">' +
+      '<button type="button" class="btn" data-act="iam" data-slot="a">I’m ' + esc(who('a')) + '</button>' +
+      (b ? '<button type="button" class="btn" data-act="iam" data-slot="b">I’m ' + esc(b) + '</button>' : '') +
+    '</div>' +
+    (b ? '' : '<form id="joinForm" novalidate autocomplete="off" style="margin-top:16px"><label class="fld"><span>I’m ' + (a ? esc(a) + '’s partner' : 'the other parent') + '. My name:</span>' +
+      '<input type="text" name="nm" maxlength="30"></label><button type="submit" class="btn primary wide">Start swiping</button><p class="err" role="alert"></p></form>') +
+    '</div>';
+}
+
+/* ------------------------------------------------------------------ swiping */
+var shownKey = null, undoStack = [], busy = false;
+function source() { var s = prefs().src || 'all'; if (s !== 'all' && s !== 'ours' && !own(S.lists, s)) s = 'all'; return s; }
+function inSource(k, src) {
+  if (src === 'all') return true;
+  var e = ENT[k];
+  if (src === 'ours') return !!e.by;
+  var l = own(S.lists, src); return !!(l && Array.isArray(l.keys) && l.keys.indexOf(k) > -1);
+}
+function popOk(e, pop) { return pop === 'pop' ? e.p >= 50 : pop === 'rare' ? (e.p == null || e.p < 38) : true; }
+// Names this person hasn't decided on yet, best first. Names the other one liked come up much sooner
+// (5-star ones always first, 1-star ones mixed in with the most popular), then a nudge toward popular names, otherwise a shuffle that stays put.
+function deck(slot) {
+  slot = slot || me();
+  var mine = S.votes[slot], theirs = S.votes[slot === 'a' ? 'b' : 'a'], src = source(), pop = prefs().pop || 'any', seed = prefs().seed, out = [];
+  var ls = src !== 'all' && src !== 'ours' ? own(S.lists, src) : null, lset = {};
+  if (ls && Array.isArray(ls.keys)) ls.keys.forEach(function (k) { lset[k] = 1; });
+  KEYS.forEach(function (k) {
+    if (own(mine, k) !== undefined) return;
+    var e = ENT[k];
+    if (!fitsGender(e, S.gender) || !popOk(e, pop)) return;
+    if (src === 'ours' && !e.by) return;
+    if (ls && !lset[k]) return;
+    var o = own(theirs, k), pr = hash(seed + k) + (e.p || 0) / 250;
+    if (o >= 1) pr += 1 + 0.1 * o; else if (o === 0) pr -= 0.3;
+    out.push({ k: k, pr: pr });
+  });
+  out.sort(function (x, y) { return y.pr - x.pr; });
+  return out.map(function (x) { return x.k; });
+}
+function filterLabel() {
+  var src = source(), pop = prefs().pop || 'any';
+  var g = S.gender === 'g' ? 'Girls' : S.gender === 'b' ? 'Boys' : 'Girls and boys';
+  var s = src === 'all' ? 'all names' : src === 'ours' ? 'our suggestions' : 'AI list “' + S.lists[src].label + '”';
+  return '<b>' + g + '</b> · ' + esc(s) + (pop === 'pop' ? ' · popular' : pop === 'rare' ? ' · less common' : '');
+}
+function cardHtml(e, back) {
+  var src = e.by && e.ai ? '✨ From the AI list “' + esc((own(S.lists, e.ai) || {}).label || 'AI') + '”' : e.by ? '💡 Suggested by ' + esc(who(e.by)) : '';
+  return '<div class="ncard' + (back ? ' back' : '') + '"' + (back ? ' aria-hidden="true"' : ' id="card" data-k="' + esc(e.k) + '"') + '>' +
+    '<span class="stamp like" aria-hidden="true">LIKE</span><span class="stamp nope" aria-hidden="true">NOPE</span>' +
+    gTag(e.g) + '<div class="big' + (e.n.length > 9 ? ' long' : '') + '">' + esc(e.n) + '</div>' +
+    (e.alt.length ? '<div class="alts">Also: <b>' + e.alt.map(esc).join('</b> · <b>') + '</b></div>' : '<div class="alts">No common nicknames</div>') +
+    popHtml(e) + (src ? '<div class="src">' + src + '</div>' : '') + '</div>';
+}
+function renderSwipe(info) {
+  var vw = $('#view');
+  if (!$('#stack')) {
+    vw.innerHTML = '<button type="button" class="filterbtn" data-act="filters" id="filterBtn"></button>' +
+      '<div class="stack" id="stack"></div>' +
+      '<div class="acts" id="acts"><button type="button" class="round no" data-act="no" aria-label="No">✕</button>' +
+      '<button type="button" class="round undo" data-act="undo" aria-label="Undo">↶</button>' +
+      '<button type="button" class="round yes" data-act="yes" aria-label="Like">♥</button></div>' +
+      '<p class="seen" id="seen"></p><div id="waiting"></div>';
+    shownKey = null;
+  }
+  $('#filterBtn').innerHTML = '<span aria-hidden="true">⚙️</span><span class="t">' + filterLabel() + '</span><span aria-hidden="true">▾</span>';
+  var d = deck(), keep = shownKey && ent(shownKey) && vote(me(), shownKey) === undefined && d.indexOf(shownKey) > -1;
+  var cur = keep ? shownKey : d[0] || null, next = d.filter(function (k) { return k !== cur; })[0];
+  if (!dragging && !busy && ((cur || '') !== shownKey || info.force)) {
+    shownKey = cur || '';
+    $('#stack').innerHTML = cur ? (next ? cardHtml(ent(next), true) : '') + cardHtml(ent(cur)) :
+      '<div class="done"><div class="e" aria-hidden="true">🎉</div><h2>That’s every name for now</h2>' +
+      '<p class="hint">You’ve been through all the names that fit ' + filterLabel() + '.</p>' +
+      '<div class="tools"><button type="button" class="btn small" data-act="filters">Change filters</button>' +
+      '<button type="button" class="btn small" data-act="ai">✨ Ideas from AI</button><button type="button" class="btn small" data-act="suggest">＋ Add a name</button></div></div>';
+    if (cur) bindCard($('#card'));
+  }
+  $$('#acts .no, #acts .yes').forEach(function (b) { b.disabled = !cur || !!gone; });
+  $('#acts .undo').disabled = !undoStack.length || !!gone;
+  var seenN = 0, total = 0, mv = S.votes[me()];
+  KEYS.forEach(function (k) { var e = ENT[k]; if (!fitsGender(e, S.gender)) return; total++; if (own(mv, k) !== undefined) seenN++; });
+  var m = matchKeys().filter(function (k) { return fitsGender(ENT[k], S.gender); }).length;
+  $('#seen').textContent = 'You’ve decided on ' + seenN.toLocaleString() + ' of ' + plural(total, 'name') + (m ? ' · ' + plural(m, 'match', 'matches') : '') + '.';
+  var mn = $('#matchN'); if (mn) mn.textContent = matchKeys().length ? '(' + matchKeys().length + ')' : '';
+}
+
+var dragging = false;
+function bindCard(el) {
+  var sx = 0, sy = 0, dx = 0, pid = null;
+  function set(x) {
+    el.style.transform = 'translateX(' + x + 'px) rotate(' + (x / 18) + 'deg)';
+    el.style.setProperty('--like', Math.max(0, Math.min(1, x / 90)));
+    el.style.setProperty('--nope', Math.max(0, Math.min(1, -x / 90)));
+  }
+  function reset() { dragging = false; el.style.transition = 'transform .2s'; set(0); }
+  el.addEventListener('pointerdown', function (ev) {
+    if (ev.button || busy || gone) return;
+    pid = ev.pointerId; sx = ev.clientX; sy = ev.clientY; dx = 0; dragging = true; el.style.transition = 'none';
+    try { el.setPointerCapture(pid); } catch (e) {}
+  });
+  el.addEventListener('pointermove', function (ev) {
+    if (!dragging || ev.pointerId !== pid) return;
+    dx = ev.clientX - sx; set(dx);
+  });
+  el.addEventListener('pointerup', function (ev) {
+    if (!dragging || ev.pointerId !== pid) return;
+    dragging = false;
+    if (dx > 80) decide(1); else if (dx < -80) decide(-1); else reset();
+  });
+  el.addEventListener('pointercancel', reset);
+}
+// Sends the card off to one side, then saves (left) or asks for stars (right).
+function decide(dir) {
+  var el = $('#card'); if (!el || busy) return;
+  var k = el.getAttribute('data-k');
+  busy = true; dragging = false;
+  el.style.transition = 'transform .22s ease-in';
+  el.style.setProperty(dir > 0 ? '--like' : '--nope', 1);
+  el.style.transform = 'translateX(' + (dir * 130) + '%) rotate(' + (dir * 18) + 'deg)';
+  if (navigator.vibrate) navigator.vibrate(8);
+  setTimeout(function () {
+    if (dir < 0) { busy = false; setVote(k, 0); return; }
+    askStars(k, function (n) { busy = false; if (n) setVote(k, n); else { shownKey = null; renderSwipe({ force: true }); } });
+  }, 200);
+}
+function setVote(k, v, noUndo) {
+  var slot = me(), prev = vote(slot, k), o = vote(other(), k);
+  if (!change(function (s) { s.votes[slot][k] = v; })) { shownKey = null; if (view() === 'swipe') renderSwipe({ force: true }); return; }
+  if (!noUndo) { undoStack.push({ k: k, prev: prev }); if (undoStack.length > 50) undoStack.shift(); }
+  if (v >= 1 && !(prev >= 1) && o >= 1) toast('💚 It’s a match! ' + who(other()) + ' likes ' + ENT[k].n + ' too.', 'match');
+}
+function undo() {
+  var u = undoStack.pop(); if (!u) return;
+  shownKey = u.k;
+  change(function (s) { if (u.prev === undefined) delete s.votes[me()][u.k]; else s.votes[me()][u.k] = u.prev; });
+  renderSwipe({ force: true });
+}
+function starRow(cur, attr) {
+  var h = '';
+  for (var i = 1; i <= 5; i++) h += '<button type="button" class="star' + (i <= cur ? ' on' : '') + '" ' + attr + '="' + i + '" aria-label="' + i + ' star' + (i > 1 ? 's' : '') + '">★</button>';
+  return h;
+}
+function askStars(k, done) {
+  var e = ent(k), picked = 0;
+  var d = dialog('<div class="in">' + head('') +
+    '<div class="ratehead"><div class="big">' + esc(e.n) + ' <span style="color:var(--good)">♥</span></div><p class="hint" style="margin-top:4px">How much do you like it?</p></div>' +
+    '<div class="stars" style="margin:10px 0 6px">' + starRow(0, 'data-star') + '</div>' +
+    '<p class="hint" style="text-align:center">1 = it’s fine · 5 = love it</p></div>');
+  d.onClosed = function () { done(picked); };
+  d.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-star]'); if (!b) return;
+    picked = +b.getAttribute('data-star');
+    $$('.star', d).forEach(function (s, i) { s.classList.toggle('on', i < picked); });
+    setTimeout(function () { d.close(); }, 140);
+  });
+  d.addEventListener('keydown', function (ev) { if (ev.key >= '1' && ev.key <= '5') { ev.preventDefault(); picked = +ev.key; d.close(); } });
+}
+
+/* ------------------------------------------------------------------ our list */
+function score(k) { return ((vote('a', k) || 0) + (vote('b', k) || 0)) * 1000 + (ENT[k].p || 0); }
+// Names we both like: in the order we've set by hand; ones without a place yet slot in by stars.
+function ordered(keys) {
+  var ranked = keys.filter(function (k) { return typeof own(S.rank, k) === 'number'; })
+    .sort(function (x, y) { return (S.rank[x] - S.rank[y]) || (score(y) - score(x)); });
+  keys.filter(function (k) { return typeof own(S.rank, k) !== 'number'; }).sort(function (x, y) { return score(y) - score(x); })
+    .forEach(function (k) {
+      var sc = score(k), i = -1;
+      for (var j = 0; j < ranked.length; j++) if (typeof own(S.rank, ranked[j]) === 'number' && score(ranked[j]) < sc) { i = j; break; }
+      if (i < 0) ranked.push(k); else ranked.splice(i, 0, k);
+    });
+  return ranked;
+}
+function listGender() { var g = prefs().lg; return g === 'g' || g === 'b' || g === 'any' ? g : S.gender; }
+function notesHtml(k) {
+  var ns = own(S.notes, k) || {}, ids = Object.keys(ns).sort(function (x, y) { return (ns[x].at || 0) - (ns[y].at || 0); });
+  return ids.length ? '<ul class="notes">' + ids.map(function (id) {
+    var n = ns[id];
+    return '<li>' + (n.by === me() ? '<button type="button" class="x" data-act="delnote" data-k="' + esc(k) + '" data-id="' + esc(id) + '" aria-label="Delete comment">✕</button>' : '') +
+      '<b>' + esc(who(n.by)) + ':</b>' + esc(n.t) + '</li>';
+  }).join('') + '</ul>' : '';
+}
+function rateLine(k) {
+  return '<span class="rates">' + ['a', 'b'].map(function (s) {
+    var v = vote(s, k);
+    return '<span>' + esc(who(s)) + ' ' + (v >= 1 ? stars5(v) : v === 0 ? '<b>✕ no</b>' : '<b>not yet</b>') + '</span>';
+  }).join('') + '</span>';
+}
+function renderList() {
+  var vw = $('#view'), lg = listGender();
+  var focus = document.activeElement, findVal = $('#findBox') ? $('#findBox').value : '', hadFocus = focus && focus.id === 'findBox';
+  var keepOpen = $$('details.more', vw).reduce(function (o, d) { o[d.getAttribute('data-s')] = d.open; return o; }, {});
+  var all = ordered(matchKeys()), shown = all.filter(function (k) { return fitsGender(ENT[k], lg); });
+  var mine = me(), oth = other(), h = '';
+  h += '<div class="seg" style="--n:3;margin-bottom:14px">' + ['any', 'g', 'b'].map(function (g) {
+    return '<label><input type="radio" name="lg" value="' + g + '"' + (g === lg ? ' checked' : '') + '><span>' + { any: 'All', g: 'Girls', b: 'Boys' }[g] + '</span></label>';
+  }).join('') + '</div>';
+  h += '<section class="sec"><h2>You both like<span>' + shown.length + '</span></h2>';
+  if (!shown.length) {
+    h += '<div class="card empty"><div class="e" aria-hidden="true">💚</div><b>No matches yet</b>When you both swipe right on a name, it shows up here. ' +
+      'Then put them in your own order, rate them again and leave comments.</div>';
+  } else {
+    h += '<ol class="rows">' + shown.map(function (k, i) {
+      var e = ENT[k];
+      return '<li class="nrow"><span class="pos">' + (i + 1) + '</span><div class="main">' +
+        '<button type="button" class="open" data-act="detail" data-k="' + esc(k) + '"><b>' + esc(e.n) + '</b>' + (lg === 'any' ? gTag(e.g) : '') +
+        (e.alt.length ? '<small>' + e.alt.map(esc).join(' · ') + '</small>' : '') + '</button>' + rateLine(k) + notesHtml(k) +
+        '<button type="button" class="addnote" data-act="detail" data-k="' + esc(k) + '" data-note="1">💬 Comment</button></div>' +
+        '<div class="mv"><button type="button" class="icon-btn" data-act="up" data-k="' + esc(k) + '" aria-label="Move ' + esc(e.n) + ' up"' + (i ? '' : ' disabled') + '>↑</button>' +
+        '<button type="button" class="icon-btn" data-act="down" data-k="' + esc(k) + '" aria-label="Move ' + esc(e.n) + ' down"' + (i < shown.length - 1 ? '' : ' disabled') + '>↓</button></div></li>';
+    }).join('') + '</ol>';
+  }
+  h += '</section>';
+  // Liked by one of us only
+  var mv = S.votes[mine], ov = S.votes[oth], waitThem = [], waitMe = 0, split = [];
+  KEYS.forEach(function (k) {
+    var e = ENT[k]; if (!fitsGender(e, lg)) return;
+    var a = own(mv, k), b = own(ov, k);
+    if (a >= 1 && b === undefined) waitThem.push(k);
+    else if (b >= 1 && a === undefined) waitMe++;
+    else if ((a >= 1 && b === 0) || (a === 0 && b >= 1)) split.push(k);
+  });
+  if (waitMe) h += '<p class="note">💡 ' + esc(who(oth)) + ' liked ' + plural(waitMe, 'name') + ' you haven’t seen yet. They’ll come up first when you swipe.</p>';
+  function chips(keys, cls) {
+    return '<div class="chiplist">' + keys.map(function (k) {
+      var v = own(mv, k);
+      return '<button type="button" class="nchip' + (cls ? ' ' + cls : '') + '" data-act="detail" data-k="' + esc(k) + '">' + esc(ENT[k].n) + (v >= 1 ? '<small>' + v + '★</small>' : '') + '</button>';
+    }).join('') + '</div>';
+  }
+  if (waitThem.length) {
+    waitThem.sort(function (x, y) { return (own(mv, y) - own(mv, x)) || (ENT[x].n < ENT[y].n ? -1 : 1); });
+    h += '<details class="more" data-s="wait"' + (keepOpen.wait ? ' open' : '') + '><summary>You like, waiting for ' + esc(who(oth)) + ' (' + waitThem.length + ')</summary>' +
+      '<div class="rows">' + chips(waitThem) + '</div></details>';
+  }
+  if (split.length) {
+    h += '<details class="more" data-s="split"' + (keepOpen.split ? ' open' : '') + '><summary>Only one of you likes (' + split.length + ')</summary><ul class="rows">' + split.map(function (k) {
+      return '<li class="nrow lone"><span class="pos"></span><div class="main"><button type="button" class="open" data-act="detail" data-k="' + esc(k) + '"><b>' + esc(ENT[k].n) + '</b></button>' + rateLine(k) + '</div></li>';
+    }).join('') + '</ul></details>';
+  }
+  h += '<section class="sec find"><h2>Find a name</h2><input type="search" id="findBox" placeholder="Look up any name or nickname" aria-label="Find a name" autocomplete="off" value="' + esc(findVal) + '">' +
+    '<ul class="res" id="findRes"></ul></section>';
+  h += '<div class="tools" style="margin-top:4px"><button type="button" class="btn small" data-act="suggest">＋ Add a name</button>' +
+    '<button type="button" class="btn small" data-act="ai">✨ Ideas from AI</button>' + (all.length ? '<button type="button" class="btn small" data-act="copy">📋 Copy our list</button>' : '') + '</div>';
+  vw.innerHTML = h;
+  findNames();
+  if (hadFocus) { var fb = $('#findBox'); fb.focus(); fb.setSelectionRange(fb.value.length, fb.value.length); }
+  if (openDetail) openDetail.fill();
+  var mn = $('#matchN'); if (mn) mn.textContent = all.length ? '(' + all.length + ')' : '';
+}
+function findNames() {
+  var box = $('#findBox'), res = $('#findRes'); if (!box || !res) return;
+  var q = key(box.value);
+  if (!q) { res.innerHTML = ''; return; }
+  var hits = [], mv = S.votes[me()];
+  KEYS.forEach(function (k) {
+    var e = ENT[k], sc = k === q ? 0 : k.indexOf(q) === 0 ? 1 : e.alt.some(function (a) { return key(a) === q; }) ? 2 : e.alt.some(function (a) { return key(a).indexOf(q) === 0; }) ? 3 : -1;
+    if (sc >= 0) hits.push({ k: k, sc: sc });
+  });
+  hits.sort(function (x, y) { return (x.sc - y.sc) || ((ENT[y.k].p || 0) - (ENT[x.k].p || 0)); });
+  res.innerHTML = hits.slice(0, 12).map(function (h) {
+    var e = ENT[h.k], v = own(mv, h.k);
+    return '<li><button type="button" data-act="detail" data-k="' + esc(h.k) + '"><b>' + esc(e.n) + '</b><small>' + esc(e.alt.join(' · ')) + '</small>' +
+      '<span class="v">' + (v >= 1 ? stars5(v) : v === 0 ? '✕' : 'not seen') + '</span></button></li>';
+  }).join('') || '<li><button type="button" data-act="suggest" data-n="' + esc(cap(box.value)) + '"><b>＋ Add “' + esc(cap(box.value)) + '”</b></button></li>';
+}
+function move(k, dir) {
+  var lg = listGender(), all = ordered(matchKeys()), shown = all.filter(function (x) { return fitsGender(ENT[x], lg); });
+  var i = shown.indexOf(k), j = i + dir; if (i < 0 || j < 0 || j >= shown.length) return;
+  var ai = all.indexOf(k), aj = all.indexOf(shown[j]);
+  all[ai] = shown[j]; all[aj] = k;
+  change(function (s) { s.rank = {}; all.forEach(function (x, n) { s.rank[x] = n; }); });
+  setTimeout(function () { var b = $('#view [data-act="' + (dir < 0 ? 'up' : 'down') + '"][data-k="' + CSS.escape(k) + '"]'); if (b && !b.disabled) b.focus(); }, 0);
+}
+function listText() {
+  var lines = ['👶 ' + title() + ': names we both like', ''];
+  ordered(matchKeys()).forEach(function (k, i) {
+    lines.push((i + 1) + '. ' + ENT[k].n + ' (' + who('a') + ' ' + vote('a', k) + '★, ' + who('b') + ' ' + vote('b', k) + '★)');
+    var ns = own(S.notes, k) || {};
+    Object.keys(ns).sort(function (x, y) { return (ns[x].at || 0) - (ns[y].at || 0); }).forEach(function (id) { lines.push('   ' + who(ns[id].by) + ': ' + ns[id].t); });
+  });
+  return lines.join('\n');
+}
+
+/* ------------------------------------------------------------------ changes */
+function change(fn) {
+  if (!D || gone) { toast(gone ? 'This shortlist can’t be changed anymore.' : 'Still loading. Try again in a moment.'); return false; }
+  var s = D.state(); normalize(s); fn(s);
+  if (JSON.stringify(s).length > MAX_BYTES) { toast('Your shortlist is too full to save more. Try removing an AI list.'); return false; }
+  D.change(function () { return s; });
+  return true;
+}
+
+/* ------------------------------------------------------------------ dialogs */
+var openDlgs = [], openDetail = null;
+function dialog(html) {
+  var d = document.createElement('dialog'); d.className = 'dlg'; d.innerHTML = html;
+  document.body.appendChild(d); openDlgs.push(d);
+  d.addEventListener('close', function () { d.remove(); openDlgs = openDlgs.filter(function (x) { return x !== d; }); if (d.onClosed) d.onClosed(); });
+  d.addEventListener('click', function (ev) { if (ev.target.closest('[data-close]')) d.close(); });
+  if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  return d;
+}
+function closeDialogs() { openDlgs.slice().forEach(function (d) { try { d.close(); } catch (e) { d.remove(); } }); openDlgs = []; }
+function head(t) { return '<div class="dlghead"><h2>' + t + '</h2><button type="button" class="icon-btn" data-close aria-label="Close">✕</button></div>'; }
+
+// One name: details, your rating (or change your mind), the other person's, and comments.
+function openName(k, toNote) {
+  var e = ent(k); if (!e) { toast('That name was removed.'); return; }
+  var d = dialog('<div class="in">' + head(esc(e.n)) + '<div id="dTop"></div>' +
+    '<div class="dsec"><h3>Comments</h3><div id="dNotes"></div>' +
+    '<form id="noteForm" novalidate autocomplete="off" style="margin-top:8px"><textarea name="t" rows="2" maxlength="' + MAX_NOTE + '" placeholder="Middle name ideas, who it’s after, how it sounds with our last name…" style="min-height:64px"></textarea>' +
+    '<div class="dlgbtns"><button type="submit" class="btn primary small">Add comment</button></div></form></div><div id="dFoot"></div></div>');
+  function fill() {
+    e = ent(k); if (!e) { d.close(); return; }
+    var mv = vote(me(), k), ov = vote(other(), k), c = own(S.names, k);
+    $('#dTop', d).innerHTML = '<div class="dinfo">' + gTag(e.g) + (mv >= 1 && ov >= 1 ? '<span class="tag">💚 You both like it</span>' : '') + '</div>' +
+      '<p style="text-align:center;margin-top:8px;color:var(--muted)">' + (e.alt.length ? 'Also: <b style="color:var(--ink)">' + e.alt.map(esc).join(' · ') + '</b>' : 'No common nicknames') + '</p>' +
+      '<div style="display:flex;justify-content:center;margin-top:10px">' + popHtml(e) + '</div>' +
+      (e.by ? '<p class="hint" style="text-align:center;margin-top:8px">' + (e.ai ? '✨ From the AI list “' + esc((own(S.lists, e.ai) || {}).label || 'AI') + '”, added by ' : '💡 Suggested by ') + esc(who(e.by)) + '</p>' : '') +
+      '<div class="dsec"><h3>Your rating</h3><div class="myrate"><div class="stars sm">' + starRow(mv >= 1 ? mv : 0, 'data-rate') + '</div>' +
+      '<button type="button" class="btn small nobtn" data-rate="0" aria-pressed="' + (mv === 0) + '">✕ Not for us</button></div>' +
+      (mv === undefined ? '<p class="hint" style="text-align:center;margin-top:4px">You haven’t swiped on this one yet.</p>' : '') + '</div>' +
+      '<div class="dsec"><h3>' + esc(who(other())) + '</h3><p>' + (mv === undefined && ov !== undefined ? '<span class="hint">Rate it first to see what ' + esc(who(other())) + ' thought.</span>' :
+        ov >= 1 ? stars5(ov) : ov === 0 ? 'Not a fan (swiped left)' : '<span class="hint">Hasn’t seen it yet.</span>') + '</p></div>';
+    $('#dNotes', d).innerHTML = notesHtml(k) || '<p class="hint">No comments yet.</p>';
+    $('#dFoot', d).innerHTML = c && c.n && !own(CAT, k) && c.by === me() ? '<div class="dlgbtns" style="margin-top:18px"><button type="button" class="btn small danger" data-x="remove">Remove this name</button></div>' : '';
+  }
+  fill();
+  openDetail = { k: k, fill: fill };
+  d.onClosed = function () { if (openDetail && openDetail.k === k) openDetail = null; };
+  d.addEventListener('click', function (ev) {
+    var r = ev.target.closest('[data-rate]');
+    if (r) {
+      var v = +r.getAttribute('data-rate');
+      setVote(k, v, true); fill();
+      toast(v ? 'Rated ' + v + ' star' + (v > 1 ? 's' : '') + '.' : 'Marked as not for us.');
+      return;
+    }
+    var dn = ev.target.closest('[data-act=delnote]');
+    if (dn) { delNote(dn.getAttribute('data-k'), dn.getAttribute('data-id')); fill(); return; }
+    if (ev.target.closest('[data-x=remove]')) {
+      if (!confirm('Remove “' + e.n + '” for both of you?')) return;
+      if (change(function (s) { delete s.names[k]; delete s.votes.a[k]; delete s.votes.b[k]; delete s.rank[k]; delete s.notes[k];
+        Object.keys(s.lists).forEach(function (id) { var l = s.lists[id]; if (l && Array.isArray(l.keys)) l.keys = l.keys.filter(function (x) { return x !== k; }); }); })) { d.close(); toast('Removed.'); }
+    }
+  });
+  var f = $('#noteForm', d);
+  f.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var t = tidy(f.t.value).slice(0, MAX_NOTE); if (!t) { f.t.focus(); return; }
+    var by = me();
+    if (change(function (s) { s.notes[k] = s.notes[k] || {}; s.notes[k][PebblyDoc.id()] = { by: by, t: t, at: Date.now() }; })) { f.t.value = ''; fill(); toast('Comment added.'); }
+  });
+  if (toNote) f.t.focus();
+}
+function delNote(k, id) { change(function (s) { if (s.notes[k]) { delete s.notes[k][id]; if (!Object.keys(s.notes[k]).length) delete s.notes[k]; } }); }
+
+function openFilters() {
+  var src = source(), pop = prefs().pop || 'any', lists = Object.keys(S.lists).sort(function (x, y) { return (S.lists[y].at || 0) - (S.lists[x].at || 0); });
+  function left(fn) { var mv = S.votes[me()], n = 0; KEYS.forEach(function (k) { if (own(mv, k) === undefined && fitsGender(ENT[k], S.gender) && fn(k)) n++; }); return n; }
+  var oursN = left(function (k) { return !!ENT[k].by; });
+  var d = dialog('<form novalidate>' + head('What to swipe') +
+    '<fieldset><legend>Girl or boy names</legend>' + genderSeg('gender', S.gender, { g: 'Girls', b: 'Boys', any: 'Both' }) +
+      '<small class="hint" style="display:block;margin-top:6px">Changes it for both of you.</small></fieldset>' +
+    '<fieldset><legend>Names from</legend><div class="opts">' +
+      '<label class="opt"><input type="radio" name="src" value="all"' + (src === 'all' ? ' checked' : '') + '><span>All names<small>' + left(function () { return true; }).toLocaleString() + ' left</small></span></label>' +
+      '<label class="opt"><input type="radio" name="src" value="ours"' + (src === 'ours' ? ' checked' : '') + '><span>Names we added<small>' + oursN + ' left</small></span></label>' +
+      lists.map(function (id) {
+        var l = S.lists[id], set = {}; (l.keys || []).forEach(function (k) { set[k] = 1; });
+        return '<label class="opt"><input type="radio" name="src" value="' + esc(id) + '"' + (src === id ? ' checked' : '') + '><span>✨ ' + esc(l.label) + '<small>' + left(function (k) { return set[k]; }) + ' left</small></span></label>';
+      }).join('') + '</div></fieldset>' +
+    '<fieldset><legend>Popularity</legend><div class="seg" style="--n:3">' + [['any', 'Any'], ['pop', 'Popular'], ['rare', 'Less common']].map(function (o) {
+      return '<label><input type="radio" name="pop" value="' + o[0] + '"' + (o[0] === pop ? ' checked' : '') + '><span>' + o[1] + '</span></label>';
+    }).join('') + '</div><small class="hint" style="display:block;margin-top:6px">Popular: top 100 in the US lately. Less common: outside the top 300.</small></fieldset>' +
+    '<div class="dlgbtns"><button type="submit" class="btn primary">Done</button></div>' +
+    (S.votes[me()] && Object.keys(S.votes[me()]).some(function (k) { return S.votes[me()][k] === 0; }) ?
+      '<div class="dlgbtns"><button type="button" class="btn small" data-x="again">↺ Show the names I said no to again</button></div>' : '') + '</form>');
+  var f = d.querySelector('form');
+  f.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    setPref('src', f.src.value); setPref('pop', f.pop.value);
+    var g = f.gender.value;
+    if (g !== S.gender) change(function (s) { s.gender = g; });
+    d.close(); shownKey = null; render({ force: true });
+  });
+  f.addEventListener('click', function (ev) {
+    if (!ev.target.closest('[data-x=again]')) return;
+    var slot = me();
+    if (!confirm('Bring back every name you swiped left on?')) return;
+    if (change(function (s) { Object.keys(s.votes[slot]).forEach(function (k) { if (s.votes[slot][k] === 0) delete s.votes[slot][k]; }); })) {
+      undoStack = []; d.close(); shownKey = null; render({ force: true }); toast('They’re back in your pile.');
+    }
+  });
+}
+
+/* ---------- add your own name */
+function openSuggest(start) {
+  var d = dialog('<form novalidate autocomplete="off">' + head('Add a name') +
+    '<label class="fld"><span>Name</span><input type="text" name="n" maxlength="30" placeholder="e.g. James" autocapitalize="words"></label>' +
+    '<div id="sgInfo"></div>' +
+    '<div id="sgNew" hidden><fieldset><legend>For a</legend>' + genderSeg('g', S.gender === 'any' ? 'any' : S.gender, { g: 'Girl', b: 'Boy', any: 'Either' }) + '</fieldset>' +
+      '<label class="fld"><span>Nicknames or other spellings <span class="pl-opt">(optional)</span></span><input type="text" name="alt" maxlength="120" placeholder="Separate with commas"></label></div>' +
+    '<div id="sgRate" hidden><p class="lbl" style="text-align:center">How much do you like it?</p><div class="stars">' + starRow(0, 'data-star') + '</div>' +
+    '<p class="hint" style="text-align:center">Tap the stars to add it to your likes. ' + esc(who(other())) + ' will see it soon.</p></div>' +
+    '<p class="err" role="alert"></p></form>');
+  var f = d.querySelector('form'), pick = null;
+  function look() {
+    var n = cap(f.n.value), k = key(n);
+    $('#sgRate', d).hidden = !k; $('#sgNew', d).hidden = true; $('#sgInfo', d).innerHTML = ''; pick = null;
+    if (!k) return;
+    var m = findMatch(n, []), e = m && ent(m.k);
+    if (m && m.how === 'name') {
+      pick = m.k;
+      var v = vote(me(), m.k);
+      $('#sgInfo', d).innerHTML = '<div class="preview"><div class="t">✓ ' + esc(e.n) + ' is already here ' + gTag(e.g) + '</div>' +
+        '<div class="alts">' + (e.alt.length ? 'Also: ' + e.alt.map(esc).join(' · ') + ' · ' : '') + 'Popularity ' + (e.p == null ? '–' : e.p + '/100') + '</div>' +
+        (v !== undefined ? '<div class="alts">You rated it ' + (v ? v + '★' : '✕') + ' already. Tap the stars to change it.</div>' : '') + '</div>';
+    } else if (m) {
+      $('#sgInfo', d).innerHTML = '<div class="preview"><div class="t">' + esc(n) + ' is a nickname for ' + esc(e.n) + '</div>' +
+        '<div class="dlgbtns"><button type="button" class="btn small" data-x="use" data-k="' + esc(m.k) + '">Rate ' + esc(e.n) + ' instead</button></div>' +
+        '<div class="alts" style="margin-top:6px">Or rate below to add ' + esc(n) + ' as a name of its own.</div></div>';
+      $('#sgNew', d).hidden = false;
+    } else $('#sgNew', d).hidden = false;
+  }
+  f.n.addEventListener('input', look);
+  f.addEventListener('submit', function (ev) { ev.preventDefault(); });
+  f.addEventListener('click', function (ev) {
+    var u = ev.target.closest('[data-x=use]');
+    if (u) { f.n.value = ent(u.getAttribute('data-k')).n; look(); return; }
+    var b = ev.target.closest('[data-star]'); if (!b) return;
+    var stars = +b.getAttribute('data-star'), n = cap(f.n.value), k = key(n), slot = me();
+    if (!k) { d.querySelector('.err').textContent = 'Type a name first.'; return; }
+    var alts = String(f.alt.value || '').split(/[,;\/]/).map(cap).filter(function (a) { return a && key(a) !== k; }).slice(0, 8);
+    var g = f.g.value === 'any' ? 'u' : f.g.value, prev = vote(slot, pick || k), o = vote(other(), pick || k);
+    var ok = change(function (s) {
+      if (pick) { var c = s.names[pick] = s.names[pick] || {}; if (!c.by) { c.by = slot; c.at = Date.now(); } s.votes[slot][pick] = stars; }
+      else { s.names[k] = { n: n, alt: alts, g: g, by: slot, at: Date.now() }; s.votes[slot][k] = stars; }
+    });
+    if (!ok) return;
+    d.close();
+    if (!(prev >= 1) && o >= 1) toast('💚 It’s a match! ' + who(other()) + ' likes ' + ent(pick || k).n + ' too.', 'match');
+    else toast((pick ? ent(pick).n : n) + ' added to your likes.');
+  });
+  if (start) { f.n.value = start; look(); }
+  f.n.focus();
+}
+
+/* ---------- ideas from AI */
+function aiPrompt(g, vibe, n, examples) {
+  var who_ = g === 'g' ? 'a baby girl' : g === 'b' ? 'a baby boy' : 'a baby (girls’ and boys’ names, plus some that work for either)';
+  return 'Suggest ' + n + ' baby names for ' + who_ + (vibe ? '. The style or vibe we want: ' + vibe : '') + '.\n' +
+    (examples.length ? 'Names we already love, for a sense of our taste: ' + examples.join(', ') + '. Suggest new ones, not these.\n' : '') +
+    '\nReturn the result as JSON inside one single code block, so I can copy it with one click. Put nothing else inside the code block, and keep any other text short. Use exactly this format:\n' +
+    '{"names": [{"name": "Eleanor", "alternates": ["Ellie", "Nora", "Elinor"], "gender": "girl", "popularity": 71}]}\n\n' +
+    'Rules:\n' +
+    '- Exactly ' + n + ' different names. Real names, spelled the usual way.\n' +
+    '- "alternates": nicknames and short forms, the full name if it is itself a short form, and common other spellings (up to 6; [] if none).\n' +
+    '- "gender": "girl", "boy" or "unisex".\n' +
+    '- "popularity": 0 to 100, how common the name has been for babies in the US over the last few years (Social Security data): ' +
+    '100 = the #1 name, 75 = top 10, 50 = top 100, 25 = top 1,000, 0 = very rare.';
+}
+function pick(o, names) { for (var i = 0; i < names.length; i++) { var v = own(o, names[i]); if (v !== undefined && v !== null && v !== '') return v; } }
+// Reads what the AI wrote: JSON (an array, or {"names": [...]}, inside a code block or not), or simply one name per line.
+function parseImport(text) {
+  var t = String(text || '').trim(), data = null;
+  if (!t) return [];
+  var fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i); if (fence) t = fence[1].trim();
+  var i = t.search(/[\[{]/);
+  if (i > -1) {
+    var j = Math.max(t.lastIndexOf(']'), t.lastIndexOf('}'));
+    try { data = JSON.parse(t.slice(i, j + 1)); } catch (e) { try { data = JSON.parse(t.slice(i, j + 1).replace(/,\s*([\]}])/g, '$1').replace(/[“”]/g, '"')); } catch (e2) { data = null; } }
+  }
+  var rows = [];
+  if (data) {
+    var arr = Array.isArray(data) ? data : pick(data, ['names', 'babyNames', 'baby_names', 'results', 'items', 'suggestions']) || [];
+    if (!Array.isArray(arr)) arr = [];
+    arr.forEach(function (r) {
+      if (typeof r === 'string') { rows.push({ n: r }); return; }
+      if (!r || typeof r !== 'object') return;
+      var alts = pick(r, ['alternates', 'alternate_names', 'alternateNames', 'alternatives', 'alts', 'nicknames', 'variants', 'other_names']);
+      if (typeof alts === 'string') alts = alts.split(/[,;\/]/);
+      var g = String(pick(r, ['gender', 'sex', 'g']) || '').toLowerCase().trim(), p = pick(r, ['popularity', 'popularity_score', 'pop', 'score']);
+      rows.push({ n: pick(r, ['name', 'first_name', 'firstName', 'n']), alt: Array.isArray(alts) ? alts : [],
+        g: /^(g|f|girl|female|feminine)/.test(g) ? 'g' : /^(b|m|boy|male|masculine)/.test(g) ? 'b' : 'u',
+        p: isFinite(parseFloat(p)) ? Math.max(0, Math.min(100, Math.round(parseFloat(p)))) : null });
+    });
+  } else {
+    t.split(/\r?\n|,/).forEach(function (l) {
+      l = l.replace(/^\s*(?:[-*•·]|\d+[.)])\s*/, '').replace(/\s*[(\-–:].*$/, '');
+      if (/^[^\d{}\[\]]{1,30}$/.test(l.trim())) rows.push({ n: l });
+    });
+  }
+  var seen = {}, out = [];
+  rows.forEach(function (r) {
+    var n = cap(String(r.n || '').replace(/[^\p{L}\p{M}' -]/gu, '')).slice(0, 30), k = key(n);
+    if (!k || seen[k]) return; seen[k] = 1;
+    var alts = (r.alt || []).map(function (a) { return cap(String(a || '')).slice(0, 30); }).filter(function (a) { return key(a) && key(a) !== k; }).slice(0, 8);
+    out.push({ n: n, k: k, alt: alts, g: r.g || 'u', p: r.p == null ? null : r.p });
+  });
+  return out.slice(0, 300);
+}
+// Adds an import: names already here (by name or nickname) are reused, picking up any new alternates; the rest are added.
+function importNames(rows, label, g) {
+  var slot = me(), id = PebblyDoc.id(), plan = [], added = 0, merged = 0, keys = [], fresh = {};
+  rows.forEach(function (r) {
+    var m = findMatch(r.n, r.alt), k = m ? m.k : r.k;
+    if (!m) {                                     // a second spelling of a new name earlier in this same reply
+      var ks = [r.k].concat(r.alt.map(key)), hit = null;
+      Object.keys(fresh).forEach(function (fk) { if (!hit && ks.some(function (x) { return fresh[fk][x]; })) hit = fk; });
+      if (hit) {
+        var x0 = plan.filter(function (x) { return x.k === hit; })[0];
+        [r.n].concat(r.alt).forEach(function (a) { var ak = key(a); if (ak !== hit && !fresh[hit][ak]) { fresh[hit][ak] = 1; x0.r.alt.push(a); } });
+        return;
+      }
+      fresh[k] = {}; fresh[k][k] = 1; r.alt.forEach(function (a) { fresh[k][key(a)] = 1; });
+    }
+    if (keys.indexOf(k) > -1) return;
+    keys.push(k); plan.push({ r: r, k: k, m: m });
+    if (m) merged++; else added++;
+  });
+  var ok = change(function (s) {
+    plan.forEach(function (x) {
+      var c = s.names[x.k], extra = x.r.alt.concat(x.m && x.m.how === 'alt' && key(x.r.n) !== x.k ? [x.r.n] : []);
+      if (x.m) {
+        var e = ent(x.k), have = {}; e.alt.forEach(function (a) { have[key(a)] = 1; }); have[x.k] = 1;
+        var add = extra.filter(function (a) { var ak = key(a); if (have[ak]) return false; have[ak] = 1; return true; });
+        if (add.length || !c) { c = s.names[x.k] = c || {}; c.alt = (Array.isArray(c.alt) ? c.alt : []).concat(add).slice(0, 10); }
+        if (!c.by) { c.by = slot; c.ai = id; c.at = Date.now(); }
+      } else s.names[x.k] = { n: x.r.n, alt: x.r.alt, g: x.r.g, p: x.r.p, by: slot, ai: id, at: Date.now() };
+    });
+    s.lists[id] = { label: label, g: g, by: slot, at: Date.now(), keys: keys };
+  });
+  return ok ? { id: id, added: added, merged: merged, total: keys.length } : null;
+}
+function openAI() {
+  var mine = ordered(matchKeys()).slice(0, 8).map(function (k) { return ENT[k].n; });
+  if (!mine.length) mine = KEYS.filter(function (k) { return vote(me(), k) >= 4; }).slice(0, 8).map(function (k) { return ENT[k].n; });
+  var d = dialog('<div class="in">' + head('✨ Ideas from AI') +
+    '<p class="hint" style="margin:-6px 0 14px">Pebbly writes the request; ChatGPT, Gemini, Claude or any AI chat comes up with the names. Then paste its reply here.</p>' +
+    '<p class="step">1 · What are you looking for?</p>' +
+    '<fieldset><legend>For a</legend>' + genderSeg('aiG', S.gender, { g: 'Girl', b: 'Boy', any: 'Either' }) + '</fieldset>' +
+    '<label class="fld"><span>Type of name or vibe</span><input type="text" id="aiVibe" maxlength="120" placeholder="e.g. Irish, nature, vintage, short and strong"></label>' +
+    '<label class="fld"><span>How many</span><select id="aiN"><option>25</option><option selected>50</option><option>100</option></select></label>' +
+    (mine.length ? '<label class="chk"><input type="checkbox" id="aiEx" checked><span>Mention names we like (' + esc(mine.slice(0, 4).join(', ')) + (mine.length > 4 ? '…' : '') + ') so it gets our taste</span></label>' : '') +
+    '<button type="button" class="btn primary wide" id="aiCopy">📋 Copy the request</button>' +
+    '<p class="hint" style="margin-top:8px">Paste it into your AI app. It answers with a box of names and a copy button: tap that, then come back here.</p>' +
+    '<details><summary>Show the request</summary><pre class="prompt" id="aiPrompt"></pre></details>' +
+    '<p class="step" style="margin-top:14px">2 · Paste the AI’s reply</p>' +
+    '<textarea id="aiText" rows="5" placeholder=\'{"names": [ … ]}\' spellcheck="false"></textarea>' +
+    '<div class="dlgbtns"><button type="button" class="btn small" id="aiPaste">Paste</button><button type="button" class="btn primary" id="aiImport">Add these names</button></div>' +
+    '<p class="err" id="aiErr" role="alert"></p><div id="aiDone"></div></div>');
+  function g() { return d.querySelector('[name=aiG]:checked').value; }
+  function prompt() { return aiPrompt(g(), tidy($('#aiVibe', d).value), $('#aiN', d).value, $('#aiEx', d) && $('#aiEx', d).checked ? mine : []); }
+  function show() { $('#aiPrompt', d).textContent = prompt(); }
+  show();
+  d.addEventListener('input', show); d.addEventListener('change', show);
+  $('#aiCopy', d).addEventListener('click', function () {
+    copyText(prompt()).then(function (ok) { toast(ok ? 'Copied. Paste it into your AI app, then copy its reply back here.' : 'Couldn’t copy. Open “Show the request” and copy it by hand.'); });
+  });
+  $('#aiPaste', d).addEventListener('click', function () {
+    if (!navigator.clipboard || !navigator.clipboard.readText) { $('#aiText', d).focus(); return; }
+    navigator.clipboard.readText().then(function (t) { $('#aiText', d).value = t; }, function () { $('#aiText', d).focus(); toast('Long-press the box and choose Paste.'); });
+  });
+  $('#aiImport', d).addEventListener('click', function () {
+    var err = $('#aiErr', d), rows = parseImport($('#aiText', d).value);
+    err.textContent = '';
+    if (!rows.length) { err.textContent = 'Couldn’t find any names in that. Copy the AI’s whole reply (or just the box with the names) and paste it again.'; return; }
+    var gg = g(), vibe = tidy($('#aiVibe', d).value).slice(0, 40);
+    var label = (vibe ? cap(vibe) : 'AI ideas') + (gg === 'g' ? ' (girls)' : gg === 'b' ? ' (boys)' : '');
+    var r = importNames(rows, label, gg);
+    if (!r) return;
+    $('#aiDone', d).innerHTML = '<div class="result"><b>Added ' + plural(r.total, 'name') + ' as “' + esc(label) + '”.</b><br>' +
+      r.added + ' new' + (r.merged ? ', ' + r.merged + ' already here (matched by name or nickname, so they keep their popularity and nicknames)' : '') + '.' +
+      '<div class="dlgbtns" style="margin-top:10px"><button type="button" class="btn primary small" data-x="only">Swipe just these</button>' +
+      '<button type="button" class="btn small" data-x="all">Swipe all names</button></div></div>';
+    $('#aiText', d).value = '';
+    $('#aiDone', d).addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-x]'); if (!b) return;
+      setPref('src', b.getAttribute('data-x') === 'only' ? r.id : 'all'); setPref('view', 'swipe');
+      if (b.getAttribute('data-x') === 'only' && gg !== S.gender && S.gender !== 'any') change(function (s) { s.gender = gg; });
+      d.close(); shownKey = null; render({ force: true });
+    });
+  });
+}
+
+/* ---------- menu, people */
+function openMenu() {
+  var lists = Object.keys(S.lists);
+  var d = dialog('<div class="in">' + head('Options') + '<div class="menu">' +
+    '<button type="button" class="btn" data-m="suggest"><span>＋ Add a name<small>One you’ve been thinking of. It goes to the top of ' + esc(who(other())) + '’s pile.</small></span></button>' +
+    '<button type="button" class="btn" data-m="ai"><span>✨ Ideas from AI<small>Names in a style you pick, from ChatGPT, Gemini or Claude</small></span></button>' +
+    '<button type="button" class="btn" data-m="filters"><span>⚙️ What to swipe<small>Girls or boys, which names, how popular</small></span></button>' +
+    '<button type="button" class="btn" data-m="share"><span>🔗 Share link<small>For ' + esc(who(other())) + ' or a second phone</small></span></button>' +
+    '<button type="button" class="btn" data-m="people"><span>🙋 Your names<small>' + esc(who('a')) + ' and ' + esc(who('b')) + '</small></span></button>' +
+    '<button type="button" class="btn" data-m="switch"><span>🔄 Swipe as ' + esc(who(other())) + '<small>If you’re sharing this phone</small></span></button>' +
+    (lists.length ? '<button type="button" class="btn" data-m="lists"><span>🗂️ AI lists<small>' + plural(lists.length, 'list') + '. Rename or remove.</small></span></button>' : '') +
+    (D && D.isOwner ? '<h3>Host</h3>' +
+      '<button type="button" class="btn" data-m="copy-host"><span>Copy host link<small>Manage this from another phone. Keep it private.</small></span></button>' +
+      '<button type="button" class="btn" data-m="lock"><span>🔒 Password</span></button>' +
+      '<button type="button" class="btn" data-m="delete" style="color:var(--bad)"><span>Delete this shortlist<small>For both of you. Can’t be undone.</small></span></button>' : '') +
+    '</div><div class="dlgbtns" style="margin-top:14px"><button type="button" class="btn" data-close>Close</button></div></div>');
+  d.addEventListener('click', function (ev) {
+    var b = ev.target.closest('[data-m]'); if (!b) return;
+    var m = b.getAttribute('data-m');
+    d.close();
+    if (m === 'suggest') openSuggest();
+    else if (m === 'ai') openAI();
+    else if (m === 'filters') openFilters();
+    else if (m === 'share') share(title(), shareUrl(CODE));
+    else if (m === 'people') openPeople();
+    else if (m === 'switch') { setPref('me', other()); undoStack = []; shownKey = null; render({ force: true }); toast('Now swiping as ' + who(me()) + '.'); }
+    else if (m === 'lists') openLists();
+    else if (m === 'copy-host') copyText(PebblyDoc.ownerLink(CODE)).then(function (ok) { toast(ok ? 'Host link copied. Keep it private.' : 'Couldn’t copy. Try again.'); });
+    else if (m === 'lock') PebblyLock.openHost({ app: 'doc', code: CODE, owner: PebblyDoc.owner(CODE), raw: PebblyDoc.raw, what: 'list', toast: toast });
+    else if (m === 'delete') {
+      if (!confirm('Delete “' + title() + '” for both of you? All your swipes, ratings and comments go too. This can’t be undone.')) return;
+      D.remove().then(function () { forgetList(CODE); D = null; history.pushState(null, '', baseUrl()); route(); toast('Deleted.'); }, function (e) { toast(friendly(e)); });
+    }
+  });
+}
+function openPeople() {
+  var d = dialog('<form novalidate autocomplete="off">' + head('Your names') +
+    '<label class="fld"><span>Parent 1</span><input type="text" name="a" maxlength="30" value="' + esc(S.p.a) + '"></label>' +
+    '<label class="fld"><span>Parent 2</span><input type="text" name="b" maxlength="30" value="' + esc(S.p.b) + '"></label>' +
+    '<p class="err" role="alert"></p><div class="dlgbtns"><button type="submit" class="btn primary">Save</button><button type="button" class="btn" data-close>Cancel</button></div></form>');
+  var f = d.querySelector('form');
+  f.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var a = tidy(f.a.value).slice(0, 30), b = tidy(f.b.value).slice(0, 30);
+    if (!a) { d.querySelector('.err').textContent = 'Parent 1 needs a name.'; return; }
+    if (change(function (s) { s.p.a = a; s.p.b = b; })) { d.close(); toast('Saved.'); }
+  });
+}
+function openLists() {
+  var d = dialog('<div class="in">' + head('AI lists') + '<div id="lsBody"></div><div class="dlgbtns" style="margin-top:14px"><button type="button" class="btn" data-close>Close</button></div></div>');
+  function fill() {
+    var ids = Object.keys(S.lists).sort(function (x, y) { return (S.lists[y].at || 0) - (S.lists[x].at || 0); });
+    $('#lsBody', d).innerHTML = ids.length ? '<ul class="rows">' + ids.map(function (id) {
+      var l = S.lists[id];
+      return '<li class="nrow lone"><span class="pos"></span><div class="main"><b>' + esc(l.label) + '</b><small class="hint" style="display:block">' + plural((l.keys || []).length, 'name') +
+        ', added by ' + esc(who(l.by)) + '</small></div><div class="mv" style="flex-direction:row"><button type="button" class="icon-btn" data-ren="' + esc(id) + '" aria-label="Rename">✎</button>' +
+        '<button type="button" class="icon-btn" data-del="' + esc(id) + '" aria-label="Remove" style="color:var(--bad)">🗑</button></div></li>';
+    }).join('') + '</ul>' : '<p class="hint">No AI lists.</p>';
+  }
+  fill();
+  d.addEventListener('click', function (ev) {
+    var r = ev.target.closest('[data-ren]'), x = ev.target.closest('[data-del]');
+    if (r) {
+      var id = r.getAttribute('data-ren'), t = prompt('New name for this list', S.lists[id].label);
+      if (t && tidy(t)) change(function (s) { if (s.lists[id]) s.lists[id].label = tidy(t).slice(0, 40); });
+      fill();
+    } else if (x) {
+      var lid = x.getAttribute('data-del'), l = S.lists[lid];
+      if (!confirm('Remove the list “' + l.label + '”? Its new names go too, unless one of you already liked them.')) return;
+      change(function (s) {
+        (l.keys || []).forEach(function (k) {
+          var c = s.names[k]; if (!c || c.ai !== lid) return;
+          var liked = s.votes.a[k] >= 1 || s.votes.b[k] >= 1;
+          if (c.n && !own(CAT, k)) {
+            if (!liked) { delete s.names[k]; delete s.votes.a[k]; delete s.votes.b[k]; delete s.notes[k]; delete s.rank[k]; } else delete c.ai;
+          } else {                                  // a built-in name the list pointed to: keep only its extra nicknames
+            delete c.ai; delete c.by; delete c.at;
+            if (!Array.isArray(c.alt) || !c.alt.length) delete s.names[k];
+          }
+        });
+        delete s.lists[lid];
+      });
+      fill();
+    }
+  });
+}
+
+/* ------------------------------------------------------------------ events */
+$app.addEventListener('click', function (ev) {
+  var t = ev.target.closest('[data-act]'); if (!t || !$app.contains(t)) return;
+  var k = t.getAttribute('data-k');
+  switch (t.getAttribute('data-act')) {
+    case 'retry': route(); break;
+    case 'reload': location.reload(); break;
+    case 'share': share(title(), shareUrl(CODE)); break;
+    case 'hide-created': justCreated = false; render({}); break;
+    case 'menu': openMenu(); break;
+    case 'tab': setPref('view', t.getAttribute('data-v')); $('#view').innerHTML = ''; render({ force: true }); break;
+    case 'switch': setPref('me', undefined); undoStack = []; render({}); break;
+    case 'iam': setPref('me', t.getAttribute('data-slot')); render({ force: true }); break;
+    case 'filters': openFilters(); break;
+    case 'no': decide(-1); break;
+    case 'yes': decide(1); break;
+    case 'undo': undo(); break;
+    case 'suggest': openSuggest(t.getAttribute('data-n') || ''); break;
+    case 'ai': openAI(); break;
+    case 'detail': openName(k, !!t.getAttribute('data-note')); break;
+    case 'delnote': delNote(k, t.getAttribute('data-id')); break;
+    case 'up': move(k, -1); break;
+    case 'down': move(k, 1); break;
+    case 'copy': copyText(listText()).then(function (ok) { toast(ok ? 'Copied. Paste it anywhere.' : 'Couldn’t copy. Try again.'); }); break;
+  }
+});
+$app.addEventListener('change', function (ev) {
+  if (ev.target.name === 'lg') { setPref('lg', ev.target.value); render({}); }
+});
+$app.addEventListener('input', function (ev) { if (ev.target.id === 'findBox') findNames(); });
+$app.addEventListener('submit', function (ev) {
+  if (ev.target.id === 'createForm') { ev.preventDefault(); submitCreate(ev.target); }
+  else if (ev.target.id === 'joinForm') {
+    ev.preventDefault();
+    var n = tidy(ev.target.elements.nm.value).slice(0, 30);
+    if (!n) { ev.target.querySelector('.err').textContent = 'Add your name.'; return; }
+    setPref('me', 'b');
+    if (!change(function (s) { s.p.b = n; })) setPref('me', undefined);
+  }
+});
+document.addEventListener('keydown', function (ev) {
+  if (!S || openDlgs.length || view() !== 'swipe' || /^(INPUT|TEXTAREA|SELECT)$/.test((ev.target.tagName || ''))) return;
+  if (ev.key === 'ArrowRight') { ev.preventDefault(); decide(1); }
+  else if (ev.key === 'ArrowLeft') { ev.preventDefault(); decide(-1); }
+});
+window.addEventListener('popstate', function () { justCreated = false; route(); });
+
+window.__names = { key: key, findMatch: findMatch, parseImport: parseImport, aiPrompt: aiPrompt, deck: deck, ordered: ordered,
+  state: function () { return S; }, count: function () { return CAT_KEYS.length; } };
+route();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
