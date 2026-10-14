@@ -176,6 +176,33 @@ async function tab(p, v) { await p.click('.tabs [data-v=' + v + ']'); }
   await c.waitForSelector('#dTop');
   check((await c.textContent('#dTop')).includes('You both like it'), 'both like tag');
   await c.click('dialog [data-close]');
+  // the four folded sections (Ben's view)
+  const rest = liked.find(n => !first2.includes(n));
+  const sec = (p, id) => p.$eval('details[data-s=' + id + ']', d => d.textContent);
+  check(/You like, waiting for Sam \(1\)/.test(await sec(a, 'wait')) && (await sec(a, 'wait')).includes(rest), 'You like, waiting for Sam: ' + await sec(a, 'wait'));
+  async function rateOn(p, name, v) {
+    await p.fill('#findBox', name.toLowerCase());
+    await p.click('#findRes button:has-text("' + name + '")');
+    await p.waitForSelector('#dTop');
+    await p.click('dialog [data-rate="' + v + '"]');
+    await p.waitForFunction(([n, v]) => { const st = __names.state(); return Object.values(st.votes).some(x => x[n.toLowerCase()] === v); }, [name, v]);
+    await p.click('dialog [data-close]'); await p.fill('#findBox', '');
+  }
+  await rateOn(c, rest, 0);          // Sam: no to Ben's 3-star name
+  await rateOn(c, 'Mildred', 4);     // Sam likes one Ben hasn't seen
+  await a.waitForFunction(() => document.querySelector('details[data-s=mine]').textContent.includes('Mildred'), null, { timeout: 8000 });
+  check((await sec(a, 'nope')).includes(rest) && (await sec(a, 'nope')).includes('doesn’t'), 'You like, Sam doesn’t: ' + await sec(a, 'nope'));
+  check(/Sam likes, waiting for you \(1\)/.test(await sec(a, 'mine')) && !(await sec(a, 'mine')).includes('4★'), 'Sam likes, waiting for you (no stars shown): ' + await sec(a, 'mine'));
+  check(/None yet/.test(await sec(a, 'wait')), 'waiting for Sam now empty');
+  await a.click('details[data-s=mine] summary');
+  await shot(a, 'sections');
+  await a.click('details[data-s=mine] .nchip');
+  await a.waitForSelector('#dTop');
+  await a.click('dialog .nobtn');
+  await a.waitForFunction(() => __names.state().votes.a.mildred === 0);
+  await a.click('dialog [data-close]');
+  check((await sec(a, 'theirsNo')).includes('Mildred') && (await sec(a, 'theirsNo')).includes('Sam likes, you don’t'), 'Sam likes, you don’t: ' + await sec(a, 'theirsNo'));
+  check(await a.$eval('details[data-s=mine]', d => d.open), 'opened section stays open after a change');
   // find a name
   await a.fill('#findBox', 'jimm');
   await a.waitForSelector('#findRes li');

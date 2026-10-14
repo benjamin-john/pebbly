@@ -3528,32 +3528,38 @@ function renderList() {
     }).join('') + '</ol>';
   }
   h += '</section>';
-  // Liked by one of us only
-  var mv = S.votes[mine], ov = S.votes[oth], waitThem = [], waitMe = 0, split = [];
+  // Liked by one of us only: four folded sections
+  var mv = S.votes[mine], ov = S.votes[oth], g4 = { wait: [], nope: [], mine: [], theirsNo: [] };
   KEYS.forEach(function (k) {
     var e = ENT[k]; if (!fitsGender(e, lg)) return;
     var a = own(mv, k), b = own(ov, k);
-    if (a >= 1 && b === undefined) waitThem.push(k);
-    else if (b >= 1 && a === undefined) waitMe++;
-    else if ((a >= 1 && b === 0) || (a === 0 && b >= 1)) split.push(k);
+    if (a >= 1 && b === undefined) g4.wait.push(k);
+    else if (a >= 1 && b === 0) g4.nope.push(k);
+    else if (b >= 1 && a === undefined) g4.mine.push(k);
+    else if (b >= 1 && a === 0) g4.theirsNo.push(k);
   });
-  if (waitMe) h += '<p class="note">💡 ' + esc(who(oth)) + ' liked ' + plural(waitMe, 'name') + ' you haven’t seen yet. They’ll come up first when you swipe.</p>';
-  function chips(keys, cls) {
+  function byStars(votes) { return function (x, y) { return (own(votes, y) - own(votes, x)) || (ENT[x].n < ENT[y].n ? -1 : 1); }; }
+  function chips(keys, stars) {
     return '<div class="chiplist">' + keys.map(function (k) {
-      var v = own(mv, k);
-      return '<button type="button" class="nchip' + (cls ? ' ' + cls : '') + '" data-act="detail" data-k="' + esc(k) + '">' + esc(ENT[k].n) + (v >= 1 ? '<small>' + v + '★</small>' : '') + '</button>';
+      var v = stars ? own(mv, k) : 0;
+      return '<button type="button" class="nchip" data-act="detail" data-k="' + esc(k) + '">' + esc(ENT[k].n) + (v >= 1 ? '<small>' + v + '★</small>' : '') + '</button>';
     }).join('') + '</div>';
   }
-  if (waitThem.length) {
-    waitThem.sort(function (x, y) { return (own(mv, y) - own(mv, x)) || (ENT[x].n < ENT[y].n ? -1 : 1); });
-    h += '<details class="more" data-s="wait"' + (keepOpen.wait ? ' open' : '') + '><summary>You like, waiting for ' + esc(who(oth)) + ' (' + waitThem.length + ')</summary>' +
-      '<div class="rows">' + chips(waitThem) + '</div></details>';
-  }
-  if (split.length) {
-    h += '<details class="more" data-s="split"' + (keepOpen.split ? ' open' : '') + '><summary>Only one of you likes (' + split.length + ')</summary><ul class="rows">' + split.map(function (k) {
+  function lines(keys) {
+    return '<ul class="rows" style="border:0;border-radius:0">' + keys.map(function (k) {
       return '<li class="nrow lone"><span class="pos"></span><div class="main"><button type="button" class="open" data-act="detail" data-k="' + esc(k) + '"><b>' + esc(ENT[k].n) + '</b></button>' + rateLine(k) + '</div></li>';
-    }).join('') + '</ul></details>';
+    }).join('') + '</ul>';
   }
+  function fold(id, label, keys, body, hint) {
+    return '<details class="more" data-s="' + id + '"' + (keepOpen[id] ? ' open' : '') + '><summary>' + label + ' (' + keys.length + ')</summary>' +
+      '<div class="rows">' + (keys.length ? (hint ? '<p class="hint" style="padding:12px 14px 0">' + hint + '</p>' : '') + body : '<p class="hint" style="padding:12px 14px">None yet.</p>') + '</div></details>';
+  }
+  g4.wait.sort(byStars(mv)); g4.nope.sort(byStars(mv)); g4.mine.sort(function (x, y) { return ENT[x].n < ENT[y].n ? -1 : 1; }); g4.theirsNo.sort(byStars(ov));
+  var O = esc(who(oth));
+  h += fold('wait', 'You like, waiting for ' + O, g4.wait, chips(g4.wait, true));
+  h += fold('nope', 'You like, ' + O + ' doesn’t', g4.nope, lines(g4.nope));
+  h += fold('mine', O + ' likes, waiting for you', g4.mine, chips(g4.mine, false), 'These come up first when you swipe. Tap one to rate it now.');
+  h += fold('theirsNo', O + ' likes, you don’t', g4.theirsNo, lines(g4.theirsNo), 'Changed your mind? Tap a name to rate it.');
   h += '<section class="sec find"><h2>Find a name</h2><input type="search" id="findBox" placeholder="Look up any name or nickname" aria-label="Find a name" autocomplete="off" value="' + esc(findVal) + '">' +
     '<ul class="res" id="findRes"></ul></section>';
   h += '<div class="tools" style="margin-top:4px"><button type="button" class="btn small" data-act="suggest">＋ Add a name</button>' +
