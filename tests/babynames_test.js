@@ -206,6 +206,38 @@ async function tab(p, v) { await p.click('.tabs [data-v=' + v + ']'); }
   const nick = await a.evaluate(() => [__names.findMatch('Ellie', []), __names.findMatch('Zzlenor', ['Eleanor'])]);
   check(nick[0] && nick[0].k === 'ellie' && nick[0].how === 'name', 'exact name wins over nickname');
   check(!nick[1], 'alternates only match when the other name lists it back');
+  // add your own nickname: Beck for Beckett (from Find a name), shows on the card, matches when typed, removable
+  await tab(a, 'list');
+  await a.fill('#findBox', 'beckett');
+  await a.click('#findRes button:has-text("Beckett")');
+  await a.waitForSelector('#altForm');
+  await a.fill('#altForm [name=alt]', 'beck, Beckett');
+  await a.click('#altForm [type=submit]');
+  await a.waitForFunction(() => document.querySelector('#dAlts').textContent.includes('Beck'));
+  s = await st(a);
+  check(JSON.stringify(s.names.beckett.alt) === '["Beck"]', 'nickname saved (capitalised, the name itself skipped): ' + JSON.stringify(s.names.beckett));
+  check(await a.isVisible('#dAlts [data-delalt="Beck"]'), 'added nickname can be removed');
+  await shot(a, 'nickname', false);
+  const nb = await a.evaluate(() => __names.findMatch('Beck', []));
+  check(nb && nb.k === 'beckett', 'typing Beck now finds Beckett: ' + JSON.stringify(nb));
+  await c.waitForFunction(() => { const n = __names.state().names.beckett; return n && n.alt && n.alt[0] === 'Beck'; }, null, { timeout: 8000 });
+  pass++;
+  await a.click('#dAlts [data-delalt="Beck"]');
+  await a.waitForFunction(() => !__names.state().names.beckett);
+  pass++;
+  await a.click('dialog [data-close]');
+  await a.fill('#findBox', '');
+  // from the swipe card
+  await tab(a, 'swipe');
+  const cn = await cardName(a);
+  await a.click('#card [data-alt]');
+  await a.waitForSelector('#altForm');
+  check(await a.evaluate(() => document.activeElement.name === 'alt'), 'card link opens the nickname box');
+  await a.fill('#altForm [name=alt]', 'Zuzu');
+  await a.click('#altForm [type=submit]');
+  await a.waitForFunction(() => document.querySelector('#dAlts').textContent.includes('Zuzu'));
+  await a.click('dialog [data-close]');
+  check((await cardName(a)) === cn && (await a.textContent('#card .alts')).includes('Zuzu'), 'card shows the new nickname, same card');
   // Sam (girls filter) doesn't get the boy name; switch gender for both
   await c.waitForFunction(() => __names.state().votes.a.jaimz === 5, null, { timeout: 8000 });
   await c.click('.tabs [data-v=swipe]');
