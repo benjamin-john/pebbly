@@ -95,6 +95,8 @@ host, others joining as players (Dots: until the first line). Their tests: `test
 secrets in the shared game (lightly scrambled, never shown), so it's a family game, not a secure one.
 Color Stack (`/colorstack/`) is a solo puzzle (no players, no play together); its solver checks that deals can be
 finished and gives hints (`tests/colorstack_test.js`).
+After a win it shows the fewest possible moves: `fewest()` (exact A*, run in a Blob worker built from its own
+source) stops at a memory cap; big puzzles (e.g. 8 colors, 1 empty rod) then show the computer's best instead.
 Word Dash (`/worddash/`) races all phones on one word at once (no turns): each phone only writes its own
 `boards[pid]`, and the winner (earliest solve time) and round end are worked out from the boards, never stored,
 so simultaneous pushes merge cleanly. Answer words are a curated common list; guesses check a larger list

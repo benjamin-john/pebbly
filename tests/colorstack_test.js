@@ -1,6 +1,7 @@
 // Color Stack (/colorstack/): moving one bead at a time (lift, drop, put back), full rods, the
-// "same color only" rule, undo, hints that lead to a solve, finishing and best score, deals that
-// can be solved (and the extra empty rod when none can), 360px width. No database.
+// "same color only" rule, undo, hints that lead to a solve, finishing and best score, the fewest possible
+// moves (checked against trying every move, and the computer's best when a puzzle is too big to check fully),
+// deals that can be solved (and the extra empty rod when none can), 360px width. No database.
 // Serve the repo root on port 8791 (python3 -m http.server 8791), then:
 //   NODE_PATH=$(npm root -g) node tests/colorstack_test.js        (SHOTS=<folder> to save screenshots)
 const { chromium, devices } = require('playwright');
@@ -13,7 +14,7 @@ const rod = (p, i) => p.click('.rod[data-rod="' + i + '"]');
 async function setRods(p, rods, extra) {
   await p.evaluate(([rods, extra]) => {
     const g = JSON.parse(localStorage.getItem('pebbly_colorstack'));
-    Object.assign(g, extra || {}, { rods, start: rods, moves: 0, ms: 0, solved: false });
+    Object.assign(g, extra || {}, { rods, start: rods, moves: 0, ms: 0, solved: false }); delete g.fewest;
     localStorage.setItem('pebbly_colorstack', JSON.stringify(g)); localStorage.setItem('pebbly_colorstack_undo', '[]');
   }, [rods, extra]);
   await p.reload();
@@ -73,6 +74,10 @@ async function setRods(p, rods, extra) {
   check(g.solved, 'solved by following hints (' + steps + ' moves)');
   await p.waitForSelector('#winDlg[open]');
   check((await p.textContent('#winTitle')).includes('New best') && (await p.textContent('#winMoves')).includes(String(g.moves)), 'win dialog with new best');
+  await p.waitForFunction(() => /fewest possible/i.test(document.getElementById('winPar').textContent), null, { timeout: 5000 });
+  g = await G(p);
+  check(g.fewest && g.fewest.low === g.fewest.up && g.fewest.low <= g.moves, 'fewest possible worked out: ' + JSON.stringify(g.fewest));
+  check((await p.textContent('#winPar')) === (g.moves === g.fewest.low ? '🎯 That’s the fewest possible!' : 'Fewest possible: ' + g.fewest.low + ' moves'), 'win dialog shows the fewest possible: ' + await p.textContent('#winPar'));
   await shot(p, 'cs-win');
   await p.click('#wRestart');
   g = await G(p); check(!g.solved && g.moves === 0 && JSON.stringify(g.rods) === JSON.stringify(g.start), 'try again: same puzzle from the start');
@@ -90,6 +95,27 @@ async function setRods(p, rods, extra) {
   await rod(p, 1);                    // put it back
   await rod(p, 2); await rod(p, 0);   // 1 onto 1
   g = await G(p); check(JSON.stringify(g.rods[0]) === '[0,1,1]', 'same color allowed');
+
+  /* ---------------- fewest possible moves = trying every move (small puzzles, both rules) */
+  const fw = await p.evaluate(() => {
+    const cs = window.__cs, out = { ok: 0, n: 0, bad: [] };
+    function bfs(start, h, rule) {
+      const key = r => r.map(x => x.join('')).sort().join('|'), seen = new Set([key(start)]); let q = [start], d = 0;
+      while (q.length) { const nq = [];
+        for (const rods of q) { if (cs.isSolved(rods, h)) return d;
+          for (let a = 0; a < rods.length; a++) for (let b = 0; b < rods.length; b++) { if (!cs.canMove(rods, a, b, h, rule)) continue;
+            const nx = rods.slice(); nx[a] = rods[a].slice(0, -1); nx[b] = rods[b].concat(rods[a][rods[a].length - 1]);
+            const k = key(nx); if (!seen.has(k)) { seen.add(k); nq.push(nx); } } }
+        q = nq; d++; }
+      return null;
+    }
+    for (const [colors, h, spare] of [[3, 3, 1], [3, 3, 2], [4, 3, 1], [3, 4, 1]]) for (const rule of ['free', 'match']) for (let i = 0; i < 6; i++) {
+      const r = cs.deal({ colors, h, spare, rule: 'free' }), want = bfs(r, h, rule), got = cs.fewest(r, h, rule, 1e6).moves;
+      out.n++; if (want === (got == null ? null : got)) out.ok++; else out.bad.push(JSON.stringify(r) + rule + ':' + want + '/' + got);
+    }
+    return out;
+  });
+  check(fw.ok === fw.n, 'fewest moves match trying every move: ' + fw.ok + '/' + fw.n + ' ' + fw.bad.join(' '));
 
   /* ---------------- deals */
   const d = await p.evaluate(() => {
@@ -114,6 +140,20 @@ async function setRods(p, rods, extra) {
   g = await G(p);
   check(g.rods.length === 9 && g.rods.filter(r => !r.length).length === 1, 'hard: 8 colors + 1 empty rod');
   await shot(p, 'cs-hard');
+  // too big to check every way (small limit here): a proven minimum and the computer's best
+  await p.evaluate(() => { window.__cs.cap = 2000; window.__cs.game().moves = 0; });
+  await p.click('#newBtn');
+  await p.waitForFunction(() => window.__cs.game().fewest, null, { timeout: 20000 });
+  g = await G(p);
+  check(g.fewest.up > g.fewest.low && g.fewest.low >= 20, 'big puzzle: minimum and computer’s best ' + JSON.stringify(g.fewest));
+  await p.evaluate(m => { const g = JSON.parse(localStorage.getItem('pebbly_colorstack')); Object.assign(g, { solved: true, moves: m }); localStorage.setItem('pebbly_colorstack', JSON.stringify(g)); }, g.fewest.up + 3);
+  await p.reload(); await p.waitForSelector('#winDlg[open]');
+  check((await p.textContent('#winPar')) === 'Computer’s best: ' + g.fewest.up + ' moves', 'win dialog: computer’s best ' + await p.textContent('#winPar'));
+  await shot(p, 'cs-win-big');
+  await p.evaluate(m => { const g = JSON.parse(localStorage.getItem('pebbly_colorstack')); g.moves = m; localStorage.setItem('pebbly_colorstack', JSON.stringify(g)); }, g.fewest.up - 1);
+  await p.reload(); await p.waitForSelector('#winDlg[open]');
+  check((await p.textContent('#winPar')).includes('You beat the computer’s best'), 'win dialog: beat the computer');
+  await p.click('#wNew');
   await p.evaluate(() => localStorage.setItem('pebbly_theme', 'dark')); await p.reload();
   check(await p.evaluate(() => getComputedStyle(document.body).backgroundColor) === 'rgb(20, 26, 24)', 'dark mode');
   await shot(p, 'cs-dark');

@@ -130,6 +130,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 .dlghead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
 .dlghead h3{flex:1;margin:0;font:800 22px/1.2 var(--head)}
 .big{font:800 40px/1 var(--head);text-align:center;margin:6px 0 4px}
+.par{font-weight:700;text-align:center;margin:8px 0 2px;color:var(--brand)}
 </style>
 <script src="/keepawake.js"></script>
 <script src="/nav.js"></script>
@@ -231,6 +232,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   <div class="dlg">
     <div class="dlghead"><h3 id="winTitle">🎉 Sorted!</h3><button class="icon-btn" type="button" data-close aria-label="Close">✕</button></div>
     <div class="big" id="winMoves"></div>
+    <p class="par" id="winPar" aria-live="polite"></p>
     <p class="hint" id="winSub" style="text-align:center;margin:0 0 14px"></p>
     <div class="stack">
       <button class="btn" type="button" id="wNew" autofocus>Next puzzle</button>
@@ -342,6 +344,126 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     return null;
   }
 
+  // ================= Fewest possible moves (shown after a win) =================
+  // A* that never overestimates, so the first finish it reaches is the fewest moves. Lower bound per position:
+  // every bead outside its color's best clean bottom run moves at least once, its color's beads stacked above
+  // other colors on that rod twice, plus beads that any order of clearing the rods forces to move twice.
+  // Gives up after `cap` positions (phones' memory): then { low } is a proven minimum. `wt` > 1 trades
+  // exactness for speed (a quick good solution); `up` is a known solution length to stop at.
+  // Self-contained: it also runs in a worker (built from its source).
+  function fewest(start, h, rule, cap, wt, up) {
+    wt = wt || 1;
+    var C = 0, R = start.length;
+    start.forEach(function (r) { r.forEach(function (b) { if (b >= C) C = b + 1; }); });
+    var Bs = C + 1, N = Math.pow(Bs, h), pw = [1];
+    for (var i = 1; i <= h; i++) pw.push(pw[i - 1] * Bs);
+    // Each rod is a number (beads as base-(C+1) digits, bottom first); tables per number. sv = beads in the clean
+    // bottom run minus bottom-color beads higher up (those must leave and come back).
+    var len = new Uint8Array(N), topc = new Int8Array(N), bot = new Int8Array(N), sv = new Int8Array(N), full = new Uint8Array(N), beads = new Array(N);
+    for (var code = 0; code < N; code++) {
+      var x = code, arr = [];
+      while (x) { arr.push(x % Bs - 1); x = Math.floor(x / Bs); }
+      beads[code] = arr; len[code] = arr.length;
+      if (!arr.length) { topc[code] = bot[code] = -1; continue; }
+      topc[code] = arr[arr.length - 1]; bot[code] = arr[0];
+      var clean = true, s = 0;
+      for (var k = 0; k < arr.length; k++) { if (arr[k] !== arr[0]) clean = false; else s += clean ? 1 : -1; }
+      sv[code] = s; full[code] = s === h ? 1 : 0;
+    }
+    var bs = new Int32Array(C), sec = new Int32Array(C), tg = new Int32Array(C), idx = new Int32Array(C), nodes = new Int32Array(C);
+    var gg = new Int32Array(1 << C), mc = new Int32Array(1 << C), w = new Int32Array(C * C);
+    function quick(cs) {
+      bs.fill(0);
+      for (var i = 0; i < R; i++) { var c = cs[i]; if (c) { var b = bot[c]; if (sv[c] > bs[b]) bs[b] = sv[c]; } }
+      var t = C * h; for (var j = 0; j < C; j++) t -= bs[j]; return t;
+    }
+    // Colors with a clear-cut best rod: a bead on color A's rod that belongs on B's goes straight there only if
+    // B is cleared first. Fewest beads any order sends somewhere in between, letting colors switch rods at their cost.
+    function strong(cs) {
+      bs.fill(0); sec.fill(0); tg.fill(-1);
+      for (var i = 0; i < R; i++) { var c = cs[i]; if (!c) continue; var b = bot[c], s = sv[c];
+        if (s > bs[b]) { sec[b] = bs[b]; bs[b] = s; tg[b] = i; } else if (s > sec[b]) sec[b] = s; }
+      var base = C * h, K = 0;
+      for (var j = 0; j < C; j++) { base -= bs[j]; idx[j] = -1; if (bs[j] > sec[j]) { idx[j] = K; nodes[K++] = j; } }
+      if (K < 2) return base;
+      w.fill(0);
+      for (i = 0; i < K; i++) { var col = nodes[i], arr = beads[cs[tg[col]]], q = 0;
+        while (q < arr.length && arr[q] === col) q++;
+        for (; q < arr.length; q++) { var d = idx[arr[q]]; if (d >= 0 && d !== i) w[i * C + d]++; } }
+      var MM = 1 << K, best = 1e9;
+      for (var U = 1; U < MM; U++) {
+        var low = U & -U, li = 31 - Math.clz32(low), bb = 1e9;
+        mc[U] = mc[U ^ low] + bs[nodes[li]] - sec[nodes[li]];
+        for (var v = 0; v < K; v++) if (U >> v & 1) { var rest = U ^ (1 << v), s2 = gg[rest];
+          for (var u = 0; u < K; u++) if (rest >> u & 1) s2 += w[u * C + v];
+          if (s2 < bb) bb = s2; }
+        gg[U] = bb;
+      }
+      for (U = 0; U < MM; U++) { var y = gg[U] + mc[(MM - 1) ^ U]; if (y < best) best = y; }
+      return base + best;
+    }
+    function enc(cs) { return String.fromCharCode.apply(null, cs.slice().sort(function (p, q) { return p - q; })); }
+    var s0 = start.map(function (r) { return r.reduce(function (acc, b, k) { return acc + (b + 1) * pw[k]; }, 0); });
+    // Buckets by estimated total; each entry: position, moves so far, the rod just dropped on, lower bound checked.
+    var seen = new Map(), buckets = [], cs = new Array(R), k0 = enc(s0), f0 = Math.ceil(wt * strong(s0));
+    buckets[f0] = [k0, 0, -1, 1]; seen.set(k0, 0);
+    for (var f = f0; f < buckets.length; f++) {
+      if (up && wt === 1 && f >= up) return { moves: up };
+      var B = buckets[f]; if (!B) continue;
+      while (B.length) {
+        var checked = B.pop(), last = B.pop(), g0 = B.pop(), key = B.pop();
+        if (seen.get(key) < g0) continue;
+        for (i = 0; i < R; i++) cs[i] = key.charCodeAt(i);
+        if (!checked) { var e = Math.ceil(g0 + wt * strong(cs)); if (e > f) { (buckets[e] || (buckets[e] = [])).push(key, g0, last, 1); continue; } }
+        if (quick(cs) === 0) return { moves: g0 };
+        if (seen.size > cap) return { low: wt === 1 ? f : null };
+        var g = g0 + 1;
+        for (var a = 0; a < R; a++) {
+          var ca = cs[a]; if (!ca || ca === last || full[ca]) continue;   // moving the same bead twice in a row never helps
+          var La = len[ca], t = topc[ca], na = ca - (t + 1) * pw[La - 1], mono = sv[ca] === La, emptyTried = false;
+          for (var b = 0; b < R; b++) {
+            if (b === a) continue; var cb = cs[b], Lb = len[cb]; if (Lb >= h) continue;
+            if (!Lb) { if (mono || emptyTried) continue; emptyTried = true; }
+            else if (rule === 'match' && topc[cb] !== t) continue;
+            var nb = cb + (t + 1) * pw[Lb]; cs[a] = na; cs[b] = nb;
+            var kk = enc(cs), o = seen.get(kk);
+            if (o === undefined || o > g) {
+              seen.set(kk, g);
+              var nf = Math.max(f, Math.ceil(g + wt * quick(cs)));
+              (nf === f ? B : (buckets[nf] || (buckets[nf] = []))).push(kk, g, nb, 0);
+            }
+            cs[a] = ca; cs[b] = cb;
+          }
+        }
+      }
+    }
+    return {};   // can't be finished
+  }
+  // Works out { low, up } for a puzzle in the background: up = the fewest moves found, low = proven minimum
+  // (equal when it got all the way).
+  var bestWorker = null;
+  function findFewest() {
+    if (bestWorker) { bestWorker.terminate(); bestWorker = null; }
+    if (!game || game.fewest || !game.start || typeof Worker === 'undefined') return;
+    var id = JSON.stringify(game.start);
+    try {
+      var src = fewest.toString() + '\nonmessage = function (e) { var d = e.data, up = null;\n' +
+        '  [1.5, 1.3].forEach(function (wt) { var u = fewest(d.rods, d.h, d.rule, 150000, wt); if (u.moves != null && (up == null || u.moves < up)) up = u.moves; });\n' +
+        '  var x = fewest(d.rods, d.h, d.rule, d.cap, 1, up);\n' +
+        '  postMessage(x.moves != null ? { low: x.moves, up: x.moves } : { low: x.low, up: up }); };';
+      var url = URL.createObjectURL(new Blob([src], { type: 'text/javascript' }));
+      bestWorker = new Worker(url); URL.revokeObjectURL(url);
+    } catch (e) { bestWorker = null; return; }
+    bestWorker.onmessage = function (e) {
+      bestWorker.terminate(); bestWorker = null;
+      if (!game || JSON.stringify(game.start) !== id || e.data.low == null) return;
+      game.fewest = e.data; save();
+      if ($('winDlg').open) showPar();
+    };
+    bestWorker.onerror = function () { if (bestWorker) bestWorker.terminate(); bestWorker = null; };
+    bestWorker.postMessage({ rods: game.start, h: game.h, rule: game.rule, cap: (window.__cs && window.__cs.cap) || 1200000 });
+  }
+
   // ================= Setup =================
   function radio(name, v) { var el = document.querySelector('input[name=' + name + '][value="' + v + '"]'); if (el) el.checked = true; }
   function pick(name) { return document.querySelector('input[name=' + name + ']:checked').value; }
@@ -366,7 +488,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     var rods = window.__cs && window.__cs._noDeal ? null : deal(cfg), spare = cfg.spare;
     if (!rods) { spare++; rods = deal({ colors: cfg.colors, h: cfg.h, spare: spare, rule: cfg.rule }) || rods; }
     game = { colors: cfg.colors, h: cfg.h, spare: cfg.spare, rule: cfg.rule, extra: spare > cfg.spare, start: rods, rods: rods.map(function (r) { return r.slice(); }), moves: 0, ms: 0, solved: false };
-    undo = []; sel = -1; hintMove = null; plan = null; save(); showPlay(); msg('');
+    undo = []; sel = -1; hintMove = null; plan = null; save(); showPlay(); msg(''); findFewest();
     if (game.extra) msg('These settings rarely give a puzzle that can be finished, so you get an extra empty rod.');
     return true;
   }
@@ -473,7 +595,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 
   $('undoBtn').addEventListener('click', function () {
     if (!undo.length) return;
-    var ms = game.ms; game = JSON.parse(undo.pop()); game.ms = ms; game.solved = false;
+    var ms = game.ms, fw = game.fewest; game = JSON.parse(undo.pop()); game.ms = ms; game.fewest = fw; game.solved = false;
     sel = -1; hintMove = null; plan = null; save(); buzz(); if ($('winDlg').open) $('winDlg').close(); msg(''); render();
   });
   function restartSame() {
@@ -508,14 +630,27 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     $('winTitle').textContent = game.record ? '🏆 New best!' : '🎉 Sorted!';
     $('winMoves').textContent = game.moves + ' moves';
     $('winSub').textContent = 'in ' + clock(game.ms) + (b && !game.record ? ' · your best: ' + b.moves + ' moves' : '') + '.';
+    showPar();
     $('winDlg').showModal();
+  }
+  // The fewest possible moves for this puzzle, once the worker has it. Big puzzles can be too much to check
+  // every way: then it's the computer's best, unless the player matched the proven minimum.
+  function showPar() {
+    var f = game.fewest, m = game.moves, t;
+    if (!f) t = bestWorker ? 'Working out the fewest possible…' : '';
+    else if (m <= f.low) t = '🎯 That’s the fewest possible!';
+    else if (f.up === f.low) t = 'Fewest possible: ' + f.low + ' moves';
+    else if (f.up == null) t = '';
+    else if (m < f.up) t = 'You beat the computer’s best (' + f.up + ' moves)!';
+    else t = 'Computer’s best: ' + f.up + ' moves';
+    $('winPar').textContent = t; $('winPar').hidden = !t;
   }
   addEventListener('resize', function () { if (game && !$('play').hidden) render(); });
 
-  if (game && game.rods) showPlay(); else { game = null; openSetup(); }
+  if (game && game.rods) { showPlay(); findFewest(); } else { game = null; openSetup(); }
 
   // Exposed for automated checks only.
-  window.__cs = { solve: solve, deal: deal, isSolved: isSolved, canMove: canMove, game: function () { return game; } };
+  window.__cs = { fewest: fewest, solve: solve, deal: deal, isSolved: isSolved, canMove: canMove, game: function () { return game; } };
 })();
 </script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
