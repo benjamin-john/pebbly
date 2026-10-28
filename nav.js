@@ -1,7 +1,8 @@
 // Adds a slim "← Pebbly" bar to the top of an app, but only when it's running as the
 // installed app. In a normal browser tab (e.g. a guest opening an RSVP link) nothing changes.
 // Add ?appnav to a URL to preview the bar in a regular tab.
-// It also asks the browser to keep Pebbly's saved data (names, games, host links) instead of
+// It also loads backup.js once the phone has a backup key (/backup/), and asks the browser to keep
+// Pebbly's saved data (names, games, host links) instead of
 // clearing it on its own when space runs low. Chrome and Edge decide silently; Firefox shows a
 // prompt, so there it's only asked from the installed app.
 (function () {
@@ -9,6 +10,13 @@
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(function () {});
 
   var installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+
+  // Backups (backup.js) keep themselves up to date on every page once this phone has a backup key.
+  try {
+    if (localStorage.getItem('pebbly_backup') && !window.PebblyBackup) {
+      var bk = document.createElement('script'); bk.src = '/backup.js'; document.head.appendChild(bk);
+    }
+  } catch (e) {}
 
   if (navigator.storage && navigator.storage.persist && (installed || !/Firefox\//.test(navigator.userAgent))) {
     navigator.storage.persisted().then(function (p) { if (!p) return navigator.storage.persist(); }).catch(function () {});

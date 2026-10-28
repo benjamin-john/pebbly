@@ -31,6 +31,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/worddash/` | Word Dash: guess the five-letter word in six; practice alone (stats, streaks) or race everyone's phones on the same word, no turns |
 | `/namegame/` | The Name Game |
 | `/admin/` | Admin: one sign-in to see, open as host, or delete everything in every app with an admin mode |
+| `/backup/` | Backup & restore: a six-word key keeps an encrypted copy of this phone's host links, names and settings, to restore on another phone (see `backup.js`) |
 | `/notifications/` | Notification settings: which kinds ring the 🔔 bell, for all events or one (see `notify.js`) |
 | `/install/` | How to add Pebbly to a phone or computer home screen |
 

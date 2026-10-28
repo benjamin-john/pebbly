@@ -57,6 +57,11 @@
   .admin { margin: 10px 0 0; text-align: center; font-size: .8rem; }
   .admin a { color: var(--muted); text-decoration: none; padding: 8px 10px; display: inline-block; }
   @media (display-mode: standalone) { .install { display: none; } }
+  .bknote { display: flex; align-items: center; gap: 10px; margin: 28px 0 0; padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-size: .95rem; }
+  .bknote[hidden] { display: none; }
+  .bknote p { margin: 0; flex: 1; color: var(--muted); }
+  .bknote a { color: var(--accent); font-weight: 600; }
+  .bknote button { font: inherit; font-size: .85rem; color: var(--muted); background: none; border: 0; min-height: 44px; padding: 0 4px; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -194,11 +199,12 @@
     </a></li>
   </ul>
 
+  <div class="bknote" id="bknote" hidden><span aria-hidden="true">💾</span><p><a href="backup/">Back up your host links</a> so you don’t lose your events if this phone’s data is cleared.</p><button type="button" id="bklater">Not now</button></div>
   <p class="install"><a href="install/">Install Pebbly</a></p>
   <div class="theme" role="group" aria-label="Appearance"><span>Theme</span>
     <button type="button" data-theme="auto">Auto</button><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button>
   </div>
-  <p class="admin"><a href="admin/">Admin</a> <a href="notifications/">Notifications</a></p>
+  <p class="admin"><a href="admin/">Admin</a> <a href="notifications/">Notifications</a> <a href="backup/">Backup &amp; restore</a></p>
 </main>
 <script>
   // Theme switch: Auto follows the phone; Light/Dark apply to every Pebbly app that has a dark look.
@@ -210,6 +216,19 @@
     show();
   })();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  // Backups: keep an existing one up to date (backup.js), or suggest one to hosts who have none.
+  (function () {
+    function get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }
+    if (get('pebbly_backup')) { var s = document.createElement('script'); s.src = '/backup.js'; document.head.appendChild(s); return; }
+    var hosts = ['rsvp.owners', 'meetup.owners', 'pick.owners', 'pebbly_doc_owners', 'pebbly_santa_owners']
+      .some(function (k) { return Object.keys(get(k) || {}).length > 0; });
+    if (!hosts || Date.now() < (get('pebbly_backup_later') || 0)) return;
+    var el = document.getElementById('bknote'); el.hidden = false;
+    document.getElementById('bklater').addEventListener('click', function () {
+      try { localStorage.setItem('pebbly_backup_later', JSON.stringify(Date.now() + 30 * 864e5)); } catch (e) {}
+      el.hidden = true;
+    });
+  })();
   // Ask the browser to keep Pebbly's saved data (see nav.js).
   (function () {
     var installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;

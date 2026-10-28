@@ -31,6 +31,7 @@ database for the apps that share data between people. See README.md for the app 
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
 | `admin/` | One admin page for every app with an admin mode (shared admin password): a section per app (list, open as host, delete). Add new apps' admin functions to `APPS` there. |
 | `notify.js`, `notifications/` | The 🔔 bell (homepage, RSVP, Which Day Works?) and its settings page. See "Notifications" below. |
+| `backup.js`, `backup/` | Backup & restore: a six-word key keeps an encrypted copy of the phone's Pebbly data in the database. See "Backups" below. |
 | `migrate.js` | Merges saved data forwarded from benjamin-john.com (RSVP/Poll/Which Day Works? only). |
 | `sw.js` | Service worker (registered by the homepage and `nav.js`): network-first with `cache: 'no-cache'` (updates show right away); saves every page in `PAGES` plus shared files and Google Fonts up front and refreshes them daily, so all of Pebbly opens offline. |
 | `manifest.webmanifest`, `icons/` | Installable app (PWA). Shortcuts list in the manifest. |
@@ -68,7 +69,9 @@ database for the apps that share data between people. See README.md for the app 
    `<script src="/theme.js"></script>` (right after the charset meta, if it has dark mode),
    `<script src="/keepawake.js"></script>` (games), `<script src="/play/sync.js"></script>` (if it
    supports playing together), `<script src="/nav.js"></script>`.
-2. Add a card to `index.html` (Plan or Play), a row to README.md, its folder to `PAGES` in `sw.js`
+2. Anything the app keeps in localStorage under a `pebbly_` name is backed up (`backup.js`); add in-progress game
+   state or per-phone keys to `SKIP` there (undo stacks ending `_undo` are skipped already).
+   Add a card to `index.html` (Plan or Play), a row to README.md, its folder to `PAGES` in `sw.js`
    (and any new shared file to `FILES`; `tests/sw_test.js` checks), and optionally a manifest shortcut
    (Android shows the first four).
 3. Test (below), then commit and push to `main`.
@@ -174,6 +177,13 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   `notify_push_sync` only accepts real push-service addresses. `handler.js` has no Deno-only code, so
   `tests/push_test.js` runs it in Node with stand-ins for Supabase and the push service; its service-worker check
   needs `chromium.launch({ channel: 'chromium' })` (the headless shell always refuses notifications).
+- **Backups** (`backups` table, `backup_*`; `backup.js`, `/backup/`): six words (BIP39 English list, inline; first four
+  letters identify a word) → PBKDF2 (200k, SHA-256) → 64 bytes: the row id (hex) and an AES-GCM key. The words stay on
+  the phone (`pebbly_backup`); the database holds only the id and ciphertext. Copies merge (`merge`: lists and objects
+  added together; single values: this phone's when saving, the backup's when restoring, so a restored phone gets its
+  old guest ids back); `version` catches two phones saving at once. nav.js loads backup.js on every page once a phone
+  has a key; it saves on load, every minute while open and when leaving, only if something changed. Never back up
+  admin passwords (they're in sessionStorage). Test: `tests/backup_test.js`.
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)

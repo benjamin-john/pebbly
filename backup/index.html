@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<title>Backup & restore | Pebbly</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED; --warn:#8A5A00; --warn-t:#FFF3D6; --no:#CC423D;
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --warn:#F2B24C; --warn-t:#3A2C14; --no:#F07A75; color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --warn:#F2B24C; --warn-t:#3A2C14; --no:#F07A75; color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+button,input,textarea{font:inherit;color:inherit}
+[hidden]{display:none !important}
+a{color:var(--brand)}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.wrap{max-width:620px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
+h1{font:800 30px/1.15 var(--head);margin:8px 0 0}
+h2{font:600 19px/1.25 var(--head);margin:0 0 6px}
+.lede{color:var(--muted);margin:6px 0 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:16px}
+.card p{margin:0}
+.muted{color:var(--muted);font-size:15px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;text-decoration:none;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.row .btn{flex:1 1 140px;width:auto}
+.links{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:10px}
+.link{background:none;border:0;padding:10px 0;min-height:44px;color:var(--brand);font-weight:500;cursor:pointer;text-decoration:underline}
+.link.danger{color:var(--no)}
+.words{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px;counter-reset:w}
+.words li{counter-increment:w;display:flex;align-items:center;gap:8px;min-height:48px;padding:0 12px;border:1px solid var(--line);border-radius:10px;
+  background:var(--bg);font:600 18px/1 var(--body);letter-spacing:.01em}
+.words li::before{content:counter(w);font-size:13px;font-weight:600;color:var(--muted);min-width:14px}
+.warn{margin-top:12px;padding:12px;border-radius:10px;background:var(--warn-t);color:var(--ink);font-size:15px}
+.ok{font-weight:600;color:var(--brand)}
+textarea{display:block;width:100%;margin-top:10px;min-height:92px;padding:12px;border:1px solid var(--field);border-radius:12px;background:var(--surface);
+  font-size:17px;line-height:1.4;resize:vertical}
+.err{color:var(--no);font-size:15px;margin-top:8px}
+details{margin-top:16px}
+details summary{cursor:pointer;min-height:44px;display:flex;align-items:center;color:var(--brand);font-weight:500}
+details ul{margin:4px 0 0;padding-left:20px;color:var(--muted);font-size:15px}
+.foot{margin-top:28px;text-align:center;font-size:15px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;
+  background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:15px;transition:opacity .2s,transform .2s;max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+</style>
+<script src="/nav.js"></script>
+<script src="/backup.js"></script>
+</head>
+<body>
+<main class="wrap">
+  <h1>Backup &amp; restore</h1>
+  <p class="lede">Pebbly keeps your host links, names and settings on this phone. A backup key (six words) gets them back if this phone’s data is cleared, or moves them to a new phone. No account needed.</p>
+  <section class="card" id="mine"></section>
+  <section class="card" id="restore">
+    <h2>Restore on this phone</h2>
+    <p class="muted">Type or paste your six backup words. Anything already on this phone stays; the backup is added to it.</p>
+    <form id="rForm" novalidate>
+      <textarea id="rWords" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-label="Your six backup words" placeholder="e.g. river candle orbit pencil maple swift"></textarea>
+      <p class="err" id="rErr" role="alert" hidden></p>
+      <div class="row"><button type="submit" class="btn">Restore</button></div>
+    </form>
+  </section>
+  <details>
+    <summary>What’s in a backup?</summary>
+    <ul>
+      <li>Host and organizer links for every app (RSVP, Which Day Works?, Poll, Sign-up Sheet, Split the Bill, Shared List, Secret Santa, Live Quiz, Baby Names)</li>
+      <li>Which events you replied to as a guest, so you can still change your answer</li>
+      <li>Your names, event passwords you’ve entered, and notification settings</li>
+      <li>Remembered player names, Trivia question sets, game stats and settings</li>
+    </ul>
+    <p class="muted" style="margin-top:8px">Not included: games in progress, and phone alerts (turn those on again on a new phone).
+      The backup is locked with your six words before it leaves the phone, so nobody else, including Pebbly, can read it.</p>
+  </details>
+  <p class="foot"><a href="/">Back to Pebbly</a></p>
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+  'use strict';
+  var B = window.PebblyBackup, $mine = document.getElementById('mine'), $toast = document.getElementById('toast'), toastTimer, showWords = false, busy = false;
+  var ERR = {
+    bad_words: 'That doesn’t look like a backup key. It should be six words, like the ones you saved.',
+    not_found: 'There’s no backup for those words. Check the spelling, and that they’re in the right order.',
+    not_ready: 'Backups aren’t switched on yet. Try again in a few minutes.',
+    backup_too_big: 'This phone has too much saved to back up. Tell Ben.',
+    network: 'Couldn’t reach the server. Check your connection and try again.'
+  };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function toast(m) { $toast.textContent = m; $toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(function () { $toast.classList.remove('show'); }, 2800); }
+  function ago(t) {
+    if (!t) return 'not yet';
+    var s = (Date.now() - t) / 1000;
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + ' min ago';
+    if (s < 86400) return Math.floor(s / 3600) + ' h ago';
+    return new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
+  function wordsHtml(words) {
+    return '<ol class="words" aria-label="Your backup key">' + words.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ol>' +
+      '<div class="row"><button type="button" class="btn ghost" data-act="copy">Copy the six words</button></div>' +
+      '<p class="warn">Save these somewhere safe, like your notes app or a password manager, or write them down. ' +
+      'Anyone with these words can control your events, so keep them private. You’ll need them to restore.</p>';
+  }
+
+  function render() {
+    var s = B.state(), sum = B.summary();
+    if (!s.on) {
+      $mine.innerHTML = '<h2>Back up this phone</h2>' +
+        '<p class="muted">' + (sum.hosted ? 'This phone holds ' + plural(sum.hosted, 'host link', 'host links') + '. ' : '') +
+        'Make a backup key once; Pebbly then keeps the backup up to date by itself.</p>' +
+        '<div class="row"><button type="button" class="btn" data-act="create">Make a backup key</button></div>';
+      return;
+    }
+    $mine.innerHTML = '<h2>✅ This phone is backed up</h2>' +
+      '<p class="muted">Last saved ' + esc(ago(s.savedAt)) + '. It updates by itself whenever something changes.</p>' +
+      (s.error && s.error !== 'network' ? '<p class="err">' + esc(ERR[s.error] || 'The last save didn’t work.') + '</p>' : '') +
+      (showWords ? wordsHtml(s.words) : '<div class="row"><button type="button" class="btn ghost" data-act="show">Show my key</button>' +
+        '<button type="button" class="btn plain" data-act="now">Back up now</button></div>') +
+      '<div class="links"><button type="button" class="link" data-act="stop">Stop backing up this phone</button>' +
+        '<button type="button" class="link danger" data-act="delete">Delete my backup</button></div>';
+  }
+
+  function run(p, done) {
+    busy = true;
+    [].forEach.call(document.querySelectorAll('button'), function (b) { b.disabled = true; });
+    return p.then(done, function (e) { toast(ERR[e && e.message] || 'Something went wrong. Try again.'); })
+      .then(function () { busy = false; render(); [].forEach.call(document.querySelectorAll('button'), function (b) { b.disabled = false; }); });
+  }
+
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest('[data-act]');
+    if (!t || busy) return;
+    var act = t.dataset.act;
+    if (act === 'create') run(B.create(), function () { showWords = true; toast('Backed up. Now save your six words.'); });
+    else if (act === 'show') { showWords = true; render(); }
+    else if (act === 'now') run(B.sync(true), function () { toast('Backed up.'); });
+    else if (act === 'copy') {
+      var text = B.state().words.join(' ');
+      (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { toast('Copied. Paste them somewhere safe.'); },
+        function () { toast('Couldn’t copy. Press and hold the words, or write them down.'); });
+    }
+    else if (act === 'stop') {
+      if (confirm('Stop backing up this phone? The backup stays on the server, and your six words can still restore it.')) { B.forget(); showWords = false; render(); toast('This phone is no longer backing up.'); }
+    }
+    else if (act === 'delete') {
+      if (confirm('Delete your backup from the server? Your six words won’t restore anything after this. Nothing on this phone is removed.'))
+        run(B.remove(), function () { showWords = false; toast('Backup deleted.'); });
+    }
+  });
+
+  document.getElementById('rForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = document.getElementById('rErr'), text = document.getElementById('rWords').value;
+    err.hidden = true;
+    if (!B.parse(text)) { err.textContent = ERR.bad_words; err.hidden = false; return; }
+    var cur = B.state();
+    if (cur.on && cur.words.join(' ') !== B.parse(text).join(' ') &&
+        !confirm('This phone already backs up with different words. Restore and switch to these words? The old backup stays on the server.')) return;
+    busy = true;
+    var btn = e.target.querySelector('button'); btn.disabled = true; btn.textContent = 'Restoring…';
+    B.restore(text).then(function (sum) {
+      document.getElementById('rWords').value = '';
+      toast('Restored.');
+      document.getElementById('restore').innerHTML = '<h2>✅ Restored</h2><p class="muted">This phone now has ' + plural(sum.hosted, 'host link', 'host links') +
+        (sum.joined ? ' and ' + plural(sum.joined, 'event', 'events') + ' you replied to' : '') +
+        ', plus your names and settings. It keeps backing up with the same six words.</p>' +
+        '<div class="row"><a class="btn" href="/">Go to Pebbly</a></div>';
+    }, function (er) {
+      err.textContent = ERR[er && er.message] || 'Something went wrong. Try again.'; err.hidden = false;
+    }).then(function () { busy = false; btn.disabled = false; btn.textContent = 'Restore'; render(); });
+  });
+
+  render();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
