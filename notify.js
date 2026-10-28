@@ -93,7 +93,8 @@
       var owners = load(APPS[app].owners, {}) || {}, pid = load(APPS[app].pid, '') || '';
       Object.keys(owners).forEach(function (code) {
         var id = fid(app, norm(code), 'host');
-        if (!all[id] && owners[code]) { all[id] = { app: app, code: norm(code), role: 'host', key: owners[code], pid: pid, at: Date.now() }; changed = true; }
+        // new, or the app now holds a different host key for it
+        if (owners[code] && (!all[id] || all[id].key !== owners[code])) { all[id] = { app: app, code: norm(code), role: 'host', key: owners[code], pid: pid, at: Date.now() }; changed = true; }
       });
     });
     if (changed) save(FEEDS, all);
@@ -116,9 +117,11 @@
     save(FEEDS, all); save(SEEN, seen); paint();
   }
   function lockKey(app, code) { return (load('pebbly_lock_keys', {}) || {})[app + ':' + code] || null; }
+  // A refused event (deleted, or no longer ours) is asked about again after a day.
+  function isDead(f) { return typeof f.dead === 'number' && Date.now() - f.dead < 864e5; }
   function live() {
     var all = seed();
-    return Object.keys(all).map(function (id) { return all[id]; }).filter(function (f) { return !f.dead && APPS[f.app]; })
+    return Object.keys(all).map(function (id) { return all[id]; }).filter(function (f) { return !isDead(f) && APPS[f.app]; })
       .sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 40);
   }
 
@@ -139,10 +142,11 @@
       (res || []).forEach(function (r, i) {
         var f = list[i], id = fid(f.app, f.code, f.role);
         if (!all[id]) return;
-        if (!r || !r.ok) { all[id].dead = true; delete state[id]; return; }
+        if (!r || !r.ok) { all[id].dead = Date.now(); delete state[id]; return; }
         var top = r.items.length ? r.items[0].id : 0, before = state[id] ? (state[id].items[0] || {}).id || 0 : null;
         if (before !== null && top > before) news.push(f);
         state[id] = r;
+        delete all[id].dead;
         all[id].title = r.title; all[id].emoji = r.emoji;
         if (seen[id] === null) seen[id] = r.items.length ? r.items[0].id : 0;   // a new feed starts with everything seen
         // turn off what this phone turned off for all events, once per new feed

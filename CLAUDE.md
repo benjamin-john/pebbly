@@ -157,8 +157,8 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
 - **Notifications** (`notifications`, `notify_types`, `notify_off`; `notify.js`): one table for every app. Rows are
   added by triggers on each app's tables (so app functions don't change), each for the event's hosts or for everyone
   who responded (`audience` 'host'/'guest'). Phones read only through `notify_feed` (one call for all their events:
-  host key, or participant id that has responded plus the lock key if the event has a password; admin "open as host"
-  keys don't count). The actor's participant id is stored so your own actions don't ring your bell, never returned.
+  host key (admin "open as host" keys count too), or participant id that has responded plus the lock key if the event
+  has a password). A refused event is asked about again after a day. The actor's participant id is stored so your own actions don't ring your bell, never returned.
   "Seen" is per phone (localStorage `pebbly_notify_seen`); turned-off kinds are per event and key on the server
   (`notify_set_off`), so later email/Web Push senders can respect them (`emailed_at`/`pushed_at` columns are for
   those). Pages register events with `PebblyNotify.feed(app, code, role, key, pid)` and place

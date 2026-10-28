@@ -46,9 +46,9 @@ const feed = (app, code, role, key, extra) => call('notify_feed', { p_feeds: [{ 
   check(/permission denied/.test(sql("set role anon; select count(*) from notifications").stderr), 'anon cannot read the table');
   check(/permission denied/.test(sql("set role anon; select _notify_add('rsvp', gen_random_uuid(), 'rsvp.comment', null, null, 'x', '{}')").stderr), 'anon cannot add notifications');
   check(fails('notify_feed', { p_feeds: 'nope' }) && fails('notify_feed', { p_feeds: Array(41).fill({}) }), 'bad input rejected');
-  // admin "open as host" keys don't get a host feed
+  // admin "open as host" keys count too (the admin is often an organizer)
   sql(`insert into rsvp_owner_keys (event_id, key_hash, label) select id, _rsvp_hash('admintok'), 'admin' from rsvp_events where code = '${code}'`);
-  check(!feed('rsvp', code, 'host', 'admintok').ok, 'admin key has no host feed');
+  check(feed('rsvp', code, 'host', 'admintok').ok, 'admin key has a host feed');
   // passwords: guests need the lock key
   const ls = call('lock_set', { p_app: 'rsvp', p_code: code, p_owner_token: tok, p_password: 'tacos' });
   check(!feed('rsvp', code, 'guest', 'dbguest-0001').ok, 'locked event: guest without lock key refused');
@@ -103,6 +103,11 @@ const feed = (app, code, role, key, extra) => call('notify_feed', { p_feeds: [{ 
   await host.reload(); await host.waitForSelector('#host .host');
   await host.waitForFunction(() => { const b = document.querySelector('[data-pn-bell]'); return b && !b.hidden; });
   check(await badge(host) === '', 'seen is remembered on this phone');
+  // an event this phone once got refused for (old "dead" flag, or a day old) is asked about again
+  await host.evaluate(c => { const f = JSON.parse(localStorage.getItem('pebbly_notify_feeds')); f['rsvp:' + c + ':host'].dead = true; localStorage.setItem('pebbly_notify_feeds', JSON.stringify(f)); }, ev2.code);
+  await host.goto(B + '/'); await host.waitForFunction(() => { const b = document.querySelector('[data-pn-bell]'); return b && !b.hidden; });
+  check(await host.evaluate(c => !JSON.parse(localStorage.getItem('pebbly_notify_feeds'))['rsvp:' + c + ':host'].dead, ev2.code), 'refused event retried');
+  await host.goto(B + '/rsvp/?e=' + ev2.code); await host.waitForSelector('#host .host');
 
   // announcement → guest bell, and the text-the-invited offer
   await host.fill('#annBody', 'Parking is behind the hall');
