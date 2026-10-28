@@ -14,6 +14,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="/notify.js"></script>
 <style>
   :root {
     color-scheme: light dark;
@@ -34,6 +35,7 @@
   header { margin-bottom: 28px; }
   h1 { margin: 0 0 4px; font: 800 2.2rem/1.1 "Bricolage Grotesque", "Trebuchet MS", system-ui, sans-serif; }
   header p { margin: 0; color: var(--muted); }
+  .hbar { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 28px 0 10px; }
   ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
   a.app {
@@ -60,7 +62,7 @@
 <body>
 <main>
   <header>
-    <h1>Pebbly</h1>
+    <div class="hbar"><h1>Pebbly</h1><span data-pn-bell></span></div>
     <p>Small, free tools for planning get-togethers and playing games.</p>
   </header>
 
@@ -196,7 +198,7 @@
   <div class="theme" role="group" aria-label="Appearance"><span>Theme</span>
     <button type="button" data-theme="auto">Auto</button><button type="button" data-theme="light">Light</button><button type="button" data-theme="dark">Dark</button>
   </div>
-  <p class="admin"><a href="admin/">Admin</a></p>
+  <p class="admin"><a href="admin/">Admin</a> <a href="notifications/">Notifications</a></p>
 </main>
 <script>
   // Theme switch: Auto follows the phone; Light/Dark apply to every Pebbly app that has a dark look.

@@ -31,6 +31,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/worddash/` | Word Dash: guess the five-letter word in six; practice alone (stats, streaks) or race everyone's phones on the same word, no turns |
 | `/namegame/` | The Name Game |
 | `/admin/` | Admin: one sign-in to see, open as host, or delete everything in every app with an admin mode |
+| `/notifications/` | Notification settings: which kinds ring the 🔔 bell, for all events or one (see `notify.js`) |
 | `/install/` | How to add Pebbly to a phone or computer home screen |
 
 - Any folder with an `index.html` becomes a page (`poll/index.html` → `https://pebbly.dev/poll/`).
@@ -42,6 +43,9 @@ Static site served by GitHub Pages at https://pebbly.dev.
   `play/play.sql` (run once in Supabase) stores each shared game as one JSON document with a
   version number; `play/sync.js` pushes changes, polls every 1.5 s, and merges when two phones
   change things at once. A game page hooks in with `PebblySync.wire(kind, {...})` (see Kwiks).
+- **Notifications** (`notify.js`, `supabase/migrations/20261028120000_notifications.sql`): a 🔔 bell on the
+  homepage and in RSVP / Which Day Works?. Database triggers record new RSVPs, changed answers, comments,
+  announcements, new or changed days and the final date; the bell checks every 30 s while a page is open.
 - `doc.js`: shared JSON documents (Sign-up Sheet, Split the Bill, Shared List) with versioned merges;
   see its header.
 - `lock.js` + `supabase/migrations/20261012000000_plan_passwords.sql`: optional passwords for RSVP,

@@ -35,7 +35,8 @@ button,input,textarea{font:inherit;color:inherit}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* page furniture */
-.topnav{display:flex;justify-content:space-between;margin-bottom:14px;font-size:15px}
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;font-size:15px}
+.navr{display:flex;align-items:center;gap:12px}
 .banner{background:var(--not-ideal-t);border:1px solid #E5CB6B;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:14px}
 .banner button{margin-top:6px}
 .banner.bad{background:var(--unavailable-t);border-color:#D9908D;font-size:15px}
@@ -218,6 +219,7 @@ textarea{resize:vertical}
 </style>
 <script src="/lock.js"></script>
 <script src="/nav.js"></script>
+<script src="/notify.js"></script>
 </head>
 <body>
 <main id="app" class="wrap"></main>
@@ -670,6 +672,7 @@ function loadEvent(code) {
     if (!data) { renderNotFound(); return; }
     S.ev = data.event; S.responses = data.responses || []; S.isOwner = !!data.is_owner;
     rememberEvent(S.ev.code, S.ev.name);
+    notifyFeeds();
     var r = eventRange(S.ev);
     S.cursor = r.lo <= r.hi ? r.lo : S.ev.earliest;
     S.sel = null; S.calView = 'month'; S.showMore = false;
@@ -688,7 +691,14 @@ function reload() {
   return api.getEvent(S.code, S.pid, S.owner).then(function (data) {
     if (!data) throw new ApiError('event_not_found');
     S.ev = data.event; S.responses = data.responses || []; S.isOwner = !!data.is_owner;
+    notifyFeeds();
   });
+}
+// The 🔔 bell (notify.js): the organizer hears about new answers, people who answered about the final date.
+function notifyFeeds() {
+  if (!REMOTE || !window.PebblyNotify) return;
+  if (S.isOwner && S.owner) PebblyNotify.feed('wdw', S.code, 'host', S.owner, S.pid);
+  if (S.responses.some(function (r) { return r.mine; })) PebblyNotify.feed('wdw', S.code, 'guest', S.pid, S.pid);
 }
 
 /* -------------------------------------------------------------------- home */
@@ -911,7 +921,8 @@ function renderEvent() {
   $app.innerHTML =
     previewBanner() +
     '<nav class="topnav"><a href="' + esc(baseUrl()) + '">New event</a>' +
-      (S.isOwner ? '<span class="orgtag">You’re the organizer</span>' : '') + '</nav>' +
+      '<span class="navr">' + (S.isOwner ? '<span class="orgtag">You’re the organizer</span>' : '') +
+      (REMOTE ? '<span data-pn-bell data-app="wdw" data-code="' + esc(S.code) + '"></span>' : '') + '</span></nav>' +
     '<header class="head"><h1>' + esc(ev.name) + '</h1>' +
       (ev.description ? '<p class="desc">' + esc(ev.description) + '</p>' : '') +
       (facts.length ? '<p class="facts">' + facts.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</p>' : '') +
@@ -1080,6 +1091,7 @@ function deleteEvent() {
   if (!confirm('Delete “' + S.ev.name + '”' + (n ? ' and its ' + n + (n === 1 ? ' response' : ' responses') : '') + '? This can’t be undone.')) return;
   api.deleteEvent({ code: S.code, owner: S.owner }).then(function () {
     forgetEvent(S.code);
+    if (window.PebblyNotify) PebblyNotify.drop('wdw', S.code);
     try { history.replaceState(null, '', baseUrl()); } catch (e) {}
     renderHome(); toast('Event deleted.');
   }, function (e) { toast(friendly(e)); });
@@ -1490,6 +1502,9 @@ $app.addEventListener('submit', function (e) {
 
 document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'visible' && S.view === 'event' && S.mode === 'view' && !S.editEv) refreshNow(true);
+});
+window.addEventListener('pebbly-notify-new', function (e) {
+  if (e.detail.app === 'wdw' && e.detail.code === S.code && S.view === 'event' && S.mode === 'view' && !S.editEv) refreshNow(true);
 });
 window.addEventListener('beforeunload', function (e) {
   if (S.view === 'event' && S.mode === 'edit' && S.dirty) { e.preventDefault(); e.returnValue = ''; }

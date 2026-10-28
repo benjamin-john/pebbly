@@ -30,6 +30,7 @@ database for the apps that share data between people. See README.md for the app 
 | `doc.js` | Shared documents for Sign-up Sheet, Split the Bill, Shared List (doc_* functions): open/change/merge, host keys. Keep lists as objects keyed by id. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
 | `admin/` | One admin page for every app with an admin mode (shared admin password): a section per app (list, open as host, delete). Add new apps' admin functions to `APPS` there. |
+| `notify.js`, `notifications/` | The 🔔 bell (homepage, RSVP, Which Day Works?) and its settings page. See "Notifications" below. |
 | `migrate.js` | Merges saved data forwarded from benjamin-john.com (RSVP/Poll/Which Day Works? only). |
 | `sw.js` | Service worker (registered by the homepage and `nav.js`): network-first with `cache: 'no-cache'` (updates show right away); saves every page in `PAGES` plus shared files and Google Fonts up front and refreshes them daily, so all of Pebbly opens offline. |
 | `manifest.webmanifest`, `icons/` | Installable app (PWA). Shortcuts list in the manifest. |
@@ -149,6 +150,18 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   catalog (US SSA data, nicknames from the `nicknames-curated` package) is inline in the page; the document only holds
   names the couple added, extra nicknames, AI lists, order, comments. New names (typed or from AI) match an existing
   row by name, then by nickname (`findMatch`). Test: `tests/babynames_test.js`.
+- **Notifications** (`notifications`, `notify_types`, `notify_off`; `notify.js`): one table for every app. Rows are
+  added by triggers on each app's tables (so app functions don't change), each for the event's hosts or for everyone
+  who responded (`audience` 'host'/'guest'). Phones read only through `notify_feed` (one call for all their events:
+  host key, or participant id that has responded plus the lock key if the event has a password; admin "open as host"
+  keys don't count). The actor's participant id is stored so your own actions don't ring your bell, never returned.
+  "Seen" is per phone (localStorage `pebbly_notify_seen`); turned-off kinds are per event and key on the server
+  (`notify_set_off`), so later email/Web Push senders can respect them (`emailed_at`/`pushed_at` columns are for
+  those). Pages register events with `PebblyNotify.feed(app, code, role, key, pid)` and place
+  `<span data-pn-bell data-app data-code>`; the page reloads its data on the `pebbly-notify-new` event. A new kind is a
+  `notify_types` row + trigger (new migration) and a `TYPES` entry in `notify.js` (wording, icon, section to scroll to,
+  settings label). Quick repeat changes from the same person within 10 minutes merge into one item.
+  Test: `tests/notify_test.js`.
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)

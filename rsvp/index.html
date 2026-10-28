@@ -31,7 +31,10 @@ a{color:var(--brand)}
 button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 .hint{color:var(--muted);font-size:15px}
-.topnav{display:flex;justify-content:space-between;gap:10px;margin-bottom:14px;font-size:15px}
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;font-size:15px}
+.navr{display:flex;align-items:center;gap:12px}
+.annsent{margin-top:12px;padding:12px;border-radius:12px;background:var(--go-t);font-size:15px}
+.annsent .btn{margin-top:8px}
 .banner{background:var(--gold-t);border:1px solid #E5CB6B;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:14px}
 .banner button{margin-top:6px}
 .banner.bad{background:var(--no-t);border-color:#D9908D;font-size:15px}
@@ -222,6 +225,7 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 </style>
 <script src="/lock.js"></script>
 <script src="/nav.js"></script>
+<script src="/notify.js"></script>
 </head>
 <body>
 <main id="app" class="wrap"></main>
@@ -921,6 +925,11 @@ function applyData(d) {
   S.ev = d.event; S.isOwner = !!d.is_owner; S.me = d.me || null; S.counts = d.counts || null;
   S.guests = d.guests || null; S.posts = d.posts || []; S.items = d.items || [];
   S.invites = d.invites || null;
+  // the 🔔 bell (notify.js): hosts hear about replies and comments, guests about announcements
+  if (REMOTE && window.PebblyNotify) {
+    if (S.isOwner && S.owner) PebblyNotify.feed('rsvp', S.code, 'host', S.owner, S.pid);
+    if (S.me) PebblyNotify.feed('rsvp', S.code, 'guest', S.pid, S.pid);
+  }
 }
 // The event, plus the invite list for the host (null if the database doesn't have it yet).
 function fetchEvent(code) {
@@ -1228,7 +1237,8 @@ function renderEvent() {
   $app.innerHTML =
     previewBanner() +
     '<nav class="topnav">' + (S.fromAdmin ? '<button type="button" class="link" data-act="to-admin" style="padding:0">← All events (admin)</button>' : '<a href="' + esc(baseUrl()) + '">New event</a>') +
-      (S.isOwner ? '<span class="hint">' + (S.fromAdmin ? 'Admin: host view' : 'You’re the host') + '</span>' : '') + '</nav>' +
+      '<span class="navr">' + (S.isOwner ? '<span class="hint">' + (S.fromAdmin ? 'Admin: host view' : 'You’re the host') + '</span>' : '') +
+      (REMOTE ? '<span data-pn-bell data-app="rsvp" data-code="' + esc(S.code) + '"></span>' : '') + '</span></nav>' +
     (S.justCreated ? '<section class="panel created"><h2>Your event is ready 🎉</h2><p style="margin-top:4px">Send this link to your guests' + (REMOTE && PebblyLock.key('rsvp', S.code) ? ', and tell them the password separately' : '') + ':</p>' +
       '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Event link">' +
       '<button type="button" class="btn small" data-act="copy-link">Copy</button></div></section>' : '') +
@@ -1673,6 +1683,7 @@ function renderHost() {
     '<form id="annForm" style="margin-top:14px" novalidate><label class="fld" style="margin-bottom:8px"><span>Post an announcement</span>' +
       '<textarea id="annBody" rows="3" maxlength="1000" placeholder="Shown at the top of the page for everyone">' + esc(S.draft.ann) + '</textarea></label>' +
       '<button type="submit" class="btn primary small">Post announcement</button></form>' +
+    annSentHtml() +
     '<div class="row"><button type="button" class="btn small" data-act="edit-event">Edit event</button>' +
       '<button type="button" class="btn small" data-act="copy-host">Copy host link</button>' +
       (REMOTE ? '<button type="button" class="btn small" data-act="lock">🔒 Password</button>' : '') +
@@ -1696,6 +1707,15 @@ function renderHost() {
       '<button type="button" class="btn small" data-act="dl" data-id="announcements">Announcements</button>' +
       '<button type="button" class="btn small" data-act="dl" data-id="event">Event details</button></div></div>';
   renderTextList();
+}
+
+// After an announcement: guests who replied see it under 🔔; offer to text the invited who haven't.
+function annSentHtml() {
+  if (!S.annSent) return '';
+  var wait = S.invites ? inviteRows().rows.filter(function (r) { return !r.guest; }).length : 0;
+  return '<div class="annsent" role="status"><p>Posted. Guests who replied will see it on the page' + (REMOTE ? ' and under 🔔' : '') + '.' +
+    (wait ? ' ' + wait + (wait === 1 ? ' person on your invite list hasn’t' : ' people on your invite list haven’t') + ' replied yet.</p>' +
+      '<button type="button" class="btn small primary" data-act="ann-text">Text it to people who haven’t replied</button>' : '</p>') + '</div>';
 }
 
 /* texting (host) */
@@ -1848,6 +1868,12 @@ $app.addEventListener('click', function (e) {
     case 'link-rm': F.links.splice(Number(t.dataset.i), 1); if (!F.links.length) F.links.push({ label: '', url: '' }); $('#linkRows').innerHTML = linkRowsHtml(); break;
     case 'dl': doDownload(id); break;
     case 'texts-reset': S.texted = {}; renderTextList(); break;
+    case 'ann-text':
+      S.draft.sms = S.annSent; S.annSent = null; S.smsLink = true; S.texted = {};
+      S.aud = { going: false, maybe: false, no: false, invited: true };
+      renderHost();
+      var sb = $('#smsBody'); if (sb) sb.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      break;
     case 'share-details': copyText(detailsText()).then(function (ok) { toast(ok ? 'Event details copied. Paste them into a text or email.' : 'Could not copy.'); }); break;
     case 'copy-link': copyText(shareUrl(S.code), $('#shareUrl')).then(function (ok) { toast(ok ? 'Link copied.' : 'Press and hold the link to copy it.'); }); break;
     case 'share': copyText(shareUrl(S.code)).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : shareUrl(S.code)); }); break;
@@ -1891,7 +1917,7 @@ $app.addEventListener('click', function (e) {
     case 'delete-event':
       if (confirm('Delete this event for everyone? This can’t be undone.')) {
         api.del({ code: S.code, owner: S.owner }).then(function () {
-          forgetEvent(S.code); history.pushState(null, '', baseUrl()); renderHome(); toast('Event deleted.');
+          forgetEvent(S.code); if (window.PebblyNotify) PebblyNotify.drop('rsvp', S.code); history.pushState(null, '', baseUrl()); renderHome(); toast('Event deleted.');
         }, function (er) { toast(friendly(er)); });
       }
       break;
@@ -1954,7 +1980,7 @@ $app.addEventListener('submit', function (e) {
     var body = S.draft.ann.trim();
     if (!body) { $('#annBody').focus(); return; }
     after(api.post({ code: S.code, pid: S.pid, owner: S.owner, name: '', kind: 'announce', body: body }), 'Announcement posted.')
-      .then(function (ok) { if (ok) { S.draft.ann = ''; renderHost(); } });
+      .then(function (ok) { if (ok) { S.draft.ann = ''; S.annSent = body; renderHost(); } });
   }
   else if (id === 'itemEditForm') {
     var label = S.editItemText.replace(/\s+/g, ' ').trim();
@@ -1969,6 +1995,10 @@ document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'visible' && S.ev && S.mode === 'view' && $('#me')) {
     reload().then(renderParts, function () {});
   }
+});
+
+window.addEventListener('pebbly-notify-new', function (e) {
+  if (e.detail.app === 'rsvp' && e.detail.code === S.code && S.ev && S.mode === 'view' && $('#me')) reload().then(renderParts, function () {});
 });
 
 window.addEventListener('popstate', route);

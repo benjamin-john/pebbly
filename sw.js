@@ -13,9 +13,9 @@ const CACHE = 'pebbly-v3';
 const FONTS = 'pebbly-fonts';
 const PAGES = ['/', '/install/',
   '/rsvp/', '/whichdayworks/', '/poll/', '/signup/', '/bill/', '/list/', '/santa/', '/babynames/',
-  '/bracket/', '/codebreaker/', '/colorstack/', '/darts/', '/dots/', '/farkle/', '/gomoku/', '/mancala/', '/timer/', '/kwiks/', '/namegame/', '/score/', '/teams/', '/trivia/', '/worddash/', '/live/', '/join/', '/admin/',
+  '/bracket/', '/codebreaker/', '/colorstack/', '/darts/', '/dots/', '/farkle/', '/gomoku/', '/mancala/', '/timer/', '/kwiks/', '/namegame/', '/score/', '/teams/', '/trivia/', '/worddash/', '/live/', '/join/', '/admin/', '/notifications/',
   '/qwixx/'];
-const FILES = ['/theme.js', '/nav.js', '/keepawake.js', '/play/sync.js', '/lock.js', '/doc.js', '/migrate.js',
+const FILES = ['/theme.js', '/nav.js', '/keepawake.js', '/play/sync.js', '/lock.js', '/doc.js', '/migrate.js', '/notify.js',
   '/rsvp/config.js', '/poll/config.js', '/whichdayworks/config.js',
   '/manifest.webmanifest', '/icons/favicon.png', '/icons/icon-192.png', '/icons/icon-512.png',
   '/icons/maskable-192.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png'];
