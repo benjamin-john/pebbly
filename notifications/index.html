@@ -61,6 +61,16 @@ details.card[open] summary::after{transform:rotate(90deg)}
 .hint{color:var(--muted);font-size:15px}
 .msg{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-top:20px}
 .foot{margin-top:28px;text-align:center;font-size:15px}
+.alerts{margin-top:20px;padding:16px}
+.alerts h3{padding:0;margin:0 0 4px}
+.alerts p{margin:0;color:var(--muted);font-size:15px}
+.alerts .row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:0 16px;border:0;border-radius:12px;
+  background:var(--brand);color:var(--brand-ink);font-weight:600;font-size:17px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.ghost{background:transparent;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.plain{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.row .btn{flex:1 1 140px;width:auto}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;pointer-events:none;
   background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:15px;transition:opacity .2s,transform .2s;max-width:calc(100% - 32px)}
 .toast.show{opacity:1;transform:translate(-50%,0)}
@@ -71,7 +81,8 @@ details.card[open] summary::after{transform:rotate(90deg)}
 <body>
 <main class="wrap">
   <div class="top"><h1>Notifications</h1><span data-pn-bell></span></div>
-  <p class="lede">Choose what rings the 🔔 bell for events you host or have replied to. What you’ve already seen is kept on each phone.</p>
+  <p class="lede">Choose what rings the 🔔 bell for events you host or have replied to, and whether this phone also gets alerts on its lock screen. What you’ve already seen is kept on each phone.</p>
+  <section class="card alerts" id="alerts" hidden></section>
   <div id="app"><p class="hint" style="margin-top:20px">Loading…</p></div>
   <p class="foot"><a href="/">Back to Pebbly</a></p>
 </main>
@@ -149,7 +160,44 @@ details.card[open] summary::after{transform:rotate(90deg)}
     }
   });
 
-  N.load().then(function (list) { feeds = list; render(); }, function () {
+  /* phone alerts */
+  var $alerts = document.getElementById('alerts'), P = N.push, BUSY = false;
+  var ALERT_ERR = {
+    blocked: 'Notifications are blocked for Pebbly. To allow them: tap the icon left of the address bar, then Permissions (or Site settings), then Notifications.',
+    dismissed: 'No problem. Tap the button again when you’re ready, and choose Allow.',
+    not_ready: 'Phone alerts aren’t set up on the server yet. Try again later.',
+    network: 'Couldn’t reach the server. Check your connection and try again.'
+  };
+  function alertsCard(state, note) {
+    $alerts.hidden = false;
+    var h = '<h3>📲 Phone alerts</h3>';
+    if (state === 'no') h += '<p>This browser can’t show phone alerts. On Android, open Pebbly in Chrome.</p>';
+    else if (state === 'ios-install') h += '<p>On iPhone, add Pebbly to your Home Screen first (Share, then Add to Home Screen), open it from there, and come back to this page.</p>';
+    else if (state === 'blocked') h += '<p>' + ALERT_ERR.blocked + '</p>';
+    else if (state === 'on') h += '<p>On for this phone: you’ll get an alert, even when Pebbly is closed. The switches below choose what for.</p>' +
+      '<div class="row"><button type="button" class="btn ghost" data-alert="test">Send a test alert</button><button type="button" class="btn plain" data-alert="off">Turn off</button></div>';
+    else h += '<p>Get an alert on your lock screen when something happens, even when Pebbly is closed.</p>' +
+      '<div class="row"><button type="button" class="btn" data-alert="on">Turn on phone alerts</button></div>';
+    if (note) h += '<p style="margin-top:10px;color:var(--ink)" role="status">' + note + '</p>';
+    $alerts.innerHTML = h;
+  }
+  function showAlerts(note) { return P.state().then(function (s) { alertsCard(s, note); }); }
+  $alerts.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-alert]');
+    if (!b || BUSY) return;
+    BUSY = true; b.disabled = true;
+    var act = b.dataset.alert, p;
+    if (act === 'on') p = P.on().then(function () { toast('Phone alerts are on.'); return showAlerts(); });
+    else if (act === 'off') p = P.off().then(function () { toast('Phone alerts are off.'); return showAlerts(); });
+    else p = P.test().then(function (ok) { toast(ok ? 'Sent. It should show up in a few seconds.' : 'Couldn’t send it. Try turning alerts off and on.'); b.disabled = false; });
+    p.catch(function (er) {
+      var m = er && er.message;
+      return showAlerts(ALERT_ERR[m] || 'Something went wrong. Try again.');
+    }).then(function () { BUSY = false; });
+  });
+  if (N.available()) showAlerts().then(function () { if (location.hash === '#alerts') $alerts.scrollIntoView({ block: 'center' }); });
+
+  N.load().then(function (list) { feeds = list; render(); if (!N.available()) $alerts.hidden = true; }, function () {
     $app.innerHTML = '<div class="msg">Couldn’t load your settings. Check your connection and try again.</div>';
   });
 })();

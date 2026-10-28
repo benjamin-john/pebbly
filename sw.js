@@ -9,6 +9,10 @@
 // Shared apps (RSVP, lists, …) still need the internet for their data. Add every new app to PAGES
 // (tests/sw_test.js checks). Supabase calls are never touched. Google Fonts are kept in their own
 // cache so pages look the same offline.
+// It also shows phone alerts (Web Push, see notify.js) and opens the event when one is tapped.
+// Phone alerts: a push carries the notification's facts; notify.js says how it reads (alertView).
+try { importScripts('/notify.js'); } catch (e) {}
+
 const CACHE = 'pebbly-v3';
 const FONTS = 'pebbly-fonts';
 const PAGES = ['/', '/install/',
@@ -18,7 +22,7 @@ const PAGES = ['/', '/install/',
 const FILES = ['/theme.js', '/nav.js', '/keepawake.js', '/play/sync.js', '/lock.js', '/doc.js', '/migrate.js', '/notify.js',
   '/rsvp/config.js', '/poll/config.js', '/whichdayworks/config.js',
   '/manifest.webmanifest', '/icons/favicon.png', '/icons/icon-192.png', '/icons/icon-512.png',
-  '/icons/maskable-192.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png'];
+  '/icons/maskable-192.png', '/icons/maskable-512.png', '/icons/apple-touch-icon.png', '/icons/badge-96.png'];
 const STAMP = '/__pebbly_saved_at';
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -62,4 +66,26 @@ self.addEventListener('fetch', e => {
     }).catch(() => caches.match(req, { ignoreSearch: true }).then(r => r ||
       (req.mode === 'navigate' ? caches.match('/') : null)).then(r => r || Response.error()))
   );
+});
+
+// Phone alerts
+self.addEventListener('push', e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (x) {}
+  const N = self.PebblyNotify;
+  const v = N ? N.alertView(d) : { title: 'Pebbly', body: 'Something new', url: '/', tag: 'pebbly' };
+  e.waitUntil(self.registration.showNotification(v.title, {
+    body: v.body, tag: v.tag, renotify: true, icon: '/icons/icon-192.png', badge: '/icons/badge-96.png', data: { url: v.url }
+  }));
+});
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || '/', location.origin).href;
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
+    const same = list.find(c => c.url === url);
+    if (same) return same.focus();
+    const any = list.find(c => new URL(c.url).origin === location.origin);
+    if (any && any.navigate) return any.navigate(url).then(c => (c || any).focus());
+    return self.clients.openWindow(url);
+  }));
 });

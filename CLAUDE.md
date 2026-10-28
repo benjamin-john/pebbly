@@ -35,6 +35,7 @@ database for the apps that share data between people. See README.md for the app 
 | `sw.js` | Service worker (registered by the homepage and `nav.js`): network-first with `cache: 'no-cache'` (updates show right away); saves every page in `PAGES` plus shared files and Google Fonts up front and refreshes them daily, so all of Pebbly opens offline. |
 | `manifest.webmanifest`, `icons/` | Installable app (PWA). Shortcuts list in the manifest. |
 | `supabase/migrations/` | Database changes; applied automatically on push to `main` (see below). |
+| `supabase/functions/` | Edge Functions (`notify-push`: phone alerts). Deployed by `.github/workflows/deploy-functions.yml` (needs the `SUPABASE_ACCESS_TOKEN` repo secret; see `supabase/README.md`). |
 | `tests/` | Playwright helpers and one test per app (`<app>_test.js`); `setup_db.sh` builds a test database. |
 
 ## Design conventions (match these in every app)
@@ -162,6 +163,17 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   `notify_types` row + trigger (new migration) and a `TYPES` entry in `notify.js` (wording, icon, section to scroll to,
   settings label). Quick repeat changes from the same person within 10 minutes merge into one item.
   Test: `tests/notify_test.js`.
+- **Phone alerts** (Web Push; `supabase/migrations/20261028180000_notify_push.sql`, `supabase/functions/notify-push/`):
+  a phone turns them on from `/notifications/` (`PebblyNotify.push`), sending its push subscription and its events
+  (`notify_push_sync`, again when they change and once a day); each becomes a `push_targets` row. A trigger on
+  `notifications` calls the function through `pg_net` (only if that event has targets); the function claims waiting
+  rows (`notify_push_queue`: same rules as the bell, items over an hour old are skipped), encrypts and sends them
+  (`webpush.js`: WebCrypto only, RFC 8291/8292; checked against the RFC's test vector), and deletes subscriptions the
+  push service says are gone. Its VAPID key pair is made on first use and kept in `push_config` (service role only).
+  The push carries facts; `sw.js` imports `notify.js` for the wording (`alertView`), so alerts read like the bell.
+  `notify_push_sync` only accepts real push-service addresses. `handler.js` has no Deno-only code, so
+  `tests/push_test.js` runs it in Node with stand-ins for Supabase and the push service; its service-worker check
+  needs `chromium.launch({ channel: 'chromium' })` (the headless shell always refuses notifications).
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)

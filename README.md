@@ -46,6 +46,9 @@ Static site served by GitHub Pages at https://pebbly.dev.
 - **Notifications** (`notify.js`, `supabase/migrations/20261028120000_notifications.sql`): a 🔔 bell on the
   homepage and in RSVP / Which Day Works?. Database triggers record new RSVPs, changed answers, comments,
   announcements, new or changed days and the final date; the bell checks every 30 s while a page is open.
+  **Phone alerts** (Web Push) send the same things to a phone's lock screen, even with Pebbly closed: turned on
+  per phone on `/notifications/`, sent by the `notify-push` Edge Function (`supabase/functions/`, deployed by
+  `.github/workflows/deploy-functions.yml`; setup in `supabase/README.md`).
 - `doc.js`: shared JSON documents (Sign-up Sheet, Split the Bill, Shared List) with versioned merges;
   see its header.
 - `lock.js` + `supabase/migrations/20261012000000_plan_passwords.sql`: optional passwords for RSVP,

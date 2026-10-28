@@ -15,6 +15,12 @@
 //     data-app="rsvp" data-code="…"                just one event's. Bells can appear at any time.
 //   window 'pebbly-notify-new' event { app, code, role }: something new arrived while the page is open
 //   PebblyNotify.load() → Promise<feeds>, PebblyNotify.setOff(list), PebblyNotify.TYPES, …  (settings page)
+//   PebblyNotify.push.support() / state() / on() / off() / test()   phone alerts (Web Push, settings page)
+//
+// Phone alerts: the phone subscribes with its browser's push service and sends that subscription with
+// its events (notify_push_sync, again whenever they change); the notify-push Edge Function sends an
+// alert for each new notification. sw.js loads this file too (importScripts) for alertView(): the
+// wording is the same as the bell's.
 (function () {
   'use strict';
   var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
@@ -46,6 +52,17 @@
     'wdw.final_date': { app: 'wdw', role: 'guest', label: 'The organizer picked the date', go: '#decided', icon: function () { return '🎯'; },
       text: function (n, d) { return 'The date is set: ' + day(d.date) + (d.days > 1 ? ' (' + d.days + ' days)' : ''); } }
   };
+
+  // What a phone alert says (sw.js, for each push).
+  function alertView(d) {
+    if (d.test) return { title: 'Pebbly', body: 'Phone alerts are on. You’ll get one like this when something happens.', url: '/notifications/', tag: 'pebbly-test' };
+    var t = TYPES[d.type], a = APPS[d.app], det = d.detail || {};
+    return { title: (d.emoji ? d.emoji + ' ' : '') + (d.title || (a ? a.name : 'Pebbly')),
+      body: t ? t.icon(det) + ' ' + t.text(d.name || 'Someone', det) : 'Something new',
+      url: a ? a.path + '?e=' + encodeURIComponent(d.code || '') : '/', tag: d.tag || 'pebbly' };
+  }
+  // In the service worker: only the wording.
+  if (typeof document === 'undefined') { self.PebblyNotify = { TYPES: TYPES, APPS: APPS, alertView: alertView }; return; }
 
   function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
   function save(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
@@ -138,6 +155,7 @@
       });
       save(FEEDS, all); save(SEEN, seen);
       if (pending.length) setOff(pending).catch(function () {});
+      keepPush();
       ready = true; failed = false; last = Date.now(); busy = null; paint();
       // something new since the last check: the page can reload its data
       news.forEach(function (f) { window.dispatchEvent(new CustomEvent('pebbly-notify-new', { detail: { app: f.app, code: f.code, role: f.role } })); });
@@ -236,7 +254,8 @@
     '.pn-tx{flex:1;min-width:0;overflow-wrap:anywhere}' +
     '.pn-tm{display:block;margin-top:2px;font-size:13px;color:var(--muted,#5D6B66)}' +
     '.pn-dot{flex:none;width:9px;height:9px;margin-top:6px;border-radius:50%;background:var(--brand,var(--accent,#2F7A63))}' +
-    '.pn-empty{padding:22px 16px;color:var(--muted,#5D6B66);font-size:15px}';
+    '.pn-empty{padding:22px 16px;color:var(--muted,#5D6B66);font-size:15px}' +
+    '.pn-foot{display:flex;align-items:center;min-height:48px;padding:0 16px;border-top:1px solid var(--line,#DDE4E1);color:var(--brand,var(--accent,#2F7A63));font-weight:600;font-size:15px;text-decoration:none}';
   function addCss() {
     if (document.getElementById('pn-css')) return;
     var s = document.createElement('style'); s.id = 'pn-css'; s.textContent = CSS; document.head.appendChild(s);
@@ -278,7 +297,9 @@
             (app ? '' : ' · ' + esc(APPS[x.app].name)) + '</span></span>' +
           (x.unread ? '<span class="pn-dot" aria-label="new"></span>' : '') + '</button></li>';
       }).join('') + '</ul>'
-      : '<p class="pn-empty">Nothing yet. New replies, comments and updates for your events will show up here.</p>') + '</div>';
+      : '<p class="pn-empty">Nothing yet. New replies, comments and updates for your events will show up here.</p>') +
+      (pushSupport() === 'ok' && !load(PUSH, {}).on && Notification.permission !== 'denied'
+        ? '<a class="pn-foot" href="/notifications/#alerts">📲 Get these on your lock screen too</a>' : '') + '</div>';
     wrap.addEventListener('click', function (e) {
       if (e.target === wrap || e.target.closest('[data-pn="close"]')) { close(); return; }
       var b = e.target.closest('[data-pn-i]');
@@ -312,7 +333,102 @@
   }
   if (document.body) watch(); else document.addEventListener('DOMContentLoaded', watch);
 
+  /* ------------------------------------------------------------ phone alerts (Web Push) */
+
+  var FUNC = URL_ + '/functions/v1/notify-push', PUSH = 'pebbly_push';   // { on, sig }
+  function standalone() { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; }
+  function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+  // 'ok', 'ios-install' (iPhone: only from the Home Screen app) or 'no'
+  function pushSupport() {
+    if ('serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window) return 'ok';
+    return isIOS() && !standalone() ? 'ios-install' : 'no';
+  }
+  function swReg() { return navigator.serviceWorker.register('/sw.js').then(function () { return navigator.serviceWorker.ready; }); }
+  function bytes(b64) {
+    var s = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((b64.length + 3) % 4)), out = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+    return out;
+  }
+  function sameKey(sub, pk) {
+    var k = sub.options && sub.options.applicationServerKey;
+    if (!k) return true;
+    var a = new Uint8Array(k), b = bytes(pk);
+    return a.length === b.length && a.every(function (x, i) { return x === b[i]; });
+  }
+  // Sends the subscription and this phone's events (only when they changed, unless force).
+  function syncSub(sub, force) {
+    var j = sub.toJSON(), list = live().map(function (f) {
+      return { app: f.app, code: f.code, role: f.role, key: f.key, pid: f.pid || '', lock: lockKey(f.app, f.code) };
+    });
+    // (and once a day anyway, in case the server dropped it)
+    var sig = new Date().toDateString() + '|' + j.endpoint + '|' + list.map(function (f) { return [f.app, f.code, f.role, f.key, f.pid, f.lock || ''].join(','); }).join(';');
+    if (!force && load(PUSH, {}).sig === sig) return Promise.resolve(null);
+    return raw('notify_push_sync', { p_endpoint: j.endpoint, p_p256dh: j.keys.p256dh, p_auth: j.keys.auth, p_feeds: list }).then(function (r) {
+      save(PUSH, { on: true, sig: sig });
+      return r;
+    });
+  }
+  function subscribe() {
+    return Promise.all([swReg(), fetch(FUNC).then(function (r) {
+      if (!r.ok) throw new Error('not_ready');
+      return r.json();
+    }, function () { throw new Error('network'); })]).then(function (x) {
+      var reg = x[0], pk = x[1] && x[1].publicKey;
+      if (!pk) throw new Error('not_ready');
+      return reg.pushManager.getSubscription().then(function (old) {
+        if (old && sameKey(old, pk)) return old;
+        return (old ? old.unsubscribe() : Promise.resolve()).then(function () {
+          return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes(pk) });
+        });
+      });
+    });
+  }
+  // Keeps an "on" phone's subscription and event list up to date (after each bell check).
+  var keeping = false;
+  function keepPush() {
+    if (keeping || !load(PUSH, {}).on || pushSupport() !== 'ok' || Notification.permission !== 'granted') return;
+    keeping = true;
+    swReg().then(function (reg) { return reg.pushManager.getSubscription(); })
+      .then(function (sub) { return sub ? syncSub(sub) : subscribe().then(function (s) { return syncSub(s, true); }); })
+      .catch(function () {}).then(function () { keeping = false; });
+  }
+  var push = {
+    support: pushSupport,
+    // 'on' | 'off' | 'blocked' | 'ios-install' | 'no'
+    state: function () {
+      var s = pushSupport();
+      if (s !== 'ok') return Promise.resolve(s);
+      if (Notification.permission === 'denied') return Promise.resolve('blocked');
+      if (!load(PUSH, {}).on || Notification.permission !== 'granted') return Promise.resolve('off');
+      return swReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) { return sub ? 'on' : 'off'; }, function () { return 'off'; });
+    },
+    // Rejects with 'blocked', 'dismissed', 'not_ready' (sender not set up), 'network' or the browser's error.
+    on: function () {
+      return Promise.resolve(Notification.requestPermission()).then(function (perm) {
+        if (perm !== 'granted') throw new Error(perm === 'denied' ? 'blocked' : 'dismissed');
+        seed();
+        return subscribe();
+      }).then(function (sub) { return syncSub(sub, true); });
+    },
+    off: function () {
+      save(PUSH, { on: false });
+      return swReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+        if (!sub) return;
+        var ep = sub.endpoint;
+        return sub.unsubscribe().catch(function () {}).then(function () { return raw('notify_push_remove', { p_endpoint: ep }); });
+      });
+    },
+    // Resolves true when the alert was handed to the push service.
+    test: function () {
+      return swReg().then(function (reg) { return reg.pushManager.getSubscription(); }).then(function (sub) {
+        if (!sub) throw new Error('off');
+        return fetch(FUNC, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ test: sub.endpoint }) });
+      }).then(function (r) { return r.json().then(function (d) { return r.ok && d.sent > 0; }); });
+    }
+  };
+
   window.PebblyNotify = {
+    push: push, alertView: alertView,
     feed: feed, drop: drop, TYPES: TYPES, APPS: APPS,
     check: function () { return fetchAll(); },   // check now (tests; normally every 30 s)
     // settings page

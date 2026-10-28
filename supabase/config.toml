@@ -1,4 +1,9 @@
 # Supabase project settings for the GitHub integration.
-# Only database migrations (supabase/migrations/) are deployed from this repo. Auth, API and other
+# Database migrations (supabase/migrations/) are deployed by the integration. Edge Functions
+# (supabase/functions/) are deployed by .github/workflows/deploy-functions.yml. Auth, API and other
 # settings are managed in the Supabase dashboard; production ignores them here by default.
 project_id = "pebbly"
+
+# Phone alerts sender: called by the database (pg_net) with no key.
+[functions.notify-push]
+verify_jwt = false

@@ -24,6 +24,25 @@ Supabase records each file it has run, so nothing runs twice.
 
 Never put secrets (service-role key, database password) in a migration.
 
+## Edge Functions
+
+`supabase/functions/notify-push/` sends phone alerts (Web Push). It isn't deployed by the
+integration above but by `.github/workflows/deploy-functions.yml`, whenever the folder changes on
+`main` (or by hand: Actions tab → "Deploy Supabase functions" → Run workflow). It needs no secrets of
+its own: it makes and keeps its sender key pair in the database (`push_config`) and uses the service
+key Supabase gives every function. The workflow needs one GitHub secret, set up once:
+
+1. Supabase dashboard → your account (top right) → **Access Tokens** → **Generate new token**
+   (name it "GitHub deploy"), and copy it.
+2. GitHub, in a phone browser (the GitHub app can't do this; use the browser's "Desktop site" if
+   the page is cramped): the pebbly repo → **Settings** → **Secrets and variables** → **Actions** →
+   **New repository secret**. Name `SUPABASE_ACCESS_TOKEN`, value: the token. Save.
+3. Actions tab → **Deploy Supabase functions** → **Run workflow** (or re-run the failed run).
+4. In Pebbly: homepage → Notifications → **Turn on phone alerts** → **Send a test alert**.
+
+If alerts don't arrive: Supabase dashboard → Edge Functions → notify-push → Logs. The database
+calls the function through the `pg_net` extension (Database → Extensions should show it on).
+
 ## History
 
 `20261011000000_baseline.sql` is a no-op that marks where automatic history begins. Everything
