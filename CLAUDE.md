@@ -167,7 +167,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   `notify_types` row + trigger (new migration) and a `TYPES` entry in `notify.js` (wording, icon, section to scroll to,
   settings label). Quick repeat changes from the same person within 10 minutes merge into one item.
   Kinds so far: RSVP (new/changed RSVP, comment, someone offers to bring something → host; announcement → guests), Which Day Works? (new/changed days →
-  organizer; final date → guests), Poll (winner → voters), Sign-up Sheet (someone signs up → host; it's a shared
+  organizer; final date → guests), Poll (winner → voters; someone adds a choice → host), Sign-up Sheet (someone signs up → host; it's a shared
   document, so the trigger compares `signups` before and after), Secret Santa (names drawn → people who picked their
   name; never says who has whom), Bracket (champion → every phone in a shared bracket except the one that recorded it;
   the page keeps `champ: {id, name, by}` in the shared game for this; phones are checked by their play_members key). `APPS` in notify.js has each app's page, link parameter and host-key storage
@@ -184,6 +184,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   `notify_push_sync` only accepts real push-service addresses. `handler.js` has no Deno-only code, so
   `tests/push_test.js` runs it in Node with stand-ins for Supabase and the push service; its service-worker check
   needs `chromium.launch({ channel: 'chromium' })` (the headless shell always refuses notifications).
+  After a guest replies to an RSVP, the page offers to turn alerts on (`offerAlerts`; "Not now" hides it for 30 days).
 - **Backups** (`backups` table, `backup_*`; `backup.js`, `/backup/`): six words (BIP39 English list, inline; first four
   letters identify a word) → PBKDF2 (200k, SHA-256) → 64 bytes: the row id (hex) and an AES-GCM key. The words stay on
   the phone (`pebbly_backup`); the database holds only the id and ciphertext. Copies merge (`merge`: lists and objects
