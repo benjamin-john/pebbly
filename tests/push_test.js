@@ -94,7 +94,7 @@ async function decrypt(body, sub) {
     const res = await handle(new Request(rq.url(), { method: rq.method(), headers: { 'Content-Type': 'application/json' }, body: rq.method() === 'POST' ? rq.postData() : undefined }), { env, fetch: fakeFetch });
     route.fulfill({ status: res.status, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: await res.text() });
   });
-  await host.context().addInitScript(s => {
+  const stub = s => {
     // like a real browser, permission and subscription survive page loads
     const mk = () => ({ endpoint: s.endpoint, options: null, toJSON: () => ({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }),
       unsubscribe: () => { cur = null; localStorage.removeItem('__sub'); return Promise.resolve(true); } });
@@ -107,7 +107,8 @@ async function decrypt(body, sub) {
     };
     const reg = { pushManager: pm };
     Object.defineProperty(navigator, 'serviceWorker', { value: { register: () => Promise.resolve(reg), ready: Promise.resolve(reg), addEventListener() {} }, configurable: true });
-  }, { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth });
+  };
+  await host.context().addInitScript(stub, { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth });
   await host.goto(B + '/rsvp/?e=' + ev.code + '&o=' + ev.owner_token);
   await host.waitForSelector('#host .host');
   await host.waitForFunction(() => { const b = document.querySelector('[data-pn-bell]'); return b && !b.hidden; });
@@ -187,6 +188,44 @@ async function decrypt(body, sub) {
   await host.waitForTimeout(800);
   check(mine() === '1', 'phone re-registers');
 
+  /* ---------------- after replying to an RSVP, a phone is offered alerts */
+  const gsub = fakeSub(2);
+  const guest = await phone(browser, devices, DB);
+  await guest.context().route(SB + '/functions/v1/notify-push', async route => {
+    const res = await handle(new Request(route.request().url(), { method: 'GET' }), { env, fetch: fakeFetch });
+    route.fulfill({ status: res.status, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: await res.text() });
+  });
+  await guest.context().addInitScript(stub, { endpoint: gsub.endpoint, p256dh: gsub.p256dh, auth: gsub.auth });
+  await guest.goto(B + '/rsvp/?e=' + ev.code);
+  await guest.waitForSelector('#me');
+  await guest.waitForTimeout(500);
+  check(!(await guest.locator('.alertoffer').count()), 'no offer before replying');
+  const gp = await guest.evaluate(() => JSON.parse(localStorage.getItem('rsvp.pid')));
+  call('gated_rsvp_respond', { p_code: ev.code, p_participant: gp, p_owner_token: null, p_first_name: 'Gus', p_last_name: 'Guest', p_phone: '', p_status: 'going', p_plus_ones: 0, p_note: '', p_answers: {}, p_key: null });
+  await guest.reload();
+  await guest.waitForSelector('.alertoffer [data-act=alerts-on]');
+  check(/announcements/.test(await guest.textContent('.alertoffer')), 'offer after replying: ' + await guest.textContent('.alertoffer'));
+  if (process.env.SHOTS) await guest.screenshot({ path: '/tmp/push_offer.png' });
+  await guest.click('[data-act=alerts-on]');
+  await guest.waitForFunction(() => !document.querySelector('.alertoffer'));
+  check(sql(`select count(*) from push_targets t join push_subs s on s.id = t.sub_id where s.endpoint = '${gsub.endpoint}' and t.role = 'guest'`).stdout.trim() === '1', 'guest’s alerts cover the event');
+  call('gated_rsvp_post', { p_code: ev.code, p_participant: hpid, p_owner_token: ev.owner_token, p_name: '', p_kind: 'announce', p_body: 'Doors at 6', p_key: null });
+  r = await sendWaiting();
+  const toGuest = pushed.filter(x => x.endpoint === gsub.endpoint);
+  check(toGuest.length === 1 && (await decrypt(toGuest[0].body, gsub)).detail.snippet === 'Doors at 6', 'announcement reaches the guest’s phone');
+  await guest.reload(); await guest.waitForSelector('#me'); await guest.waitForTimeout(600);
+  check(!(await guest.locator('.alertoffer').count()), 'no offer once alerts are on');
+  // "Not now" on another phone hides it for a while
+  const nn = await phone(browser, devices, DB);
+  await nn.context().addInitScript(stub, fakeSub(3));
+  await nn.goto(B + '/rsvp/?e=' + ev.code); await nn.waitForSelector('#me');
+  const nnp = await nn.evaluate(() => JSON.parse(localStorage.getItem('rsvp.pid')));
+  call('gated_rsvp_respond', { p_code: ev.code, p_participant: nnp, p_owner_token: null, p_first_name: 'Nia', p_last_name: 'Now', p_phone: '', p_status: 'maybe', p_plus_ones: 0, p_note: '', p_answers: {}, p_key: null });
+  await nn.reload(); await nn.waitForSelector('[data-act=alerts-later]');
+  await nn.click('[data-act=alerts-later]');
+  await nn.reload(); await nn.waitForSelector('#me'); await nn.waitForTimeout(600);
+  check(!(await nn.locator('.alertoffer').count()), '“Not now” hides the offer');
+
   // turn off
   await host.goto(B + '/notifications/');
   await host.waitForSelector('#alerts [data-alert=off]');
@@ -208,7 +247,7 @@ async function decrypt(body, sub) {
   await cdp.send('ServiceWorker.deliverPushMessage', { origin: B, registrationId: id, data: JSON.stringify({ app: 'wdw', code: 'abcdefgh', title: 'Cabin weekend', emoji: '📅', type: 'wdw.final_date', name: 'Cabin weekend', detail: { date: '2026-12-05', days: 2 }, tag: 'wdw:abcdefgh:wdw.final_date' }) });
   const shown = await pg.waitForFunction(() => navigator.serviceWorker.ready.then(r => r.getNotifications()).then(l => l.length && l.map(n => ({ title: n.title, body: n.body, tag: n.tag, url: n.data.url }))), null, { timeout: 5000 }).then(h => h.jsonValue()).catch(() => []);
   check(shown.length === 1 && shown[0].title === '📅 Cabin weekend' && shown[0].body === '🎯 The date is set: Sat, Dec 5 (2 days)' && shown[0].url === '/whichdayworks/?e=abcdefgh', 'service worker shows the alert: ' + JSON.stringify(shown));
-  check(!swErrs.length && !host.errs.length, 'page errors: ' + swErrs.concat(host.errs).join('; '));
+  check(!swErrs.length && !host.errs.length && !guest.errs.length && !nn.errs.length, 'page errors: ' + swErrs.concat(host.errs, guest.errs, nn.errs).join('; '));
 
   console.log(pass + ' passed, ' + fail + ' failed');
   await browser.close(); await full.close();

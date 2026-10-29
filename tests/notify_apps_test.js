@@ -51,7 +51,18 @@ const sheet = async p => { await p.click('.pn-bell'); const t = await p.textCont
   call('poll_set_winner', { p_code: pl.code, p_owner_token: pl.owner_token, p_option: opts[1].id, p_method: 'picked' });
   const pf = feed('poll', pl.code, 'guest', vpid);
   check(pf.items.length === 1 && pf.items[0].name === 'Pizza' && pf.title === 'Lunch spot', 'new pick replaces it');
-  check(!(await bellShown(host)), 'host-only phone: no bell yet (nothing for hosts in Poll)');
+  // the host hears when someone adds a choice (not their own)
+  await host.reload(); await host.waitForSelector('#opts'); await waitBell(host);
+  call('gated_poll_add_option', { p_code: pl.code, p_participant: vpid, p_name: 'Amy', p_owner_token: null, p_label: 'Sushi', p_key: null });
+  call('gated_poll_add_option', { p_code: pl.code, p_participant: await pidOf(host, 'pick.pid'), p_name: '', p_owner_token: pl.owner_token, p_label: 'Salad', p_key: null });
+  await host.evaluate(() => PebblyNotify.check());
+  check(await badge(host) === '1', 'host told about Amy’s choice only: ' + await badge(host));
+  const ht = await sheet(host);
+  check(/Amy added “Sushi”/.test(ht) && !/Salad/.test(ht), 'choice wording: ' + ht);
+  await host.click('[data-pn=close]');
+  const sushi = call('gated_poll_get', { p_code: pl.code, p_participant: null, p_owner_token: null, p_key: null }).options.find(o => o.label === 'Sushi').id;
+  call('gated_poll_remove_option', { p_code: pl.code, p_participant: null, p_owner_token: pl.owner_token, p_option: sushi, p_key: null });
+  check(!feed('poll', pl.code, 'host', pl.owner_token).items.length, 'choice removed: notification gone');
 
   /* ---------------- Sign-up Sheet: the host hears about sign-ups */
   const state = { title: 'Potluck', details: '', slots: { s1: { label: 'Bring dessert', when: '', spots: 2, order: 1 } }, signups: {} };
@@ -134,7 +145,7 @@ const sheet = async p => { await p.click('.pn-bell'); const t = await p.textCont
   await host.waitForSelector('.card');
   const hs = await host.textContent('#app');
   check(/Sign-up Sheet/.test(hs) && /Someone signs up/.test(hs) && /Potluck/.test(hs), 'settings: sign-up sheet');
-  check(!/Poll/.test(hs), 'settings: nothing for a Poll host');
+  check(/Someone adds a choice/.test(hs), 'settings: poll host');
   await voter.goto(B + '/notifications/'); await voter.waitForSelector('.card');
   check(/The winner is picked/.test(await voter.textContent('#app')), 'settings: poll voter');
   await ann.goto(B + '/'); await waitBell(ann);

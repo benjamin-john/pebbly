@@ -33,6 +33,9 @@ button,input,textarea,select{font:inherit;color:inherit}
 .hint{color:var(--muted);font-size:15px}
 .topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;font-size:15px}
 .navr{display:flex;align-items:center;gap:12px}
+.alertoffer{margin-top:14px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:15px}
+.alertoffer b{display:block;margin-bottom:2px}
+.alertoffer .tools{margin-top:10px}
 .annsent{margin-top:12px;padding:12px;border-radius:12px;background:var(--go-t);font-size:15px}
 .annsent .btn{margin-top:8px}
 .banner{background:var(--gold-t);border:1px solid #E5CB6B;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:14px}
@@ -1388,11 +1391,30 @@ function renderMe() {
     }).join('');
     el.innerHTML = '<div class="myans"><span class="e" aria-hidden="true">' + st.e + '</span><div><b>' + esc(st.you) + (m.status !== 'no' && m.plus_ones ? ' +' + m.plus_ones : '') + '</b>' +
       '<span class="sub" style="display:block">as ' + esc(m.name) + (m.note ? ' · “' + esc(m.note) + '”' : '') + '</span>' + ansHtml + '</div></div>' +
-      (canEdit ? '<div class="tools"><button type="button" class="btn small" data-act="rsvp-change">Change RSVP</button></div>' : '') + deadline;
+      (canEdit ? '<div class="tools"><button type="button" class="btn small" data-act="rsvp-change">Change RSVP</button></div>' : '') + deadline +
+      '<div id="alertOffer"></div>';
+    offerAlerts();
     return;
   }
   if (!canEdit) { el.innerHTML = '<h2>RSVPs are closed</h2>' + deadline + '<p class="hint" style="margin-top:6px">Contact the host if your plans change.</p>'; return; }
   el.innerHTML = '<h2>Will you be there?</h2>' + statusButtons(null) + deadline;
+}
+
+// Once you've replied: offer phone alerts, so announcements reach this phone even with the page closed (notify.js).
+function offerAlerts() {
+  var P = REMOTE && window.PebblyNotify && PebblyNotify.push;
+  if (!P || Date.now() < (store.get('rsvp.alertsLater', 0) || 0)) return;
+  var why = S.isOwner ? 'when guests reply or comment' : 'about the host’s announcements';
+  P.state().then(function (st) {
+    var el = $('#alertOffer');
+    if (!el) return;
+    if (st === 'off') el.innerHTML = '<div class="alertoffer"><p><b>🔔 Get updates on your phone</b>Turn on alerts to hear ' + why + ', even when this page is closed.</p>' +
+      '<div class="tools"><button type="button" class="btn small primary" data-act="alerts-on">Turn on alerts</button>' +
+      '<button type="button" class="btn small" data-act="alerts-later">Not now</button></div></div>';
+    else if (st === 'ios-install') el.innerHTML = '<div class="alertoffer"><p><b>🔔 Get updates on your phone</b>On iPhone, add this page to your Home Screen (Share, then Add to Home Screen) and open it from there to turn on alerts ' + why + '.</p>' +
+      '<div class="tools"><button type="button" class="btn small" data-act="alerts-later">Not now</button></div></div>';
+    else el.innerHTML = '';
+  }, function () {});
 }
 
 function statusButtons(cur) {
@@ -1868,6 +1890,17 @@ $app.addEventListener('click', function (e) {
     case 'link-rm': F.links.splice(Number(t.dataset.i), 1); if (!F.links.length) F.links.push({ label: '', url: '' }); $('#linkRows').innerHTML = linkRowsHtml(); break;
     case 'dl': doDownload(id); break;
     case 'texts-reset': S.texted = {}; renderTextList(); break;
+    case 'alerts-on':
+      t.disabled = true;
+      PebblyNotify.push.on().then(function () { $('#alertOffer').innerHTML = ''; toast('Alerts are on. You’ll hear about updates to this event.'); }, function (er) {
+        t.disabled = false;
+        var m = er && er.message;
+        if (m === 'blocked') toast('Notifications are blocked for this site. Allow them in your browser’s site settings, then try again.');
+        else if (m === 'not_ready') toast('Alerts aren’t available yet. Try again later.');
+        else if (m !== 'dismissed') toast('Couldn’t turn on alerts. Try again.');
+      });
+      break;
+    case 'alerts-later': store.set('rsvp.alertsLater', Date.now() + 30 * 864e5); $('#alertOffer').innerHTML = ''; break;
     case 'ann-text':
       S.draft.sms = S.annSent; S.annSent = null; S.smsLink = true; S.texted = {};
       S.aud = { going: false, maybe: false, no: false, invited: true };

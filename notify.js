@@ -61,6 +61,8 @@
       text: function (n) { return n + ' changed their days'; } },
     'wdw.final_date': { app: 'wdw', role: 'guest', label: 'The organizer picked the date', go: '#decided', icon: function () { return '🎯'; },
       text: function (n, d) { return 'The date is set: ' + day(d.date) + (d.days > 1 ? ' (' + d.days + ' days)' : ''); } },
+    'poll.option': { app: 'poll', role: 'host', label: 'Someone adds a choice', go: '#opts', icon: function () { return '➕'; },
+      text: function (n, d) { return (n && n !== 'Someone' ? n : 'Someone') + ' added “' + (d.label || '') + '”'; } },
     'poll.winner': { app: 'poll', role: 'guest', label: 'The winner is picked', go: '#winner', icon: function () { return '🏆'; },
       text: function (n, d) { return 'The winner is ' + n + (d.method === 'roulette' ? ' (picked by a spin)' : ''); } },
     'signup.signup': { app: 'signup', role: 'host', label: 'Someone signs up', go: '#slots', icon: function () { return '✍️'; },
