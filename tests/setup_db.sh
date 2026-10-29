@@ -17,7 +17,7 @@ fi
 P="psql -h $PGDIR -p 5439 -U postgres -v ON_ERROR_STOP=1 -q"
 $P -c "drop database if exists $DB" -c "create database $DB" >/dev/null
 FILES="tests/wdw_fixture.sql whichdayworks/schema_snapshot.sql whichdayworks/organizer.sql whichdayworks/final_date.sql
-  rsvp/schema.sql rsvp/update_2.sql rsvp/update_3.sql rsvp/update_4.sql rsvp/rsvp_admin.sql tests/poll_fixture.sql play/play.sql"
+  rsvp/schema.sql rsvp/update_2.sql rsvp/update_3.sql rsvp/update_4.sql rsvp/rsvp_admin.sql poll/schema_snapshot.sql tests/poll_fixture.sql play/play.sql"
 [ "$2" = nomigrations ] || FILES="$FILES $(ls supabase/migrations/*.sql | sort)"
 for f in $FILES; do $P -d $DB -f $f >/dev/null 2>/tmp/setup_db_err.txt || { echo "setup_db: $f failed"; cat /tmp/setup_db_err.txt; exit 1; }; done
 echo "ready: $DB"

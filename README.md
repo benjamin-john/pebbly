@@ -45,8 +45,9 @@ Static site served by GitHub Pages at https://pebbly.dev.
   version number; `play/sync.js` pushes changes, polls every 1.5 s, and merges when two phones
   change things at once. A game page hooks in with `PebblySync.wire(kind, {...})` (see Kwiks).
 - **Notifications** (`notify.js`, `supabase/migrations/20261028120000_notifications.sql`): a 🔔 bell on the
-  homepage and in RSVP / Which Day Works?. Database triggers record new RSVPs, changed answers, comments,
-  announcements, new or changed days and the final date; the bell checks every 30 s while a page is open.
+  homepage and in RSVP, Which Day Works?, Poll, Sign-up Sheet and Secret Santa. Database triggers record new RSVPs, changed answers, comments,
+  announcements, new or changed days and the final date, a poll's winner, sign-ups and the Secret Santa draw; the bell
+  checks every 30 s while a page is open.
   **Phone alerts** (Web Push) send the same things to a phone's lock screen, even with Pebbly closed: turned on
   per phone on `/notifications/`, sent by the `notify-push` Edge Function (`supabase/functions/`, deployed by
   `.github/workflows/deploy-functions.yml`; setup in `supabase/README.md`).

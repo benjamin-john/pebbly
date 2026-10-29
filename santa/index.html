@@ -49,6 +49,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .hint{color:var(--muted);font-size:14px}
 .topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;font-size:15px;min-height:32px}
 .topnav a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;font-weight:600}
+.navr{display:flex;align-items:center;gap:12px}
 .pill{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border:0;border-radius:12px;
@@ -186,6 +187,7 @@ dialog.dlg p{margin:6px 0 0;overflow-wrap:anywhere}
 </style>
 <script src="/lock.js"></script>
 <script src="/nav.js"></script>
+<script src="/notify.js"></script>
 </head>
 <body>
 <main id="app" class="wrap"><p class="hint">Loading…</p></main>
@@ -382,7 +384,10 @@ function ask(o) {
 
 /* ------------------------------------------------------------------ home */
 
-function nav(right) { return '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Secret Santa</a>' + (right || '') + '</nav>'; }
+function nav(right) {
+  return '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Secret Santa</a><span class="navr">' + (right || '') +
+    (S.G ? '<span data-pn-bell data-app="santa" data-code="' + esc(S.code) + '"></span>' : '') + '</span></nav>';
+}
 
 function renderHome() {
   document.title = 'Secret Santa';
@@ -469,6 +474,11 @@ function draft(k, d) { return S.drafts[k] != null ? S.drafts[k] : d; }
 
 function draw() {
   var G = S.G, g = G.group, y = window.scrollY;
+  // the 🔔 bell (notify.js): everyone who picked their name hears when names are drawn
+  if (window.PebblyNotify) {
+    if (G.is_owner && owner(S.code)) PebblyNotify.feed('santa', S.code, 'host', owner(S.code), pid());
+    if (G.me) PebblyNotify.feed('santa', S.code, 'guest', pid(), pid());
+  }
   document.title = g.name + ' | Secret Santa';
   var facts = [];
   if (g.budget) facts.push('<span>💰 ' + esc(g.budget) + '</span>');
@@ -716,6 +726,7 @@ document.addEventListener('click', function (e) {
         if (!ok) return;
         raw('santa_delete', { p_code: S.code, p_owner_token: O() }).then(function () {
           clearInterval(S.timer); forget(S.code); setOwner(S.code, null);
+          if (window.PebblyNotify) PebblyNotify.drop('santa', S.code);
           history.pushState(null, '', baseUrl()); route(); toast('Group deleted.');
         }, function (er) { toast(friendly(er)); });
       });

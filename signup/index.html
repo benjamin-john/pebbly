@@ -46,6 +46,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .hint{color:var(--muted);font-size:14px}
 .topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;font-size:15px;min-height:32px}
 .topnav a{display:inline-flex;align-items:center;min-height:44px;text-decoration:none;font-weight:600}
+.navr{display:flex;align-items:center;gap:12px}
 .sync{font-size:13px;color:var(--muted);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 10px;white-space:nowrap}
 .sync.saving{color:var(--ink)}
 .sync.offline{color:var(--no);border-color:var(--no)}
@@ -159,6 +160,7 @@ dialog.dlg p{margin:6px 0 0;overflow-wrap:anywhere}
 <script src="/lock.js"></script>
 <script src="/doc.js"></script>
 <script src="/nav.js"></script>
+<script src="/notify.js"></script>
 </head>
 <body>
 <main id="app" class="wrap"><p class="hint">Loading…</p></main>
@@ -285,6 +287,8 @@ function openSheet(code) {
   }).then(function (d) {
     if (!d) { forget(code); renderNotFound(); return; }
     S.doc = d; S.status = d.status;
+    // the 🔔 bell (notify.js): the host hears when someone signs up
+    if (d.isOwner && window.PebblyNotify) PebblyNotify.feed('signup', code, 'host', PebblyDoc.owner(code), pid());
   }, function (e) {
     $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Sign-up sheets</a></nav>' +
       '<p class="err">' + esc(PebblyDoc.message(e)) + '</p><p style="margin-top:12px"><button type="button" class="btn ghost" data-act="retry">Try again</button></p>';
@@ -399,7 +403,8 @@ function renderSheet() {
   document.title = (s.title || 'Sign-up sheet') + ' | Sign-up Sheet';
   var y = window.scrollY;
   $app.innerHTML =
-    '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Sign-up sheets</a><span id="sync" class="sync" aria-live="polite"></span></nav>' +
+    '<nav class="topnav"><a href="' + esc(baseUrl()) + '">← Sign-up sheets</a><span class="navr"><span id="sync" class="sync" aria-live="polite"></span>' +
+      '<span data-pn-bell data-app="signup" data-code="' + esc(S.code) + '"></span></span></nav>' +
     (S.justCreated && owner ? '<section class="card created"><h2>Your sheet is ready 🎉</h2><p style="margin-top:4px">Send this link to the group' +
       (PebblyLock.key('doc', S.code) ? ', and tell them the password separately' : '') + ':</p>' +
       '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Sheet link">' +
@@ -646,7 +651,7 @@ document.addEventListener('click', function (e) {
     case 'delete':
       ask({ title: 'Delete this sheet?', text: 'It will be gone for everyone, with all the sign-ups. This can’t be undone.', ok: 'Delete sheet', danger: true }).then(function (ok) {
         if (!ok) return;
-        S.doc.remove().then(function () { forget(S.code); S.doc = null; history.pushState(null, '', baseUrl()); route(); toast('Sheet deleted.'); },
+        S.doc.remove().then(function () { forget(S.code); if (window.PebblyNotify) PebblyNotify.drop('signup', S.code); S.doc = null; history.pushState(null, '', baseUrl()); route(); toast('Sheet deleted.'); },
           function (er) { toast(PebblyDoc.message(er)); });
       });
       break;

@@ -26,10 +26,16 @@
   var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
   var POLL_MS = 30000, FEEDS = 'pebbly_notify_feeds', SEEN = 'pebbly_notify_seen', OFF_ALL = 'pebbly_notify_off_all';
 
+  // Each app: name, page, link parameter, where it keeps host keys and this phone's id, and (Sign-up
+  // Sheet) its password name and the list that says which shared documents are sign-up sheets.
   var APPS = {
-    rsvp: { name: 'RSVP', path: '/rsvp/', owners: 'rsvp.owners', pid: 'rsvp.pid' },
-    wdw: { name: 'Which Day Works?', path: '/whichdayworks/', owners: 'meetup.owners', pid: 'meetup.pid' }
+    rsvp: { name: 'RSVP', path: '/rsvp/', q: 'e', owners: 'rsvp.owners', pid: 'rsvp.pid' },
+    wdw: { name: 'Which Day Works?', path: '/whichdayworks/', q: 'e', owners: 'meetup.owners', pid: 'meetup.pid' },
+    poll: { name: 'Poll', path: '/poll/', q: 'p', owners: 'pick.owners', pid: 'pick.pid' },
+    signup: { name: 'Sign-up Sheet', path: '/signup/', q: 'd', owners: 'pebbly_doc_owners', only: 'pebbly_signup_recent', pid: 'pebbly_signup_pid', lock: 'doc' },
+    santa: { name: 'Secret Santa', path: '/santa/', q: 'g', owners: 'pebbly_santa_owners', pid: 'pebbly_santa_pid' }
   };
+  function eventUrl(app, code) { var a = APPS[app]; return a ? a.path + '?' + a.q + '=' + encodeURIComponent(code || '') : '/'; }
   var RSVP_STATUS = { going: 'Going', maybe: 'Maybe', no: 'Can’t go' };
   function plus(d) { return d.plus ? ' +' + d.plus : ''; }
   function answer(status, n) { return (RSVP_STATUS[status] || status) + (n ? ' +' + n : ''); }
@@ -50,7 +56,13 @@
     'wdw.response_changed': { app: 'wdw', role: 'host', label: 'Someone changed their days', go: '#people', icon: function () { return '✏️'; },
       text: function (n) { return n + ' changed their days'; } },
     'wdw.final_date': { app: 'wdw', role: 'guest', label: 'The organizer picked the date', go: '#decided', icon: function () { return '🎯'; },
-      text: function (n, d) { return 'The date is set: ' + day(d.date) + (d.days > 1 ? ' (' + d.days + ' days)' : ''); } }
+      text: function (n, d) { return 'The date is set: ' + day(d.date) + (d.days > 1 ? ' (' + d.days + ' days)' : ''); } },
+    'poll.winner': { app: 'poll', role: 'guest', label: 'The winner is picked', go: '#winner', icon: function () { return '🏆'; },
+      text: function (n, d) { return 'The winner is ' + n + (d.method === 'roulette' ? ' (picked by a spin)' : ''); } },
+    'signup.signup': { app: 'signup', role: 'host', label: 'Someone signs up', go: '#slots', icon: function () { return '✍️'; },
+      text: function (n, d) { return n + ' signed up' + (d.slot ? ' for ' + d.slot : ''); } },
+    'santa.drawn': { app: 'santa', role: 'guest', label: 'Names are drawn', go: '#app', icon: function () { return '🎁'; },
+      text: function () { return 'Names are drawn! Open it to see who you’re buying for.'; } }
   };
 
   // What a phone alert says (sw.js, for each push).
@@ -59,7 +71,7 @@
     var t = TYPES[d.type], a = APPS[d.app], det = d.detail || {};
     return { title: (d.emoji ? d.emoji + ' ' : '') + (d.title || (a ? a.name : 'Pebbly')),
       body: t ? t.icon(det) + ' ' + t.text(d.name || 'Someone', det) : 'Something new',
-      url: a ? a.path + '?e=' + encodeURIComponent(d.code || '') : '/', tag: d.tag || 'pebbly' };
+      url: eventUrl(d.app, d.code), tag: d.tag || 'pebbly' };
   }
   // In the service worker: only the wording.
   if (typeof document === 'undefined') { self.PebblyNotify = { TYPES: TYPES, APPS: APPS, alertView: alertView }; return; }
@@ -86,12 +98,18 @@
   /* ------------------------------------------------------------ feeds on this phone */
 
   function feeds() { return load(FEEDS, {}) || {}; }
+  // Only roles that have something to hear about (e.g. Poll has nothing for hosts yet).
+  function hasTypes(app, role) { return Object.keys(TYPES).some(function (t) { return TYPES[t].app === app && TYPES[t].role === role; }); }
   // Host feeds from the apps' own saved host links (so the homepage knows them all).
   function seed() {
     var all = feeds(), changed = false;
     Object.keys(APPS).forEach(function (app) {
-      var owners = load(APPS[app].owners, {}) || {}, pid = load(APPS[app].pid, '') || '';
+      if (!hasTypes(app, 'host')) return;
+      var owners = load(APPS[app].owners, {}) || {}, pid = load(APPS[app].pid, '') || '', only = null;
+      // shared documents keep all their host keys together: only take the ones this app made
+      if (APPS[app].only) { only = {}; (load(APPS[app].only, []) || []).forEach(function (r) { if (r && r.code) only[norm(r.code)] = true; }); }
       Object.keys(owners).forEach(function (code) {
+        if (only && !only[norm(code)]) return;
         var id = fid(app, norm(code), 'host');
         // new, or the app now holds a different host key for it
         if (owners[code] && (!all[id] || all[id].key !== owners[code])) { all[id] = { app: app, code: norm(code), role: 'host', key: owners[code], pid: pid, at: Date.now() }; changed = true; }
@@ -101,7 +119,7 @@
     return all;
   }
   function feed(app, code, role, key, pid) {
-    if (!APPS[app] || !key || (role !== 'host' && role !== 'guest')) return;
+    if (!APPS[app] || !key || (role !== 'host' && role !== 'guest') || !hasTypes(app, role)) return;
     code = norm(code);
     var all = feeds(), id = fid(app, code, role), f = all[id], fresh = !f || f.dead;
     if (f && !f.dead && f.key === key && f.pid === (pid || '')) return;
@@ -116,12 +134,12 @@
     ['host', 'guest'].forEach(function (r) { delete all[fid(app, code, r)]; delete seen[fid(app, code, r)]; delete state[fid(app, code, r)]; });
     save(FEEDS, all); save(SEEN, seen); paint();
   }
-  function lockKey(app, code) { return (load('pebbly_lock_keys', {}) || {})[app + ':' + code] || null; }
+  function lockKey(app, code) { return (load('pebbly_lock_keys', {}) || {})[((APPS[app] && APPS[app].lock) || app) + ':' + code] || null; }
   // A refused event (deleted, or no longer ours) is asked about again after a day.
   function isDead(f) { return typeof f.dead === 'number' && Date.now() - f.dead < 864e5; }
   function live() {
     var all = seed();
-    return Object.keys(all).map(function (id) { return all[id]; }).filter(function (f) { return !isDead(f) && APPS[f.app]; })
+    return Object.keys(all).map(function (id) { return all[id]; }).filter(function (f) { return !isDead(f) && APPS[f.app] && hasTypes(f.app, f.role); })
       .sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 40);
   }
 
@@ -311,7 +329,7 @@
       var x = list[Number(b.dataset.pnI)], go = TYPES[x.n.type].go, here = app && document.querySelector(go);
       close();
       if (here) here.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      else location.href = APPS[x.app].path + '?e=' + encodeURIComponent(x.code);
+      else location.href = eventUrl(x.app, x.code);
     });
     document.addEventListener('keydown', onKey);
     document.body.appendChild(wrap);

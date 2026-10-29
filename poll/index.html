@@ -30,7 +30,8 @@ a{color:var(--brand)}
 button,input,textarea{font:inherit;color:inherit}
 :focus-visible{outline:3px solid var(--brand);outline-offset:2px}
 .hint{color:var(--muted);font-size:15px}
-.topnav{display:flex;justify-content:space-between;margin-bottom:14px;font-size:15px}
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;font-size:15px}
+.navr{display:flex;align-items:center;gap:12px}
 .banner{background:var(--gold-t);border:1px solid #E5CB6B;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:14px}
 .banner button{margin-top:6px}
 .banner.bad{background:var(--down-t);border-color:#D9908D;font-size:15px}
@@ -120,6 +121,7 @@ textarea{resize:vertical}
 </style>
 <script src="/lock.js"></script>
 <script src="/nav.js"></script>
+<script src="/notify.js"></script>
 </head>
 <body>
 <main id="app" class="wrap"></main>
@@ -446,6 +448,11 @@ function route() {
 function applyData(d) {
   S.poll = d.poll; S.options = d.options || []; S.isOwner = !!d.is_owner;
   if (d.my_name && !S.myName) S.myName = d.my_name;
+  // the 🔔 bell (notify.js): people who voted hear when the winner is picked
+  if (REMOTE && window.PebblyNotify) {
+    if (S.isOwner && S.owner) PebblyNotify.feed('poll', S.code, 'host', S.owner, S.pid);
+    if (d.my_name || S.options.some(function (o) { return o.mine || o.mine_added; })) PebblyNotify.feed('poll', S.code, 'guest', S.pid, S.pid);
+  }
 }
 
 function loadPoll(code) {
@@ -647,7 +654,8 @@ function renderPoll() {
   $app.innerHTML =
     previewBanner() +
     '<nav class="topnav">' + (S.fromAdmin ? '<button type="button" class="link" data-act="to-admin" style="padding:0">← All polls (admin)</button>' : '<a href="' + esc(baseUrl()) + '">New poll</a>') +
-      (S.isOwner ? '<span class="hint">' + (S.fromAdmin ? 'Admin: organizer view' : 'You’re the organizer') + '</span>' : '') + '</nav>' +
+      '<span class="navr">' + (S.isOwner ? '<span class="hint">' + (S.fromAdmin ? 'Admin: organizer view' : 'You’re the organizer') + '</span>' : '') +
+      (REMOTE ? '<span data-pn-bell data-app="poll" data-code="' + esc(S.code) + '"></span>' : '') + '</span></nav>' +
     (S.justCreated ? '<section class="panel created"><h2>Poll created</h2><p style="margin-top:4px">Send this link to the group' + (REMOTE && PebblyLock.key('poll', S.code) ? ', and tell them the password separately' : '') + ':</p>' +
       '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Poll link">' +
       '<button type="button" class="btn small" data-act="copy-link">Copy</button></div></section>' : '') +
@@ -871,6 +879,7 @@ $app.addEventListener('click', function (e) {
         api.del({ code: S.code, owner: S.owner }).then(function () {
           var o = store.get('pick.owners', {}) || {}; delete o[S.code]; store.set('pick.owners', o);
           store.set('pick.recent', store.get('pick.recent', []).filter(function (r) { return r.code !== S.code; }));
+          if (window.PebblyNotify) PebblyNotify.drop('poll', S.code);
           history.pushState(null, '', baseUrl()); renderHome(); toast('Poll deleted.');
         }, function (er) { toast(friendly(er)); });
       }
@@ -915,6 +924,10 @@ document.addEventListener('visibilitychange', function () {
   if (document.visibilityState === 'visible' && S.poll && !R.spinning && $('#opts')) {
     reload().then(renderParts, function () {});
   }
+});
+
+window.addEventListener('pebbly-notify-new', function (e) {
+  if (e.detail.app === 'poll' && e.detail.code === S.code && S.poll && !R.spinning && $('#opts')) reload().then(renderParts, function () {});
 });
 
 window.addEventListener('popstate', route);
