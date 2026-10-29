@@ -172,6 +172,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
 </style>
 <script src="/play/sync.js"></script>
 <script src="/nav.js"></script>
+<script src="/notify.js"></script>
 </head>
 <body>
 
@@ -301,7 +302,16 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   var setupPrefs = load(K_SET, { people: true, order: 'seeded', open: true });
   var mem = load(K_MEM, { players: [], games: [] }); if (!Array.isArray(mem.players)) mem.players = [];
   var sync = null;
-  function saveGame() { store(K_GAME, game); store(K_UNDO, undo); if (sync) sync.push(); }
+  function saveGame() {
+    // The champion goes in the shared game too, so the other phones hear about it (notify.js);
+    // by: the phone that recorded it, so it isn't told about its own result.
+    if (game && game.entrants && game.size) {
+      var c = champion(table(game));
+      if (!c || c === BYE) game.champ = null;
+      else if (!game.champ || game.champ.id !== c) game.champ = { id: c, name: nameOf(c), by: PebblySync.me() || '' };
+    }
+    store(K_GAME, game); store(K_UNDO, undo); if (sync) sync.push();
+  }
   function saveUi() { store(K_UI, ui); }
   function snapshot() { undo.push(JSON.stringify(game)); if (undo.length > 60) undo.shift(); }
 
@@ -482,6 +492,9 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
   }
   var celebrated = null;
   function render() {
+    // in a shared bracket, this phone hears who won (🔔 bell and phone alerts, notify.js)
+    var ps = PebblySync.active() && PebblySync.session('bracket');
+    if (ps && ps.token && window.PebblyNotify) PebblyNotify.feed('bracket', ps.code, 'guest', ps.token, ps.me);
     if (!game || $('play').hidden) return;
     var T = table(game), R = T.length;
     if (ui.gid !== game.id) { ui = { gid: game.id, tab: firstOpenRound(T), view: ui.view || 'rounds' }; saveUi(); }

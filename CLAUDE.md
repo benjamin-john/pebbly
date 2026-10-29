@@ -30,7 +30,7 @@ database for the apps that share data between people. See README.md for the app 
 | `doc.js` | Shared documents for Sign-up Sheet, Split the Bill, Shared List (doc_* functions): open/change/merge, host keys. Keep lists as objects keyed by id. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
 | `admin/` | One admin page for every app with an admin mode (shared admin password): a section per app (list, open as host, delete). Add new apps' admin functions to `APPS` there. |
-| `notify.js`, `notifications/` | The 🔔 bell (homepage, RSVP, Which Day Works?, Poll, Sign-up Sheet, Secret Santa) and its settings page. See "Notifications" below. |
+| `notify.js`, `notifications/` | The 🔔 bell (homepage, RSVP, Which Day Works?, Poll, Sign-up Sheet, Secret Santa; Bracket alerts) and its settings page. See "Notifications" below. |
 | `backup.js`, `backup/` | Backup & restore: a six-word key keeps an encrypted copy of the phone's Pebbly data in the database. See "Backups" below. |
 | `migrate.js` | Merges saved data forwarded from benjamin-john.com (RSVP/Poll/Which Day Works? only). |
 | `sw.js` | Service worker (registered by the homepage and `nav.js`): network-first with `cache: 'no-cache'` (updates show right away); saves every page in `PAGES` plus shared files and Google Fonts up front and refreshes them daily, so all of Pebbly opens offline. |
@@ -166,10 +166,11 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   `<span data-pn-bell data-app data-code>`; the page reloads its data on the `pebbly-notify-new` event. A new kind is a
   `notify_types` row + trigger (new migration) and a `TYPES` entry in `notify.js` (wording, icon, section to scroll to,
   settings label). Quick repeat changes from the same person within 10 minutes merge into one item.
-  Kinds so far: RSVP (new/changed RSVP, comment → host; announcement → guests), Which Day Works? (new/changed days →
+  Kinds so far: RSVP (new/changed RSVP, comment, someone offers to bring something → host; announcement → guests), Which Day Works? (new/changed days →
   organizer; final date → guests), Poll (winner → voters), Sign-up Sheet (someone signs up → host; it's a shared
   document, so the trigger compares `signups` before and after), Secret Santa (names drawn → people who picked their
-  name; never says who has whom). `APPS` in notify.js has each app's page, link parameter and host-key storage
+  name; never says who has whom), Bracket (champion → every phone in a shared bracket except the one that recorded it;
+  the page keeps `champ: {id, name, by}` in the shared game for this; phones are checked by their play_members key). `APPS` in notify.js has each app's page, link parameter and host-key storage
   (`_notify_title` in SQL has its name and emoji). A role with no kinds isn't followed. Tests: `tests/notify_test.js`,
   `tests/notify_apps_test.js`.
 - **Phone alerts** (Web Push; `supabase/migrations/20261028180000_notify_push.sql`, `supabase/functions/notify-push/`):

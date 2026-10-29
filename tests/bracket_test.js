@@ -4,7 +4,7 @@
 // Setup: sh tests/setup_db.sh agent_d; serve the repo root on port 8784 (python3 -m http.server 8784), then:
 //   NODE_PATH=$(npm root -g) node tests/bracket_test.js        (SHOTS=<folder> to save screenshots)
 const { chromium, devices } = require('playwright');
-const { phone } = require('./pg_bridge');
+const { phone, rpc } = require('./pg_bridge');
 const B = 'http://localhost:' + (process.env.PORT || 8784);
 const DB = process.env.DB || 'agent_d';
 let pass = 0, fail = 0;
@@ -180,6 +180,28 @@ async function waitFor(p, fn, arg, ms) { try { await p.waitForFunction(fn, arg, 
   check(await waitFor(g, () => !!document.querySelector('.champ') && document.querySelector('.champ .who').textContent === 'Cat'), 'guest sees champion');
   const sh = await h.evaluate(() => JSON.parse(localStorage.getItem('pebbly_bracket'))), sg = await g.evaluate(() => JSON.parse(localStorage.getItem('pebbly_bracket')));
   check(JSON.stringify(sh.res) === JSON.stringify(Object.fromEntries(Object.keys(sh.res).sort().map(k => [k, sg.res[k]]))) && !('tab' in sh) && !('view' in sh), 'same results on both phones, no view state in the shared game');
+
+  // notifications: the other phone hears who won; the phone that recorded it doesn't (notify.js)
+  const sessions = new Map();
+  const feedOf = async x => { if (!sessions.has(x)) sessions.set(x, await x.evaluate(() => PebblySync.session('bracket')));
+    const ss = sessions.get(x);
+    const r = rpc(DB, 'notify_feed', { p_feeds: [{ app: 'bracket', code: ss.code, role: 'guest', key: ss.token, pid: ss.me }] });
+    return r.status === 200 ? JSON.parse(r.body)[0] : { ok: false, err: r.body }; };
+  const gf = await feedOf(g), hf = await feedOf(h);
+  check(gf.ok && gf.items.length === 1 && gf.items[0].type === 'bracket.champion' && gf.items[0].name === 'Cat' && gf.title === 'Ping Pong', 'guest’s feed has the champion: ' + JSON.stringify(gf));
+  check(hf.ok && !hf.items.length, 'host recorded it: not told');
+  check(!JSON.parse(rpc(DB, 'notify_feed', { p_feeds: [{ app: 'bracket', code, role: 'guest', key: 'not-a-member' }] }).body)[0].ok, 'non-member: no feed');
+  check(await g.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('pebbly_notify_feeds')) || {}).some(k => /^bracket:/.test(k))), 'guest phone follows the bracket');
+  await g.goto(B + '/');
+  await g.waitForFunction(() => { const b = document.querySelector('[data-pn-bell]'); return b && !b.hidden && b.querySelector('.pn-bell'); });
+  await g.evaluate(() => { localStorage.setItem('pebbly_notify_seen', '{}'); return PebblyNotify.check(); });
+  await g.click('.pn-bell');
+  check(/Cat won!/.test(await g.textContent('.pn-sheet')) && /Ping Pong/.test(await g.textContent('.pn-sheet')), 'homepage bell: ' + await g.textContent('.pn-sheet'));
+  // undo the final: the notification goes
+  await h.click('#undoBtn');
+  check(await waitFor(h, () => !document.querySelector('.champ') || document.querySelector('.champ').hidden), 'final undone');
+  await h.waitForTimeout(1500);
+  check(!(await feedOf(g)).items.length, 'undone: notification gone');
 
   for (const x of [p, h, g]) check(!x.errs.length, 'page errors: ' + x.errs.join());
   console.log(pass + ' passed, ' + fail + ' failed');

@@ -33,9 +33,11 @@
     wdw: { name: 'Which Day Works?', path: '/whichdayworks/', q: 'e', owners: 'meetup.owners', pid: 'meetup.pid' },
     poll: { name: 'Poll', path: '/poll/', q: 'p', owners: 'pick.owners', pid: 'pick.pid' },
     signup: { name: 'Sign-up Sheet', path: '/signup/', q: 'd', owners: 'pebbly_doc_owners', only: 'pebbly_signup_recent', pid: 'pebbly_signup_pid', lock: 'doc' },
-    santa: { name: 'Secret Santa', path: '/santa/', q: 'g', owners: 'pebbly_santa_owners', pid: 'pebbly_santa_pid' }
+    santa: { name: 'Secret Santa', path: '/santa/', q: 'g', owners: 'pebbly_santa_owners', pid: 'pebbly_santa_pid' },
+    // a shared bracket: the page picks its game back up by itself, so the link is just the page
+    bracket: { name: 'Bracket', path: '/bracket/' }
   };
-  function eventUrl(app, code) { var a = APPS[app]; return a ? a.path + '?' + a.q + '=' + encodeURIComponent(code || '') : '/'; }
+  function eventUrl(app, code) { var a = APPS[app]; return !a ? '/' : a.q ? a.path + '?' + a.q + '=' + encodeURIComponent(code || '') : a.path; }
   var RSVP_STATUS = { going: 'Going', maybe: 'Maybe', no: 'Can’t go' };
   function plus(d) { return d.plus ? ' +' + d.plus : ''; }
   function answer(status, n) { return (RSVP_STATUS[status] || status) + (n ? ' +' + n : ''); }
@@ -49,6 +51,8 @@
       text: function (n, d) { return n + ' changed to ' + answer(d.status, d.plus) + (d.from ? ' (was ' + answer(d.from, d.plus_from) + ')' : ''); } },
     'rsvp.comment': { app: 'rsvp', role: 'host', label: 'New comments', go: '#comments', icon: function () { return '💬'; },
       text: function (n, d) { return n + ': “' + (d.snippet || '') + '”'; } },
+    'rsvp.bring': { app: 'rsvp', role: 'host', label: 'Someone offers to bring something', go: '#bring', icon: function () { return '🧺'; },
+      text: function (n, d) { return n + ' is bringing ' + (d.item || 'something'); } },
     'rsvp.announce': { app: 'rsvp', role: 'guest', label: 'Announcements from the host', go: '#annc', icon: function () { return '📣'; },
       text: function (n, d) { return 'Host: ' + (d.snippet || ''); } },
     'wdw.response_new': { app: 'wdw', role: 'host', label: 'Someone added their days', go: '#people', icon: function () { return '📅'; },
@@ -62,7 +66,9 @@
     'signup.signup': { app: 'signup', role: 'host', label: 'Someone signs up', go: '#slots', icon: function () { return '✍️'; },
       text: function (n, d) { return n + ' signed up' + (d.slot ? ' for ' + d.slot : ''); } },
     'santa.drawn': { app: 'santa', role: 'guest', label: 'Names are drawn', go: '#app', icon: function () { return '🎁'; },
-      text: function () { return 'Names are drawn! Open it to see who you’re buying for.'; } }
+      text: function () { return 'Names are drawn! Open it to see who you’re buying for.'; } },
+    'bracket.champion': { app: 'bracket', role: 'guest', label: 'A winner is crowned', go: '#play', icon: function () { return '🏆'; },
+      text: function (n) { return n + ' won!'; } }
   };
 
   // What a phone alert says (sw.js, for each push).
@@ -127,6 +133,7 @@
     save(FEEDS, all);
     if (fresh) { var seen = load(SEEN, {}); if (!(id in seen)) { seen[id] = null; save(SEEN, seen); } }
     soon();
+    setTimeout(keepPush, 300);   // phone alerts: include it now, even on a page without a bell
   }
   function drop(app, code) {
     code = norm(code);

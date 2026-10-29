@@ -108,6 +108,27 @@ const sheet = async p => { await p.click('.pn-bell'); const t = await p.textCont
   check(su && su.payload.title === 'Potluck' && su.payload.type === 'signup.signup', 'Sign-up alert: ' + JSON.stringify(su && su.payload));
   check(await ann.evaluate(c => { const v = PebblyNotify.alertView({ app: 'santa', code: c, title: 'Family swap', emoji: '🎁', type: 'santa.drawn', name: 'Family swap', detail: {} }); return v.url === '/santa/?g=' + c && v.title === '🎁 Family swap'; }, sg.code), 'alert opens the Santa group');
 
+  /* ---------------- RSVP: the host hears who's bringing what */
+  const rv = call('rsvp_create', { p_event: { title: 'BBQ', tz: 'UTC' } });
+  for (const l of ['Chips', 'Ice']) call('gated_rsvp_item_add', { p_code: rv.code, p_participant: 'hostsetup01', p_owner_token: rv.owner_token, p_name: '', p_label: l, p_needed: 1, p_key: null });
+  await host.goto(B + '/rsvp/?e=' + rv.code + '&o=' + rv.owner_token);
+  await host.waitForSelector('#host .host'); await waitBell(host);
+  const items = call('gated_rsvp_get', { p_code: rv.code, p_participant: 'x', p_owner_token: null, p_key: null }).items;
+  const chips = items.find(i => i.label === 'Chips').id, rhpid = await pidOf(host, 'rsvp.pid');
+  call('gated_rsvp_item_claim', { p_code: rv.code, p_participant: 'guestbring01', p_name: 'Amy Lee', p_item: chips, p_claim: true, p_key: null });
+  call('gated_rsvp_item_add', { p_code: rv.code, p_participant: 'guestbring02', p_owner_token: null, p_name: 'Bo Bee', p_label: 'Lawn games', p_needed: 1, p_key: null });
+  call('gated_rsvp_item_claim', { p_code: rv.code, p_participant: rhpid, p_name: 'Host', p_item: items.find(i => i.label === 'Ice').id, p_claim: true, p_key: null });
+  await host.evaluate(() => PebblyNotify.check());
+  check(await badge(host) === '2', 'host told about two volunteers (not their own claim): ' + await badge(host));
+  const bt = await sheet(host);
+  check(/Amy Lee is bringing Chips/.test(bt) && /Bo Bee is bringing Lawn games/.test(bt), 'bring wording: ' + bt);
+  if (shots) await host.screenshot({ path: '/tmp/notify_apps_bring.png' });
+  await host.click('.pn-item:has-text("Chips")');
+  await host.waitForTimeout(500);
+  check(await host.evaluate(() => { const r = document.querySelector('#bring').getBoundingClientRect(); return r.top < innerHeight && r.bottom > 0; }), 'tapping it shows the bring list');
+  call('gated_rsvp_item_claim', { p_code: rv.code, p_participant: 'guestbring01', p_name: 'Amy Lee', p_item: chips, p_claim: false, p_key: null });
+  check(!feed('rsvp', rv.code, 'host', rv.owner_token).items.some(n => n.name === 'Amy Lee'), 'Amy takes it back: notification gone');
+
   /* ---------------- homepage bell and settings */
   await host.goto(B + '/notifications/');
   await host.waitForSelector('.card');
