@@ -29,7 +29,7 @@ database for the apps that share data between people. See README.md for the app 
 | `play/sync.js`, `play/play.sql` | "Play together": share any game between phones with a 5-letter code. |
 | `doc.js` | Shared documents for Sign-up Sheet, Split the Bill, Shared List (doc_* functions): open/change/merge, host keys. Keep lists as objects keyed by id. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
-| `admin/` | One admin page for every app with an admin mode (shared admin password): a section per app (list, open as host, delete). Add new apps' admin functions to `APPS` there. |
+| `admin/` | One admin page for every app with an admin mode (shared admin password): a section per app (list, open as host, delete). Add new apps' admin functions to `APPS` there. Shared documents and Secret Santa use `doc_admin_*` / `santa_admin_*`: their admin key is `admin_hash` (host checks go through `_doc_is_owner`). Baby Names is list-and-delete only (private; `doc_admin_grant` refuses it). |
 | `notify.js`, `notifications/` | The 🔔 bell (homepage, RSVP, Which Day Works?, Poll, Sign-up Sheet, Secret Santa; Bracket alerts) and its settings page. See "Notifications" below. |
 | `backup.js`, `backup/` | Backup & restore: a six-word key keeps an encrypted copy of the phone's Pebbly data in the database. See "Backups" below. |
 | `migrate.js` | Merges saved data forwarded from benjamin-john.com (RSVP/Poll/Which Day Works? only). |

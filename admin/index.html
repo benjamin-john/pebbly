@@ -152,8 +152,33 @@ details.app[open] summary .chev{transform:rotate(90deg)}
       grant: function (pw, c) { return rpc('poll_admin_grant', { p_password: pw, p_code: c }).then(function (d) { return '/poll/?p=' + c + '&o=' + encodeURIComponent(d.owner_token); }); },
       del: function (pw, c) { return rpc('poll_admin_delete', { p_password: pw, p_code: c }); },
       title: function (x) { return x.name; }, when: function (x) { return x.created_at; }, view: function (x) { return '/poll/?p=' + x.code; },
-      meta: function (x) { return [n(x.options || 0, 'choice', 'choices'), n(x.voters || 0, 'voter', 'voters'), x.winner ? 'winner: ' + x.winner : '', 'made ' + ago(x.created_at)]; } }
+      meta: function (x) { return [n(x.options || 0, 'choice', 'choices'), n(x.voters || 0, 'voter', 'voters'), x.winner ? 'winner: ' + x.winner : '', 'made ' + ago(x.created_at)]; } },
+    doc('bill', '💸', 'Split the Bill', '/bill/', function (x) { return [n(x.people || 0, 'person', 'people'), n(x.expenses || 0, 'expense', 'expenses')]; }),
+    doc('signup', '📋', 'Sign-up Sheet', '/signup/', function (x) { return [n(x.slots || 0, 'thing', 'things') + ' to sign up for', n(x.signups || 0, 'sign-up', 'sign-ups')]; }),
+    doc('list', '🛒', 'Shared List', '/list/', function (x) { return [n(x.items || 0, 'item', 'items')]; }),
+    // private between two people: listed so old ones can be cleared away, never opened
+    { id: 'names', icon: '🍼', name: 'Baby Names', private: true,
+      list: function (pw) { return rpc('doc_admin_list', { p_password: pw, p_kind: 'names' }).then(function (d) { return d.docs || []; }); },
+      del: function (pw, c) { return rpc('doc_admin_delete', { p_password: pw, p_code: c }); },
+      title: function (x) { return x.title || 'Baby names'; }, when: function (x) { return x.updated_at; },
+      meta: function (x) { return [x.added ? n(x.added, 'name added', 'names added') : '', 'last change ' + ago(x.updated_at), 'made ' + ago(x.created_at), 'private: can’t be opened here']; } },
+    { id: 'santa', icon: '🎁', name: 'Secret Santa', host: 'Open as organizer',
+      list: function (pw) { return rpc('santa_admin_list', { p_password: pw }).then(function (d) { return d.groups || []; }); },
+      grant: function (pw, c) { return rpc('santa_admin_grant', { p_password: pw, p_code: c }).then(function (d) { return '/santa/?g=' + c + '&o=' + encodeURIComponent(d.owner_token); }); },
+      del: function (pw, c) { return rpc('santa_admin_delete', { p_password: pw, p_code: c }); },
+      title: function (x) { return x.name; }, when: function (x) { return x.updated_at; },
+      meta: function (x) { return [n(x.people, 'person', 'people') + (x.drawn ? ', names drawn' : ', ' + x.claimed + ' picked their name'), x.swap_date ? 'swap ' + day(x.swap_date) : '', 'last change ' + ago(x.updated_at)]; } }
   ];
+  // Split the Bill, Sign-up Sheet, Shared List: shared documents (doc.js), admin through doc_admin_*.
+  function doc(kind, icon, name, path, counts) {
+    return { id: kind, icon: icon, name: name, host: 'Open as host',
+      list: function (pw) { return rpc('doc_admin_list', { p_password: pw, p_kind: kind }).then(function (d) { return d.docs || []; }); },
+      grant: function (pw, c) { return rpc('doc_admin_grant', { p_password: pw, p_code: c }).then(function (d) { return path + '?d=' + c + '&o=' + encodeURIComponent(d.owner_token); }); },
+      del: function (pw, c) { return rpc('doc_admin_delete', { p_password: pw, p_code: c }); },
+      title: function (x) { return (x.emoji ? x.emoji + ' ' : '') + (x.title || ''); }, when: function (x) { return x.updated_at; },
+      view: function (x) { return path + '?d=' + x.code; },
+      meta: function (x) { return counts(x).concat(['last change ' + ago(x.updated_at), 'made ' + ago(x.created_at)]); } };
+  }
   var S = { pw: '', data: {}, errs: {}, open: {} };
   try { S.open = JSON.parse(sessionStorage.getItem('pebbly_admin_open')) || {}; } catch (e) {}
 
@@ -175,7 +200,7 @@ details.app[open] summary .chev{transform:rotate(90deg)}
         (S.errs[a.id] ? '<p class="secterr">' + esc(friendly(S.errs[a.id])) + '</p>' :
           shown.length ? '<ul class="items">' + shown.map(function (x) {
             return '<li><div class="nm">' + esc(a.title(x) || '(untitled)') + '</div><div class="meta">' + esc(a.meta(x).filter(Boolean).join(' · ')) + '</div>' +
-              '<div class="row"><button class="btn" type="button" data-act="host" data-app="' + a.id + '" data-code="' + esc(x.code) + '">' + a.host + '</button>' +
+              '<div class="row">' + (a.grant ? '<button class="btn" type="button" data-act="host" data-app="' + a.id + '" data-code="' + esc(x.code) + '">' + a.host + '</button>' : '') +
               (a.view ? '<a class="btn" href="' + esc(a.view(x)) + '">View as guest</a>' : '') +
               '<button class="btn danger" type="button" data-act="del" data-app="' + a.id + '" data-code="' + esc(x.code) + '" data-name="' + esc(a.title(x)) + '">Delete</button></div></li>';
           }).join('') + '</ul>' : '<ul class="items"><li class="empty">' + (q ? 'Nothing matches.' : 'Nothing here yet.') + '</li></ul>') +
@@ -189,7 +214,7 @@ details.app[open] summary .chev{transform:rotate(90deg)}
     try { sessionStorage.removeItem(PWKEY); } catch (e) {}
     show(false); $('loginErr').textContent = msg || ''; $('pw').value = '';
   }
-  // Check the password with one app first (each wrong try counts against the lockout once, not four times).
+  // Check the password with one app first (each wrong try counts against the lockout once, not once per app).
   function signIn(pw) {
     return APPS[0].list(pw).then(function (items) {
       S.pw = pw; S.data[APPS[0].id] = items;
