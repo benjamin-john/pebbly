@@ -42,8 +42,8 @@ async function stubMaps(ctx) {
       glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf', sprite: 'https://tiles.openfreemap.org/sprites/ofm/ofm',
       layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#f2efe6' } },
         { id: 'pl', type: 'symbol', source: 'openmaptiles', 'source-layer': 'place', layout: { 'text-field': '{name}', 'text-font': ['Noto Sans Regular'] } }] }) });
-    if (u.endsWith('/planet')) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tiles: ['https://tiles.openfreemap.org/planet/v1/{z}/{x}/{y}.pbf'], minzoom: 0, maxzoom: 14 }) });
-    if (u.includes('/planet/')) { hits.vec++; return r.fulfill({ status: 200, contentType: 'application/x-protobuf', body: Buffer.alloc(0) }); }
+    if (u.endsWith('/planet')) return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ tiles: ['/planet/v1/{z}/{x}/{y}.pbf'], minzoom: 0, maxzoom: 14 }) });
+    if (/\/planet\/v1\/\d+\/\d+\/\d+\.pbf$/.test(u)) { hits.vec++; return r.fulfill({ status: 200, contentType: 'application/x-protobuf', body: Buffer.alloc(0) }); }
     return r.fulfill({ status: 404, body: '' });
   });
   await ctx.route('https://static.cloudflareinsights.com/**', r => r.abort());
@@ -101,7 +101,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('#pinBtn');
   await ben.waitForSelector('#wpForm');
   check((await ben.textContent('#wpWhere')).includes('At your location'), 'Pin starts at my spot');
-  await ben.click('#wpForm .icons label:nth-child(3)');   // 🦌
+  await ben.click('#wpForm .icons label:nth-child(3)');   // 🦌 (shown in the list; the map shows a red dot)
   await ben.fill('#wpForm [name=name]', 'Big buck');
   await ben.fill('#wpForm [name=note]', 'Saw him at dawn');
   await ben.click('#wpForm [type=submit]');
@@ -132,12 +132,37 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.fill('#wpForm [name=name]', 'Truck (Amy)');
   await ben.click('#wpForm [type=submit]');
   check(await until(amy, () => __bc.state().waypoints.some(w => w.name === 'Truck (Amy)'), null, 10000), 'host can edit anyone’s waypoint');
-  // hide others' waypoints on Amy's phone
-  await amy.click('#showBtn');
-  await amy.uncheck('[data-ui=othersWp]');
-  check(await until(amy, () => ![...document.querySelectorAll('.wp .lbl')].some(e => e.textContent === 'Big buck') && [...document.querySelectorAll('.wp .lbl')].some(e => e.textContent === 'Truck (Amy)')), 'hiding other people’s waypoints keeps mine');
-  await amy.check('[data-ui=othersWp]');
-  await amy.click('dialog.sheet [data-close]');
+  check(await amy.evaluate(() => { const r = document.querySelector('.wp .wd').getBoundingClientRect(); return r.width <= 20 && !document.querySelector('.wp .pin'); }), 'waypoints are small red dots');
+  // the Waypoints list: closest first, show/hide each, all, only mine, tap to go there
+  await amy.click('#wpsBtn');
+  await amy.waitForSelector('#wlist [data-wgo]');
+  await shot(amy, 'wplist');
+  const names = await amy.$$eval('#wlist .tx b', e => e.map(x => x.textContent));
+  check(names.length === 2 && /2 of 2 shown/.test(await amy.textContent('#wlist')), 'Waypoints list: ' + names);
+  check(/yd/.test(await amy.textContent('#wlist li')), 'list shows distance');
+  await amy.click('[data-wall=mine]');
+  check(await until(amy, () => ![...document.querySelectorAll('.wp .lbl')].some(e => e.textContent === 'Big buck') && [...document.querySelectorAll('.wp .lbl')].some(e => e.textContent === 'Truck (Amy)')), 'Only mine hides Ben’s');
+  await amy.click('[data-wall=hide]');
+  check(await until(amy, () => !document.querySelector('.wp')), 'Hide all');
+  check(/0 of 2 shown/.test(await amy.textContent('#wlist')), 'count updates');
+  const buckId = await amy.evaluate(() => __bc.state().waypoints.find(w => w.name === 'Big buck').id);
+  await amy.check(`[data-wvis="${buckId}"]`);
+  check(await until(amy, () => document.querySelectorAll('.wp').length === 1), 'one turned back on');
+  await amy.click('[data-wall=show]');
+  check(await until(amy, () => document.querySelectorAll('.wp').length === 2), 'Show all');
+  await amy.click('[data-wall=hide]');
+  await amy.click(`[data-wgo="${buckId}"]`);
+  await amy.waitForTimeout(1200);
+  const cw = await amy.evaluate(() => __bc.map().getCenter());
+  const bw = await amy.evaluate(id => __bc.state().waypoints.find(w => w.id === id), buckId);
+  check(Math.abs(cw.lat - bw.lat) < 0.0003 && Math.abs(cw.lng - bw.lng) < 0.0003, 'tapping a waypoint flies there');
+  check(await until(amy, () => document.querySelectorAll('.wp').length === 1), 'and shows it');
+  await amy.click('#wpsBtn'); await amy.click('[data-wall=show]'); await amy.click('dialog.sheet [data-close]');
+  await amy.waitForTimeout(500); await shot(amy, 'dots');
+  // labels hide when zoomed out
+  await amy.evaluate(() => __bc.map().jumpTo({ zoom: 12 }));
+  check(await amy.evaluate(() => getComputedStyle(document.querySelector('.wp .lbl')).display === 'none'), 'names hide when zoomed out');
+  await amy.evaluate(() => __bc.map().jumpTo({ zoom: 16 }));
 
   // ---- trails
   await amy.click('#trailBtn');
@@ -165,13 +190,14 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(await until(ben, () => true) && (await ben.waitForTimeout(1500), hits.topo > 0), 'Topo loads USGS topo tiles');
   await ben.click('.layers [data-layer=map]');
   await ben.waitForTimeout(2000);
-  check(hits.vec > 0, 'Map loads OpenFreeMap tiles');
+  check(hits.vec > 0, 'Map loads OpenFreeMap tiles (real tile addresses): ' + hits.vec);
   check(await ben.evaluate(() => !!__bc.map().getSource('trails')), 'trails stay after switching map type');
   await ben.click('.layers [data-layer=sat]');
 
   // ---- heading-up
+  await ben.waitForTimeout(800);
   await ben.click('#compass');
-  check(await ben.evaluate(() => __bc.mode()) === 'heading', 'compass button turns on heading-up');
+  check(await until(ben, () => __bc.mode() === 'heading', null, 3000), 'compass button turns on heading-up');
   await ben.evaluate(() => { for (let i = 0; i < 8; i++) __bc.orient({ type: 'deviceorientationabsolute', absolute: true, alpha: 270 }); });   // facing east
   await ben.waitForTimeout(300);
   const b = await ben.evaluate(() => __bc.map().getBearing());

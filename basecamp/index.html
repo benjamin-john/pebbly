@@ -120,7 +120,7 @@ body.in-map #app{height:100%}
 .fab .n{position:absolute;bottom:2px;font:800 9px/1 var(--body);letter-spacing:.05em}
 #compass svg{transition:transform .15s linear}
 .mefab{position:absolute;right:10px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:2}
-.bbar{position:absolute;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:2;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+.bbar{position:absolute;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:2;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
   background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:5px}
 .bbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;border:0;border-radius:12px;background:none;
   font-weight:600;font-size:13px;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:2px}
@@ -160,12 +160,15 @@ body.in-map #app{height:100%}
   background:rgba(255,255,255,.92);padding:2px 7px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.25);max-width:160px;overflow:hidden;text-overflow:ellipsis}
 .pm .lbl{top:50px}
 .pm .lbl small{font-weight:500;color:#5D6B66}
-.wp{position:relative;width:38px;height:44px;cursor:pointer}
-.wp .pin{position:absolute;left:3px;top:0;width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#fff;border:3px solid var(--c,#2F7A63);
-  box-shadow:0 2px 5px rgba(0,0,0,.35)}
-.wp .ic{position:absolute;left:0;top:3px;width:38px;text-align:center;font-size:17px;line-height:26px}
-.wp .lbl{top:44px;font-size:11px}
-.wp.pending .pin{border-style:dashed}
+.wp{position:relative;width:30px;height:30px;cursor:pointer}
+.wp .wd{position:absolute;left:8px;top:8px;width:14px;height:14px;border-radius:50%;background:#E0261B;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5)}
+.wp .lbl{top:6px;left:24px;transform:none;font-size:11px;padding:1px 6px}
+.wp.pending .wd{background:#F08A84}
+#map.far .wp .lbl{display:none}
+.row .ck{flex:none;width:44px;height:44px;display:grid;place-items:center}
+.row .ck input{width:22px;height:22px;accent-color:var(--brand)}
+.wrow{display:flex;align-items:center}
+.wrow .row{flex:1;min-width:0}
 
 /* sheets (bottom dialogs) */
 dialog.sheet{position:fixed;inset:auto 0 0 0;margin:0 auto;width:100%;max-width:620px;max-height:calc(var(--app-h,100vh) - 40px);padding:0;border:0;border-radius:20px 20px 0 0;
@@ -224,7 +227,7 @@ dialog.sheet::backdrop{background:rgba(10,20,16,.45)}
   padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;font-size:15px;font-weight:500}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
-@media (max-width:370px){ .layers button{padding:0 9px;font-size:13px} .bbar button{font-size:12px} }
+@media (max-width:370px){ .layers button{padding:0 9px;font-size:13px} .bbar button{font-size:11.5px} }
 </style>
 <script src="/lock.js"></script>
 <script src="/keepawake.js"></script>
@@ -475,7 +478,8 @@ function rasterStyle(id) {
   return { version: 8, sources: { base: { type: 'raster', tiles: ['bc://t/' + id + '/{z}/{x}/{y}'], tileSize: 256, maxzoom: L.max, attribution: L.attr } },
     layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#dfe6e2' } }, { id: 'base', type: 'raster', source: 'base' }] };
 }
-function absUrl(u, base) { try { return new URL(u, base).href; } catch (e) { return u; } }
+// (new URL() turns {z} into %7Bz%7D, so put the braces back for tile and glyph templates)
+function absUrl(u, base) { try { return new URL(u, base).href.replace(/%7B/gi, '{').replace(/%7D/gi, '}'); } catch (e) { return u; } }
 // The OpenFreeMap style, with every address sent through bc:// (sources' tile lists come from their TileJSON).
 function vectorStyle() {
   return getRes(OFM_STYLE).then(function (buf) {
@@ -591,7 +595,7 @@ var CODE = '', S = null, ME = null, MAP = null, timers = [], screen = '';
 var FIX = null;          // this phone's latest GPS fix { lat, lng, acc, speed, heading, t }
 var COMPASS = null;      // { deg, t }
 var REC = null;          // recording a trail: { id, last: {lat,lng}, dist, n }
-var FOLLOW = false, MODE = 'north', watchId = null, geoErr = null, lastSent = null, offSent = false, syncing = false, syncAgain = false,
+var userMoved = false, FOLLOW = false, MODE = 'north', watchId = null, geoErr = null, lastSent = null, offSent = false, syncing = false, syncAgain = false,
   status = 'live', pending = {}, recStoppedByLeave = false, offlineView = false, markers = { p: {}, w: {} }, shownLayer = '';
 
 function freshUi() { return ui(); }
@@ -888,7 +892,7 @@ function onFix(p) {
   if (first) {
     renderNotes();
     var v = ui().views[CODE];
-    if (!v && !(S && hasPlaces())) { MAP.jumpTo({ center: [FIX.lng, FIX.lat], zoom: 16 }); FOLLOW = true; renderFabs(); }
+    if (!v && !userMoved && !(S && hasPlaces())) { MAP.jumpTo({ center: [FIX.lng, FIX.lat], zoom: 16 }); FOLLOW = true; renderFabs(); }
   }
   if (FOLLOW) follow();
   if (!lastSent || dist(lastSent, FIX) > 15) syncSoon();
@@ -998,6 +1002,7 @@ var ICON = {
   me: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg>',
   compass: '<svg viewBox="0 0 24 24"><path d="M12 2.5l4 9.5h-8z" fill="#D63B30"/><path d="M12 21.5l-4-9.5h8z" fill="currentColor" opacity=".55"/></svg>',
   show: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="6" r="2" fill="#E0261B" stroke="none"/><circle cx="5" cy="12" r="2" fill="#E0261B" stroke="none"/><circle cx="5" cy="18" r="2" fill="#E0261B" stroke="none"/><path d="M10 6h10M10 12h10M10 18h10"/></svg>',
   rec: '<svg viewBox="0 0 24 24"><circle class="dotrec" cx="12" cy="12" r="7" fill="currentColor"/></svg>'
 };
 function showMap() {
@@ -1018,6 +1023,7 @@ function showMap() {
       '<nav class="bbar" id="bbar">' +
         '<button type="button" id="pinBtn">' + ICON.pin + '<span>Pin</span></button>' +
         '<button type="button" id="trailBtn"></button>' +
+        '<button type="button" id="wpsBtn">' + ICON.list + '<span>Waypoints</span></button>' +
         '<button type="button" id="peopleBtn">' + ICON.people + '<span>People</span></button>' +
         '<button type="button" id="moreBtn">' + ICON.more + '<span>More</span></button></nav>' +
       '<div class="cross" id="cross" hidden></div>' +
@@ -1028,6 +1034,7 @@ function showMap() {
   initMap();
   $('#moreTop').onclick = $('#moreBtn').onclick = openMenu;
   $('#peopleBtn').onclick = openPeople;
+  $('#wpsBtn').onclick = openWaypointList;
   $('#pinBtn').onclick = function () { if (FIX) openWaypointEdit(null, { lat: FIX.lat, lng: FIX.lng }, true); else startPick(null); };
   $('#trailBtn').onclick = function () { if (REC) stopTrail(); else startTrail(); };
   $('#meBtn').onclick = function () {
@@ -1066,7 +1073,7 @@ function stopMap() {
   if (REC) stopTrail('leave');
   closeSheet(); closePocket();
   if (MAP) { saveView(); MAP.remove(); MAP = null; }
-  FOLLOW = false; FIX = null; pick = null;
+  FOLLOW = false; userMoved = false; FIX = null; pick = null;
 }
 function saveView() {
   if (!MAP || !CODE) return;
@@ -1095,9 +1102,11 @@ function initMap() {
   MAP.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
   MAP.on('error', function () {});
   MAP.on('style.load', addOverlays);
-  MAP.on('dragstart', function (e) { if (e.originalEvent && FOLLOW) { FOLLOW = false; renderFabs(); } });
+  MAP.on('dragstart', function (e) { if (e.originalEvent) userMoved = true; if (e.originalEvent && FOLLOW) { FOLLOW = false; renderFabs(); } });
   MAP.on('rotate', function () { renderFabs(); renderConesOnly(); });
   MAP.on('moveend', function () { clearTimeout(MAP._sv); MAP._sv = setTimeout(saveView, 800); });
+  function farClass() { var el = document.getElementById('map'); if (el) el.classList.toggle('far', MAP.getZoom() < 15); }
+  MAP.on('zoom', farClass); farClass();
   if (!v && S.members.filter(function (m) { return m.lat != null; }).length + S.waypoints.length > 1) {
     MAP.once('load', function () { showEveryone(true); });
   }
@@ -1206,8 +1215,11 @@ function circle(c, r, color) {
   }
   return { type: 'Feature', properties: { color: color }, geometry: { type: 'Polygon', coordinates: [pts] } };
 }
-function visibleWaypoints() {
-  var u = ui(), list = S.waypoints.slice(), ids = {};
+function hiddenWp() { return ui().hiddenWp && ui().hiddenWp[CODE] || {}; }
+function setHiddenWp(fn) { setUi(function (u) { u.hiddenWp = u.hiddenWp || {}; var h = u.hiddenWp[CODE] || {}; fn(h); u.hiddenWp[CODE] = h; }); renderWaypoints(); }
+function visibleWaypoints() { var h = hiddenWp(); return allWaypoints().filter(function (w) { return !h[w.id]; }); }
+function allWaypoints() {
+  var list = S.waypoints.slice(), ids = {};
   list.forEach(function (w) { ids[w.id] = 1; });
   Object.keys(pending).forEach(function (id) {
     var p = pending[id];
@@ -1217,22 +1229,22 @@ function visibleWaypoints() {
       else list.push(Object.assign({ id: id, member: ME && ME.id, at: Date.now() }, p.wp, { pending: true }));
     }
   });
-  return list.filter(function (w) { return u.othersWp !== false || (ME && w.member === ME.id); });
+  return list;
 }
 function renderWaypoints() {
   if (!MAP || !S) return;
   var seen = {};
   visibleWaypoints().forEach(function (w) {
     seen[w.id] = 1;
-    var m = member(w.member), color = m ? m.color : '#5D6B66', sig = [w.icon, w.name, color, !!w.pending].join('|');
+    var sig = [w.name, !!w.pending].join('|');
     var mk = markers.w[w.id];
     if (!mk || mk._sig !== sig) {
       if (mk) mk.remove();
       var el = document.createElement('div');
-      el.className = 'wp' + (w.pending ? ' pending' : ''); el.style.setProperty('--c', color);
-      el.innerHTML = '<div class="pin"></div><div class="ic">' + esc(w.icon || '📍') + '</div>' + (w.name ? '<div class="lbl">' + esc(w.name) + '</div>' : '');
+      el.className = 'wp' + (w.pending ? ' pending' : '');
+      el.innerHTML = '<div class="wd"></div>' + (w.name ? '<div class="lbl">' + esc(w.name) + '</div>' : '');
       el.addEventListener('click', function (ev) { ev.stopPropagation(); openWaypoint(w.id); });
-      mk = markers.w[w.id] = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, 12] }).setLngLat([w.lng, w.lat]).addTo(MAP);
+      mk = markers.w[w.id] = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([w.lng, w.lat]).addTo(MAP);
       mk._sig = sig;
     }
     mk.setLngLat([w.lng, w.lat]);
@@ -1299,11 +1311,11 @@ function showEveryone(quiet) {
   S.members.forEach(function (m) { var p = personPlace(m); if (p) { b.extend([p.lng, p.lat]); n++; } });
   visibleWaypoints().forEach(function (w) { b.extend([w.lng, w.lat]); n++; });
   if (!n) { if (!quiet) toast('Nobody is on the map yet.'); return; }
-  FOLLOW = false; renderFabs();
+  FOLLOW = false; userMoved = true; renderFabs();
   MAP.fitBounds(b, { padding: { top: 80, bottom: 120, left: 50, right: 70 }, maxZoom: 17, duration: quiet ? 0 : 700, bearing: MAP.getBearing() });
 }
 function flyTo(lat, lng) {
-  FOLLOW = false; renderFabs();
+  FOLLOW = false; userMoved = true; renderFabs();
   MAP.flyTo({ center: [lng, lat], zoom: Math.max(MAP.getZoom(), 16.5), duration: 800 });
 }
 
@@ -1394,11 +1406,13 @@ function renderPeopleList() {
     var pa = personPlace(a), pb = personPlace(b);
     return ((pb ? pb.at : 0) - (pa ? pa.at : 0));
   });
-  ul.innerHTML = list.map(function (m) {
+  var html = list.map(function (m) {
     var p = personPlace(m), isMe = ME && m.id === ME.id;
     return '<li><button type="button" class="row" data-person="' + m.id + '"><span class="sw" style="background:' + m.color + '">' + esc(initial(m.name)) + '</span>' +
       '<span class="tx"><b>' + esc(m.name) + (isMe ? ' (you)' : '') + '</b><small>' + esc(personStatus(m)) + '</small></span>' + (isMe ? '' : fromMe(p)) + '</button></li>';
   }).join('');
+  if (ul._html === html) return;          // unchanged: keep the buttons (a tap mid-redraw would be lost)
+  ul._html = html; ul.innerHTML = html;
   $$('[data-person]', ul).forEach(function (b) {
     b.onclick = function () {
       var m = member(b.dataset.person), p = m && personPlace(m);
@@ -1447,7 +1461,7 @@ function openMeEdit() {
 }
 
 /* ------------------------------------------------------------------ waypoints */
-function wpById(id) { return visibleWaypoints().concat(S.waypoints).filter(function (w) { return w.id === id; })[0] || null; }
+function wpById(id) { return allWaypoints().concat(S.waypoints).filter(function (w) { return w.id === id; })[0] || null; }
 function canEdit(w) { return S.isOwner || (ME && (w.member === ME.id || !w.member && w.pending)); }
 function openWaypoint(id) {
   var w = wpById(id); if (!w) return;
@@ -1505,6 +1519,51 @@ function openWaypointEdit(w, at, fromPinBtn) {
   });
 }
 
+/* ------------------------------------------------------------------ all waypoints */
+function openWaypointList() {
+  openSheet('wps', head('Waypoints') +
+    '<div class="btns" style="margin-bottom:12px"><button type="button" class="btn small" data-wall="show">Show all</button>' +
+      '<button type="button" class="btn small" data-wall="hide">Hide all</button><button type="button" class="btn small" data-wall="mine">Only mine</button></div>' +
+    '<div id="wlist"></div>', function (d) {
+    $$('[data-wall]', d).forEach(function (b) {
+      b.onclick = function () {
+        var how = b.dataset.wall;
+        setHiddenWp(function (h) {
+          Object.keys(h).forEach(function (k) { delete h[k]; });
+          if (how !== 'show') allWaypoints().forEach(function (w) { if (how === 'hide' || !(ME && w.member === ME.id)) h[w.id] = 1; });
+        });
+        renderWaypointList(d);
+      };
+    });
+    renderWaypointList(d);
+  });
+}
+function renderWaypointList(d) {
+  var el = $('#wlist', d); if (!el) return;
+  var h = hiddenWp(), list = allWaypoints();
+  if (!list.length) { el.innerHTML = '<p class="hint">No waypoints yet. Tap Pin, or press and hold on the map.</p>'; return; }
+  if (FIX) list.sort(function (a, b) { return dist(FIX, a) - dist(FIX, b); });
+  else list.sort(function (a, b) { return (b.at || 0) - (a.at || 0); });
+  var shown = list.filter(function (w) { return !h[w.id]; }).length;
+  el.innerHTML = '<p class="hint" style="margin:0 0 8px 4px">' + shown + ' of ' + list.length + ' shown on the map' + (FIX ? ' · closest first' : '') + '</p>' +
+    '<ul class="list">' + list.map(function (w) {
+      var m = member(w.member), by = ME && w.member === ME.id ? 'you' : (m ? m.name : w.by || 'someone');
+      return '<li class="wrow"><label class="ck"><input type="checkbox" data-wvis="' + w.id + '"' + (h[w.id] ? '' : ' checked') + ' aria-label="Show ' + esc(w.name || 'waypoint') + ' on the map"></label>' +
+        '<button type="button" class="row" data-wgo="' + w.id + '" style="padding-left:0"><span class="em">' + esc(w.icon || '📍') + '</span>' +
+        '<span class="tx"><b>' + esc(w.name || 'Waypoint') + '</b><small>by ' + esc(by) + (w.pending ? ' · not sent yet' : '') + '</small></span>' + fromMe(w) + '</button></li>';
+    }).join('') + '</ul>';
+  $$('[data-wvis]', el).forEach(function (c) {
+    c.onchange = function () { var id = c.dataset.wvis; setHiddenWp(function (x) { if (c.checked) delete x[id]; else x[id] = 1; }); renderWaypointList(d); };
+  });
+  $$('[data-wgo]', el).forEach(function (b) {
+    b.onclick = function () {
+      var w = wpById(b.dataset.wgo); if (!w) return;
+      if (hiddenWp()[w.id]) setHiddenWp(function (x) { delete x[w.id]; });   // going there shows it
+      closeSheet(); flyTo(w.lat, w.lng);
+    };
+  });
+}
+
 /* ------------------------------------------------------------------ what to show */
 function openShow() {
   var u = ui();
@@ -1515,7 +1574,7 @@ function openShow() {
     '<div class="seg" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
       return '<button type="button" data-layer2="' + id + '" aria-pressed="' + (shownLayer === id) + '">' + LAYERS[id].label + '</button>';
     }).join('') + '</div>' +
-    tg('othersWp', 'Other people’s waypoints') + tg('othersTrails', 'Other people’s trails') + tg('myTrails', 'My trails') +
+    tg('othersTrails', 'Other people’s trails') + tg('myTrails', 'My trails') +
     '<p class="sec">Trails</p><ul class="list" id="tlist"></ul>', function (d) {
     $$('[data-layer2]', d).forEach(function (b) { b.onclick = function () { setLayer(b.dataset.layer2); $$('[data-layer2]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }; });
     $$('[data-ui]', d).forEach(function (c) { c.onchange = function () { setUi(function (x) { x[c.dataset.ui] = c.checked; }); renderWaypoints(); renderTrails(); }; });
