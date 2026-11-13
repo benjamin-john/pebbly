@@ -1161,7 +1161,7 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
       return '<span class="done">' + esc(p.name) + (p.id === me ? ' (you)' : '') + '</span>'; }).join('') + '</div>' : '<p class="hint" style="margin:0">Nobody yet. They’ll show up here as they join.</p>') + '</section>';
     if (game.phase === 'lobby') {
       if (host) return '<section class="card" style="text-align:center"><h2>Get everyone in</h2><p style="margin:0">On their phones: open Trivia in Pebbly, tap <b>Join a game with a code</b>, and enter</p>' +
-        '<div class="bigcode" id="lobbyCode">' + esc(PebblySync.code()) + '</div><button type="button" class="btn ghost" data-act="code">Share the join link</button></section>' + plist +
+        '<div class="bigcode" id="lobbyCode">' + esc(PebblySync.code()) + '</div><button type="button" class="btn ghost" data-act="code">Copy the join link</button></section>' + plist +
         '<button type="button" class="btn" data-act="begin"' + (game.players.length ? '' : ' disabled') + '>' + (game.players.length ? 'Start the quiz' : 'Waiting for players to join') + '</button>';
       return '<section class="card" style="text-align:center"><p class="status" style="margin:6px 0">🎉 You’re in!<small>Waiting for the quizmaster to start the quiz.</small></p></section>' + plist;
     }

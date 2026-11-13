@@ -344,14 +344,15 @@
     var d = dialog('<div class="ps-head"><h3>Playing together</h3>' + closeBtn() + '</div>' +
       '<p class="ps-hint" style="margin:0;text-align:center">Others open ' + esc(KINDS[S.kind]) + ' in Pebbly, tap “Join a game”, and enter:</p>' +
       '<div class="ps-code">' + esc(S.code) + '</div>' +
-      '<button type="button" class="ps-btn ghost" id="psShare">' + (navigator.share ? 'Share join link' : 'Copy join link') + '</button>' +
+      '<button type="button" class="ps-btn ghost" id="psShare">' + 'Copy join link' + '</button>' +
       '<p class="ps-hint" style="margin-top:14px">On their own phones:</p><ul class="ps-list">' +
       S.members.map(function (m) { return '<li>' + esc(m.name) + (m.id === S.me ? ' (this phone)' : '') + '</li>'; }).join('') + '</ul>' +
       '<button type="button" class="ps-btn danger" id="psLeave">Leave shared game</button>');
     d.querySelector('#psShare').addEventListener('click', function () {
       var url = joinUrl();
-      if (navigator.share) navigator.share({ title: 'Join my ' + KINDS[S.kind] + ' game', text: 'Join my ' + KINDS[S.kind] + ' game in Pebbly: code ' + S.code, url: url }).catch(function () {});
-      else if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { d.querySelector('#psShare').textContent = 'Link copied'; });
+      var b = d.querySelector('#psShare');
+      if (navigator.clipboard) navigator.clipboard.writeText(url).then(function () { b.textContent = 'Link copied'; }, function () { b.textContent = url; });
+      else b.textContent = url;
     });
     d.querySelector('#psLeave').addEventListener('click', function () {
       if (!confirm('Leave this shared game on this phone? The others can keep playing.')) return;

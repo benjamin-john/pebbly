@@ -3070,7 +3070,6 @@ function copyText(text) {
   return Promise.resolve(fallback());
 }
 function share(title, url) {
-  if (navigator.share) { navigator.share({ title: title, text: title, url: url }).catch(function () {}); return; }
   copyText(url).then(function (ok) { toast(ok ? 'Link copied. Send it to your partner.' : url); });
 }
 function hash(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967296; }
@@ -3298,7 +3297,7 @@ function render(info) {
       '<p>Send this link to ' + (S.p.b ? esc(S.p.b) : 'your partner') + (PebblyLock.key('doc', CODE) ? ', and tell them the password' : '') +
       '. You each swipe on your own phone, and names you both like show up under <b>Our list</b>.</p>' +
       '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(CODE)) + '" aria-label="Shortlist link">' +
-      '<button type="button" class="btn primary small" data-act="share">Share</button></div></section>';
+      '<button type="button" class="btn primary small" data-act="share">Copy link</button></div></section>';
   }
   var n = matchKeys().length, v = view();
   top += '<header class="apphead"><h1>🍼 ' + esc(title()) + '</h1><button type="button" class="icon-btn" data-act="menu" aria-label="More options">⋯</button></header>' +
@@ -3943,7 +3942,7 @@ function openMenu() {
     '<button type="button" class="btn" data-m="suggest"><span>＋ Add a name<small>One you’ve been thinking of. It goes to the top of ' + esc(who(other())) + '’s pile.</small></span></button>' +
     '<button type="button" class="btn" data-m="ai"><span>✨ Ideas from AI<small>Names in a style you pick, from ChatGPT, Gemini or Claude</small></span></button>' +
     '<button type="button" class="btn" data-m="filters"><span>⚙️ What to swipe<small>Girls or boys, which names, how popular</small></span></button>' +
-    '<button type="button" class="btn" data-m="share"><span>🔗 Share link<small>For ' + esc(who(other())) + ' or a second phone</small></span></button>' +
+    '<button type="button" class="btn" data-m="share"><span>🔗 Copy link<small>For ' + esc(who(other())) + ' or a second phone</small></span></button>' +
     '<button type="button" class="btn" data-m="people"><span>🙋 Your names<small>' + esc(who('a')) + ' and ' + esc(who('b')) + '</small></span></button>' +
     '<button type="button" class="btn" data-m="switch"><span>🔄 Swipe as ' + esc(who(other())) + '<small>If you’re sharing this phone</small></span></button>' +
     (lists.length ? '<button type="button" class="btn" data-m="lists"><span>🗂️ AI lists<small>' + plural(lists.length, 'list') + '. Rename or remove.</small></span></button>' : '') +

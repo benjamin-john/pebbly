@@ -279,7 +279,6 @@ function copyText(text) {
   return Promise.resolve(fallback());
 }
 function share(title, url) {
-  if (navigator.share) { navigator.share({ title: title, text: title, url: url }).catch(function () {}); return; }
   copyText(url).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : url); });
 }
 function when(ts) {
@@ -583,11 +582,11 @@ function render() {
       '<button type="button" class="icon-btn" data-act="hide-created" aria-label="Close">✕</button></div>' +
       '<p>Send this link to everyone' + (PebblyLock.key('doc', CODE) ? ', and tell them the password separately' : '') + '. Anyone with it can add expenses.</p>' +
       '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(CODE)) + '" aria-label="Bill link">' +
-      '<button type="button" class="btn primary small" data-act="share">Share</button></div></section>';
+      '<button type="button" class="btn primary small" data-act="share">Copy link</button></div></section>';
   }
   h += '<header class="titlebar"><h1>' + esc(S.title) + '</h1><p class="facts">' + ppl.length + (ppl.length === 1 ? ' person' : ' people') +
     ' · ' + Object.keys(S.expenses).length + (Object.keys(S.expenses).length === 1 ? ' expense' : ' expenses') + '</p>' +
-    '<div class="tools"><button type="button" class="btn small ghost" data-act="share">Share link</button>' +
+    '<div class="tools"><button type="button" class="btn small ghost" data-act="share">Copy link</button>' +
     '<button type="button" class="btn small" data-act="people">👥 People</button></div></header>';
 
   // Which one are you?

@@ -231,7 +231,6 @@ function copyText(text) {
   return Promise.resolve(fallback());
 }
 function shareLink(title, url) {
-  if (navigator.share) { navigator.share({ title: title, text: '🎁 ' + title + ': pick your name for Secret Santa', url: url }).catch(function () {}); return; }
   copyText(url).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : url); });
 }
 function fmtDate(d) {
@@ -518,10 +517,10 @@ function draw() {
     (S.justCreated && G.is_owner ? '<section class="card created"><h2>Your group is ready 🎉</h2><p style="margin-top:4px">Send this link to everyone' +
       (PebblyLock.key('santa', S.code) ? ', and tell them the password separately' : '') + '. Each person taps their own name.</p>' +
       '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Group link">' +
-      '<button type="button" class="btn small" data-act="share">Share</button></div></section>' : '') +
+      '<button type="button" class="btn small" data-act="share">Copy link</button></div></section>' : '') +
     '<header class="head"><h1>🎁 ' + esc(g.name) + '</h1>' + factsHtml('head', facts) +
       (g.note ? '<p class="note">' + esc(g.note) + '</p>' : '') +
-      (S.justCreated && G.is_owner ? '' : '<div class="row" style="margin-top:12px"><button type="button" class="btn small ghost" data-act="share" style="flex:none">Share link</button></div>') +
+      (S.justCreated && G.is_owner ? '' : '<div class="row" style="margin-top:12px"><button type="button" class="btn small ghost" data-act="share" style="flex:none">Copy link</button></div>') +
     '</header>' +
     meHtml() + (G.is_owner ? hostHtml() : '');
   window.scrollTo(0, y);

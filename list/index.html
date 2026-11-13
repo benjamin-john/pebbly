@@ -267,7 +267,6 @@ function copyText(text) {
   return Promise.resolve(fallback());
 }
 function share(title, url) {
-  if (navigator.share) { navigator.share({ title: title, text: title, url: url }).catch(function () {}); return; }
   copyText(url).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : url); });
 }
 
@@ -465,11 +464,11 @@ function render() {
       '<button type="button" class="icon-btn" data-act="hide-created" aria-label="Close">✕</button></div>' +
       '<p>Send this link to everyone' + (PebblyLock.key('doc', CODE) ? ', and tell them the password separately' : '') + '. Anyone with it can add and tick off items.</p>' +
       '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(CODE)) + '" aria-label="List link">' +
-      '<button type="button" class="btn primary small" data-act="share">Share</button></div></section>';
+      '<button type="button" class="btn primary small" data-act="share">Copy link</button></div></section>';
   }
   top += '<header class="titlebar"><h1><span class="em" aria-hidden="true">' + esc(S.emoji) + '</span>' + esc(S.title) + '</h1>' +
     (c.n ? '<div class="progress"><div class="bar" aria-hidden="true"><i style="width:' + Math.round(100 * c.d / c.n) + '%"></i></div><span class="cnt" id="count">' + c.d + ' of ' + c.n + ' done</span></div>' : '') +
-    '<div class="tools"><button type="button" class="btn small ghost" data-act="share">Share link</button>' +
+    '<div class="tools"><button type="button" class="btn small ghost" data-act="share">Copy link</button>' +
     '<button type="button" class="btn small" data-act="menu" aria-label="More options">⋯ More</button></div></header>' +
     '<p class="mebar">' + (me ? '<span>Ticking off as <b>' + esc(me) + '</b></span><button type="button" class="link" data-act="name">Change</button>' :
       '<span>Add your name so others see who ticked what.</span><button type="button" class="link" data-act="name">Add name</button>') + '</p>';

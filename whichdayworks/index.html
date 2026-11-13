@@ -878,7 +878,6 @@ function submitCreate(form) {
 
 function renderCreated(code, name) {
   var url = shareUrl(code);
-  var canShare = !!navigator.share;
   $app.innerHTML =
     previewBanner() +
     '<h1>Event created</h1>' +
@@ -889,7 +888,6 @@ function renderCreated(code, name) {
       '<div class="linkbox"><input type="text" id="shareUrl" readonly value="' + esc(url) + '" aria-label="Event link"></div>' +
       '<div class="row-btns">' +
         '<button class="btn primary" type="button" data-act="copy-new" data-url="' + esc(url) + '">Copy link</button>' +
-        (canShare ? '<button class="btn" type="button" data-act="share-new" data-url="' + esc(url) + '" data-name="' + esc(name) + '">Share</button>' : '') +
         '<a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="' + esc(url) + '">Open event</a>' +
       '</div>' +
     '</div>' +
@@ -1431,9 +1429,6 @@ $app.addEventListener('click', function (e) {
       break;
     case 'copy-new':
       copyText(t.dataset.url, document.getElementById('shareUrl')).then(function (ok) { toast(ok ? 'Link copied.' : 'Press and hold the link to copy it.'); });
-      break;
-    case 'share-new':
-      navigator.share({ title: t.dataset.name, text: 'Which day works for ' + t.dataset.name + '?', url: t.dataset.url }).catch(function () {});
       break;
     case 'pick-best':
       var start = t.dataset.start;

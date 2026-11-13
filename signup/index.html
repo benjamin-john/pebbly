@@ -205,7 +205,6 @@ function copyText(text) {
   return Promise.resolve(fallback());
 }
 function shareLink(title, url) {
-  if (navigator.share) { navigator.share({ title: title, text: title, url: url }).catch(function () {}); return; }
   copyText(url).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : url); });
 }
 
@@ -408,7 +407,7 @@ function renderSheet() {
     (S.justCreated && owner ? '<section class="card created"><h2>Your sheet is ready 🎉</h2><p style="margin-top:4px">Send this link to the group' +
       (PebblyLock.key('doc', S.code) ? ', and tell them the password separately' : '') + ':</p>' +
       '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Sheet link">' +
-      '<button type="button" class="btn small" data-act="share">Share</button></div></section>' : '') +
+      '<button type="button" class="btn small" data-act="share">Copy link</button></div></section>' : '') +
     (S.editing ? editorHtml() : viewHtml());
   showStatus();
   window.scrollTo(0, y);
@@ -424,7 +423,7 @@ function badge(taken, spots) {
 function viewHtml() {
   var s = S.s, me = pid(), owner = isOwner(), slots = slotList(), known = {};
   var html = '<header><h1>' + esc(s.title) + '</h1>' + (s.details ? '<p class="details">' + esc(s.details) + '</p>' : '') + '</header>' +
-    '<div class="tools"><button type="button" class="btn small ghost" data-act="share">Share link</button>' +
+    '<div class="tools"><button type="button" class="btn small ghost" data-act="share">Copy link</button>' +
     (owner ? '<button type="button" class="btn small ghost" data-act="summary">Copy summary</button>' : '') + '</div>';
   if (!slots.length) html += '<p class="card hint">Nothing to sign up for yet.' + (owner ? ' Tap “Edit sheet” below to add things.' : '') + '</p>';
   html += '<ul class="slots" id="slots">' + slots.map(function (sl) {

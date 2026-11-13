@@ -555,13 +555,13 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
         <h3>🖥 Display screen <small>(no controls)</small></h3>
         <p class="hint" style="margin:0 0 10px">For the laptop or projector: shows the QR code, questions and results, and follows the organizer. Nobody can change the quiz from it.</p>
         <div class="qrbox" id="lDispQr"><p class="empty">Making the link…</p></div>
-        <div class="row2"><button class="btn plain sm" type="button" data-lk="disp-copy">📋 Copy link</button><button class="btn plain sm" type="button" data-lk="disp-share">↗ Share</button></div>
+        <button class="btn plain sm" type="button" data-lk="disp-copy">📋 Copy link</button>
       </section>
       <section class="card lcard">
         <h3>🔒 Organizer link <small>(with controls)</small></h3>
         <p class="warn" style="margin:0 0 10px">Keep it private: anyone with this link can run the quiz. On a phone it opens the remote controls; on a laptop, the big-screen view with controls.</p>
         <div class="qrbox" id="lOrgQr"></div>
-        <div class="row2"><button class="btn plain sm" type="button" data-lk="org-copy">📋 Copy link</button><button class="btn plain sm" type="button" data-lk="org-share">↗ Share</button></div>
+        <button class="btn plain sm" type="button" data-lk="org-copy">📋 Copy link</button>
       </section>
     </div>
   </div>
@@ -1464,7 +1464,6 @@ dialog::backdrop{background:rgba(10,20,16,.55)}
     $('lDlg').showModal();
   }
   function shareOrCopy(url, title, share, what) {
-    if (share && navigator.share) { navigator.share({ title: title, url: url }).catch(function () {}); return; }
     copyText(url).then(function (ok) { toast(ok ? what + ' copied.' : 'Couldn’t copy on this device.'); });
   }
   $('lDlg').addEventListener('click', function (e) {
