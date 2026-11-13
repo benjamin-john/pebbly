@@ -1,0 +1,1757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script src="/theme.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F7A63">
+<meta name="description" content="A live map for your group, with waypoints and trails.">
+<title>Basecamp</title>
+<link rel="icon" type="image/png" href="/icons/favicon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/basecamp/maplibre/maplibre-gl.css">
+<style>
+:root{
+  color-scheme:light dark;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --field:#B4C2BC;
+  --brand:#2F7A63; --brand-ink:#FFFFFF; --brand-t:#E6F2ED;
+  --good:#23704A; --bad:#B8362F; --bad-t:#F8E1DF; --warn-t:#FBF0CC; --warn-line:#E5CB6B;
+  --rec:#D63B30;
+  --shadow:0 4px 14px rgba(20,42,34,.25);
+  --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme=light]){--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --good:#6CC48F; --bad:#F07A75; --bad-t:#3A2120; --warn-t:#3A3218; --warn-line:#6B5A22;
+    --rec:#F0645A; --shadow:0 4px 14px rgba(0,0,0,.55); color-scheme:dark; }
+}
+:root[data-theme=dark]{--bg:#141A18; --surface:#1D2522; --ink:#E3EBE8; --muted:#9AABA5; --line:#2C3833; --field:#3E4C46;
+    --brand:#6CC4A4; --brand-ink:#0F1F19; --brand-t:#1F3A31; --good:#6CC48F; --bad:#F07A75; --bad-t:#3A2120; --warn-t:#3A3218; --warn-line:#6B5A22;
+    --rec:#F0645A; --shadow:0 4px 14px rgba(0,0,0,.55); color-scheme:dark; }
+:root[data-theme=light]{color-scheme:light;}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.45 var(--body)}
+[hidden]{display:none !important}
+.wrap{max-width:620px;margin:0 auto;padding:12px 16px calc(48px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:var(--head);line-height:1.15;margin:0}
+h1{font-size:30px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+h2{font-size:20px;font-weight:800}
+p{margin:0}
+a{color:var(--brand)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.hint{color:var(--muted);font-size:14px}
+.lede{margin:8px 0 18px;font-size:17px;color:var(--muted);max-width:46ch}
+.err{color:var(--bad);font-weight:600;margin-top:10px;min-height:1.4em}
+.err:empty{min-height:0;margin:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 18px;border-radius:12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:600;font-size:16px;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;text-decoration:none}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;cursor:default;transform:none}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--brand-ink)}
+.btn.ghost{background:transparent;border:1.5px solid var(--brand);color:var(--brand)}
+.btn.danger{background:transparent;border:1.5px solid var(--bad);color:var(--bad)}
+.btn.small{min-height:44px;padding:0 14px;font-size:15px;border-radius:10px}
+.btn.wide{width:100%}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+.fld{display:block;margin-bottom:16px}
+.fld>span,.lbl{display:block;font-weight:600;margin-bottom:6px;font-size:15px}
+.fld small{display:block;color:var(--muted);margin-top:5px;font-size:13px}
+input[type=text],select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font-size:17px}
+textarea{min-height:80px;resize:vertical}
+.pl-opt{font-weight:400;color:var(--muted)}
+.state{text-align:center;padding:40px 8px}
+.state .e{font-size:48px;line-height:1;margin-bottom:10px}
+.state .lede{margin:8px auto 18px}
+.topnav{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 6px;font-size:15px;min-height:44px}
+.topnav a{display:inline-flex;align-items:center;min-height:44px;font-weight:600;text-decoration:none}
+.recent{margin-top:26px}
+.recent h2{margin-bottom:8px}
+.recent ul{list-style:none;padding:0;margin:0;background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.recent li+li{border-top:1px solid var(--line)}
+.recent a{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 16px;color:var(--ink);text-decoration:none}
+.recent a .t{flex:1;min-width:0;font-weight:600;overflow-wrap:anywhere}
+.tag{font-size:12px;font-weight:700;background:var(--brand-t);color:var(--brand);border-radius:999px;padding:2px 8px;white-space:nowrap}
+.colors{display:flex;flex-wrap:wrap;gap:8px}
+.colors label{position:relative}
+.colors input{position:absolute;opacity:0;pointer-events:none}
+.colors span{display:block;width:40px;height:40px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer}
+.colors input:checked + span{box-shadow:0 0 0 3px var(--ink)}
+.colors input:focus-visible + span{outline:3px solid var(--brand);outline-offset:3px}
+.how{margin:18px 0 0;padding:0 0 0 20px;color:var(--muted);font-size:15px}
+.how li{margin-bottom:6px}
+
+/* ---------- the map screen (fills the visible height, measured into --app-h) ---------- */
+body.in-map{height:100vh;height:var(--app-h,100vh);overflow:hidden;overscroll-behavior:none}
+body.in-map #app{height:100%}
+.mapview{position:relative;height:100%;display:flex;flex-direction:column}
+.mbar{flex:none;display:flex;align-items:center;gap:4px;padding:4px 6px;background:var(--surface);border-bottom:1px solid var(--line);z-index:3;min-height:56px}
+.mbar .back{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;color:var(--ink);text-decoration:none;font-size:24px}
+.mbar .ttl{flex:1;min-width:0}
+.mbar h1{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sync::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--good)}
+.sync.saving::before{background:#D9A520}
+.sync.offline{color:var(--bad)}
+.sync.offline::before{background:var(--bad)}
+.ibtn{flex:none;width:44px;height:44px;display:grid;place-items:center;border:0;border-radius:10px;background:none;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.ibtn svg{width:24px;height:24px}
+#map{position:relative;flex:1;min-height:0;background:#dfe6e2}
+.maplibregl-ctrl-attrib{font-size:11px}
+.maplibregl-ctrl-bottom-left{bottom:calc(76px + env(safe-area-inset-bottom));display:flex;flex-direction:column-reverse;align-items:flex-start}
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 6px 10px}
+
+/* layer switch, floating buttons, bottom bar */
+.layers{position:absolute;top:10px;left:10px;z-index:2;display:flex;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:3px;gap:2px}
+.layers button{min-height:40px;padding:0 12px;border:0;border-radius:9px;background:none;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer}
+.layers button[aria-pressed=true]{background:var(--brand);color:var(--brand-ink)}
+.fabs{position:absolute;top:10px;right:10px;z-index:2;display:flex;flex-direction:column;gap:10px}
+.fab{width:48px;height:48px;display:grid;place-items:center;border:0;border-radius:50%;background:var(--surface);color:var(--ink);box-shadow:var(--shadow);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;position:relative}
+.fab svg{width:26px;height:26px}
+.fab[aria-pressed=true]{background:var(--brand);color:var(--brand-ink)}
+.fab .n{position:absolute;bottom:2px;font:800 9px/1 var(--body);letter-spacing:.05em}
+#compass svg{transition:transform .15s linear}
+.mefab{position:absolute;right:10px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:2}
+.bbar{position:absolute;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:2;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;
+  background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:5px}
+.bbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;border:0;border-radius:12px;background:none;
+  font-weight:600;font-size:13px;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:2px}
+.bbar button:active{background:var(--brand-t)}
+.bbar svg{width:24px;height:24px}
+.bbar button.rec{background:var(--rec);color:#fff}
+.bbar button.rec .dotrec{animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.bbar button.rec .dotrec{animation:none}}
+.note{position:absolute;left:10px;right:10px;top:62px;z-index:2;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:10px 12px;font-size:14px;
+  display:flex;gap:10px;align-items:center}
+.note.warn{background:var(--warn-t);border:1px solid var(--warn-line)}
+.note .t{flex:1;min-width:0}
+.note .btn{flex:none}
+.notes{position:absolute;left:10px;right:68px;top:62px;z-index:2;display:grid;gap:8px}
+.notes .note{position:static}
+
+/* picking a spot */
+.cross{position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px 0 0 -22px;z-index:2;pointer-events:none}
+.cross::before,.cross::after{content:"";position:absolute;background:#D63B30;box-shadow:0 0 0 1.5px #fff}
+.cross::before{left:21px;top:0;width:2px;height:44px}
+.cross::after{top:21px;left:0;height:2px;width:44px}
+.pickbar{position:absolute;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:3;background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:12px}
+.pickbar p{font-weight:600;margin-bottom:10px;text-align:center}
+.pickbar .row{display:flex;gap:8px}
+.pickbar .row .btn{flex:1}
+
+/* markers */
+.pm{position:relative;width:64px;height:64px;pointer-events:auto;cursor:pointer}
+.pm .cone{position:absolute;inset:0;transition:transform .15s linear}
+.pm .dot{position:absolute;left:19px;top:19px;width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);
+  display:grid;place-items:center;color:#fff;font:800 12px/1 var(--body);text-shadow:0 1px 1px rgba(0,0,0,.35)}
+.pm.me .dot{width:30px;height:30px;left:17px;top:17px}
+.pm.stale .dot{filter:grayscale(.6);opacity:.7}
+.pm.stale .cone{display:none}
+.pm .lbl,.wp .lbl{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 12px/1.2 var(--body);color:#1F2A27;
+  background:rgba(255,255,255,.92);padding:2px 7px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.25);max-width:160px;overflow:hidden;text-overflow:ellipsis}
+.pm .lbl{top:50px}
+.pm .lbl small{font-weight:500;color:#5D6B66}
+.wp{position:relative;width:38px;height:44px;cursor:pointer}
+.wp .pin{position:absolute;left:3px;top:0;width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#fff;border:3px solid var(--c,#2F7A63);
+  box-shadow:0 2px 5px rgba(0,0,0,.35)}
+.wp .ic{position:absolute;left:0;top:3px;width:38px;text-align:center;font-size:17px;line-height:26px}
+.wp .lbl{top:44px;font-size:11px}
+.wp.pending .pin{border-style:dashed}
+
+/* sheets (bottom dialogs) */
+dialog.sheet{position:fixed;inset:auto 0 0 0;margin:0 auto;width:100%;max-width:620px;max-height:calc(var(--app-h,100vh) - 40px);padding:0;border:0;border-radius:20px 20px 0 0;
+  background:var(--surface);color:var(--ink);box-shadow:0 -10px 40px rgba(0,0,0,.3);overflow:auto;overscroll-behavior:contain}
+dialog.sheet::backdrop{background:rgba(10,20,16,.45)}
+.sheet .in{padding:8px 16px calc(18px + env(safe-area-inset-bottom))}
+.sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--line);margin:4px auto 10px}
+.shead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.shead h2{flex:1;margin:0;font-size:21px;overflow-wrap:anywhere}
+.shead .ibtn{background:var(--bg)}
+.list{list-style:none;margin:0 0 12px;padding:0;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.list li+li{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;padding:8px 12px;border:0;background:none;text-align:left;cursor:pointer;color:var(--ink)}
+.row:active{background:var(--brand-t)}
+.row .sw{flex:none;width:28px;height:28px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px var(--line);display:grid;place-items:center;color:#fff;font:800 12px/1 var(--body)}
+.row .em{flex:none;width:28px;text-align:center;font-size:22px}
+.row .tx{flex:1;min-width:0}
+.row .tx b{display:block;font-weight:600;overflow-wrap:anywhere}
+.row .tx small{display:block;color:var(--muted);font-size:13px}
+.row .far{flex:none;text-align:right;font-weight:700;font-size:15px;white-space:nowrap}
+.row .far small{display:block;font-weight:500;color:var(--muted);font-size:12px}
+.menu{display:grid;gap:8px;margin-bottom:12px}
+.menu .btn{justify-content:flex-start;width:100%;padding:10px 16px;text-align:left}
+.menu .btn small{display:block;font-weight:400;color:var(--muted);font-size:13px}
+.sec{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:14px 0 8px 4px}
+.toggle{display:flex;align-items:center;gap:12px;min-height:52px;padding:6px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer}
+.toggle .tx{flex:1}
+.toggle .tx small{display:block;color:var(--muted);font-size:13px}
+.toggle input{width:22px;height:22px;accent-color:var(--brand);flex:none}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:12px}
+.seg button{min-height:44px;border:0;border-radius:9px;background:none;font-weight:600;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.icons{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px;margin-bottom:16px}
+.icons label{position:relative}
+.icons input{position:absolute;opacity:0;pointer-events:none}
+.icons span{display:grid;place-items:center;height:46px;border:1px solid var(--line);border-radius:12px;font-size:22px;cursor:pointer}
+.icons input:checked + span{border:2px solid var(--brand);background:var(--brand-t)}
+.icons input:focus-visible + span{outline:3px solid var(--brand);outline-offset:2px}
+.btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.btns .btn{flex:1 1 auto}
+.big{font:800 26px/1.1 var(--head);margin:2px 0}
+.facts{color:var(--muted);font-size:14px;margin:4px 0 12px}
+.wnote{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 12px;background:var(--bg);border-radius:10px;padding:10px 12px}
+.bar{height:10px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;width:0;background:var(--brand);transition:width .2s}
+.checks{display:grid;gap:8px;margin-bottom:12px}
+
+/* pocket mode */
+.pocket{position:fixed;inset:0;z-index:50;background:#000;color:#555;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:0 24px calc(40px + env(safe-area-inset-bottom));
+  touch-action:none;user-select:none;-webkit-user-select:none}
+.pocket p{font-size:14px;margin-bottom:14px;text-align:center}
+.pocket .hold{position:relative;width:min(320px,100%);min-height:60px;border:1px solid #333;border-radius:30px;background:#0b0b0b;color:#777;font:600 16px var(--body);overflow:hidden}
+.pocket .hold i{position:absolute;left:0;top:0;bottom:0;width:0;background:#1d3a30}
+.pocket .hold span{position:relative}
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:var(--bg);
+  padding:10px 16px;border-radius:10px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:60;font-size:15px;font-weight:500}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){#toast{transition:none}}
+@media (max-width:370px){ .layers button{padding:0 9px;font-size:13px} .bbar button{font-size:12px} }
+</style>
+<script src="/lock.js"></script>
+<script src="/keepawake.js"></script>
+<script src="/nav.js"></script>
+</head>
+<body>
+<main id="app"><div class="wrap"><p class="hint">Loading…</p></div></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript><p class="wrap">This page needs JavaScript to work.</p></noscript>
+<script src="/basecamp/maplibre/maplibre-gl.js"></script>
+<script>
+(function () {
+'use strict';
+
+/* ================================================================== basics */
+var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
+var K_RECENT = 'pebbly_basecamp_recent', K_OWNERS = 'pebbly_basecamp_owners', K_ME = 'pebbly_basecamp_me', K_NAME = 'pebbly_basecamp_name',
+  K_UI = 'pebbly_basecamp_ui', K_QUEUE = 'pebbly_basecamp_queue', K_AREAS = 'pebbly_basecamp_areas';
+var SYNC_MS = 3000, STALE_MS = 2 * 60 * 1000;
+var COLORS = ['#E4572E', '#2E86DE', '#F4B400', '#8E44AD', '#16A085', '#E84393', '#6D4C41', '#00ACC1', '#7CB342', '#FF7043', '#3949AB', '#C0CA33'];
+var ICONS = ['📍', '🚙', '🦌', '🪜', '🏕️', '⛺', '🔥', '🏠', '🚻', '🍔', '🎡', '⭐', '🚩', '⚠️', '💧', '🩸', '🅿️', '🎯'];
+var $app = document.getElementById('app');
+function $(sel, root) { return (root || document).querySelector(sel); }
+function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function tidy(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
+function baseUrl() { return location.href.split('#')[0].split('?')[0]; }
+function uuid() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+  var b = crypto.getRandomValues(new Uint8Array(16)); b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+  var h = Array.prototype.map.call(b, function (x) { return (x + 256).toString(16).slice(1); }).join('');
+  return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+}
+var toastTimer, $toast = document.getElementById('toast');
+function toast(msg) {
+  $toast.textContent = msg; $toast.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { $toast.classList.remove('show'); }, 3200);
+}
+function copyText(text) {
+  function fallback() {
+    var el = document.createElement('textarea'); el.value = text; el.style.position = 'fixed'; el.style.opacity = '0';
+    document.body.appendChild(el); el.select(); var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) {}
+    document.body.removeChild(el); return ok;
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function () { return true; }, fallback);
+  return Promise.resolve(fallback());
+}
+function initial(name) { var c = tidy(name).charAt(0); return c ? c.toUpperCase() : '?'; }
+
+// distances: yards and miles
+function dist(a, b) {
+  var R = 6371000, r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
+  var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function bearing(a, b) {
+  var r = Math.PI / 180, y = Math.sin((b.lng - a.lng) * r) * Math.cos(b.lat * r),
+    x = Math.cos(a.lat * r) * Math.sin(b.lat * r) - Math.sin(a.lat * r) * Math.cos(b.lat * r) * Math.cos((b.lng - a.lng) * r);
+  return (Math.atan2(y, x) / r + 360) % 360;
+}
+function dir8(deg) { return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'][Math.round(deg / 45) % 8]; }
+function fmtDist(m) {
+  var yd = m * 1.09361;
+  if (yd < 1000) return (yd < 100 ? Math.round(yd) : Math.round(yd / 5) * 5) + ' yd';
+  var mi = m / 1609.344;
+  return (mi < 10 ? mi.toFixed(1) : Math.round(mi)) + ' mi';
+}
+function fmtFeet(m) { return Math.round(m * 3.28084) + ' ft'; }
+function fmtAgo(ms) {
+  if (ms < 15000) return 'now';
+  if (ms < 60000) return Math.round(ms / 1000) + ' sec ago';
+  if (ms < 3600000) return Math.round(ms / 60000) + ' min ago';
+  if (ms < 86400000) return Math.round(ms / 3600000) + ' hr ago';
+  var d = Math.round(ms / 86400000); return d === 1 ? 'yesterday' : d + ' days ago';
+}
+function fmtWhen(t) {
+  var d = new Date(t);
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+function fmtMB(bytes) { return bytes < 1e6 ? Math.max(1, Math.round(bytes / 1e3)) + ' KB' : (bytes / 1e6 < 10 ? (bytes / 1e6).toFixed(1) : Math.round(bytes / 1e6)) + ' MB'; }
+
+/* ================================================================== database calls */
+function raw(fn, args) {
+  var headers = { 'Content-Type': 'application/json', apikey: KEY_ };
+  if (/^eyJ/.test(KEY_)) headers.Authorization = 'Bearer ' + KEY_;
+  var ctl = window.AbortController ? new AbortController() : null, t = ctl ? setTimeout(function () { ctl.abort(); }, 20000) : 0;
+  return fetch(URL_ + '/rest/v1/rpc/' + fn, { method: 'POST', headers: headers, body: JSON.stringify(args), signal: ctl ? ctl.signal : undefined })
+    .then(function (res) {
+      clearTimeout(t);
+      return res.text().then(function (txt) {
+        var d = null; try { d = txt ? JSON.parse(txt) : null; } catch (e) {}
+        if (!res.ok) { var err = new Error((d && (d.message || d.error_description)) || ('http_' + res.status)); err.status = res.status; throw err; }
+        return d;
+      });
+    }, function () { clearTimeout(t); throw new Error('network'); });
+}
+function rpc(fn, args) { return PebblyLock.call('basecamp', fn, args, raw); }
+var MSG = {
+  network: 'Couldn’t reach the server. Check your signal and try again.',
+  map_not_found: 'This map doesn’t exist anymore. It may have been deleted.',
+  not_member: 'You’re not on this map anymore. Join it again.',
+  not_owner: 'Only the host can do that.',
+  not_allowed: 'Only the person who added it (or the host) can change that.',
+  too_many_people: 'This map already has 60 people on it.',
+  too_many_waypoints: 'This map has 1,000 waypoints already. Delete some first.',
+  invalid_name: 'Give the map a name.',
+  invalid_member_name: 'Type your name first.'
+};
+function friendly(e) {
+  var m = (e && e.message) || e || '';
+  if (/function|schema cache|http_404/i.test(m)) return 'Basecamp isn’t set up in the database yet. Try again in a few minutes.';
+  return PebblyLock.message(m) || MSG[m] || 'Something went wrong. Please try again.';
+}
+function isNet(e) { return !!e && (e.message === 'network' || e.status >= 500); }
+
+/* ================================================================== this phone */
+function recent() { var r = load(K_RECENT, []); return Array.isArray(r) ? r : []; }
+function remember(code, name) {
+  var list = recent().filter(function (r) { return r.code !== code; });
+  list.unshift({ code: code, name: name, at: Date.now() }); store(K_RECENT, list.slice(0, 20));
+}
+function forget(code) { store(K_RECENT, recent().filter(function (r) { return r.code !== code; })); }
+function owner(code) { return (load(K_OWNERS, {}) || {})[code] || null; }
+function setOwner(code, tok) { var o = load(K_OWNERS, {}) || {}; if (tok) o[code] = tok; else delete o[code]; store(K_OWNERS, o); }
+function meKey(code) { return (load(K_ME, {}) || {})[code] || null; }
+function setMe(code, v) { var o = load(K_ME, {}) || {}; if (v) o[code] = v; else delete o[code]; store(K_ME, o); }
+function ui() { var u = load(K_UI, {}) || {}; u.views = u.views || {}; u.sharing = u.sharing || {}; return u; }
+function setUi(fn) { var u = ui(); fn(u); store(K_UI, u); }
+function queue(code) { var q = (load(K_QUEUE, {}) || {})[code] || {}; q.pts = q.pts || []; q.ops = q.ops || []; return q; }
+function setQueue(code, q) { var all = load(K_QUEUE, {}) || {}; if (q.pts.length || q.ops.length) all[code] = q; else delete all[code]; store(K_QUEUE, all); }
+
+/* ================================================================== map tiles, offline copies
+   Every map request goes through the "bc://" protocol below, so tiles can come from this phone:
+   - "pebbly-maps":      downloaded areas (kept until deleted) and the map style files
+   - "pebbly-maps-seen": tiles looked at recently (the newest ~5,000), so places you've looked at work offline too
+   Tiles are saved under fixed names (https://bc.tiles/<layer>/z/x/y) so a new map version doesn't lose them. */
+var DL = 'pebbly-maps', SEEN = 'pebbly-maps-seen', TKEY = 'https://bc.tiles/';
+var OFM_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
+var USGS = 'https://basemap.nationalmap.gov/arcgis/rest/services/';
+var LAYERS = {
+  map:  { label: 'Map', vector: true, max: 14, kb: 45 },
+  sat:  { label: 'Satellite', url: USGS + 'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', max: 19, kb: 24, attr: 'Imagery: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>' },
+  topo: { label: 'Topo', url: USGS + 'USGSTopo/MapServer/tile/{z}/{y}/{x}', max: 16, kb: 20, attr: 'Topo: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>' }
+};
+var TPL = {};                        // vector map: the real tile address of each source ("m~<source>")
+var seenPuts = 0, fromPhone = 0;
+function hasCaches() { return 'caches' in window; }
+function fetchT(url, ms, signal) {
+  var ctl = new AbortController(), t = setTimeout(function () { ctl.abort(); }, ms);
+  if (signal) signal.addEventListener('abort', function () { ctl.abort(); });
+  return fetch(url, { signal: ctl.signal, mode: 'cors', credentials: 'omit' }).then(function (r) { clearTimeout(t); return r; }, function (e) { clearTimeout(t); throw e; });
+}
+function cacheGet(key) {
+  if (!hasCaches()) return Promise.resolve(null);
+  return caches.match(key).then(function (r) { return r || null; }, function () { return null; });
+}
+function cachePut(name, key, buf, type) {
+  if (!hasCaches()) return Promise.resolve();
+  return caches.open(name).then(function (c) { return c.put(key, new Response(buf, { headers: { 'Content-Type': type || 'application/octet-stream' } })); }).catch(function () {});
+}
+function trimSeen() {
+  if (!hasCaches() || ++seenPuts % 200) return;
+  caches.open(SEEN).then(function (c) { return c.keys().then(function (keys) {
+    if (keys.length > 5000) return Promise.all(keys.slice(0, keys.length - 4000).map(function (k) { return c.delete(k); }));
+  }); }).catch(function () {});
+}
+function tileUrl(layer, z, x, y) {
+  var tpl = layer.indexOf('m~') === 0 ? TPL[layer.slice(2)] : LAYERS[layer] && LAYERS[layer].url;
+  if (!tpl) return null;
+  return tpl.replace('{z}', z).replace('{x}', x).replace('{y}', y);
+}
+function tileKey(layer, z, x, y) { return TKEY + layer + '/' + z + '/' + x + '/' + y; }
+// One tile as an ArrayBuffer: this phone's copy first, then the internet (saved for later).
+function getTile(layer, z, x, y, signal, noNet) {
+  var key = tileKey(layer, z, x, y);
+  return cacheGet(key).then(function (hit) {
+    if (hit) { fromPhone++; return hit.arrayBuffer(); }
+    if (noNet) return null;
+    var url = tileUrl(layer, z, x, y); if (!url) return null;
+    return fetchT(url, 12000, signal).then(function (r) {
+      if (r.status === 404 || r.status === 204) return layer.indexOf('m~') === 0 ? new ArrayBuffer(0) : null;   // no map there
+      if (!r.ok || /html|json/.test(r.headers.get('content-type') || '')) return null;
+      return r.arrayBuffer().then(function (buf) {
+        cachePut(SEEN, key, buf.slice(0), r.headers.get('content-type')); trimSeen();
+        return buf;
+      });
+    }, function () { return null; });
+  });
+}
+// A photo tile that isn't available: cut it out of a bigger one this phone has (blurrier, but better than nothing).
+function fromParent(layer, z, x, y, signal) {
+  var d = 1;
+  function next() {
+    if (d > 6 || z - d < 0) return Promise.resolve(null);
+    var pz = z - d, px = x >> d, py = y >> d, dd = d; d++;
+    return getTile(layer, pz, px, py, signal, dd > 2).then(function (buf) {
+      if (!buf || !buf.byteLength) return next();
+      var n = 1 << dd, size = 256 / n, sx = (x - (px << dd)) * size, sy = (y - (py << dd)) * size;
+      return createImageBitmap(new Blob([buf])).then(function (img) {
+        var c = document.createElement('canvas'); c.width = 256; c.height = 256;
+        var g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+        g.drawImage(img, sx * img.width / 256, sy * img.height / 256, size * img.width / 256, size * img.height / 256, 0, 0, 256, 256);
+        return new Promise(function (res) { c.toBlob(function (b) { res(b ? b.arrayBuffer() : null); }, 'image/jpeg', 0.85); });
+      }).catch(function () { return next(); });
+    });
+  }
+  return next();
+}
+// Style files, glyphs, sprites: the internet first (kept up to date), this phone's copy when offline.
+function getRes(url, signal) {
+  return fetchT(url, 7000, signal).then(function (r) {
+    if (!r.ok) throw new Error('http_' + r.status);
+    return r.arrayBuffer().then(function (buf) { cachePut(DL, url, buf.slice(0), r.headers.get('content-type')); return buf; });
+  }).catch(function (e) {
+    return cacheGet(url).then(function (hit) { if (hit) return hit.arrayBuffer(); throw e; });
+  });
+}
+function decode(buf, type) {
+  if (type === 'json') return JSON.parse(new TextDecoder().decode(buf));
+  if (type === 'string') return new TextDecoder().decode(buf);
+  return buf;
+}
+var protocolOn = false;
+function addProtocol() {
+  if (protocolOn) return; protocolOn = true;
+  maplibregl.addProtocol('bc', function (params, abort) {
+    var u = params.url, signal = abort && abort.signal, m = u.match(/^bc:\/\/t\/([^/]+)\/(\d+)\/(\d+)\/(\d+)/);
+    if (m) {
+      var layer = m[1], z = +m[2], x = +m[3], y = +m[4];
+      return getTile(layer, z, x, y, signal).then(function (buf) {
+        if (buf) return buf;
+        if (layer.indexOf('m~') !== 0) return fromParent(layer, z, x, y, signal);
+        return null;
+      }).then(function (buf) {
+        if (!buf) throw new Error('no tile');
+        return { data: buf };
+      });
+    }
+    var real = u.replace(/^bc:\/\/r\//, '');
+    return getRes(real, signal).then(function (buf) { return { data: decode(buf, params.type) }; });
+  });
+}
+function rasterStyle(id) {
+  var L = LAYERS[id];
+  return { version: 8, sources: { base: { type: 'raster', tiles: ['bc://t/' + id + '/{z}/{x}/{y}'], tileSize: 256, maxzoom: L.max, attribution: L.attr } },
+    layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#dfe6e2' } }, { id: 'base', type: 'raster', source: 'base' }] };
+}
+function absUrl(u, base) { try { return new URL(u, base).href; } catch (e) { return u; } }
+// The OpenFreeMap style, with every address sent through bc:// (sources' tile lists come from their TileJSON).
+function vectorStyle() {
+  return getRes(OFM_STYLE).then(function (buf) {
+    var st = decode(buf, 'json');
+    var srcs = Object.keys(st.sources || {});
+    return Promise.all(srcs.map(function (name) {
+      var s = st.sources[name];
+      if (s.type !== 'vector' && s.type !== 'raster') return null;
+      var tj = s.url ? getRes(absUrl(s.url, OFM_STYLE)).then(function (b) { return decode(b, 'json'); }) : Promise.resolve(s);
+      return tj.then(function (j) {
+        if (!j.tiles || !j.tiles.length) return;
+        TPL[name] = absUrl(j.tiles[0], s.url ? absUrl(s.url, OFM_STYLE) : OFM_STYLE);
+        s.tiles = ['bc://t/m~' + name + '/{z}/{x}/{y}'];
+        ['minzoom', 'maxzoom', 'attribution', 'bounds', 'scheme'].forEach(function (k) { if (j[k] != null && s[k] == null) s[k] = j[k]; });
+        delete s.url;
+      });
+    })).then(function () {
+      if (st.glyphs) st.glyphs = 'bc://r/' + absUrl(st.glyphs, OFM_STYLE).replace(/%7B/g, '{').replace(/%7D/g, '}');
+      if (typeof st.sprite === 'string') st.sprite = 'bc://r/' + absUrl(st.sprite, OFM_STYLE);
+      else if (Array.isArray(st.sprite)) st.sprite.forEach(function (sp) { sp.url = 'bc://r/' + absUrl(sp.url, OFM_STYLE); });
+      return st;
+    });
+  });
+}
+function styleFor(id) { return id === 'map' ? vectorStyle() : Promise.resolve(rasterStyle(id)); }
+
+// ---- offline areas
+function lon2x(lng, z) { return Math.floor((lng + 180) / 360 * Math.pow(2, z)); }
+function lat2y(lat, z) { var r = lat * Math.PI / 180; return Math.floor((1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * Math.pow(2, z)); }
+function areaTiles(b, minz, maxz, each) {
+  var n = 0;
+  for (var z = minz; z <= maxz; z++) {
+    var n2 = Math.pow(2, z) - 1;
+    var x0 = Math.max(0, lon2x(b[0], z)), x1 = Math.min(n2, lon2x(b[2], z)), y0 = Math.max(0, lat2y(b[3], z)), y1 = Math.min(n2, lat2y(b[1], z));
+    for (var x = x0; x <= x1; x++) for (var y = y0; y <= y1; y++) { n++; if (each) each(z, x, y); }
+  }
+  return n;
+}
+var DETAIL = { normal: { sat: 17, topo: 15, map: 14 }, high: { sat: 18, topo: 16, map: 14 }, max: { sat: 19, topo: 16, map: 14 } };
+var MINZ = { sat: 10, topo: 10, map: 6 };
+function areaPlan(b, layers, detail) {
+  var plan = [], total = 0, bytes = 0;
+  layers.forEach(function (id) {
+    var maxz = DETAIL[detail][id], n = areaTiles(b, MINZ[id], maxz);
+    plan.push({ id: id, minz: MINZ[id], maxz: maxz, n: n }); total += n; bytes += n * LAYERS[id].kb * 1000;
+  });
+  return { layers: plan, tiles: total, bytes: bytes };
+}
+function areas() { var a = load(K_AREAS, []); return Array.isArray(a) ? a : []; }
+function layerKeyId(id) { return id === 'map' ? 'm~' + (TPL.openmaptiles ? 'openmaptiles' : Object.keys(TPL)[0] || 'openmaptiles') : id; }
+// Download every tile of an area (skipping ones already saved). onProgress(done, total, bytes). Returns {done, bytes, failed}.
+function downloadArea(area, onProgress, signal) {
+  var jobs = [];
+  area.layers.forEach(function (l) { areaTiles(area.bounds, l.minz, l.maxz, function (z, x, y) { jobs.push([l.key, z, x, y]); }); });
+  var i = 0, done = 0, bytes = 0, failed = 0, total = jobs.length;
+  return caches.open(DL).then(function (c) {
+    function worker() {
+      if (signal.aborted || i >= jobs.length) return Promise.resolve();
+      var j = jobs[i++], key = tileKey(j[0], j[1], j[2], j[3]);
+      return c.match(key).then(function (hit) {
+        if (hit) return hit.blob().then(function (b) { bytes += b.size; });
+        return caches.match(key).then(function (seen) {             // already looked at: copy it over
+          if (seen) return seen.arrayBuffer().then(function (buf) { bytes += buf.byteLength; return c.put(key, new Response(buf)); });
+          var url = tileUrl(j[0], j[1], j[2], j[3]);
+          return fetchT(url, 20000, signal).then(function (r) {
+            if (r.status === 404 || r.status === 204) return c.put(key, new Response(new ArrayBuffer(0)));
+            if (!r.ok) throw new Error('http');
+            return r.arrayBuffer().then(function (buf) { bytes += buf.byteLength; return c.put(key, new Response(buf, { headers: { 'Content-Type': r.headers.get('content-type') || '' } })); });
+          });
+        });
+      }).catch(function () { failed++; }).then(function () { done++; onProgress(done, total, bytes); return worker(); });
+    }
+    var ws = []; for (var k = 0; k < 6; k++) ws.push(worker());
+    return Promise.all(ws);
+  }).then(function () { return { done: done, total: total, bytes: bytes, failed: failed }; });
+}
+// Map labels and icons for offline use (the vector map needs them).
+function saveMapExtras() {
+  return getRes(OFM_STYLE).then(function (buf) {
+    var st = decode(buf, 'json'), fonts = {}, jobs = [];
+    (st.layers || []).forEach(function (l) {
+      var f = l.layout && l.layout['text-font'];
+      if (Array.isArray(f) && f.every(function (x) { return typeof x === 'string'; })) fonts[f.join(',')] = true;
+    });
+    if (st.glyphs) Object.keys(fonts).forEach(function (f) {
+      ['0-255', '256-511', '8192-8447'].forEach(function (r) {
+        jobs.push(getRes(absUrl(st.glyphs, OFM_STYLE).replace(/%7B/g, '{').replace(/%7D/g, '}').replace('{fontstack}', encodeURIComponent(f)).replace('{range}', r)).catch(function () {}));
+      });
+    });
+    var sp = typeof st.sprite === 'string' ? [st.sprite] : Array.isArray(st.sprite) ? st.sprite.map(function (s) { return s.url; }) : [];
+    sp.forEach(function (u) { u = absUrl(u, OFM_STYLE); ['.json', '.png', '@2x.json', '@2x.png'].forEach(function (x) { jobs.push(getRes(u + x).catch(function () {})); }); });
+    return Promise.all(jobs);
+  }).catch(function () {});
+}
+function deleteArea(id) {
+  var all = areas(), a = all.filter(function (x) { return x.id === id; })[0], rest = all.filter(function (x) { return x.id !== id; });
+  store(K_AREAS, rest);
+  if (!a || !hasCaches()) return Promise.resolve();
+  var keep = {};
+  rest.forEach(function (o) { o.layers.forEach(function (l) { areaTiles(o.bounds, l.minz, l.maxz, function (z, x, y) { keep[tileKey(l.key, z, x, y)] = 1; }); }); });
+  return caches.open(DL).then(function (c) {
+    var dels = [];
+    a.layers.forEach(function (l) { areaTiles(a.bounds, l.minz, l.maxz, function (z, x, y) { var k = tileKey(l.key, z, x, y); if (!keep[k]) dels.push(k); }); });
+    var i = 0;
+    function step() { var chunk = dels.slice(i, i + 200); i += 200; if (!chunk.length) return; return Promise.all(chunk.map(function (k) { return c.delete(k); })).then(step); }
+    return step();
+  });
+}
+
+/* ================================================================== app state */
+var CODE = '', S = null, ME = null, MAP = null, timers = [], screen = '';
+// S: { session, isOwner, rev, since, members: [], waypoints: [], trails: [], pts: { trailId: [[id, lat, lng, t]] }, offset }
+var FIX = null;          // this phone's latest GPS fix { lat, lng, acc, speed, heading, t }
+var COMPASS = null;      // { deg, t }
+var REC = null;          // recording a trail: { id, last: {lat,lng}, dist, n }
+var FOLLOW = false, MODE = 'north', watchId = null, geoErr = null, lastSent = null, offSent = false, syncing = false, syncAgain = false,
+  status = 'live', pending = {}, recStoppedByLeave = false, offlineView = false, markers = { p: {}, w: {} }, shownLayer = '';
+
+function freshUi() { return ui(); }
+function sharing() { var s = ui().sharing[CODE]; return s !== false; }
+function srvNow() { return Date.now() + ((S && S.offset) || 0); }
+
+/* ================================================================== routes */
+function route() {
+  stopMap();
+  var q = new URLSearchParams(location.search), code = (q.get('m') || '').trim().toLowerCase();
+  if (!code) { renderHome(); return; }
+  var tok = q.get('o');
+  if (tok) {
+    setOwner(code, tok.trim()); q.delete('o');
+    try { history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q.toString() : '')); } catch (e) {}
+  }
+  openSession(code);
+}
+function go(code) { history.pushState(null, '', baseUrl() + (code ? '?m=' + code : '')); route(); }
+window.addEventListener('popstate', route);
+
+function pageMode(map) {
+  document.body.classList.toggle('in-map', !!map);
+  if (window.keepAwake) keepAwake(!!map);
+}
+
+/* ------------------------------------------------------------------ home */
+function renderHome() {
+  screen = 'home'; CODE = ''; pageMode(false);
+  document.title = 'Basecamp';
+  var list = recent(), owners = load(K_OWNERS, {}) || {};
+  $app.innerHTML = '<div class="wrap">' +
+    '<h1 style="margin-top:8px">⛺ Basecamp</h1>' +
+    '<p class="lede">A live map for your group: see where everyone is, drop waypoints, and record trails. Great for hunting, camping or a day at the fair.</p>' +
+    '<form id="createForm" class="card" novalidate autocomplete="off">' +
+      '<label class="fld"><span>Name of the map</span><input type="text" name="name" maxlength="60" placeholder="Deer camp 2026"></label>' +
+      '<label class="fld"><span>Your name</span><input type="text" name="who" maxlength="30" value="' + esc(load(K_NAME, '')) + '" placeholder="Ben"></label>' +
+      PebblyLock.fieldHtml('map') +
+      '<button class="btn primary wide" type="submit">Start a map</button>' +
+      '<p class="err" id="formErr" role="alert"></p>' +
+    '</form>' +
+    '<ol class="how"><li>Start a map and send the link to your group.</li>' +
+      '<li>Everyone who opens it shows up on the map while Basecamp is open on their screen.</li>' +
+      '<li>Download the area before you go, so the map works with no signal.</li></ol>' +
+    (list.length ? '<section class="recent"><h2>Your maps</h2><ul>' + list.map(function (r) {
+      return '<li><a href="?m=' + esc(r.code) + '"><span aria-hidden="true">🗺️</span><span class="t">' + esc(r.name || 'Map') + '</span>' +
+        (owners[r.code] ? '<span class="tag">host</span>' : '') + '</a></li>';
+    }).join('') + '</ul></section>' : '') +
+    '</div>';
+  $('#createForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var f = ev.target.elements, err = $('#formErr'), btn = ev.target.querySelector('[type=submit]');
+    var name = tidy(f.name.value), who = tidy(f.who.value);
+    err.textContent = '';
+    if (!name) { err.textContent = 'Give the map a name, like “Deer camp 2026”.'; f.name.focus(); return; }
+    if (!who) { err.textContent = 'Type your name so others know which dot is you.'; f.who.focus(); return; }
+    store(K_NAME, who);
+    btn.disabled = true; btn.textContent = 'Starting…';
+    raw('bc_create', { p_name: name, p_member_name: who, p_color: null }).then(function (r) {
+      setOwner(r.code, r.owner_token); setMe(r.code, { id: r.member_id, key: r.member_key }); remember(r.code, name);
+      return PebblyLock.afterCreate('basecamp', r.code, r.owner_token, f.lockpw ? f.lockpw.value : '', raw).then(function (lockErr) {
+        go(r.code);
+        setTimeout(function () { toast(lockErr || 'Map started. Tap Share in ☰ More to send the link.'); }, 300);
+      });
+    }, function (e) { btn.disabled = false; btn.textContent = 'Start a map'; err.textContent = friendly(e); });
+  });
+}
+
+/* ------------------------------------------------------------------ open a map */
+function openSession(code) {
+  CODE = code; screen = 'loading'; pageMode(false);
+  $app.innerHTML = '<div class="wrap"><div class="state"><p class="hint">Loading…</p></div></div>';
+  ME = meKey(code);
+  S = null; pending = {}; lastSent = null; offSent = false; offlineView = false;
+  first();
+  function first() {
+    syncCall(true).then(function (r) {
+      if (CODE !== code) return;
+      if (!r) { forget(code); notFound(); return; }
+      if (!ME) { renderJoin(); return; }
+      showMap();
+    }, function (e) {
+      if (CODE !== code) return;
+      if (e.message === 'password_required') {
+        var tok = owner(code);
+        if (tok) { PebblyLock.ownerKey('basecamp', code, tok, raw).then(function (ok) { if (ok) first(); else gate(e); }); return; }
+        gate(e); return;
+      }
+      if (isNet(e)) {
+        return loadSnapshot(code).then(function (snap) {
+          if (snap && ME) { S = snap; offlineView = true; showMap(); setStatus('offline'); return; }
+          errorScreen(e);
+        });
+      }
+      errorScreen(e);
+    });
+  }
+  function gate(e) {
+    $app.innerHTML = '<div class="wrap" id="gate"></div>';
+    PebblyLock.handle(e, { app: 'basecamp', code: code, owner: null, raw: raw, el: $('#gate'), what: 'map', retry: first });
+  }
+}
+function notFound() {
+  screen = 'gone'; pageMode(false); document.title = 'Not found | Basecamp';
+  $app.innerHTML = '<div class="wrap"><nav class="topnav"><a href="' + esc(baseUrl()) + '">⛺ Basecamp</a></nav>' +
+    '<div class="state"><div class="e" aria-hidden="true">🔍</div><h1>Map not found</h1>' +
+    '<p class="lede">That link doesn’t match a map. It may have been deleted, or part of the link is missing.</p>' +
+    '<a class="btn primary" href="' + esc(baseUrl()) + '">Start a new map</a></div></div>';
+}
+function errorScreen(e) {
+  screen = 'error'; pageMode(false);
+  $app.innerHTML = '<div class="wrap"><div class="state"><div class="e" aria-hidden="true">📶</div><h1>Couldn’t open this map</h1><p class="lede">' + esc(friendly(e)) + '</p>' +
+    '<button type="button" class="btn primary" id="retry">Try again</button></div></div>';
+  $('#retry').onclick = route;
+}
+
+/* ------------------------------------------------------------------ join */
+function renderJoin(note) {
+  screen = 'join'; pageMode(false);
+  var used = (S.members || []).map(function (m) { return m.color; }), free = COLORS.filter(function (c) { return used.indexOf(c) < 0; })[0] || COLORS[0];
+  document.title = S.session.name + ' | Basecamp';
+  $app.innerHTML = '<div class="wrap"><nav class="topnav"><a href="' + esc(baseUrl()) + '">⛺ Basecamp</a></nav>' +
+    '<h1>' + esc(S.session.name) + '</h1>' +
+    '<p class="lede">' + (note ? esc(note) + ' ' : '') + 'Join this map to see where everyone is and share where you are.</p>' +
+    '<form id="joinForm" class="card" novalidate autocomplete="off">' +
+      '<label class="fld"><span>Your name</span><input type="text" name="who" maxlength="30" value="' + esc(load(K_NAME, '')) + '"></label>' +
+      '<div class="fld"><span class="lbl">Your color</span><div class="colors">' + COLORS.map(function (c) {
+        return '<label><input type="radio" name="color" value="' + c + '"' + (c === free ? ' checked' : '') + ' aria-label="Color ' + c + '"><span style="background:' + c + '"></span></label>';
+      }).join('') + '</div></div>' +
+      '<p class="hint" style="margin-bottom:14px">Your location is shared with the people on this map only while Basecamp is open on your screen. You can turn it off any time.</p>' +
+      '<button class="btn primary wide" type="submit">Join map</button><p class="err" id="joinErr" role="alert"></p></form>' +
+    '<p class="hint">' + (S.members.length ? S.members.length + (S.members.length === 1 ? ' person is' : ' people are') + ' on this map.' : '') + '</p></div>';
+  $('#joinForm').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var f = ev.target.elements, err = $('#joinErr'), btn = ev.target.querySelector('[type=submit]'), who = tidy(f.who.value);
+    if (!who) { err.textContent = 'Type your name so others know which dot is you.'; f.who.focus(); return; }
+    store(K_NAME, who); btn.disabled = true; err.textContent = '';
+    askCompass();
+    rpc('bc_join', { p_code: CODE, p_name: who, p_color: f.color.value }).then(function (r) {
+      ME = { id: r.member_id, key: r.member_key }; setMe(CODE, ME);
+      setUi(function (u) { u.sharing[CODE] = true; });
+      S.rev = -1;
+      return syncCall(true).then(showMap);
+    }).catch(function (e) { btn.disabled = false; err.textContent = friendly(e); });
+  });
+}
+
+/* ================================================================== syncing */
+function posToSend() {
+  if (!sharing()) { if (offSent) return null; return { off: true }; }
+  if (!FIX) return null;
+  var h = headingNow(), now = Date.now(), turned = lastSent && Math.abs(angleDiff(lastSent.heading, h)) >= 12;
+  if (lastSent && now - lastSent.at < 20000 && !turned && (lastSent.t === FIX.t || dist(lastSent, FIX) < 2)) return null;
+  var p = { lat: +FIX.lat.toFixed(7), lng: +FIX.lng.toFixed(7), acc: Math.round(FIX.acc), t: FIX.t };
+  if (h != null) p.heading = Math.round(h) % 360;
+  if (FIX.speed != null && FIX.speed >= 0) p.speed = Math.round(FIX.speed * 10) / 10;
+  return p;
+}
+function angleDiff(a, b) { if (a == null && b == null) return 0; if (a == null || b == null) return 180; var d = ((b - a) % 360 + 540) % 360 - 180; return d; }
+
+// One round trip: send queued changes, this phone's location and trail points; get everything new.
+function syncCall(firstTime) {
+  if (syncing) { syncAgain = true; return Promise.resolve(S ? true : null); }
+  syncing = true;
+  var code = CODE, q = queue(code);
+  return runOps(code).then(function () {
+    q = queue(code);
+    var pos = ME && !firstTime ? posToSend() : null, pts = ME ? q.pts.slice(0, 1000) : [];
+    var args = { p_code: code, p_member: ME ? ME.key : null, p_owner_token: owner(code), p_pos: pos,
+      p_points: pts.length ? pts : null, p_rev: S && S.rev != null ? S.rev : -1, p_since: S ? S.since : 0 };
+    return rpc('bc_sync', args).then(function (r) {
+      syncing = false;
+      if (CODE !== code) return null;
+      if (!r) { S = null; return null; }
+      if (pos) { if (pos.off) offSent = true; else { lastSent = { lat: pos.lat, lng: pos.lng, heading: pos.heading, t: pos.t, at: Date.now() }; offSent = false; } }
+      if (pts.length) { var q2 = queue(code); q2.pts = q2.pts.slice(pts.length); setQueue(code, q2); }
+      applySync(r);
+      offlineView = false;
+      setStatus(queue(code).pts.length || queue(code).ops.length ? 'saving' : 'live');
+      if (r.more || syncAgain) { syncAgain = false; setTimeout(function () { if (CODE === code) syncCall(); }, 50); }
+      return true;
+    });
+  }).catch(function (e) {
+    syncing = false;
+    if (isNet(e)) setStatus('offline');
+    throw e;
+  });
+}
+function applySync(r) {
+  var first = !S || !S.session;
+  if (first) S = { rev: -1, since: 0, members: [], waypoints: [], trails: [], pts: {} };
+  S.session = r.session; S.isOwner = !!r.is_owner; S.members = r.members || []; S.offset = (r.now || Date.now()) - Date.now();
+  if (r.waypoints) {
+    S.waypoints = r.waypoints;
+    Object.keys(pending).forEach(function (id) { if (pending[id].sent) delete pending[id]; });
+  }
+  if (r.trails) {
+    S.trails = r.trails;
+    var keep = {}; S.trails.forEach(function (t) { keep[t.id] = 1; });
+    Object.keys(S.pts).forEach(function (id) { if (!keep[id]) delete S.pts[id]; });
+  }
+  if (r.rev != null && (r.waypoints || r.trails || first)) S.rev = r.rev;
+  (r.points || []).forEach(function (p) {
+    if (p[0] <= S.since) return;
+    (S.pts[p[1]] = S.pts[p[1]] || []).push([p[0], p[2], p[3], p[4]]);
+  });
+  if (r.points && r.points.length) S.since = Math.max(S.since, r.points[r.points.length - 1][0]);
+  if (ME && !r.me) {                      // taken off this map
+    setMe(CODE, null); ME = null;
+    if (screen === 'map') { stopMap(); renderJoin('You were taken off this map.'); }
+    return;
+  }
+  remember(CODE, S.session.name);
+  if (screen === 'map') { renderAll(); saveSnapshotSoon(); }
+}
+function runOps(code) {
+  var q = queue(code);
+  if (!q.ops.length) return Promise.resolve();
+  var op = q.ops[0];
+  return rpc(op.fn, op.args).then(function () {
+    var q2 = queue(code); q2.ops.shift(); setQueue(code, q2);
+    if (op.wp && pending[op.wp]) pending[op.wp].sent = true;
+    if (S) S.rev = -1;
+    return runOps(code);
+  }, function (e) {
+    if (isNet(e) || e.message === 'password_required') throw e;
+    var q2 = queue(code); q2.ops.shift(); setQueue(code, q2);      // refused: drop it and say why
+    if (op.wp) delete pending[op.wp];
+    toast(friendly(e));
+    if (S) S.rev = -1;
+    return runOps(code);
+  });
+}
+function addOp(fn, args, wpId, wp) {
+  var q = queue(CODE); q.ops.push({ fn: fn, args: args, wp: wpId }); setQueue(CODE, q);
+  if (wpId) pending[wpId] = { wp: wp };
+  setStatus('saving'); renderWaypoints(); syncSoon();
+}
+var soonT, relocking = false;
+function syncSoon() { clearTimeout(soonT); soonT = setTimeout(function () { if (screen === 'map') syncCall().catch(syncErr); }, 60); }
+// A password was added while the map was open: the host's phone fetches the new key itself; others enter it.
+function syncErr(e) {
+  if (!e || e.message !== 'password_required' || relocking || screen !== 'map') return;
+  relocking = true;
+  var code = CODE, tok = owner(code);
+  (tok ? PebblyLock.ownerKey('basecamp', code, tok, raw) : Promise.resolve(false)).then(function (ok) {
+    relocking = false;
+    if (ok || CODE !== code) return;
+    stopMap(); pageMode(false); screen = 'gate';
+    $app.innerHTML = '<div class="wrap" id="gate"></div>';
+    PebblyLock.handle(e, { app: 'basecamp', code: code, owner: null, raw: raw, el: $('#gate'), what: 'map', retry: function () { openSession(code); } });
+  });
+}
+function setStatus(st) {
+  status = st;
+  var el = $('#sync'); if (!el) return;
+  var q = queue(CODE), n = q.pts.length + q.ops.length, ppl = S ? S.members.length : 0;
+  var who = ppl + (ppl === 1 ? ' person' : ' people');
+  el.className = 'sync ' + (st === 'live' ? '' : st);
+  el.textContent = st === 'offline' ? (offlineView ? 'No signal · showing what you saw last' : 'No signal' + (n ? ' · ' + n + ' waiting to send' : ' · will keep trying'))
+    : st === 'saving' ? who + ' · sending…' : who + ' · live';
+}
+
+// What this phone last saw, for opening the map with no signal.
+var snapT;
+function snapKey(code) { return TKEY + 'state/' + code; }
+function saveSnapshotSoon() {
+  if (snapT || !hasCaches()) return;
+  snapT = setTimeout(function () {
+    snapT = null; if (!S || !CODE) return;
+    var snap = JSON.stringify({ session: S.session, isOwner: S.isOwner, rev: -1, since: S.since, members: S.members, waypoints: S.waypoints, trails: S.trails, pts: S.pts, offset: 0 });
+    cachePut(DL, snapKey(CODE), snap, 'application/json');
+  }, 15000);
+}
+function loadSnapshot(code) {
+  return cacheGet(snapKey(code)).then(function (r) { return r ? r.json() : null; }).catch(function () { return null; });
+}
+
+/* ================================================================== location */
+function startGeo() {
+  if (!('geolocation' in navigator) || watchId != null || document.visibilityState !== 'visible') return;
+  watchId = navigator.geolocation.watchPosition(onFix, function (e) {
+    geoErr = e.code === 1 ? 'denied' : 'searching';
+    renderNotes();
+  }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
+}
+function stopGeo() { if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; } }
+function onFix(p) {
+  var c = p.coords, first = !FIX;
+  FIX = { lat: c.latitude, lng: c.longitude, acc: c.accuracy || 50, speed: c.speed, heading: c.heading, t: Date.now() };
+  geoErr = null;
+  if (REC) recordPoint();
+  renderMe();
+  if (first) {
+    renderNotes();
+    var v = ui().views[CODE];
+    if (!v && !(S && hasPlaces())) { MAP.jumpTo({ center: [FIX.lng, FIX.lat], zoom: 16 }); FOLLOW = true; renderFabs(); }
+  }
+  if (FOLLOW) follow();
+  if (!lastSent || dist(lastSent, FIX) > 15) syncSoon();
+}
+function hasPlaces() { return S.waypoints.length || S.members.some(function (m) { return m.lat != null && (!ME || m.id !== ME.id); }); }
+function follow() {
+  if (!FIX || !MAP) return;
+  var o = { center: [FIX.lng, FIX.lat] };
+  if (MODE === 'heading') { var h = headingNow(); if (h != null) o.bearing = h; MAP.jumpTo(o); }
+  else MAP.easeTo({ center: o.center, duration: 400 });
+}
+
+// Which way this phone faces: GPS direction while moving, the compass while standing still.
+function headingNow() {
+  var now = Date.now();
+  if (FIX && FIX.speed != null && FIX.speed >= 1.2 && FIX.heading != null && !isNaN(FIX.heading) && now - FIX.t < 6000) return FIX.heading;
+  if (COMPASS && now - COMPASS.t < 2500) return COMPASS.deg;
+  return null;
+}
+var compassOn = false, cx = 0, cy = 0, lastHeadDraw = 0;
+function onOrient(e) {
+  var deg = null;
+  if (e.webkitCompassHeading != null && !isNaN(e.webkitCompassHeading)) deg = e.webkitCompassHeading;
+  else if ((e.absolute || e.type === 'deviceorientationabsolute') && e.alpha != null) deg = 360 - e.alpha;
+  if (deg == null) return;
+  deg = (deg + (window.screen && window.screen.orientation ? window.screen.orientation.angle || 0 : (window.orientation || 0)) + 360) % 360;
+  // smooth it (on the circle, so 359° → 1° doesn't spin the long way)
+  var r = deg * Math.PI / 180, k = COMPASS && Date.now() - COMPASS.t < 1000 ? 0.25 : 1;
+  cx = cx * (1 - k) + Math.cos(r) * k; cy = cy * (1 - k) + Math.sin(r) * k;
+  COMPASS = { deg: (Math.atan2(cy, cx) * 180 / Math.PI + 360) % 360, t: Date.now() };
+  var now = Date.now();
+  if (now - lastHeadDraw > 80) { lastHeadDraw = now; onHeading(); }
+}
+function listenCompass() {
+  if (compassOn) return; compassOn = true;
+  if ('ondeviceorientationabsolute' in window) window.addEventListener('deviceorientationabsolute', onOrient);
+  else window.addEventListener('deviceorientation', onOrient);
+}
+// iPhones ask first (needs a tap); Android just works.
+function askCompass() {
+  var D = window.DeviceOrientationEvent;
+  if (D && typeof D.requestPermission === 'function') {
+    return D.requestPermission().then(function (s) { if (s === 'granted') { compassOn = false; listenCompass(); } return s === 'granted'; }, function () { return false; });
+  }
+  listenCompass(); return Promise.resolve(true);
+}
+function onHeading() {
+  if (!MAP) return;
+  if (MODE === 'heading') {
+    var h = headingNow();
+    if (h != null && Math.abs(angleDiff(MAP.getBearing(), h)) > 1) {
+      var o = { bearing: h }; if (FOLLOW && FIX) o.center = [FIX.lng, FIX.lat];
+      MAP.jumpTo(o);
+    }
+  }
+  renderMe();
+}
+
+/* ------------------------------------------------------------------ trails */
+function startTrail() {
+  REC = { id: uuid(), last: null, dist: 0, n: 0, at: Date.now() };
+  recStoppedByLeave = false;
+  if (FIX) recordPoint();
+  if (!FIX) startGeo();
+  renderBar(); renderNotes();
+  toast('Recording your trail. It stops if you leave this screen.');
+}
+function stopTrail(why) {
+  if (!REC) return;
+  var r = REC; REC = null;
+  if (why === 'leave') recStoppedByLeave = true;
+  renderBar(); renderNotes(); renderTrails(); syncSoon();
+  if (why !== 'leave') toast(r.n > 1 ? 'Trail saved: ' + fmtDist(r.dist) + '.' : 'Trail stopped.');
+}
+function recordPoint() {
+  if (!REC || !FIX || FIX.acc > 40) return;
+  if (REC.last) {
+    var d = dist(REC.last, FIX);
+    if (d < Math.max(6, FIX.acc * 0.6)) return;
+    REC.dist += d;
+  }
+  REC.last = { lat: FIX.lat, lng: FIX.lng }; REC.n++;
+  var q = queue(CODE); q.pts.push({ i: REC.id, a: +FIX.lat.toFixed(7), o: +FIX.lng.toFixed(7), t: FIX.t }); setQueue(CODE, q);
+  renderTrails(); renderBar();
+}
+function trailLength(pts) { var d = 0; for (var i = 1; i < pts.length; i++) d += dist({ lat: pts[i - 1][1], lng: pts[i - 1][2] }, { lat: pts[i][1], lng: pts[i][2] }); return d; }
+// Trail lines: what the server has plus this phone's points not sent yet.
+function allTrails() {
+  var list = S.trails.map(function (t) { return { id: t.id, member: t.member, by: t.by, color: t.color, at: t.at, pts: (S.pts[t.id] || []).slice() }; });
+  var byId = {}; list.forEach(function (t) { byId[t.id] = t; });
+  var me = ME && S.members.filter(function (m) { return m.id === ME.id; })[0];
+  queue(CODE).pts.forEach(function (p) {
+    var t = byId[p.i];
+    if (!t) { t = byId[p.i] = { id: p.i, member: ME && ME.id, by: me ? me.name : '', color: me ? me.color : COLORS[0], at: p.t, pts: [], local: true }; list.push(t); }
+    t.pts.push([0, p.a, p.o, p.t]);
+  });
+  return list;
+}
+
+/* ================================================================== the map screen */
+var ICON = {
+  back: '‹',
+  more: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>',
+  pin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.6"/></svg>',
+  trail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 17c4-1 2-6 6-7s3-3 4-3" stroke-dasharray="2.5 2.5"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.8.2 5 2.5 5 5.3"/></svg>',
+  me: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg>',
+  compass: '<svg viewBox="0 0 24 24"><path d="M12 2.5l4 9.5h-8z" fill="#D63B30"/><path d="M12 21.5l-4-9.5h8z" fill="currentColor" opacity=".55"/></svg>',
+  show: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
+  rec: '<svg viewBox="0 0 24 24"><circle class="dotrec" cx="12" cy="12" r="7" fill="currentColor"/></svg>'
+};
+function showMap() {
+  screen = 'map'; pageMode(true); fitHeight();
+  document.title = S.session.name + ' | Basecamp';
+  $app.innerHTML = '<div class="mapview">' +
+    '<header class="mbar"><a class="back" href="' + esc(baseUrl()) + '" aria-label="All maps">' + ICON.back + '</a>' +
+      '<div class="ttl"><h1 id="mname"></h1><div id="sync" class="sync" role="status"></div></div>' +
+      '<button type="button" class="ibtn" id="moreTop" aria-label="More">' + ICON.more + '</button></header>' +
+    '<div id="map">' +
+      '<div class="layers" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
+        return '<button type="button" data-layer="' + id + '">' + LAYERS[id].label + '</button>';
+      }).join('') + '</div>' +
+      '<div class="fabs"><button type="button" class="fab" id="compass" aria-label="North up">' + ICON.compass + '<span class="n">N</span></button>' +
+        '<button type="button" class="fab" id="showBtn" aria-label="What to show">' + ICON.show + '</button></div>' +
+      '<div class="notes" id="notes"></div>' +
+      '<button type="button" class="fab mefab" id="meBtn" aria-label="Go to my location">' + ICON.me + '</button>' +
+      '<nav class="bbar" id="bbar">' +
+        '<button type="button" id="pinBtn">' + ICON.pin + '<span>Pin</span></button>' +
+        '<button type="button" id="trailBtn"></button>' +
+        '<button type="button" id="peopleBtn">' + ICON.people + '<span>People</span></button>' +
+        '<button type="button" id="moreBtn">' + ICON.more + '<span>More</span></button></nav>' +
+      '<div class="cross" id="cross" hidden></div>' +
+      '<div class="pickbar" id="pickbar" hidden><p id="pickText">Move the map so the cross is on the spot</p><div class="row">' +
+        '<button type="button" class="btn" id="pickCancel">Cancel</button><button type="button" class="btn primary" id="pickOk">Put it here</button></div></div>' +
+    '</div></div>';
+  markers = { p: {}, w: {} }; shownLayer = '';
+  initMap();
+  $('#moreTop').onclick = $('#moreBtn').onclick = openMenu;
+  $('#peopleBtn').onclick = openPeople;
+  $('#pinBtn').onclick = function () { if (FIX) openWaypointEdit(null, { lat: FIX.lat, lng: FIX.lng }, true); else startPick(null); };
+  $('#trailBtn').onclick = function () { if (REC) stopTrail(); else startTrail(); };
+  $('#meBtn').onclick = function () {
+    if (!FIX) { startGeo(); toast(geoErr === 'denied' ? 'Location is blocked for Basecamp. See the note at the top.' : 'Finding your location…'); FOLLOW = true; renderFabs(); return; }
+    FOLLOW = true; MAP.flyTo({ center: [FIX.lng, FIX.lat], zoom: Math.max(MAP.getZoom(), 16), bearing: MODE === 'heading' ? (headingNow() || MAP.getBearing()) : 0, duration: 700 });
+    renderFabs();
+  };
+  $('#compass').onclick = function () {
+    if (MODE === 'north') {
+      askCompass().then(function () {
+        MODE = 'heading'; setUi(function (u) { u.mode = 'heading'; });
+        if (headingNow() == null) toast('Turning the map with you. Hold the phone flat, or start walking.');
+        if (FIX) { FOLLOW = true; follow(); }
+        renderFabs(); onHeading();
+      });
+    } else {
+      MODE = 'north'; setUi(function (u) { u.mode = 'north'; });
+      MAP.easeTo({ bearing: 0, duration: 300 }); renderFabs();
+    }
+  };
+  $('#showBtn').onclick = openShow;
+  $$('.layers button').forEach(function (b) { b.onclick = function () { setLayer(b.dataset.layer); }; });
+  $('#pickCancel').onclick = endPick;
+  $('#pickOk').onclick = function () { var c = MAP.getCenter(), cb = pick && pick.done; endPick(); if (cb) cb({ lat: c.lat, lng: c.lng }); };
+  MODE = ui().mode === 'heading' ? 'heading' : 'north';
+  listenCompass();
+  startGeo();
+  renderAll();
+  setStatus(offlineView ? 'offline' : status === 'offline' ? 'offline' : 'live');
+  timers.push(setInterval(function () { if (document.visibilityState === 'visible' && screen === 'map') syncCall().catch(syncErr); }, SYNC_MS));
+  timers.push(setInterval(function () { if (screen === 'map') { renderPeopleMarkers(); if (openSheetName === 'people') renderPeopleList(); } }, 10000));
+}
+function stopMap() {
+  timers.forEach(clearInterval); timers = [];
+  stopGeo();
+  if (REC) stopTrail('leave');
+  closeSheet(); closePocket();
+  if (MAP) { saveView(); MAP.remove(); MAP = null; }
+  FOLLOW = false; FIX = null; pick = null;
+}
+function saveView() {
+  if (!MAP || !CODE) return;
+  var c = MAP.getCenter();
+  setUi(function (u) { u.views[CODE] = { c: [+c.lng.toFixed(6), +c.lat.toFixed(6)], z: +MAP.getZoom().toFixed(2) }; });
+}
+function fitHeight() {
+  var h = window.visualViewport ? Math.min(window.innerHeight, window.visualViewport.height) : window.innerHeight;
+  document.documentElement.style.setProperty('--app-h', Math.round(h) + 'px');
+}
+window.addEventListener('resize', fitHeight);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitHeight);
+
+function initMap() {
+  addProtocol();
+  var v = ui().views[CODE], center = [-94.5, 39.5], zoom = 3.5;
+  if (v) { center = v.c; zoom = v.z; }
+  else {
+    var pts = S.waypoints.map(function (w) { return [w.lng, w.lat]; }).concat(S.members.filter(function (m) { return m.lat != null; }).map(function (m) { return [m.lng, m.lat]; }));
+    if (pts.length) { center = pts[0]; zoom = 15; }
+  }
+  MAP = new maplibregl.Map({ container: 'map', style: { version: 8, sources: {}, layers: [] }, center: center, zoom: zoom, maxZoom: 20,
+    attributionControl: false, dragRotate: false, pitchWithRotate: false, touchPitch: false, keyboard: true, fadeDuration: 0 });
+  MAP.touchZoomRotate.disableRotation();
+  MAP.addControl(new maplibregl.ScaleControl({ unit: 'imperial', maxWidth: 90 }), 'bottom-left');
+  MAP.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
+  MAP.on('error', function () {});
+  MAP.on('style.load', addOverlays);
+  MAP.on('dragstart', function (e) { if (e.originalEvent && FOLLOW) { FOLLOW = false; renderFabs(); } });
+  MAP.on('rotate', function () { renderFabs(); renderConesOnly(); });
+  MAP.on('moveend', function () { clearTimeout(MAP._sv); MAP._sv = setTimeout(saveView, 800); });
+  if (!v && S.members.filter(function (m) { return m.lat != null; }).length + S.waypoints.length > 1) {
+    MAP.once('load', function () { showEveryone(true); });
+  }
+  setLayer(ui().layer || 'sat', true);
+  longPress();
+}
+function setLayer(id, quiet) {
+  if (!LAYERS[id] || !MAP) return;
+  setUi(function (u) { u.layer = id; });
+  $$('.layers button').forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.layer === id ? 'true' : 'false'); });
+  if (shownLayer === id) return;
+  shownLayer = id;
+  styleFor(id).then(function (st) {
+    if (!MAP || shownLayer !== id) return;
+    MAP.setStyle(st, { diff: false });
+  }, function () {
+    if (!MAP) return;
+    toast('The street map can’t load with no signal. Showing satellite instead.');
+    shownLayer = ''; setLayer('sat');
+  });
+}
+function addOverlays() {
+  if (!MAP.getSource('trails')) {
+    MAP.addSource('trails', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    MAP.addLayer({ id: 'trails-case', type: 'line', source: 'trails', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.9 } });
+    MAP.addLayer({ id: 'trails', type: 'line', source: 'trails', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': 4 } });
+  }
+  if (!MAP.getSource('acc')) {
+    MAP.addSource('acc', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    MAP.addLayer({ id: 'acc', type: 'fill', source: 'acc', paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.14 } });
+    MAP.addLayer({ id: 'acc-line', type: 'line', source: 'acc', paint: { 'line-color': ['get', 'color'], 'line-width': 1.5, 'line-opacity': 0.6 } });
+  }
+  renderTrails(); renderMe();
+}
+
+/* ------------------------------------------------------------------ drawing */
+function renderAll() {
+  if (screen !== 'map' || !S) return;
+  var t = $('#mname'); if (t) t.textContent = S.session.name;
+  document.title = S.session.name + ' | Basecamp';
+  renderPeopleMarkers(); renderWaypoints(); renderTrails(); renderBar(); renderFabs(); renderNotes(); setStatus(status);
+  if (openSheetName === 'people') renderPeopleList();
+}
+function member(id) { return S.members.filter(function (m) { return m.id === id; })[0] || null; }
+function meMember() { return ME ? member(ME.id) : null; }
+function coneSvg(color) {
+  return '<svg class="cone" viewBox="0 0 64 64"><defs><radialGradient id="g' + color.slice(1) + '" cx="32" cy="32" r="30" gradientUnits="userSpaceOnUse">' +
+    '<stop offset=".25" stop-color="' + color + '" stop-opacity=".7"/><stop offset="1" stop-color="' + color + '" stop-opacity="0"/></radialGradient></defs>' +
+    '<path d="M32 32 L18 4 A30 30 0 0 1 46 4 Z" fill="url(#g' + color.slice(1) + ')"/></svg>';
+}
+function personEl(m, isMe) {
+  var el = document.createElement('div');
+  el.className = 'pm' + (isMe ? ' me' : '');
+  el.innerHTML = coneSvg(m.color) + '<div class="dot" style="background:' + m.color + '">' + esc(initial(m.name)) + '</div><div class="lbl"></div>';
+  el.addEventListener('click', function (ev) { ev.stopPropagation(); openPerson(m.id); });
+  return el;
+}
+function setCone(el, heading) {
+  var c = el.querySelector('.cone'); if (!c) return;
+  if (heading == null) { c.style.display = 'none'; return; }
+  c.style.display = ''; c.style.transform = 'rotate(' + (heading - (MAP ? MAP.getBearing() : 0)) + 'deg)';
+}
+function personPlace(m) {
+  if (ME && m.id === ME.id && FIX && sharingOrLocal()) return { lat: FIX.lat, lng: FIX.lng, acc: FIX.acc, heading: headingNow(), at: srvNow(), live: true };
+  if (m.lat == null) return null;
+  return { lat: m.lat, lng: m.lng, acc: m.acc, heading: m.heading, at: m.pos_at };
+}
+function sharingOrLocal() { return true; }      // your own dot always shows where you are (even if you've hidden it from others)
+function renderPeopleMarkers() {
+  if (!MAP || !S) return;
+  var seen = {};
+  S.members.forEach(function (m) {
+    var isMe = ME && m.id === ME.id, p = personPlace(m);
+    if (!p) return;
+    seen[m.id] = 1;
+    var mk = markers.p[m.id];
+    if (!mk || mk._color !== m.color || mk._name !== m.name) {
+      if (mk) mk.remove();
+      mk = markers.p[m.id] = new maplibregl.Marker({ element: personEl(m, isMe), anchor: 'center' }).setLngLat([p.lng, p.lat]).addTo(MAP);
+      mk._color = m.color; mk._name = m.name;
+    }
+    mk.setLngLat([p.lng, p.lat]);
+    var el = mk.getElement(), age = srvNow() - (p.at || 0), stale = !p.live && age > STALE_MS;
+    el.classList.toggle('stale', stale);
+    el.style.zIndex = isMe ? 3 : stale ? 1 : 2;
+    el.querySelector('.lbl').innerHTML = esc(isMe ? 'You' : m.name) + (stale ? ' <small>' + esc(fmtAgo(age)) + '</small>' : '');
+    setCone(el, stale ? null : p.heading);
+    mk._heading = stale ? null : p.heading;
+  });
+  Object.keys(markers.p).forEach(function (id) { if (!seen[id]) { markers.p[id].remove(); delete markers.p[id]; } });
+}
+function renderConesOnly() { Object.keys(markers.p).forEach(function (id) { var mk = markers.p[id]; setCone(mk.getElement(), mk._heading); }); }
+function renderMe() {
+  if (!MAP || !S) return;
+  renderPeopleMarkers();
+  var src = null; try { src = MAP.getSource('acc'); } catch (e) {} if (!src) return;
+  var me = meMember();
+  if (!FIX || !me) { src.setData({ type: 'FeatureCollection', features: [] }); return; }
+  src.setData({ type: 'FeatureCollection', features: [circle(FIX, Math.max(FIX.acc, 3), me.color)] });
+}
+function circle(c, r, color) {
+  var pts = [], k = r / 6378137;
+  for (var i = 0; i <= 48; i++) {
+    var a = i / 48 * 2 * Math.PI;
+    pts.push([c.lng + (k * Math.sin(a)) * 180 / Math.PI / Math.cos(c.lat * Math.PI / 180), c.lat + (k * Math.cos(a)) * 180 / Math.PI]);
+  }
+  return { type: 'Feature', properties: { color: color }, geometry: { type: 'Polygon', coordinates: [pts] } };
+}
+function visibleWaypoints() {
+  var u = ui(), list = S.waypoints.slice(), ids = {};
+  list.forEach(function (w) { ids[w.id] = 1; });
+  Object.keys(pending).forEach(function (id) {
+    var p = pending[id];
+    if (p.wp === null) list = list.filter(function (w) { return w.id !== id; });
+    else if (p.wp) {
+      if (ids[id]) list = list.map(function (w) { return w.id === id ? Object.assign({}, w, p.wp, { pending: true }) : w; });
+      else list.push(Object.assign({ id: id, member: ME && ME.id, at: Date.now() }, p.wp, { pending: true }));
+    }
+  });
+  return list.filter(function (w) { return u.othersWp !== false || (ME && w.member === ME.id); });
+}
+function renderWaypoints() {
+  if (!MAP || !S) return;
+  var seen = {};
+  visibleWaypoints().forEach(function (w) {
+    seen[w.id] = 1;
+    var m = member(w.member), color = m ? m.color : '#5D6B66', sig = [w.icon, w.name, color, !!w.pending].join('|');
+    var mk = markers.w[w.id];
+    if (!mk || mk._sig !== sig) {
+      if (mk) mk.remove();
+      var el = document.createElement('div');
+      el.className = 'wp' + (w.pending ? ' pending' : ''); el.style.setProperty('--c', color);
+      el.innerHTML = '<div class="pin"></div><div class="ic">' + esc(w.icon || '📍') + '</div>' + (w.name ? '<div class="lbl">' + esc(w.name) + '</div>' : '');
+      el.addEventListener('click', function (ev) { ev.stopPropagation(); openWaypoint(w.id); });
+      mk = markers.w[w.id] = new maplibregl.Marker({ element: el, anchor: 'bottom', offset: [0, 12] }).setLngLat([w.lng, w.lat]).addTo(MAP);
+      mk._sig = sig;
+    }
+    mk.setLngLat([w.lng, w.lat]);
+  });
+  Object.keys(markers.w).forEach(function (id) { if (!seen[id]) { markers.w[id].remove(); delete markers.w[id]; } });
+}
+function shownTrails() {
+  var u = ui();
+  return allTrails().filter(function (t) {
+    var mine = ME && t.member === ME.id;
+    return mine ? u.myTrails !== false : u.othersTrails !== false;
+  });
+}
+var drawnTrails = 0;
+function renderTrails() {
+  if (!MAP || !S || !MAP.getSource('trails')) return;
+  var feats = [];
+  shownTrails().forEach(function (t) {
+    var c = t.pts.map(function (p) { return [p[2], p[1]]; });
+    if (REC && t.id === REC.id && FIX && c.length) c.push([FIX.lng, FIX.lat]);
+    if (c.length >= 2) feats.push({ type: 'Feature', properties: { color: t.color }, geometry: { type: 'LineString', coordinates: c } });
+  });
+  drawnTrails = feats.length;
+  MAP.getSource('trails').setData({ type: 'FeatureCollection', features: feats });
+}
+function renderBar() {
+  var b = $('#trailBtn'); if (!b) return;
+  b.classList.toggle('rec', !!REC);
+  b.innerHTML = REC ? ICON.rec + '<span>Stop · ' + esc(fmtDist(REC.dist)) + '</span>' : ICON.trail + '<span>Trail</span>';
+  b.setAttribute('aria-label', REC ? 'Stop recording the trail' : 'Record a trail');
+}
+function renderFabs() {
+  var c = $('#compass'); if (!c || !MAP) return;
+  c.setAttribute('aria-pressed', MODE === 'heading' ? 'true' : 'false');
+  c.setAttribute('aria-label', MODE === 'heading' ? 'Map turns with you. Tap for north up.' : 'North up. Tap to turn the map with you.');
+  c.querySelector('svg').style.transform = 'rotate(' + (-MAP.getBearing()) + 'deg)';
+  var m = $('#meBtn'); m.setAttribute('aria-pressed', FOLLOW ? 'true' : 'false');
+}
+function renderNotes() {
+  var el = $('#notes'); if (!el) return;
+  var h = '';
+  if (geoErr === 'denied') h += '<div class="note warn"><div class="t"><b>Location is blocked.</b> Others can’t see you. To fix: tap the icon left of the web address (or, in the installed app, long-press the Pebbly icon → App info) → Permissions → Location → Allow. Then reload.</div></div>';
+  else if (!FIX && sharing() && geoErr === 'searching') h += '<div class="note"><div class="t">Looking for GPS… Stepping outside helps.</div></div>';
+  if (!sharing()) h += '<div class="note"><div class="t">You’re hidden. Others can’t see where you are.</div><button type="button" class="btn small" data-act="share-on">Share</button></div>';
+  if (recStoppedByLeave) h += '<div class="note"><div class="t">Your trail stopped when you left Basecamp.</div><button type="button" class="btn small" data-act="trail-again">New trail</button>' +
+    '<button type="button" class="btn small" data-act="trail-ok" aria-label="OK">OK</button></div>';
+  el.innerHTML = h;
+}
+$app.addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-act]'); if (!b) return;
+  var a = b.dataset.act;
+  if (a === 'share-on') setSharing(true);
+  if (a === 'trail-again') { recStoppedByLeave = false; startTrail(); }
+  if (a === 'trail-ok') { recStoppedByLeave = false; renderNotes(); }
+});
+function setSharing(on) {
+  setUi(function (u) { u.sharing[CODE] = !!on; });
+  offSent = false; lastSent = null;
+  renderNotes(); syncSoon();
+  toast(on ? 'Sharing your location again.' : 'Your location is hidden now.');
+}
+function showEveryone(quiet) {
+  var b = new maplibregl.LngLatBounds(), n = 0;
+  S.members.forEach(function (m) { var p = personPlace(m); if (p) { b.extend([p.lng, p.lat]); n++; } });
+  visibleWaypoints().forEach(function (w) { b.extend([w.lng, w.lat]); n++; });
+  if (!n) { if (!quiet) toast('Nobody is on the map yet.'); return; }
+  FOLLOW = false; renderFabs();
+  MAP.fitBounds(b, { padding: { top: 80, bottom: 120, left: 50, right: 70 }, maxZoom: 17, duration: quiet ? 0 : 700, bearing: MAP.getBearing() });
+}
+function flyTo(lat, lng) {
+  FOLLOW = false; renderFabs();
+  MAP.flyTo({ center: [lng, lat], zoom: Math.max(MAP.getZoom(), 16.5), duration: 800 });
+}
+
+/* ------------------------------------------------------------------ long press and picking a spot */
+var pick = null;
+function longPress() {
+  var t = null, start = null, box = MAP.getCanvasContainer();
+  function cancel() { clearTimeout(t); t = null; }
+  box.addEventListener('touchstart', function (e) {
+    if (e.touches.length !== 1 || pick) { cancel(); return; }
+    var r = box.getBoundingClientRect(), touch = e.touches[0];
+    start = { x: touch.clientX, y: touch.clientY };
+    var pt = [touch.clientX - r.left, touch.clientY - r.top];
+    cancel();
+    t = setTimeout(function () {
+      t = null; var ll = MAP.unproject(pt);
+      if (navigator.vibrate) try { navigator.vibrate(30); } catch (x) {}
+      openWaypointEdit(null, { lat: ll.lat, lng: ll.lng });
+    }, 550);
+  }, { passive: true });
+  box.addEventListener('touchmove', function (e) {
+    if (!t || !start) return;
+    var touch = e.touches[0]; if (e.touches.length > 1 || Math.abs(touch.clientX - start.x) + Math.abs(touch.clientY - start.y) > 12) cancel();
+  }, { passive: true });
+  box.addEventListener('touchend', cancel); box.addEventListener('touchcancel', cancel);
+  MAP.on('contextmenu', function (e) { if (!pick) openWaypointEdit(null, { lat: e.lngLat.lat, lng: e.lngLat.lng }); });
+}
+function startPick(at, text, done) {
+  closeSheet();
+  pick = { done: done || function (ll) { openWaypointEdit(null, ll); } };
+  if (at) MAP.jumpTo({ center: [at.lng, at.lat] });
+  $('#pickText').textContent = text || 'Move the map so the cross is on the spot';
+  $('#cross').hidden = false; $('#pickbar').hidden = false; $('#bbar').hidden = true; $('#meBtn').hidden = true;
+  FOLLOW = false; renderFabs();
+}
+function endPick() {
+  pick = null; var c = $('#cross'); if (!c) return;
+  c.hidden = true; $('#pickbar').hidden = true; $('#bbar').hidden = false; $('#meBtn').hidden = false;
+}
+
+/* ================================================================== sheets */
+var openSheetName = '', sheetEl = null;
+function openSheet(name, html, setup) {
+  closeSheet();
+  var d = document.createElement('dialog');
+  d.className = 'sheet'; d.innerHTML = '<div class="in"><div class="grab" aria-hidden="true"></div>' + html + '</div>';
+  document.body.appendChild(d);
+  sheetEl = d; openSheetName = name;
+  d.addEventListener('click', function (ev) { if (ev.target === d) closeSheet(); });
+  d.addEventListener('close', function () { if (sheetEl === d) { sheetEl = null; openSheetName = ''; } d.remove(); });
+  $$('[data-close]', d).forEach(function (b) { b.addEventListener('click', closeSheet); });
+  if (d.showModal) d.showModal(); else d.setAttribute('open', '');
+  if (setup) setup(d);
+  return d;
+}
+function closeSheet() { if (sheetEl) { var d = sheetEl; sheetEl = null; openSheetName = ''; try { d.close(); } catch (e) {} d.remove(); } }
+function head(title) { return '<div class="shead"><h2>' + title + '</h2><button type="button" class="ibtn" data-close aria-label="Close">✕</button></div>'; }
+function fromMe(p) {
+  if (!FIX || !p) return '';
+  var d = dist(FIX, p);
+  if (d < 8) return '<span class="far">here</span>';
+  return '<span class="far">' + esc(fmtDist(d)) + '<small>' + dir8(bearing(FIX, p)) + '</small></span>';
+}
+
+/* ------------------------------------------------------------------ people */
+function openPeople() {
+  openSheet('people', head('People') + '<ul class="list" id="plist"></ul>' +
+    '<div class="btns"><button type="button" class="btn ghost" id="fitAll">Show everyone on the map</button></div>', function (d) {
+    renderPeopleList();
+    $('#fitAll', d).onclick = function () { closeSheet(); showEveryone(); };
+  });
+}
+function personStatus(m) {
+  var p = personPlace(m), isMe = ME && m.id === ME.id;
+  if (isMe) {
+    if (!sharing()) return 'Hidden from others';
+    if (!FIX) return geoErr === 'denied' ? 'Location blocked' : 'Looking for GPS…';
+    return 'Sharing · ±' + fmtFeet(FIX.acc);
+  }
+  if (!p) return 'Not sharing';
+  var age = srvNow() - p.at;
+  return (age < 30000 ? 'Here now' : fmtAgo(age)) + (p.acc != null ? ' · ±' + fmtFeet(p.acc) : '');
+}
+function renderPeopleList() {
+  var ul = $('#plist'); if (!ul) return;
+  var list = S.members.slice().sort(function (a, b) {
+    if (ME && a.id === ME.id) return -1; if (ME && b.id === ME.id) return 1;
+    var pa = personPlace(a), pb = personPlace(b);
+    return ((pb ? pb.at : 0) - (pa ? pa.at : 0));
+  });
+  ul.innerHTML = list.map(function (m) {
+    var p = personPlace(m), isMe = ME && m.id === ME.id;
+    return '<li><button type="button" class="row" data-person="' + m.id + '"><span class="sw" style="background:' + m.color + '">' + esc(initial(m.name)) + '</span>' +
+      '<span class="tx"><b>' + esc(m.name) + (isMe ? ' (you)' : '') + '</b><small>' + esc(personStatus(m)) + '</small></span>' + (isMe ? '' : fromMe(p)) + '</button></li>';
+  }).join('');
+  $$('[data-person]', ul).forEach(function (b) {
+    b.onclick = function () {
+      var m = member(b.dataset.person), p = m && personPlace(m);
+      if (!p) { openPerson(b.dataset.person); return; }
+      closeSheet();
+      if (ME && m.id === ME.id) { $('#meBtn').click(); return; }
+      flyTo(p.lat, p.lng);
+    };
+  });
+}
+function openPerson(id) {
+  var m = member(id); if (!m) return;
+  var p = personPlace(m), isMe = ME && m.id === ME.id;
+  var pts = 0; allTrails().forEach(function (t) { if (t.member === id) pts++; });
+  openSheet('person', head('<span class="sw" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + m.color + ';margin-right:6px"></span>' + esc(m.name) + (isMe ? ' (you)' : '')) +
+    '<p class="facts">' + esc(personStatus(m)) + (p && FIX && !isMe ? ' · ' + esc(fmtDist(dist(FIX, p))) + ' ' + dir8(bearing(FIX, p)) + ' of you' : '') + '</p>' +
+    '<div class="btns">' + (p ? '<button type="button" class="btn primary" id="pGo">Show on map</button>' : '') +
+      (isMe ? '<button type="button" class="btn" id="pMe">Change my name or color</button>' : '') +
+      (!isMe && S.isOwner ? '<button type="button" class="btn danger" id="pRm">Take off this map</button>' : '') + '</div>', function (d) {
+    if ($('#pGo', d)) $('#pGo', d).onclick = function () { closeSheet(); if (isMe) $('#meBtn').click(); else flyTo(p.lat, p.lng); };
+    if ($('#pMe', d)) $('#pMe', d).onclick = openMeEdit;
+    if ($('#pRm', d)) $('#pRm', d).onclick = function () {
+      if (!confirm('Take ' + m.name + ' off this map? Their waypoints and trails stay. They can join again with the link.')) return;
+      rpc('bc_remove_member', { p_code: CODE, p_member: ME ? ME.key : null, p_owner_token: owner(CODE), p_id: id }).then(function () {
+        closeSheet(); toast(m.name + ' was taken off the map.'); S.rev = -1; syncSoon();
+      }, function (e) { toast(friendly(e)); });
+    };
+  });
+}
+function openMeEdit() {
+  var m = meMember(); if (!m) return;
+  openSheet('me', head('You on this map') +
+    '<form id="meForm" novalidate autocomplete="off"><label class="fld"><span>Your name</span><input type="text" name="who" maxlength="30" value="' + esc(m.name) + '"></label>' +
+    '<div class="fld"><span class="lbl">Your color</span><div class="colors">' + COLORS.map(function (c) {
+      return '<label><input type="radio" name="color" value="' + c + '"' + (c === m.color ? ' checked' : '') + ' aria-label="Color ' + c + '"><span style="background:' + c + '"></span></label>';
+    }).join('') + '</div></div><p class="err" role="alert"></p><button class="btn primary wide" type="submit">Save</button></form>', function (d) {
+    $('#meForm', d).onsubmit = function (ev) {
+      ev.preventDefault();
+      var f = ev.target.elements, who = tidy(f.who.value);
+      if (!who) { $('.err', d).textContent = 'Type your name.'; return; }
+      rpc('bc_me_update', { p_code: CODE, p_member: ME.key, p_name: who, p_color: f.color.value }).then(function () {
+        store(K_NAME, who); closeSheet(); S.rev = -1; syncSoon(); toast('Saved.');
+      }, function (e) { $('.err', d).textContent = friendly(e); });
+    };
+  });
+}
+
+/* ------------------------------------------------------------------ waypoints */
+function wpById(id) { return visibleWaypoints().concat(S.waypoints).filter(function (w) { return w.id === id; })[0] || null; }
+function canEdit(w) { return S.isOwner || (ME && (w.member === ME.id || !w.member && w.pending)); }
+function openWaypoint(id) {
+  var w = wpById(id); if (!w) return;
+  var m = member(w.member), by = m ? m.name : w.by || 'someone';
+  openSheet('wp', head(esc(w.icon || '📍') + ' ' + esc(w.name || 'Waypoint')) +
+    '<p class="facts">' + (FIX ? '<b style="color:var(--ink)">' + esc(fmtDist(dist(FIX, w))) + ' ' + dir8(bearing(FIX, w)) + '</b> of you · ' : '') +
+      'Added by ' + esc(ME && w.member === ME.id ? 'you' : by) + (w.at ? ' · ' + esc(fmtWhen(w.at)) : '') + (w.pending ? ' · not sent yet' : '') + '</p>' +
+    (w.note ? '<p class="wnote">' + esc(w.note) + '</p>' : '') +
+    '<div class="btns"><button type="button" class="btn primary" id="wGo">Show on map</button>' +
+      (canEdit(w) ? '<button type="button" class="btn" id="wEdit">Edit</button>' : '') + '</div>', function (d) {
+    $('#wGo', d).onclick = function () { closeSheet(); flyTo(w.lat, w.lng); };
+    if ($('#wEdit', d)) $('#wEdit', d).onclick = function () { openWaypointEdit(w); };
+  });
+}
+function openWaypointEdit(w, at, fromPinBtn) {
+  var isNew = !w || !!w._new, place = w ? { lat: w.lat, lng: w.lng } : at;
+  if (!ME) return;
+  openSheet('wpedit', head(isNew ? 'New waypoint' : 'Edit waypoint') +
+    '<form id="wpForm" novalidate autocomplete="off">' +
+      '<div class="icons" role="radiogroup" aria-label="Icon">' + ICONS.map(function (ic, i) {
+        return '<label><input type="radio" name="icon" value="' + ic + '"' + ((w ? w.icon === ic : !i) ? ' checked' : '') + '><span>' + ic + '</span></label>';
+      }).join('') + '</div>' +
+      '<label class="fld"><span>Name</span><input type="text" name="name" maxlength="60" value="' + esc(w ? w.name : '') + '" placeholder="Tree stand, truck, meet here…"></label>' +
+      '<label class="fld"><span>Note <span class="pl-opt">(optional)</span></span><textarea name="note" maxlength="500">' + esc(w ? w.note : '') + '</textarea></label>' +
+      '<p class="hint" id="wpWhere" style="margin:-6px 0 12px"></p>' +
+      '<div class="btns"><button type="submit" class="btn primary">' + (isNew ? 'Save waypoint' : 'Save') + '</button>' +
+        '<button type="button" class="btn" id="wpMove">' + (fromPinBtn ? 'Pick a spot on the map' : 'Move it') + '</button></div>' +
+      (!isNew ? '<div class="btns" style="margin-top:8px"><button type="button" class="btn danger" id="wpDel">Delete waypoint</button></div>' : '') +
+    '</form>', function (d) {
+    var f = $('#wpForm', d);
+    function where() {
+      $('#wpWhere', d).textContent = fromPinBtn && isNew && place === at ? 'At your location (±' + fmtFeet(FIX ? FIX.acc : 0) + ').' :
+        FIX ? 'This spot is ' + fmtDist(dist(FIX, place)) + ' ' + dir8(bearing(FIX, place)) + ' of you.' : '';
+    }
+    where();
+    $('#wpMove', d).onclick = function () {
+      var keep = { icon: f.elements.icon.value, name: f.elements.name.value, note: f.elements.note.value };
+      startPick(place, 'Move the map so the cross is on the spot', function (ll) {
+        openWaypointEdit(Object.assign({}, w || { id: null, member: ME.id }, keep, { lat: ll.lat, lng: ll.lng, _new: isNew }), null, false);
+      });
+    };
+    f.onsubmit = function (ev) {
+      ev.preventDefault();
+      var e = f.elements, data = { name: tidy(e.name.value).slice(0, 60), icon: e.icon.value, note: String(e.note.value || '').trim().slice(0, 500), lat: place.lat, lng: place.lng };
+      var id = isNew ? uuid() : w.id;
+      addOp('bc_waypoint_save', { p_code: CODE, p_member: ME.key, p_owner_token: owner(CODE), p_id: id, p_wp: data }, id, Object.assign({ by: (meMember() || {}).name }, data));
+      closeSheet();
+      toast(isNew ? 'Waypoint saved.' : 'Saved.');
+    };
+    if ($('#wpDel', d)) $('#wpDel', d).onclick = function () {
+      if (!confirm('Delete “' + (w.name || 'this waypoint') + '” for everyone?')) return;
+      addOp('bc_waypoint_delete', { p_code: CODE, p_member: ME.key, p_owner_token: owner(CODE), p_id: w.id }, w.id, null);
+      closeSheet(); toast('Waypoint deleted.');
+    };
+  });
+}
+
+/* ------------------------------------------------------------------ what to show */
+function openShow() {
+  var u = ui();
+  function tg(key, label, sub) {
+    return '<label class="toggle"><span class="tx">' + label + (sub ? '<small>' + sub + '</small>' : '') + '</span><input type="checkbox" data-ui="' + key + '"' + (u[key] !== false ? ' checked' : '') + '></label>';
+  }
+  openSheet('show', head('What to show') +
+    '<div class="seg" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
+      return '<button type="button" data-layer2="' + id + '" aria-pressed="' + (shownLayer === id) + '">' + LAYERS[id].label + '</button>';
+    }).join('') + '</div>' +
+    tg('othersWp', 'Other people’s waypoints') + tg('othersTrails', 'Other people’s trails') + tg('myTrails', 'My trails') +
+    '<p class="sec">Trails</p><ul class="list" id="tlist"></ul>', function (d) {
+    $$('[data-layer2]', d).forEach(function (b) { b.onclick = function () { setLayer(b.dataset.layer2); $$('[data-layer2]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }; });
+    $$('[data-ui]', d).forEach(function (c) { c.onchange = function () { setUi(function (x) { x[c.dataset.ui] = c.checked; }); renderWaypoints(); renderTrails(); }; });
+    renderTrailList(d);
+  });
+}
+function renderTrailList(d) {
+  var ul = $('#tlist', d); if (!ul) return;
+  var list = allTrails().filter(function (t) { return t.pts.length; }).sort(function (a, b) { return b.at - a.at; });
+  if (!list.length) { ul.outerHTML = '<p class="hint" id="tlist">No trails yet. Tap Trail at the bottom to record where you walk.</p>'; return; }
+  ul.innerHTML = list.map(function (t) {
+    var mine = ME && t.member === ME.id, m = member(t.member), last = t.pts[t.pts.length - 1];
+    var dur = last ? last[3] - t.pts[0][3] : 0;
+    return '<li><div class="row" style="cursor:default"><span class="sw" style="background:' + t.color + '"></span><span class="tx"><b>' + esc(mine ? 'You' : (m ? m.name : t.by)) + ' · ' + esc(fmtDist(trailLength(t.pts))) + '</b>' +
+      '<small>' + esc(fmtWhen(t.pts[0][3] || t.at)) + (dur > 60000 ? ' · ' + Math.round(dur / 60000) + ' min' : '') + (REC && REC.id === t.id ? ' · recording' : '') + '</small></span>' +
+      '<button type="button" class="btn small" data-tgo="' + t.id + '">Show</button>' +
+      (mine || S.isOwner ? '<button type="button" class="ibtn" data-tdel="' + t.id + '" aria-label="Delete trail" style="color:var(--bad)">✕</button>' : '') + '</div></li>';
+  }).join('');
+  $$('[data-tgo]', ul).forEach(function (b) {
+    b.onclick = function () {
+      var t = allTrails().filter(function (x) { return x.id === b.dataset.tgo; })[0]; if (!t) return;
+      var bb = new maplibregl.LngLatBounds(); t.pts.forEach(function (p) { bb.extend([p[2], p[1]]); });
+      closeSheet(); FOLLOW = false; renderFabs();
+      MAP.fitBounds(bb, { padding: 70, maxZoom: 18, duration: 700, bearing: MAP.getBearing() });
+    };
+  });
+  $$('[data-tdel]', ul).forEach(function (b) {
+    b.onclick = function () {
+      if (!confirm('Delete this trail for everyone?')) return;
+      var id = b.dataset.tdel;
+      if (REC && REC.id === id) REC = null;
+      var q = queue(CODE); q.pts = q.pts.filter(function (p) { return p.i !== id; }); setQueue(CODE, q);
+      delete S.pts[id]; S.trails = S.trails.filter(function (t) { return t.id !== id; });
+      addOp('bc_trail_delete', { p_code: CODE, p_member: ME ? ME.key : null, p_owner_token: owner(CODE), p_id: id });
+      renderTrails(); renderBar(); renderTrailList(sheetEl);
+    };
+  });
+}
+
+/* ------------------------------------------------------------------ more menu */
+function openMenu() {
+  var isOwner = S.isOwner, sh = sharing();
+  openSheet('menu', head(esc(S.session.name)) +
+    '<div class="menu">' +
+      '<button type="button" class="btn" id="mShare"><span>🔗 Share the link<small>Send it to your group so they can join</small></span></button>' +
+      '<button type="button" class="btn" id="mHide"><span>' + (sh ? '🙈 Hide my location<small>Others won’t see where you are</small>' : '📡 Share my location<small>You’re hidden right now</small>') + '</span></button>' +
+      '<button type="button" class="btn" id="mOffline"><span>⬇️ Offline maps<small>Download the area so the map works with no signal</small></span></button>' +
+      '<button type="button" class="btn" id="mPocket"><span>🌑 Pocket mode<small>Black screen that keeps sharing; uses less battery</small></span></button>' +
+      '<button type="button" class="btn" id="mMe"><span>🎨 My name and color</span></button>' +
+    '</div>' +
+    (isOwner ? '<p class="sec">Host tools</p><div class="menu">' +
+      '<button type="button" class="btn" id="hRename"><span>✏️ Rename the map</span></button>' +
+      '<button type="button" class="btn" id="hLock"><span>🔒 Password</span></button>' +
+      '<button type="button" class="btn" id="hHostLink"><span>🔑 Copy host link<small>Open the host tools on your other devices</small></span></button>' +
+      '<button type="button" class="btn" id="hClearT"><span>🧹 Clear all trails</span></button>' +
+      '<button type="button" class="btn" id="hClearW"><span>🧹 Clear all waypoints</span></button>' +
+      '<button type="button" class="btn" id="hClearP"><span>🧹 Clear everyone’s location<small>Removes old dots; people still sharing show up again</small></span></button>' +
+      '<button type="button" class="btn danger" id="hDelete"><span>🗑️ Delete this map</span></button>' +
+    '</div>' : '') +
+    '<div class="menu" style="margin-top:12px"><button type="button" class="btn" id="mLeave"><span>👋 Leave this map<small>Takes you off it. Your waypoints and trails stay.</small></span></button></div>', function (d) {
+    $('#mShare', d).onclick = function () { copyText(baseUrl() + '?m=' + CODE).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : baseUrl() + '?m=' + CODE); }); };
+    $('#mHide', d).onclick = function () { closeSheet(); setSharing(!sh); };
+    $('#mOffline', d).onclick = openOffline;
+    $('#mPocket', d).onclick = function () { closeSheet(); openPocket(); };
+    $('#mMe', d).onclick = openMeEdit;
+    $('#mLeave', d).onclick = function () {
+      if (!confirm('Leave this map? You’ll be taken off it. You can join again with the link.')) return;
+      rpc('bc_remove_member', { p_code: CODE, p_member: ME.key, p_owner_token: null, p_id: ME.id }).then(function () {
+        setMe(CODE, null); ME = null; if (!owner(CODE)) forget(CODE); stopMap(); go('');
+      }, function (e) { toast(friendly(e)); });
+    };
+    if (!isOwner) return;
+    function host(action, value, done) {
+      return raw('bc_host', { p_code: CODE, p_owner_token: owner(CODE), p_action: action, p_value: value || null }).then(function () { S.rev = -1; syncSoon(); if (done) done(); },
+        function (e) { toast(friendly(e)); });
+    }
+    $('#hRename', d).onclick = function () {
+      var n = prompt('New name for the map', S.session.name); n = tidy(n);
+      if (n) host('rename', n, function () { S.session.name = n; renderAll(); closeSheet(); toast('Renamed.'); });
+    };
+    $('#hLock', d).onclick = function () { closeSheet(); PebblyLock.openHost({ app: 'basecamp', code: CODE, owner: owner(CODE), raw: raw, what: 'map', toast: toast }); };
+    $('#hHostLink', d).onclick = function () {
+      copyText(baseUrl() + '?m=' + CODE + '&o=' + encodeURIComponent(owner(CODE))).then(function (ok) { toast(ok ? 'Host link copied. Keep it to yourself.' : 'Couldn’t copy.'); });
+    };
+    $('#hClearT', d).onclick = function () { if (confirm('Delete every trail on this map, for everyone?')) host('clear_trails', null, function () { closeSheet(); toast('All trails cleared.'); }); };
+    $('#hClearW', d).onclick = function () { if (confirm('Delete every waypoint on this map, for everyone?')) host('clear_waypoints', null, function () { closeSheet(); toast('All waypoints cleared.'); }); };
+    $('#hClearP', d).onclick = function () { if (confirm('Clear everyone’s last location? People with Basecamp open show up again within seconds.')) host('clear_places', null, function () { closeSheet(); toast('Locations cleared.'); }); };
+    $('#hDelete', d).onclick = function () {
+      if (!confirm('Delete “' + S.session.name + '” for everyone? All waypoints and trails are lost. This can’t be undone.')) return;
+      host('delete', null, function () { setOwner(CODE, null); setMe(CODE, null); forget(CODE); stopMap(); go(''); toast('Map deleted.'); });
+    };
+  });
+}
+
+/* ------------------------------------------------------------------ offline maps */
+var dlCtl = null;
+function openOffline() {
+  var b = MAP.getBounds(), bounds = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map(function (x) { return +x.toFixed(5); });
+  var sel = { layers: ['sat', 'topo', 'map'], detail: 'high' };
+  openSheet('offline', head('Offline maps') +
+    '<p class="hint" style="margin-bottom:12px">Download an area at home on Wi-Fi so the map works where there’s no signal. GPS works without signal; dots and pins update when a bar comes back.</p>' +
+    '<div id="areaList"></div>' +
+    '<p class="sec">Download the area on screen</p>' +
+    '<label class="fld"><span>Name</span><input type="text" id="aName" maxlength="40" value="' + esc(S.session.name) + '"></label>' +
+    '<div class="checks">' + ['sat', 'topo', 'map'].map(function (id) {
+      return '<label class="toggle"><span class="tx">' + LAYERS[id].label + '</span><input type="checkbox" data-al="' + id + '" checked></label>';
+    }).join('') + '</div>' +
+    '<span class="lbl">Detail</span><div class="seg" role="group" aria-label="Detail">' +
+      '<button type="button" data-det="normal">Normal</button><button type="button" data-det="high" aria-pressed="true">High</button><button type="button" data-det="max">Highest</button></div>' +
+    '<p id="aEst" class="hint" style="margin-bottom:12px"></p>' +
+    '<div id="aProg" hidden><div class="bar"><i></i></div><p class="hint" id="aProgT"></p></div>' +
+    '<p class="err" id="aErr" role="alert"></p>' +
+    '<div class="btns"><button type="button" class="btn primary" id="aGo">Download</button><button type="button" class="btn" id="aStop" hidden>Stop</button></div>' +
+    '<p class="hint" style="margin-top:10px">Tip: close this, zoom the map to just the area you need, then open Offline maps again. Smaller areas download faster.</p>', function (d) {
+    function est() {
+      var p = areaPlan(bounds, sel.layers, sel.detail), go = $('#aGo', d);
+      var big = p.tiles > 20000;
+      $('#aEst', d).textContent = !sel.layers.length ? 'Pick at least one map type.' :
+        'About ' + fmtMB(p.bytes) + ' (' + p.tiles.toLocaleString() + ' pieces).' + (big ? ' That’s too big: zoom in to a smaller area or pick less detail.' : '');
+      go.disabled = big || !sel.layers.length || !!dlCtl;
+    }
+    $$('[data-al]', d).forEach(function (c) { c.onchange = function () { sel.layers = $$('[data-al]', d).filter(function (x) { return x.checked; }).map(function (x) { return x.dataset.al; }); est(); }; });
+    $$('[data-det]', d).forEach(function (b) { b.onclick = function () { sel.detail = b.dataset.det; $$('[data-det]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); est(); }; });
+    est(); renderAreas(d);
+    if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(function (e) {
+      if (e.quota) { var el = $('#aEst', d); if (el) el.insertAdjacentHTML('afterend', '<p class="hint" style="margin:-6px 0 12px">Space Pebbly can use on this phone: about ' + fmtMB(Math.max(0, e.quota - e.usage)) + '.</p>'); }
+    }).catch(function () {});
+    $('#aGo', d).onclick = function () {
+      if (!hasCaches()) { $('#aErr', d).textContent = 'This browser can’t save maps.'; return; }
+      var plan = areaPlan(bounds, sel.layers, sel.detail);
+      var area = { id: uuid(), name: tidy($('#aName', d).value) || S.session.name, bounds: bounds, detail: sel.detail, at: Date.now(), tiles: plan.tiles, bytes: 0,
+        layers: plan.layers.map(function (l) { return { id: l.id, key: l.id === 'map' ? layerKeyId('map') : l.id, minz: l.minz, maxz: l.maxz }; }) };
+      $('#aErr', d).textContent = '';
+      var needStyle = sel.layers.indexOf('map') >= 0 ? vectorStyle().then(saveMapExtras) : Promise.resolve();
+      dlCtl = new AbortController(); var ctl = dlCtl;
+      $('#aGo', d).disabled = true; $('#aStop', d).hidden = false; $('#aProg', d).hidden = false;
+      $('#aProgT', d).textContent = 'Starting…';
+      needStyle.then(function () {
+        area.layers.forEach(function (l) { if (l.id === 'map') l.key = layerKeyId('map'); });
+        var all = areas(); all.unshift(area); store(K_AREAS, all);
+        return downloadArea(area, function (done, total, bytes) {
+          if (!sheetEl || openSheetName !== 'offline') return;
+          $('.bar i', d).style.width = Math.round(done / total * 100) + '%';
+          $('#aProgT', d).textContent = done.toLocaleString() + ' of ' + total.toLocaleString() + ' · ' + fmtMB(bytes);
+        }, ctl.signal);
+      }).then(function (res) {
+        dlCtl = null;
+        var all = areas().map(function (a) { if (a.id === area.id) { a.bytes = res.bytes; a.failed = res.failed; a.partial = ctl.signal.aborted || res.failed > 0; } return a; });
+        store(K_AREAS, all);
+        if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(function () {});
+        if (openSheetName === 'offline') {
+          $('#aStop', d).hidden = true; $('#aGo', d).disabled = false;
+          if (!ctl.signal.aborted) $('.bar i', d).style.width = '100%';
+          $('#aProgT', d).textContent = ctl.signal.aborted ? 'Stopped. What downloaded is kept.' :
+            res.failed ? 'Done, but ' + res.failed.toLocaleString() + ' pieces didn’t download. Tap Download again to fill them in.' : 'Done. This area works offline now.';
+          renderAreas(d);
+        }
+        if (!ctl.signal.aborted && !res.failed) toast('Area saved for offline use.');
+      }, function () {
+        dlCtl = null;
+        if (openSheetName === 'offline') { $('#aErr', d).textContent = 'Couldn’t download. Check your connection and try again.'; $('#aStop', d).hidden = true; $('#aGo', d).disabled = false; }
+      });
+    };
+    $('#aStop', d).onclick = function () { if (dlCtl) dlCtl.abort(); };
+  });
+}
+function renderAreas(d) {
+  var el = $('#areaList', d); if (!el) return;
+  var list = areas();
+  el.innerHTML = list.length ? '<p class="sec">Saved on this phone</p><ul class="list">' + list.map(function (a) {
+    return '<li><div class="row" style="cursor:default"><span class="em">🗺️</span><span class="tx"><b>' + esc(a.name) + '</b><small>' +
+      esc(a.layers.map(function (l) { return LAYERS[l.id].label; }).join(', ')) + ' · ' + esc(fmtMB(a.bytes || 0)) + (a.partial ? ' · not complete' : '') + '</small></span>' +
+      '<button type="button" class="btn small" data-ago="' + a.id + '">Show</button>' +
+      '<button type="button" class="ibtn" data-adel="' + a.id + '" aria-label="Delete saved area" style="color:var(--bad)">✕</button></div></li>';
+  }).join('') + '</ul>' : '';
+  $$('[data-ago]', el).forEach(function (b) {
+    b.onclick = function () {
+      var a = areas().filter(function (x) { return x.id === b.dataset.ago; })[0]; if (!a) return;
+      closeSheet(); FOLLOW = false; renderFabs();
+      MAP.fitBounds([[a.bounds[0], a.bounds[1]], [a.bounds[2], a.bounds[3]]], { padding: 10, duration: 600, bearing: MAP.getBearing() });
+    };
+  });
+  $$('[data-adel]', el).forEach(function (b) {
+    b.onclick = function () {
+      if (!confirm('Delete this saved area from this phone?')) return;
+      b.disabled = true;
+      deleteArea(b.dataset.adel).then(function () { renderAreas(d); toast('Saved area deleted.'); });
+    };
+  });
+}
+
+/* ------------------------------------------------------------------ pocket mode */
+var pocketEl = null;
+function openPocket() {
+  closePocket();
+  var el = pocketEl = document.createElement('div');
+  el.className = 'pocket'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Pocket mode');
+  el.innerHTML = '<p>Pocket mode: still sharing your location' + (REC ? ' and recording your trail' : '') + '.</p>' +
+    '<button type="button" class="hold"><i></i><span>Press and hold to unlock</span></button>';
+  document.body.appendChild(el);
+  var btn = el.querySelector('.hold'), bar = btn.querySelector('i'), t = null, t0 = 0, raf = null;
+  function down(e) { e.preventDefault(); t0 = Date.now(); step(); }
+  function step() {
+    var k = Math.min(1, (Date.now() - t0) / 1200); bar.style.width = k * 100 + '%';
+    if (k >= 1) { closePocket(); return; }
+    raf = requestAnimationFrame(step);
+  }
+  function up() { cancelAnimationFrame(raf); bar.style.width = '0'; }
+  btn.addEventListener('pointerdown', down); btn.addEventListener('pointerup', up); btn.addEventListener('pointerleave', up); btn.addEventListener('pointercancel', up);
+  el.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+}
+function closePocket() { if (pocketEl) { pocketEl.remove(); pocketEl = null; } }
+
+/* ================================================================== leaving the screen */
+document.addEventListener('visibilitychange', function () {
+  if (screen !== 'map') return;
+  if (document.visibilityState === 'hidden') {
+    if (REC) stopTrail('leave');
+    stopGeo(); saveView();
+    if (S) { clearTimeout(snapT); snapT = null; saveSnapshotSoon(); }
+    try { syncCall().catch(function () {}); } catch (e) {}
+  } else {
+    startGeo(); renderNotes(); syncCall().catch(syncErr);
+  }
+});
+window.addEventListener('pagehide', function () { if (screen === 'map' && REC) stopTrail('leave'); saveView(); });
+
+window.__bc = {
+  state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
+  mode: function () { return MODE; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
+  areaPlan: areaPlan, areaTiles: areaTiles, fmtDist: fmtDist, dir8: dir8, layers: LAYERS, tileKey: tileKey,
+  orient: onOrient, sync: function () { return syncCall(); }
+};
+route();
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "6ace61993fc54f859a2dff822d57815f"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

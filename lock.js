@@ -1,7 +1,7 @@
 // Optional passwords for the Plan apps (RSVP, Poll, Which Day Works?). See
 // supabase/migrations/20261012000000_plan_passwords.sql for the database side.
 //
-// Apps: 'rsvp', 'poll', 'wdw', 'doc' (Split the Bill, Sign-up Sheet, Shared List; doc.js) and 'santa'.
+// Apps: 'rsvp', 'poll', 'wdw', 'doc' (Split the Bill, Sign-up Sheet, Shared List; doc.js), 'santa' and 'basecamp'.
 // A guest trades the password for a key once (lock_open); this phone keeps the key in localStorage
 // and PebblyLock.call adds it to every guest call (gated_<name>). The host's phone gets the key with
 // its host link (lock_owner), so hosts never type the password.
@@ -17,7 +17,8 @@
     poll: ['poll_get', 'poll_vote', 'poll_add_option', 'poll_edit_option', 'poll_remove_option'],
     wdw: ['wdw_get', 'get_event', 'save_response', 'delete_response'],
     doc: ['doc_get', 'doc_push'],
-    santa: ['santa_get', 'santa_claim', 'santa_unclaim', 'santa_join', 'santa_set_wish']
+    santa: ['santa_get', 'santa_claim', 'santa_unclaim', 'santa_join', 'santa_set_wish'],
+    basecamp: ['bc_sync', 'bc_join', 'bc_me_update', 'bc_remove_member', 'bc_waypoint_save', 'bc_waypoint_delete', 'bc_trail_delete']
   };
   var KEYS = 'pebbly_lock_keys', PWS = 'pebbly_lock_pw', noGate = false;
   var MSG = {
@@ -105,7 +106,7 @@
   }
 
   function fieldHtml(what) {
-    var w = words(what), verb = /^(bill|list|sheet)$/.test(w.a) ? 'see or change' : 'see or reply to';
+    var w = words(what), verb = /^(bill|list|sheet)$/.test(w.a) ? 'see or change' : w.a === 'map' ? 'see or join' : 'see or reply to';
     return '<label class="fld"><span>🔒 Password <span class="pl-opt">(optional)</span></span>' +
       '<input type="text" name="lockpw" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="100">' +
       '<small>Leave blank so anyone with the link can open it. With a password, people need it to ' + verb + ' the ' + w.a +

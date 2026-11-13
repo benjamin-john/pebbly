@@ -18,6 +18,7 @@ let pass = 0, fail = 0; const check = (ok, m) => ok ? pass++ : (fail++, console.
   const list = doc('list', { v: 1, title: 'Groceries', kind: 'grocery', emoji: '🛒', sections: {}, items: { i: { text: 'Milk' } } });
   const names = doc('names', { v: 1, p: { a: 'Amy', b: 'Ben' }, votes: { a: {}, b: {} }, names: { zelda: { n: 'Zelda' } }, lists: {}, rank: {}, notes: {} });
   const santa = JSON.parse(sql(`select santa_create('Family swap', '', null, '', '["Ann","Bo","Cy"]'::jsonb);`));
+  const camp = JSON.parse(sql(`select bc_create('Deer camp', 'Ben', null);`));
   const b = await chromium.launch();
   const p = await phone(b, devices, DB);
   await p.goto(B + '/');
@@ -31,7 +32,7 @@ let pass = 0, fail = 0; const check = (ok, m) => ok ? pass++ : (fail++, console.
   await p.fill('#pw', 'secret'); await p.click('#loginForm button');
   await p.waitForSelector('#dash:not([hidden]) details.app');
   const secs = await p.$$eval('details.app', ds => ds.map(d => d.dataset.app + ':' + d.querySelectorAll('.items li:not(.empty)').length));
-  check(secs.join() === 'live:1,rsvp:1,wdw:1,poll:1,bill:1,signup:1,list:1,names:1,santa:1', 'one section per app with its items: ' + secs);
+  check(secs.join() === 'live:1,rsvp:1,wdw:1,poll:1,bill:1,signup:1,list:1,names:1,basecamp:1,santa:1', 'one section per app with its items: ' + secs);
   const txt = await p.textContent('#apps');
   check(['Lake BBQ', 'Cabin weekend', 'Lunch spot', 'Team Quiz', 'Waiting to start', live.code, 'Lake trip', '2 people', '1 expense',
     'Potluck', '1 thing to sign up for', '🛒 Groceries', '1 item', 'Amy & Ben', '1 name added', 'Family swap', '3 people, 0 picked their name'].every(t => txt.includes(t)), 'titles and details shown: ' + txt);
@@ -60,6 +61,12 @@ let pass = 0, fail = 0; const check = (ok, m) => ok ? pass++ : (fail++, console.
   await p.click('button[data-act=host][data-app=santa]');
   await p.waitForSelector('.pill', { timeout: 15000 }).catch(() => {});
   check(/organizer/.test(await p.textContent('#app')) && /"is_owner": true/.test(sql(`select santa_get('${santa.code}', null, '${santa.owner_token}');`, true)), 'open as organizer: santa (and the real organizer still is)');
+  await p.goto(B + '/admin/'); await p.waitForSelector('details.app');
+  await p.click('button[data-act=host][data-app=basecamp]');
+  await p.waitForSelector('#joinForm', { timeout: 15000 }).catch(() => {});
+  const campTok = await p.evaluate(c => (JSON.parse(localStorage.getItem('pebbly_basecamp_owners')) || {})[c], camp.code);
+  check(campTok && campTok !== camp.owner_token && /"is_owner": true/.test(sql(`select gated_bc_sync('${camp.code}', null, '${campTok}');`, true)) &&
+    /"is_owner": true/.test(sql(`select gated_bc_sync('${camp.code}', null, '${camp.owner_token}');`, true)), 'open as host: basecamp (and the real host still is)');
   for (const app of ['rsvp', 'wdw', 'poll', 'live']) {
     await p.goto(B + '/admin/'); await p.waitForSelector('details.app');
     await p.click(`button[data-act=host][data-app=${app}]`);
@@ -72,7 +79,8 @@ let pass = 0, fail = 0; const check = (ok, m) => ok ? pass++ : (fail++, console.
   await p.waitForFunction(() => !document.querySelector('button[data-act=del][data-app=poll]'));
   check(sql(`select count(*) from polls where code='${poll.code}';`, true) === '0', 'delete removes it');
   check(/Nothing here yet/.test(await p.textContent('details[data-app=poll]')), 'empty section message');
-  for (const [app, q] of [['names', `select count(*) from plan_docs where code='${names.code}';`], ['santa', `select count(*) from santa_groups where code='${santa.code}';`]]) {
+  for (const [app, q] of [['names', `select count(*) from plan_docs where code='${names.code}';`], ['santa', `select count(*) from santa_groups where code='${santa.code}';`],
+    ['basecamp', `select count(*) from bc_sessions where code='${camp.code}';`]]) {
     await p.click(`button[data-act=del][data-app=${app}]`);
     await p.waitForFunction(a => !document.querySelector(`button[data-act=del][data-app=${a}]`), app);
     check(sql(q, true) === '0', 'delete: ' + app);

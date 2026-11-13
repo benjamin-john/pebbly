@@ -1,0 +1,2 @@
+MapLibre GL JS 5.23.0 (BSD-3-Clause, see LICENSE.txt), from the npm package maplibre-gl/dist.
+Kept here so Basecamp works offline (sw.js saves it the first time Basecamp opens).

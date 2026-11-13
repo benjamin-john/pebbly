@@ -8,7 +8,8 @@
 // refreshed about once a day, so all of Pebbly opens offline, even pages never opened before.
 // Shared apps (RSVP, lists, …) still need the internet for their data. Add every new app to PAGES
 // (tests/sw_test.js checks). Supabase calls are never touched. Google Fonts are kept in their own
-// cache so pages look the same offline.
+// cache so pages look the same offline. Basecamp keeps its offline maps in its own caches (pebbly-maps*):
+// never delete those here.
 // It also shows phone alerts (Web Push, see notify.js) and opens the event when one is tapped.
 // Phone alerts: a push carries the notification's facts; notify.js says how it reads (alertView).
 try { importScripts('/notify.js'); } catch (e) {}
@@ -16,7 +17,7 @@ try { importScripts('/notify.js'); } catch (e) {}
 const CACHE = 'pebbly-v3';
 const FONTS = 'pebbly-fonts';
 const PAGES = ['/', '/install/',
-  '/rsvp/', '/whichdayworks/', '/poll/', '/signup/', '/bill/', '/list/', '/santa/', '/babynames/',
+  '/rsvp/', '/whichdayworks/', '/poll/', '/signup/', '/bill/', '/list/', '/santa/', '/babynames/', '/basecamp/',
   '/bracket/', '/codebreaker/', '/colorstack/', '/darts/', '/dots/', '/farkle/', '/gomoku/', '/mancala/', '/timer/', '/kwiks/', '/namegame/', '/score/', '/teams/', '/trivia/', '/worddash/', '/live/', '/join/', '/admin/', '/notifications/', '/backup/',
   '/qwixx/'];
 const FILES = ['/theme.js', '/nav.js', '/keepawake.js', '/play/sync.js', '/lock.js', '/doc.js', '/migrate.js', '/notify.js', '/backup.js',
@@ -39,7 +40,7 @@ function refreshIfOld() {
 
 self.addEventListener('install', e => { self.skipWaiting(); e.waitUntil(saveAll().catch(() => {})); });
 self.addEventListener('activate', e => e.waitUntil(
-  caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== FONTS).map(k => caches.delete(k))))
+  caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== FONTS && !k.startsWith('pebbly-maps')).map(k => caches.delete(k))))
     .then(() => self.clients.claim())
 ));
 

@@ -29,6 +29,7 @@ database for the apps that share data between people. See README.md for the app 
 | `play/sync.js`, `play/play.sql` | "Play together": share any game between phones with a 5-letter code. |
 | `doc.js` | Shared documents for Sign-up Sheet, Split the Bill, Shared List (doc_* functions): open/change/merge, host keys. Keep lists as objects keyed by id. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
+| `basecamp/` | Basecamp: live group map with waypoints, trails and offline maps (see "Basecamp" below). |
 | `admin/` | One admin page for every app with an admin mode (shared admin password): a section per app (list, open as host, delete). Add new apps' admin functions to `APPS` there. Shared documents and Secret Santa use `doc_admin_*` / `santa_admin_*`: their admin key is `admin_hash` (host checks go through `_doc_is_owner`). Baby Names is list-and-delete only (private; `doc_admin_grant` refuses it). |
 | `notify.js`, `notifications/` | The 🔔 bell (homepage, RSVP, Which Day Works?, Poll, Sign-up Sheet, Secret Santa; Bracket alerts) and its settings page. See "Notifications" below. |
 | `backup.js`, `backup/` | Backup & restore: a six-word key keeps an encrypted copy of the phone's Pebbly data in the database. See "Backups" below. |
@@ -192,6 +193,19 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   old guest ids back); `version` catches two phones saving at once. nav.js loads backup.js on every page once a phone
   has a key; it saves on load, every minute while open and when leaving, only if something changed. Never back up
   admin passwords (they're in sessionStorage). Test: `tests/backup_test.js`.
+- **Basecamp** (`/basecamp/`, `bc_*`, `supabase/migrations/20261113220000_basecamp.sql`): live group map. A phone joins
+  (`bc_join`, hashed member key in `pebbly_basecamp_me`) and calls `bc_sync` every 3 s: its location and new trail points
+  go up, everyone's locations come back, plus waypoints/trails when `rev` changed and trail points newer than `p_since`
+  (point inserts take a per-map advisory lock so ids arrive in order). Waypoint and trail ids are made on the phone, and
+  changes wait in `pebbly_basecamp_queue` when there's no signal. Maps are never deleted automatically (Ben's choice: keep
+  people's waypoints); only the host (`bc_host`) or admin removes them. Browsers only share location while the page is on
+  screen, so a trail stops when you leave the screen. Map: MapLibre GL JS, vendored in `basecamp/maplibre/` (offline).
+  Layers: OpenFreeMap vector "liberty" (Map), USGS ImageryOnly (Satellite) and USGSTopo (Topo), all no-account. Every
+  map request goes through the page's `bc://` protocol: tiles come from Cache Storage first (`pebbly-maps` for downloaded
+  areas and style files, `pebbly-maps-seen` for the newest ~5,000 viewed tiles) under fixed keys `https://bc.tiles/<layer>/z/x/y`;
+  missing photo tiles are cut from a parent tile. `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
+  kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:
+  `webkitCompassHeading` after a tap). Test: `tests/basecamp_test.js` (map servers stubbed; WebGL via SwiftShader flags).
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
 
 ## Testing (do this before pushing)
