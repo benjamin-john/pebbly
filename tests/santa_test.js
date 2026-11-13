@@ -42,6 +42,12 @@ async function toastHas(p, s) { await p.waitForFunction(s => document.getElement
   check(!!tok, 'organizer key stored');
   check((await org.evaluate(() => JSON.parse(localStorage.getItem('pebbly_score_memory')).players)).includes('Cara'), 'names remembered');
   await shot(org, 'organizer-new');
+  // the ovals: budget shows as a limit with $, and tapping one explains it (tap again to close)
+  check((await org.textContent('.fact[data-k="head:budget"]')).includes('$25 limit'), 'budget oval says $25 limit');
+  await org.click('.fact[data-k="head:budget"]');
+  check((await org.textContent('.facttip')).includes('Spending limit'), 'tapping budget explains it');
+  await org.click('.fact[data-k="head:budget"]');
+  check(!(await org.$('.facttip')), 'tapping again closes it');
   await claim(org, 'Ann');
   check(await org.locator('#wishForm').isVisible(), 'organizer picked own name, sees wish list');
 

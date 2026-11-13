@@ -107,8 +107,12 @@ textarea{resize:vertical;line-height:1.4}
 .created{border:2px solid var(--brand);background:var(--brand-t)}
 .created h2{font-size:19px}
 .facts{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
-.facts span{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:14px}
+.facts .fact{display:inline-flex;align-items:center;min-height:36px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;
+  padding:3px 12px;font:inherit;font-size:14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.facts .fact.on{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
 .facts .ok{border-color:var(--brand);color:var(--brand);font-weight:600}
+.facts .ok.on{border-color:var(--brand);box-shadow:0 0 0 1px var(--brand)}
+.facttip{margin-top:8px;padding:10px 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;font-size:15px;text-align:left}
 .note{margin-top:10px;white-space:pre-wrap;overflow-wrap:anywhere}
 .head{margin-bottom:18px}
 .sec-title{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:4px}
@@ -234,6 +238,29 @@ function fmtDate(d) {
   var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d || ''); if (!m) return '';
   var dt = new Date(+m[1], +m[2] - 1, +m[3]);
   return dt.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: dt.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' });
+}
+
+// The budget is free text; a bare number like "25" or "20-30" gets a $ so it reads as money.
+function money(b) {
+  b = String(b || '').trim();
+  return /^\d/.test(b) && !/[a-z€£¥₹]/i.test(b) ? '$' + b.replace(/(\d)\s*[-–]\s*(\d)/g, '$1–$$$2') : b;
+}
+// The ovals under the title: tap one to see what it means (S.tip remembers which, so polling keeps it open).
+function factsHtml(where, list) {
+  var open = null;
+  var h = list.map(function (f) {
+    var k = where + ':' + f.k, on = S.tip === k; if (on) open = f.tip;
+    return '<button type="button" class="fact' + (f.cls ? ' ' + f.cls : '') + (on ? ' on' : '') + '" data-act="fact" data-k="' + k + '" aria-expanded="' + on + '">' + f.label + '</button>';
+  }).join('');
+  return '<div class="facts">' + h + '</div>' + (open ? '<p class="facttip" role="status">' + open + '</p>' : '');
+}
+function budgetFact(g) {
+  var m = esc(money(g.budget));
+  return { k: 'budget', label: '💰 ' + m + ' limit', tip: '💰 <b>Spending limit:</b> try to spend ' + (/\d\s*[-–]|to\s/i.test(m) ? m : 'no more than ' + m) + ' on your gift, so everyone’s gifts are about the same.' };
+}
+function dateFact(g) {
+  var d = esc(fmtDate(g.swap_date));
+  return { k: 'date', label: '📅 ' + d, tip: '📅 <b>Gift swap day:</b> have your gift ready by ' + d + '.' };
 }
 
 // Phone id, organizer keys, recent groups, remembered names.
@@ -397,7 +424,7 @@ function renderHome() {
     '<p class="lede">Draw names for a gift swap. Everyone picks their own name on their phone and sees only who they’re buying for. Not even you can peek.</p>' +
     '<form id="createForm" class="card" novalidate>' +
       '<label class="fld"><span>Group name</span><input type="text" name="name" maxlength="80" placeholder="Family Christmas 2026" autocomplete="off"></label>' +
-      '<div class="two"><label class="fld"><span>Budget <span class="opt">(optional)</span></span><input type="text" name="budget" maxlength="40" placeholder="$25"></label>' +
+      '<div class="two"><label class="fld"><span>Spending limit <span class="opt">(optional)</span></span><input type="text" name="budget" maxlength="40" placeholder="$25"></label>' +
       '<label class="fld"><span>Swap date <span class="opt">(optional)</span></span><input type="date" name="date"></label></div>' +
       '<label class="fld"><span>Note <span class="opt">(optional)</span></span><textarea name="note" rows="2" maxlength="1000" placeholder="Where you’ll swap, theme, anything people should know"></textarea></label>' +
       '<label class="fld" style="margin-bottom:6px"><span>Who’s in?</span><textarea name="people" rows="5" placeholder="One name per line&#10;Ann&#10;Ben&#10;Cara"></textarea>' +
@@ -480,17 +507,19 @@ function draw() {
     if (G.me) PebblyNotify.feed('santa', S.code, 'guest', pid(), pid());
   }
   document.title = g.name + ' | Secret Santa';
-  var facts = [];
-  if (g.budget) facts.push('<span>💰 ' + esc(g.budget) + '</span>');
-  if (g.swap_date) facts.push('<span>📅 ' + esc(fmtDate(g.swap_date)) + '</span>');
-  facts.push('<span>👥 ' + plural(G.people.length, 'person', 'people') + '</span>');
-  facts.push(g.drawn ? '<span class="ok">✓ Names drawn</span>' : '<span>Names not drawn yet</span>');
+  var facts = [], n = G.people.length;
+  if (g.budget) facts.push(budgetFact(g));
+  if (g.swap_date) facts.push(dateFact(g));
+  facts.push({ k: 'people', label: '👥 ' + plural(n, 'person', 'people'), tip: '👥 <b>' + plural(n, 'person is', 'people are') + ' in this group.</b> Each one gives a gift to someone and gets one back.' });
+  facts.push(g.drawn
+    ? { k: 'drawn', cls: 'ok', label: '✓ Names drawn', tip: '✓ <b>Names are drawn.</b> Everyone has someone to buy for. ' + (G.me ? (S.revealed ? 'Yours is shown below.' : 'Tap the gift below to see who you have.') : 'Tap your name below to see who you have.') }
+    : { k: 'drawn', label: 'Names not drawn yet', tip: '⏳ <b>Names aren’t drawn yet.</b> ' + (G.is_owner ? 'Draw names once everyone is on the list.' : 'Once the organizer draws names, come back here to see who you’re buying for.') });
   $app.innerHTML = nav(G.is_owner ? '<span class="pill">You’re the organizer</span>' : '') +
     (S.justCreated && G.is_owner ? '<section class="card created"><h2>Your group is ready 🎉</h2><p style="margin-top:4px">Send this link to everyone' +
       (PebblyLock.key('santa', S.code) ? ', and tell them the password separately' : '') + '. Each person taps their own name.</p>' +
       '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(S.code)) + '" aria-label="Group link">' +
       '<button type="button" class="btn small" data-act="share">Share</button></div></section>' : '') +
-    '<header class="head"><h1>🎁 ' + esc(g.name) + '</h1><div class="facts">' + facts.join('') + '</div>' +
+    '<header class="head"><h1>🎁 ' + esc(g.name) + '</h1>' + factsHtml('head', facts) +
       (g.note ? '<p class="note">' + esc(g.note) + '</p>' : '') +
       (S.justCreated && G.is_owner ? '' : '<div class="row" style="margin-top:12px"><button type="button" class="btn small ghost" data-act="share" style="flex:none">Share link</button></div>') +
     '</header>' +
@@ -528,10 +557,10 @@ function meHtml() {
         out += '<button type="button" class="gift" data-act="reveal" aria-label="Tap to reveal who you’re buying for"><span class="inner"><span class="tagline">Tap to reveal<small>who you’re buying for. Make sure nobody’s peeking!</small></span></span></button>';
       } else {
         var f = [];
-        if (g.budget) f.push('<span>💰 ' + esc(g.budget) + '</span>');
-        if (g.swap_date) f.push('<span>📅 ' + esc(fmtDate(g.swap_date)) + '</span>');
+        if (g.budget) f.push(budgetFact(g));
+        if (g.swap_date) f.push(dateFact(g));
         out += '<section class="reveal" aria-live="polite"><p class="kicker">🎁 You’re buying for…</p><p class="who" id="matchName">' + esc(G.match.name) + '</p>' +
-          (f.length ? '<div class="facts">' + f.join('') + '</div>' : '') +
+          (f.length ? factsHtml('reveal', f) : '') +
           '<div class="wish"><h3>' + esc(G.match.name) + '’s wish list</h3>' +
           (G.match.wish ? '<p>' + esc(G.match.wish) + '</p>' : '<p class="hint">No wish list yet — check back later.</p>') + '</div>' +
           '<button type="button" class="link" data-act="hide">Hide it again</button></section>';
@@ -600,7 +629,7 @@ function editDialog() {
   var g = S.G.group, d = document.createElement('dialog'); d.className = 'dlg';
   d.innerHTML = '<form novalidate><h2>Edit details</h2><div style="margin-top:12px">' +
     '<label class="fld"><span>Group name</span><input type="text" name="name" maxlength="80" value="' + esc(g.name) + '"></label>' +
-    '<div class="two"><label class="fld"><span>Budget</span><input type="text" name="budget" maxlength="40" placeholder="$25" value="' + esc(g.budget || '') + '"></label>' +
+    '<div class="two"><label class="fld"><span>Spending limit</span><input type="text" name="budget" maxlength="40" placeholder="$25" value="' + esc(g.budget || '') + '"></label>' +
     '<label class="fld"><span>Swap date</span><input type="date" name="date" value="' + esc(g.swap_date || '') + '"></label></div>' +
     '<label class="fld"><span>Note</span><textarea name="note" rows="3" maxlength="1000">' + esc(g.note || '') + '</textarea></label>' +
     '<label class="check"><input type="checkbox" name="selfjoin"' + (g.self_join ? ' checked' : '') + '><span><b>Let people add themselves</b><small>Until you draw names.</small></span></label>' +
@@ -688,6 +717,7 @@ document.addEventListener('click', function (e) {
       break;
     case 'join-open': S.joinOpen = true; draw(); var j = $('#joinName'); if (j) j.focus(); break;
     case 'join-chip': var ji = $('#joinName'); if (ji) { ji.value = nm; S.drafts.join = nm; ji.focus(); } break;
+    case 'fact': S.tip = S.tip === t.dataset.k ? null : t.dataset.k; draw(); break;
     case 'reveal': S.revealed = true; draw(); break;
     case 'hide': S.revealed = false; draw(); break;
     case 'add-chip':
