@@ -149,7 +149,7 @@ body.in-map #app{height:100%}
 .pickbar .row .btn{flex:1}
 
 /* markers */
-.pm{position:relative;width:64px;height:64px;pointer-events:auto;cursor:pointer}
+.pm{width:64px;height:64px;pointer-events:auto;cursor:pointer}
 .pm .cone{position:absolute;inset:0;transition:transform .15s linear}
 .pm .dot{position:absolute;left:19px;top:19px;width:26px;height:26px;border-radius:50%;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.45);
   display:grid;place-items:center;color:#fff;font:800 12px/1 var(--body);text-shadow:0 1px 1px rgba(0,0,0,.35)}
@@ -160,7 +160,7 @@ body.in-map #app{height:100%}
   background:rgba(255,255,255,.92);padding:2px 7px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.25);max-width:160px;overflow:hidden;text-overflow:ellipsis}
 .pm .lbl{top:50px}
 .pm .lbl small{font-weight:500;color:#5D6B66}
-.wp{position:relative;width:30px;height:30px;cursor:pointer}
+.wp{width:30px;height:30px;cursor:pointer}
 .wp .wd{position:absolute;left:8px;top:8px;width:14px;height:14px;border-radius:50%;background:#E0261B;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5)}
 .wp .lbl{top:6px;left:24px;transform:none;font-size:11px;padding:1px 6px}
 .wp.pending .wd{background:#F08A84}
@@ -407,17 +407,19 @@ function tileKey(layer, z, x, y) { return TKEY + layer + '/' + z + '/' + x + '/'
 function getTile(layer, z, x, y, signal, noNet) {
   var key = tileKey(layer, z, x, y);
   return cacheGet(key).then(function (hit) {
-    if (hit) { fromPhone++; return hit.arrayBuffer(); }
-    if (noNet) return null;
+    return hit ? hit.arrayBuffer() : null;
+  }).then(function (saved) {
+    if (saved && saved.byteLength) { fromPhone++; return saved; }
+    if (noNet) return saved;
     var url = tileUrl(layer, z, x, y); if (!url) return null;
     return fetchT(url, 12000, signal).then(function (r) {
       if (r.status === 404 || r.status === 204) return layer.indexOf('m~') === 0 ? new ArrayBuffer(0) : null;   // no map there
-      if (!r.ok || /html|json/.test(r.headers.get('content-type') || '')) return null;
+      if (!r.ok || /html|json/.test(r.headers.get('content-type') || '')) return saved;
       return r.arrayBuffer().then(function (buf) {
-        cachePut(SEEN, key, buf.slice(0), r.headers.get('content-type')); trimSeen();
+        if (buf.byteLength) { cachePut(SEEN, key, buf.slice(0), r.headers.get('content-type')); trimSeen(); }
         return buf;
       });
-    }, function () { return null; });
+    }, function () { return saved; });
   });
 }
 // A photo tile that isn't available: cut it out of a bigger one this phone has (blurrier, but better than nothing).
@@ -540,16 +542,21 @@ function downloadArea(area, onProgress, signal) {
       if (signal.aborted || i >= jobs.length) return Promise.resolve();
       var j = jobs[i++], key = tileKey(j[0], j[1], j[2], j[3]);
       return c.match(key).then(function (hit) {
-        if (hit) return hit.blob().then(function (b) { bytes += b.size; });
+        return hit ? hit.blob() : null;
+      }).then(function (b) {
+        if (b && b.size) { bytes += b.size; return; }
         return caches.match(key).then(function (seen) {             // already looked at: copy it over
-          if (seen) return seen.arrayBuffer().then(function (buf) { bytes += buf.byteLength; return c.put(key, new Response(buf)); });
+          if (seen) return seen.arrayBuffer().then(function (buf) { if (!buf.byteLength) return fetchIt(); bytes += buf.byteLength; return c.put(key, new Response(buf)); });
+          return fetchIt();
+        });
+        function fetchIt() {
           var url = tileUrl(j[0], j[1], j[2], j[3]);
           return fetchT(url, 20000, signal).then(function (r) {
-            if (r.status === 404 || r.status === 204) return c.put(key, new Response(new ArrayBuffer(0)));
+            if (r.status === 404 || r.status === 204) return;          // nothing there: nothing to save
             if (!r.ok) throw new Error('http');
             return r.arrayBuffer().then(function (buf) { bytes += buf.byteLength; return c.put(key, new Response(buf, { headers: { 'Content-Type': r.headers.get('content-type') || '' } })); });
           });
-        });
+        }
       }).catch(function () { failed++; }).then(function () { done++; onProgress(done, total, bytes); return worker(); });
     }
     var ws = []; for (var k = 0; k < 6; k++) ws.push(worker());
@@ -1016,14 +1023,13 @@ function showMap() {
       '<div class="layers" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
         return '<button type="button" data-layer="' + id + '">' + LAYERS[id].label + '</button>';
       }).join('') + '</div>' +
-      '<div class="fabs"><button type="button" class="fab" id="compass" aria-label="North up">' + ICON.compass + '<span class="n">N</span></button>' +
-        '<button type="button" class="fab" id="showBtn" aria-label="What to show">' + ICON.show + '</button></div>' +
+      '<div class="fabs"><button type="button" class="fab" id="compass" aria-label="North up">' + ICON.compass + '<span class="n">N</span></button></div>' +
       '<div class="notes" id="notes"></div>' +
       '<button type="button" class="fab mefab" id="meBtn" aria-label="Go to my location">' + ICON.me + '</button>' +
       '<nav class="bbar" id="bbar">' +
         '<button type="button" id="pinBtn">' + ICON.pin + '<span>Pin</span></button>' +
         '<button type="button" id="trailBtn"></button>' +
-        '<button type="button" id="wpsBtn">' + ICON.list + '<span>Waypoints</span></button>' +
+        '<button type="button" id="wpsBtn">' + ICON.list + '<span>Saved</span></button>' +
         '<button type="button" id="peopleBtn">' + ICON.people + '<span>People</span></button>' +
         '<button type="button" id="moreBtn">' + ICON.more + '<span>More</span></button></nav>' +
       '<div class="cross" id="cross" hidden></div>' +
@@ -1034,7 +1040,7 @@ function showMap() {
   initMap();
   $('#moreTop').onclick = $('#moreBtn').onclick = openMenu;
   $('#peopleBtn').onclick = openPeople;
-  $('#wpsBtn').onclick = openWaypointList;
+  $('#wpsBtn').onclick = function () { openSaved(ui().savedTab === 'tr' ? 'tr' : 'wp'); };
   $('#pinBtn').onclick = function () { if (FIX) openWaypointEdit(null, { lat: FIX.lat, lng: FIX.lng }, true); else startPick(null); };
   $('#trailBtn').onclick = function () { if (REC) stopTrail(); else startTrail(); };
   $('#meBtn').onclick = function () {
@@ -1055,7 +1061,6 @@ function showMap() {
       MAP.easeTo({ bearing: 0, duration: 300 }); renderFabs();
     }
   };
-  $('#showBtn').onclick = openShow;
   $$('.layers button').forEach(function (b) { b.onclick = function () { setLayer(b.dataset.layer); }; });
   $('#pickCancel').onclick = endPick;
   $('#pickOk').onclick = function () { var c = MAP.getCenter(), cb = pick && pick.done; endPick(); if (cb) cb({ lat: c.lat, lng: c.lng }); };
@@ -1215,8 +1220,14 @@ function circle(c, r, color) {
   }
   return { type: 'Feature', properties: { color: color }, geometry: { type: 'Polygon', coordinates: [pts] } };
 }
-function hiddenWp() { return ui().hiddenWp && ui().hiddenWp[CODE] || {}; }
-function setHiddenWp(fn) { setUi(function (u) { u.hiddenWp = u.hiddenWp || {}; var h = u.hiddenWp[CODE] || {}; fn(h); u.hiddenWp[CODE] = h; }); renderWaypoints(); }
+// What this phone hides on the map, per map: kind 'wp' (waypoints) or 'tr' (trails) -> { id: 1 }.
+function hidden(kind) { var h = ui().hidden; return h && h[kind] && h[kind][CODE] || {}; }
+function setHidden(kind, fn) {
+  setUi(function (u) { u.hidden = u.hidden || {}; u.hidden[kind] = u.hidden[kind] || {}; var h = u.hidden[kind][CODE] || {}; fn(h); u.hidden[kind][CODE] = h; });
+  if (kind === 'wp') renderWaypoints(); else renderTrails();
+}
+function hiddenWp() { return hidden('wp'); }
+function setHiddenWp(fn) { setHidden('wp', fn); }
 function visibleWaypoints() { var h = hiddenWp(); return allWaypoints().filter(function (w) { return !h[w.id]; }); }
 function allWaypoints() {
   var list = S.waypoints.slice(), ids = {};
@@ -1252,11 +1263,8 @@ function renderWaypoints() {
   Object.keys(markers.w).forEach(function (id) { if (!seen[id]) { markers.w[id].remove(); delete markers.w[id]; } });
 }
 function shownTrails() {
-  var u = ui();
-  return allTrails().filter(function (t) {
-    var mine = ME && t.member === ME.id;
-    return mine ? u.myTrails !== false : u.othersTrails !== false;
-  });
+  var h = hidden('tr');
+  return allTrails().filter(function (t) { return !h[t.id]; });
 }
 var drawnTrails = 0;
 function renderTrails() {
@@ -1399,29 +1407,38 @@ function personStatus(m) {
   var age = srvNow() - p.at;
   return (age < 30000 ? 'Here now' : fmtAgo(age)) + (p.acc != null ? ' · ±' + fmtFeet(p.acc) : '');
 }
+// The rows stay in a fixed order (you first, then in the order people joined) and are updated in place,
+// so a tap is never lost to a redraw while times and distances tick.
 function renderPeopleList() {
   var ul = $('#plist'); if (!ul) return;
   var list = S.members.slice().sort(function (a, b) {
-    if (ME && a.id === ME.id) return -1; if (ME && b.id === ME.id) return 1;
-    var pa = personPlace(a), pb = personPlace(b);
-    return ((pb ? pb.at : 0) - (pa ? pa.at : 0));
+    if (ME && a.id === ME.id) return -1; if (ME && b.id === ME.id) return 1; return 0;
   });
-  var html = list.map(function (m) {
+  function inner(m) {
     var p = personPlace(m), isMe = ME && m.id === ME.id;
-    return '<li><button type="button" class="row" data-person="' + m.id + '"><span class="sw" style="background:' + m.color + '">' + esc(initial(m.name)) + '</span>' +
-      '<span class="tx"><b>' + esc(m.name) + (isMe ? ' (you)' : '') + '</b><small>' + esc(personStatus(m)) + '</small></span>' + (isMe ? '' : fromMe(p)) + '</button></li>';
-  }).join('');
-  if (ul._html === html) return;          // unchanged: keep the buttons (a tap mid-redraw would be lost)
-  ul._html = html; ul.innerHTML = html;
-  $$('[data-person]', ul).forEach(function (b) {
-    b.onclick = function () {
+    return '<span class="sw" style="background:' + m.color + '">' + esc(initial(m.name)) + '</span>' +
+      '<span class="tx"><b>' + esc(m.name) + (isMe ? ' (you)' : '') + '</b><small>' + esc(personStatus(m)) + '</small></span>' + (isMe ? '' : fromMe(p));
+  }
+  var sig = list.map(function (m) { return m.id; }).join(',');
+  if (ul._sig !== sig) {
+    ul._sig = sig;
+    ul.innerHTML = list.map(function (m) { return '<li><button type="button" class="row" data-person="' + m.id + '"></button></li>'; }).join('');
+  }
+  list.forEach(function (m) {
+    var btn = ul.querySelector('[data-person="' + m.id + '"]'), html = inner(m);
+    if (btn && btn._html !== html) { btn._html = html; btn.innerHTML = html; }
+  });
+  if (!ul._wired) {
+    ul._wired = true;
+    ul.addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-person]'); if (!b) return;
       var m = member(b.dataset.person), p = m && personPlace(m);
       if (!p) { openPerson(b.dataset.person); return; }
       closeSheet();
       if (ME && m.id === ME.id) { $('#meBtn').click(); return; }
       flyTo(p.lat, p.lng);
-    };
-  });
+    });
+  }
 }
 function openPerson(id) {
   var m = member(id); if (!m) return;
@@ -1520,24 +1537,30 @@ function openWaypointEdit(w, at, fromPinBtn) {
 }
 
 /* ------------------------------------------------------------------ all waypoints */
-function openWaypointList() {
-  openSheet('wps', head('Waypoints') +
-    '<div class="btns" style="margin-bottom:12px"><button type="button" class="btn small" data-wall="show">Show all</button>' +
-      '<button type="button" class="btn small" data-wall="hide">Hide all</button><button type="button" class="btn small" data-wall="mine">Only mine</button></div>' +
+function openSaved(tab) {
+  setUi(function (u) { u.savedTab = tab; });
+  openSheet('saved', head('Saved') +
+    '<div class="seg" style="grid-template-columns:1fr 1fr" role="tablist">' +
+      '<button type="button" role="tab" data-tab="wp" aria-pressed="' + (tab === 'wp') + '">Waypoints</button>' +
+      '<button type="button" role="tab" data-tab="tr" aria-pressed="' + (tab === 'tr') + '">Trails</button></div>' +
+    '<div class="btns" style="margin-bottom:12px"><button type="button" class="btn small" data-all="show">Show all</button>' +
+      '<button type="button" class="btn small" data-all="hide">Hide all</button><button type="button" class="btn small" data-all="mine">Only mine</button></div>' +
     '<div id="wlist"></div>', function (d) {
-    $$('[data-wall]', d).forEach(function (b) {
+    $$('[data-tab]', d).forEach(function (b) { b.onclick = function () { closeSheet(); openSaved(b.dataset.tab); }; });
+    $$('[data-all]', d).forEach(function (b) {
       b.onclick = function () {
-        var how = b.dataset.wall;
-        setHiddenWp(function (h) {
+        var how = b.dataset.all, items = tab === 'wp' ? allWaypoints() : allTrails();
+        setHidden(tab, function (h) {
           Object.keys(h).forEach(function (k) { delete h[k]; });
-          if (how !== 'show') allWaypoints().forEach(function (w) { if (how === 'hide' || !(ME && w.member === ME.id)) h[w.id] = 1; });
+          if (how !== 'show') items.forEach(function (x) { if (how === 'hide' || !(ME && x.member === ME.id)) h[x.id] = 1; });
         });
-        renderWaypointList(d);
+        renderSaved(d);
       };
     });
-    renderWaypointList(d);
+    renderSaved(d);
   });
 }
+function renderSaved(d) { if (ui().savedTab === 'tr') renderTrailList(d); else renderWaypointList(d); }
 function renderWaypointList(d) {
   var el = $('#wlist', d); if (!el) return;
   var h = hiddenWp(), list = allWaypoints();
@@ -1564,52 +1587,51 @@ function renderWaypointList(d) {
   });
 }
 
-/* ------------------------------------------------------------------ what to show */
-function openShow() {
-  var u = ui();
-  function tg(key, label, sub) {
-    return '<label class="toggle"><span class="tx">' + label + (sub ? '<small>' + sub + '</small>' : '') + '</span><input type="checkbox" data-ui="' + key + '"' + (u[key] !== false ? ' checked' : '') + '></label>';
-  }
-  openSheet('show', head('What to show') +
-    '<div class="seg" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
-      return '<button type="button" data-layer2="' + id + '" aria-pressed="' + (shownLayer === id) + '">' + LAYERS[id].label + '</button>';
-    }).join('') + '</div>' +
-    tg('othersTrails', 'Other people’s trails') + tg('myTrails', 'My trails') +
-    '<p class="sec">Trails</p><ul class="list" id="tlist"></ul>', function (d) {
-    $$('[data-layer2]', d).forEach(function (b) { b.onclick = function () { setLayer(b.dataset.layer2); $$('[data-layer2]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }; });
-    $$('[data-ui]', d).forEach(function (c) { c.onchange = function () { setUi(function (x) { x[c.dataset.ui] = c.checked; }); renderWaypoints(); renderTrails(); }; });
-    renderTrailList(d);
-  });
+/* ------------------------------------------------------------------ trails list */
+function fmtRange(t0, t1) {
+  var a = new Date(t0), b = new Date(t1), tm = { hour: 'numeric', minute: '2-digit' };
+  var day = a.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  if (!t1 || t1 - t0 < 60000) return day + ', ' + a.toLocaleTimeString(undefined, tm);
+  var same = a.toDateString() === b.toDateString();
+  return day + ', ' + a.toLocaleTimeString(undefined, tm) + ' – ' + (same ? '' : b.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ', ') + b.toLocaleTimeString(undefined, tm);
 }
+function fmtDur(ms) { var m = Math.round(ms / 60000); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' hr' + (m % 60 ? ' ' + (m % 60) + ' min' : ''); }
 function renderTrailList(d) {
-  var ul = $('#tlist', d); if (!ul) return;
-  var list = allTrails().filter(function (t) { return t.pts.length; }).sort(function (a, b) { return b.at - a.at; });
-  if (!list.length) { ul.outerHTML = '<p class="hint" id="tlist">No trails yet. Tap Trail at the bottom to record where you walk.</p>'; return; }
-  ul.innerHTML = list.map(function (t) {
-    var mine = ME && t.member === ME.id, m = member(t.member), last = t.pts[t.pts.length - 1];
-    var dur = last ? last[3] - t.pts[0][3] : 0;
-    return '<li><div class="row" style="cursor:default"><span class="sw" style="background:' + t.color + '"></span><span class="tx"><b>' + esc(mine ? 'You' : (m ? m.name : t.by)) + ' · ' + esc(fmtDist(trailLength(t.pts))) + '</b>' +
-      '<small>' + esc(fmtWhen(t.pts[0][3] || t.at)) + (dur > 60000 ? ' · ' + Math.round(dur / 60000) + ' min' : '') + (REC && REC.id === t.id ? ' · recording' : '') + '</small></span>' +
-      '<button type="button" class="btn small" data-tgo="' + t.id + '">Show</button>' +
-      (mine || S.isOwner ? '<button type="button" class="ibtn" data-tdel="' + t.id + '" aria-label="Delete trail" style="color:var(--bad)">✕</button>' : '') + '</div></li>';
-  }).join('');
-  $$('[data-tgo]', ul).forEach(function (b) {
+  var el = $('#wlist', d); if (!el) return;
+  var h = hidden('tr'), list = allTrails().filter(function (t) { return t.pts.length; }).sort(function (a, b) { return (b.pts[0][3] || b.at) - (a.pts[0][3] || a.at); });
+  if (!list.length) { el.innerHTML = '<p class="hint">No trails yet. Tap Trail at the bottom to record where you walk.</p>'; return; }
+  var shown = list.filter(function (t) { return !h[t.id]; }).length;
+  el.innerHTML = '<p class="hint" style="margin:0 0 8px 4px">' + shown + ' of ' + list.length + ' shown on the map · newest first</p><ul class="list">' + list.map(function (t) {
+    var mine = ME && t.member === ME.id, m = member(t.member), t0 = t.pts[0][3] || t.at, t1 = t.pts[t.pts.length - 1][3];
+    var rec = REC && REC.id === t.id;
+    return '<li class="wrow"><label class="ck"><input type="checkbox" data-tvis="' + t.id + '"' + (h[t.id] ? '' : ' checked') + ' aria-label="Show this trail on the map"></label>' +
+      '<button type="button" class="row" data-tgo="' + t.id + '" style="padding-left:0"><span class="sw" style="background:' + t.color + '"></span>' +
+      '<span class="tx"><b>' + esc(mine ? 'You' : (m ? m.name : t.by || 'Someone')) + ' · ' + esc(fmtDist(trailLength(t.pts))) + '</b>' +
+      '<small>' + esc(fmtRange(t0, rec ? 0 : t1)) + (!rec && t1 - t0 >= 60000 ? ' · ' + esc(fmtDur(t1 - t0)) : '') + (rec ? ' · recording now' : '') + (t.local ? ' · not sent yet' : '') + '</small></span></button>' +
+      (mine || S.isOwner ? '<button type="button" class="ibtn" data-tdel="' + t.id + '" aria-label="Delete trail" style="color:var(--bad)">✕</button>' : '') + '</li>';
+  }).join('') + '</ul>';
+  $$('[data-tvis]', el).forEach(function (c) {
+    c.onchange = function () { var id = c.dataset.tvis; setHidden('tr', function (x) { if (c.checked) delete x[id]; else x[id] = 1; }); renderTrailList(d); };
+  });
+  $$('[data-tgo]', el).forEach(function (b) {
     b.onclick = function () {
       var t = allTrails().filter(function (x) { return x.id === b.dataset.tgo; })[0]; if (!t) return;
+      if (hidden('tr')[t.id]) setHidden('tr', function (x) { delete x[t.id]; });
       var bb = new maplibregl.LngLatBounds(); t.pts.forEach(function (p) { bb.extend([p[2], p[1]]); });
-      closeSheet(); FOLLOW = false; renderFabs();
+      closeSheet(); FOLLOW = false; userMoved = true; renderFabs();
       MAP.fitBounds(bb, { padding: 70, maxZoom: 18, duration: 700, bearing: MAP.getBearing() });
     };
   });
-  $$('[data-tdel]', ul).forEach(function (b) {
+  $$('[data-tdel]', el).forEach(function (b) {
     b.onclick = function () {
-      if (!confirm('Delete this trail for everyone?')) return;
-      var id = b.dataset.tdel;
+      var id = b.dataset.tdel, t = allTrails().filter(function (x) { return x.id === id; })[0];
+      if (!confirm('Delete this trail' + (t ? ' (' + fmtDist(trailLength(t.pts)) + ', ' + fmtRange(t.pts[0][3] || t.at, 0) + ')' : '') + ' for everyone?')) return;
       if (REC && REC.id === id) REC = null;
       var q = queue(CODE); q.pts = q.pts.filter(function (p) { return p.i !== id; }); setQueue(CODE, q);
-      delete S.pts[id]; S.trails = S.trails.filter(function (t) { return t.id !== id; });
+      delete S.pts[id]; S.trails = S.trails.filter(function (x) { return x.id !== id; });
       addOp('bc_trail_delete', { p_code: CODE, p_member: ME ? ME.key : null, p_owner_token: owner(CODE), p_id: id });
       renderTrails(); renderBar(); renderTrailList(sheetEl);
+      toast('Trail deleted.');
     };
   });
 }

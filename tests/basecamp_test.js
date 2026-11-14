@@ -133,6 +133,26 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('#wpForm [type=submit]');
   check(await until(amy, () => __bc.state().waypoints.some(w => w.name === 'Truck (Amy)'), null, 10000), 'host can edit anyone’s waypoint');
   check(await amy.evaluate(() => { const r = document.querySelector('.wp .wd').getBoundingClientRect(); return r.width <= 20 && !document.querySelector('.wp .pin'); }), 'waypoints are small red dots');
+  // every dot (people and waypoints) sits exactly on its spot, at any zoom
+  for (const z of [17, 14, 11, 8]) {
+    const off = await amy.evaluate(z => {
+      const m = __bc.map(); m.jumpTo({ zoom: z }); const box = m.getContainer().getBoundingClientRect(); let worst = 0;
+      const S = __bc.state();
+      const spots = [...document.querySelectorAll('.wp')].map((el, i) => [el.querySelector('.wd'), S.waypoints.find(w => el.textContent.includes(w.name))]);
+      spots.forEach(([el, w]) => {
+        if (!w) return; const r = el.getBoundingClientRect(), p = m.project([w.lng, w.lat]);
+        worst = Math.max(worst, Math.hypot(r.left + r.width / 2 - box.left - p.x, r.top + r.height / 2 - box.top - p.y));
+      });
+      document.querySelectorAll('.pm').forEach(el => {
+        const name = el.querySelector('.lbl').textContent; const mem = S.members.find(x => name.startsWith(x.name));
+        if (!mem || mem.lat == null) return; const d = el.querySelector('.dot').getBoundingClientRect(), p = m.project([mem.lng, mem.lat]);
+        worst = Math.max(worst, Math.hypot(d.left + d.width / 2 - box.left - p.x, d.top + d.height / 2 - box.top - p.y));
+      });
+      return worst;
+    }, z);
+    check(off < 3, 'markers on their exact spot at zoom ' + z + ' (off by ' + off.toFixed(1) + ' px)');
+  }
+  await amy.evaluate(() => __bc.map().jumpTo({ zoom: 16 }));
   // the Waypoints list: closest first, show/hide each, all, only mine, tap to go there
   await amy.click('#wpsBtn');
   await amy.waitForSelector('#wlist [data-wgo]');
@@ -140,24 +160,24 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   const names = await amy.$$eval('#wlist .tx b', e => e.map(x => x.textContent));
   check(names.length === 2 && /2 of 2 shown/.test(await amy.textContent('#wlist')), 'Waypoints list: ' + names);
   check(/yd/.test(await amy.textContent('#wlist li')), 'list shows distance');
-  await amy.click('[data-wall=mine]');
+  await amy.click('[data-all=mine]');
   check(await until(amy, () => ![...document.querySelectorAll('.wp .lbl')].some(e => e.textContent === 'Big buck') && [...document.querySelectorAll('.wp .lbl')].some(e => e.textContent === 'Truck (Amy)')), 'Only mine hides Ben’s');
-  await amy.click('[data-wall=hide]');
+  await amy.click('[data-all=hide]');
   check(await until(amy, () => !document.querySelector('.wp')), 'Hide all');
   check(/0 of 2 shown/.test(await amy.textContent('#wlist')), 'count updates');
   const buckId = await amy.evaluate(() => __bc.state().waypoints.find(w => w.name === 'Big buck').id);
   await amy.check(`[data-wvis="${buckId}"]`);
   check(await until(amy, () => document.querySelectorAll('.wp').length === 1), 'one turned back on');
-  await amy.click('[data-wall=show]');
+  await amy.click('[data-all=show]');
   check(await until(amy, () => document.querySelectorAll('.wp').length === 2), 'Show all');
-  await amy.click('[data-wall=hide]');
+  await amy.click('[data-all=hide]');
   await amy.click(`[data-wgo="${buckId}"]`);
   await amy.waitForTimeout(1200);
   const cw = await amy.evaluate(() => __bc.map().getCenter());
   const bw = await amy.evaluate(id => __bc.state().waypoints.find(w => w.id === id), buckId);
   check(Math.abs(cw.lat - bw.lat) < 0.0003 && Math.abs(cw.lng - bw.lng) < 0.0003, 'tapping a waypoint flies there');
   check(await until(amy, () => document.querySelectorAll('.wp').length === 1), 'and shows it');
-  await amy.click('#wpsBtn'); await amy.click('[data-wall=show]'); await amy.click('dialog.sheet [data-close]');
+  await amy.click('#wpsBtn'); await amy.click('[data-all=show]'); await amy.click('dialog.sheet [data-close]');
   await amy.waitForTimeout(500); await shot(amy, 'dots');
   // labels hide when zoomed out
   await amy.evaluate(() => __bc.map().jumpTo({ zoom: 12 }));
@@ -177,20 +197,38 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(await amy.evaluate(() => !__bc.rec()), 'leaving the screen stops the trail');
   await amy.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' }); document.dispatchEvent(new Event('visibilitychange')); });
   check(await until(amy, () => /trail stopped/.test(document.querySelector('#notes').textContent)), 'coming back says the trail stopped');
-  // Ben hides others' trails
-  await ben.click('#showBtn');
-  check(/Amy · \d+ yd/.test(await ben.textContent('#tlist')), 'trail list shows Amy’s trail');
-  await ben.uncheck('[data-ui=othersTrails]');
-  check(await ben.evaluate(() => __bc.drawnTrails() === 0), 'hiding other people’s trails');
-  await ben.check('[data-ui=othersTrails]');
+  // Trails tab: when it was recorded, show/hide each, only mine, tap to go there, delete
+  await ben.click('#wpsBtn'); await ben.click('[data-tab=tr]');
+  await ben.waitForSelector('#wlist [data-tgo]');
+  await shot(ben, 'trails');
+  const trow = await ben.textContent('#wlist li');
+  check(/Amy · \d+ yd/.test(trow) && /\d{1,2}:\d\d/.test(trow) && /(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/.test(trow), 'trail list shows who, length and when: ' + trow);
+  check(!(await ben.$('#wlist [data-tdel]')) === false, 'host can delete Amy’s trail');
+  await ben.click('[data-all=mine]');
+  check(await until(ben, () => __bc.drawnTrails() === 0), 'Only mine hides Amy’s trail');
+  await ben.click('[data-all=show]');
+  check(await until(ben, () => __bc.drawnTrails() === 1), 'Show all');
+  await ben.uncheck('#wlist [data-tvis]');
+  check(await until(ben, () => __bc.drawnTrails() === 0), 'hide one trail');
+  await ben.click('#wlist [data-tgo]');
+  check(await until(ben, () => __bc.drawnTrails() === 1), 'going to a trail shows it');
+  await ben.click('#wpsBtn');
+  check(await ben.isVisible('[data-tab=tr][aria-pressed=true]'), 'Saved opens on the last tab');
+  await ben.click('[data-tab=wp]'); await ben.waitForSelector('#wlist [data-wgo]');
   await ben.click('dialog.sheet [data-close]');
 
   // ---- map types
   await ben.click('.layers [data-layer=topo]');
   check(await until(ben, () => true) && (await ben.waitForTimeout(1500), hits.topo > 0), 'Topo loads USGS topo tiles');
+  // an older version saved empty pieces in offline downloads: those must not make the map white
+  const seeded = await ben.evaluate(() => caches.open('pebbly-maps').then(c => {
+    const m = __bc.map(), b = m.getBounds(), keys = [];
+    __bc.areaTiles([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], 6, 14, (z, x, y) => keys.push(__bc.tileKey('m~openmaptiles', z, x, y)));
+    return Promise.all(keys.map(k => c.put(k, new Response(new ArrayBuffer(0))))).then(() => keys.length);
+  }));
   await ben.click('.layers [data-layer=map]');
   await ben.waitForTimeout(2000);
-  check(hits.vec > 0, 'Map loads OpenFreeMap tiles (real tile addresses): ' + hits.vec);
+  check(seeded > 0 && hits.vec > 0, 'Map loads OpenFreeMap tiles (real addresses), even over empty saved pieces: ' + hits.vec);
   check(await ben.evaluate(() => !!__bc.map().getSource('trails')), 'trails stay after switching map type');
   await ben.click('.layers [data-layer=sat]');
 
@@ -198,7 +236,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.waitForTimeout(800);
   await ben.click('#compass');
   check(await until(ben, () => __bc.mode() === 'heading', null, 3000), 'compass button turns on heading-up');
-  await ben.evaluate(() => { for (let i = 0; i < 8; i++) __bc.orient({ type: 'deviceorientationabsolute', absolute: true, alpha: 270 }); });   // facing east
+  await ben.evaluate(() => { window.__fakeCompass = setInterval(() => __bc.orient({ type: 'deviceorientationabsolute', absolute: true, alpha: 270 }), 150); });   // facing east, like a real compass (keeps sending)
   await ben.waitForTimeout(300);
   const b = await ben.evaluate(() => __bc.map().getBearing());
   check(Math.abs(b - 90) < 3, 'map turns to face east: ' + b);
@@ -206,6 +244,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(await until(amy, () => { const c = [...document.querySelectorAll('.pm')].find(e => e.textContent.includes('Ben')); return c && c.querySelector('.cone').style.display !== 'none'; }, null, 10000), 'Amy sees Ben’s direction cone');
   await ben.click('#compass');
   await ben.waitForTimeout(500);
+  await ben.evaluate(() => clearInterval(window.__fakeCompass));
   check(Math.abs(await ben.evaluate(() => __bc.map().getBearing())) < 1, 'north-up again');
 
   // ---- offline download
@@ -271,6 +310,16 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.evaluate(() => window.confirm = () => true);
   await ben.click('#moreBtn'); await ben.click('#hClearT');
   check(await until(amy, () => __bc.state().trails.length === 0, null, 10000), 'host clears all trails');
+  // delete one trail of your own
+  await amy.click('#trailBtn');
+  for (let i = 1; i <= 3; i++) { await amy.context().setGeolocation({ latitude: 45.06 + i * 0.0002, longitude: -93.19, accuracy: 5 }); await amy.waitForTimeout(400); }
+  await amy.click('#trailBtn');
+  check(await until(ben, () => __bc.state().trails.length === 1, null, 10000), 'new trail arrives');
+  await amy.evaluate(() => window.confirm = () => true);
+  await amy.click('#wpsBtn'); await amy.click('[data-tab=tr]');
+  await amy.click('#wlist [data-tdel]');
+  check(await until(ben, () => __bc.state().trails.length === 0, null, 10000), 'deleting one trail removes it for everyone');
+  await amy.click('dialog.sheet [data-close]');
   await ben.click('#moreBtn'); await ben.click('#mOffline');
   await ben.click('[data-adel]');
   check(await until(ben, () => !document.querySelector('[data-adel]')), 'saved area deleted');

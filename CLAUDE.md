@@ -203,7 +203,10 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   Layers: OpenFreeMap vector "liberty" (Map), USGS ImageryOnly (Satellite) and USGSTopo (Topo), all no-account. Every
   map request goes through the page's `bc://` protocol: tiles come from Cache Storage first (`pebbly-maps` for downloaded
   areas and style files, `pebbly-maps-seen` for the newest ~5,000 viewed tiles) under fixed keys `https://bc.tiles/<layer>/z/x/y`;
-  missing photo tiles are cut from a parent tile. `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
+  missing photo tiles are cut from a parent tile. Never save empty tiles (an empty saved tile is treated as missing and refetched; an
+  early version saved empty ones and the street map showed white). Marker CSS must not set `position` on the marker root
+  (it overrides MapLibre's absolute positioning and markers drift with zoom; the test checks every dot's pixel spot).
+  The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
   kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:
   `webkitCompassHeading` after a tap). Test: `tests/basecamp_test.js` (map servers stubbed; WebGL via SwiftShader flags).
 - The free project is kept awake by `.github/workflows/keepalive.yml` (pings every 3 days).
