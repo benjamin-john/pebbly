@@ -889,6 +889,7 @@ function applySync(r) {
   if (first) S = { rev: -1, since: 0, members: [], waypoints: [], trails: [], pts: {} };
   S.session = r.session; S.isOwner = !!r.is_owner; S.members = r.members || []; S.offset = (r.now || Date.now()) - Date.now();
   S.me = r.me || null;
+  if (S.me && !S.me.ot_follow && stoppedFollow) stoppedFollow = null;
   noteMoves(S.members);
   if (r.waypoints) {
     S.waypoints = r.waypoints;
@@ -911,7 +912,7 @@ function applySync(r) {
     return;
   }
   remember(CODE, S.session.name);
-  if (screen === 'map') { renderAll(); saveSnapshotSoon(); }
+  if (screen === 'map') { renderAll(); resumeTrail(); saveSnapshotSoon(); }
 }
 function runOps(code) {
   var q = queue(code);
@@ -1055,20 +1056,36 @@ function onHeading() {
 }
 
 /* ------------------------------------------------------------------ trails */
+// With screen-off sharing on, the Trail button's trail carries on through OwnTracks when the screen goes off: the server
+// is told which trail is being recorded (bc_ot_follow) and adds OwnTracks' points to it; coming back picks it up again.
+function otOn() { return !!(S && S.me && S.me.ot); }
+var stoppedFollow = null;           // a trail just stopped here (until the server hears, don't pick it back up)
 function startTrail() {
   REC = { id: uuid(), last: null, dist: 0, n: 0, at: Date.now() };
-  recStoppedByLeave = false;
+  recStoppedByLeave = false; stoppedFollow = null;
   if (FIX) recordPoint();
   if (!FIX) startGeo();
+  if (otOn()) addOp('bc_ot_follow', { p_code: CODE, p_member: ME.key, p_trail: REC.id });
   renderBar(); renderNotes();
-  toast('Recording your trail. It stops if you leave this screen.');
+  toast(otOn() ? 'Recording your trail. It keeps going with the screen off, through OwnTracks.' : 'Recording your trail. It stops if you leave this screen.');
 }
 function stopTrail(why) {
   if (!REC) return;
   var r = REC; REC = null;
+  if (why === 'leave' && otOn()) { renderBar(); renderTrails(); return; }      // OwnTracks carries on with it
   if (why === 'leave') recStoppedByLeave = true;
+  if (otOn()) { stoppedFollow = r.id; addOp('bc_ot_follow', { p_code: CODE, p_member: ME.key, p_trail: null }); }
   renderBar(); renderNotes(); renderTrails(); syncSoon();
-  if (why !== 'leave') toast(r.n > 1 ? 'Trail saved: ' + fmtDist(r.dist) + '.' : 'Trail stopped.');
+  if (why !== 'leave') { var t = trailById(r.id); toast((t ? t.pts.length : r.n) > 1 ? 'Trail saved: ' + fmtDist(t ? trailLength(t.pts) : r.dist) + '.' : 'Trail stopped.'); }
+}
+function trailById(id) { return allTrails().filter(function (t) { return t.id === id; })[0] || null; }
+// The server says a trail of ours is still going (OwnTracks has been adding to it): show it as recording again.
+function resumeTrail() {
+  var id = S && S.me && S.me.ot && S.me.ot_follow;
+  if (!id || REC || id === stoppedFollow || screen !== 'map') return;
+  var t = trailById(id), pts = t ? t.pts : [], last = pts[pts.length - 1];
+  REC = { id: id, last: last ? { lat: last[1], lng: last[2] } : null, dist: trailLength(pts), n: pts.length, at: pts.length ? pts[0][3] : Date.now() };
+  renderBar(); renderTrails();
 }
 function recordPoint() {
   if (!REC || !FIX || FIX.acc > 40) return;
@@ -1078,6 +1095,7 @@ function recordPoint() {
     REC.dist += d;
   }
   REC.last = { lat: FIX.lat, lng: FIX.lng }; REC.n++;
+  if (otOn()) { var tt = trailById(REC.id); if (tt && tt.pts.length > REC.n) REC.dist = trailLength(tt.pts); }
   var q = queue(CODE); q.pts.push({ i: REC.id, a: +FIX.lat.toFixed(7), o: +FIX.lng.toFixed(7), t: FIX.t }); setQueue(CODE, q);
   renderTrails(); renderBar();
 }
@@ -1092,6 +1110,7 @@ function allTrails() {
     if (!t) { t = byId[p.i] = { id: p.i, member: ME && ME.id, by: me ? me.name : '', color: me ? me.color : COLORS[0], at: p.t, pts: [], local: true }; list.push(t); }
     t.pts.push([0, p.a, p.o, p.t]);
   });
+  list.forEach(function (t) { t.pts.sort(function (a, b) { return (a[3] || 0) - (b[3] || 0) || (a[0] || 1e18) - (b[0] || 1e18); }); });
   return list;
 }
 
@@ -1170,6 +1189,7 @@ function showMap() {
   startGeo();
   followAsks();
   renderAll();
+  resumeTrail();
   setStatus(offlineView ? 'offline' : status === 'offline' ? 'offline' : 'live');
   timers.push(setInterval(function () {
     if (document.visibilityState !== 'visible' || screen !== 'map') return;
@@ -2123,7 +2143,7 @@ function openOwnTracks() {
       '<button type="button" data-dur="week">A week</button><button type="button" data-dur="forever">Until I stop</button></div>' +
       '<p class="hint" style="margin:-4px 0 12px" id="otDurHint">When it ends, this map stops getting your location. Once no map is left, Pebbly switches OwnTracks to Quiet.</p>') +
     '<label class="toggle"><span class="tx">Record my trail while the screen is off<small>Draws a trail on this map from OwnTracks’ reports. A new trail starts after 30 minutes without moving.</small></span>' +
-      '<input type="checkbox" id="otTrail"' + (trail ? ' checked' : '') + '></label>' +
+      '<input type="checkbox" id="otTrail"' + (trail || !on ? ' checked' : '') + '></label>' +
     '<p class="err" id="otErr" role="alert"></p>' +
     '<div class="btns"><a class="btn primary" id="otGo" href="#">' + (join ? 'Turn on for this map' : on ? 'Open OwnTracks setup again' : 'Set up OwnTracks') + '</a></div>' +
     '<div class="btns" style="margin-top:8px">' + (join ? '' : '<button type="button" class="btn small" id="otFile">Download settings file instead</button>') +
@@ -2221,7 +2241,7 @@ function closePocket() { if (pocketEl) { pocketEl.remove(); pocketEl = null; } }
 document.addEventListener('visibilitychange', function () {
   if (screen !== 'map') return;
   if (document.visibilityState === 'hidden') {
-    if (REC) stopTrail('leave');
+    if (REC && !otOn()) stopTrail('leave');                                   // with OwnTracks on, it carries on
     stopGeo(); saveView();
     if (S) { clearTimeout(snapT); snapT = null; saveSnapshotSoon(); }
     try { syncCall().catch(function () {}); } catch (e) {}
@@ -2229,7 +2249,7 @@ document.addEventListener('visibilitychange', function () {
     startGeo(); renderNotes(); syncCall().catch(syncErr);
   }
 });
-window.addEventListener('pagehide', function () { if (screen === 'map' && REC) stopTrail('leave'); saveView(); });
+window.addEventListener('pagehide', function () { if (screen === 'map' && REC && !otOn()) stopTrail('leave'); saveView(); });
 
 window.__bc = {
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },

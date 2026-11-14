@@ -517,6 +517,36 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('dialog.sheet [data-close]');
   owntracks(otKey, { _type: 'location', lat: 45.0712, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) });
   check(await until(ben, () => { const e = [...document.querySelectorAll('.pm')].find(x => x.textContent.includes('Amy')); return e && !e.classList.contains('lost'); }, null, 10000), 'a new report clears the flag');
+  // Trail button + screen off: OwnTracks carries on with the same trail; coming back (or reopening) picks it up
+  const psql = (q) => spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'], { input: q, encoding: 'utf8' }).stdout.trim();
+  await setVisible(amy, true);
+  await amy.waitForTimeout(1500);
+  const trailsBefore = +psql(`select count(*) from bc_trails t join bc_members m on m.id = t.member_id where m.name = 'Amy';`);
+  await amy.click('#trailBtn');
+  check(/keeps going with the screen off/.test(await amy.textContent('#toast')), 'Trail with screen-off sharing on: says it keeps going');
+  const recId = await amy.evaluate(() => __bc.rec().id);
+  for (let i = 1; i <= 3; i++) { await amy.context().setGeolocation({ latitude: 45.08 + i * 0.0002, longitude: -93.22, accuracy: 5 }); await amy.waitForTimeout(500); }
+  check(await until(amy, () => __bc.queue().pts.length === 0 && __bc.queue().ops.length === 0, null, 10000), 'trail points and the hand-off sent');
+  check(psql(`select ot_follow from bc_members where name = 'Amy';`) === recId, 'the server knows which trail she’s recording');
+  await setVisible(amy, false);
+  check(await amy.evaluate(() => !!__bc.rec()), 'leaving the screen doesn’t stop it');
+  leftScreen('Amy');
+  owntracks(otKey, { _type: 'location', lat: 45.0812, lon: -93.22, acc: 8, tst: Math.floor(Date.now() / 1000) });
+  owntracks(otKey, { _type: 'location', lat: 45.0818, lon: -93.22, acc: 8, tst: Math.floor(Date.now() / 1000) + 30 });
+  const onTrail = +psql(`select count(*) from bc_points where trail_id = '${recId}';`);
+  const trailsAfter = +psql(`select count(*) from bc_trails t join bc_members m on m.id = t.member_id where m.name = 'Amy';`);
+  check(onTrail >= 4 && trailsAfter === trailsBefore + 1, 'OwnTracks’ points went on the same trail (' + onTrail + ' points, no extra trail)');
+  check(await until(ben, id => (__bc.state().pts[id] || []).length >= 4, recId, 10000), 'Ben sees one continuous trail');
+  await setVisible(amy, true);
+  check(await amy.evaluate(id => __bc.rec() && __bc.rec().id === id, recId) && /Stop/.test(await amy.textContent('#trailBtn')), 'back on screen: still recording the same trail');
+  await amy.reload();
+  await amy.waitForSelector('#map canvas');
+  check(await until(amy, id => __bc.rec() && __bc.rec().id === id, recId, 10000), 'reopening the map picks the trail back up');
+  await amy.click('#trailBtn');
+  check(await until(amy, () => __bc.queue().ops.length === 0 && !__bc.rec(), null, 10000), 'Stop');
+  check(psql(`select coalesce(ot_follow::text, 'none') from bc_members where name = 'Amy';`) === 'none', 'and the server stops adding to it');
+  await amy.waitForTimeout(3500);
+  check(await amy.evaluate(() => !__bc.rec()), 'it doesn’t come back after stopping');
   // hiding in Basecamp also hides OwnTracks reports; sharing again lets them through
   await setVisible(amy, true);
   await amy.click('#moreBtn'); await amy.click('#mHide');

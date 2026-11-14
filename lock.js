@@ -18,7 +18,7 @@
     wdw: ['wdw_get', 'get_event', 'save_response', 'delete_response'],
     doc: ['doc_get', 'doc_push'],
     santa: ['santa_get', 'santa_claim', 'santa_unclaim', 'santa_join', 'santa_set_wish'],
-    basecamp: ['bc_sync', 'bc_join', 'bc_me_update', 'bc_remove_member', 'bc_waypoint_save', 'bc_waypoint_delete', 'bc_trail_delete', 'bc_ot_link', 'bc_ot_set', 'bc_ot_stop', 'bc_ot_extend', 'bc_ask']
+    basecamp: ['bc_sync', 'bc_join', 'bc_me_update', 'bc_remove_member', 'bc_waypoint_save', 'bc_waypoint_delete', 'bc_trail_delete', 'bc_ot_link', 'bc_ot_set', 'bc_ot_stop', 'bc_ot_extend', 'bc_ask', 'bc_ot_follow']
   };
   var KEYS = 'pebbly_lock_keys', PWS = 'pebbly_lock_pw', noGate = false;
   var MSG = {

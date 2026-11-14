@@ -233,6 +233,11 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   when its `ot_until` passes or on Stop/leave/delete; Quiet only when none is left (the device row is then deleted);
   pace is normal if any of its maps was viewed in 12 h.
   Tests: `tests/owntracks_test.js` (handler in Node), Basecamp test (flow via psql as service_role).
+  Trail hand-off (`20261117020000_basecamp_trail_handoff.sql`): with screen-off sharing on, starting the Trail button tells the
+  server the trail id (`bc_ot_follow` → `bc_members.ot_follow`); OwnTracks reports then add to that trail (Basecamp's own
+  points still win while on screen), leaving the screen doesn't stop it, and `me.ot_follow` makes a reopened map resume
+  it (`resumeTrail`). Stop clears it; 30 min without reports ends it. "Record my trail while the screen is off" is on by
+  default. Trail points are drawn in time order.
   Someone with screen-off sharing on whose OwnTracks and Basecamp have both been silent for over an hour (`lost()`) shows a
   red ring and "No word from OwnTracks" in People.
   Waypoint and person sheets have "Open in Google Maps" (`gmapsUrl`: google.com/maps/search/?api=1&query=lat,lng, opens the
