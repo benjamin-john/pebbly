@@ -202,7 +202,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   screen, so a trail stops when you leave the screen. Map: MapLibre GL JS, vendored in `basecamp/maplibre/` (offline).
   Layers: OpenFreeMap vector "liberty" (Map), USGS ImageryOnly (Satellite) and USGSTopo (Topo), all no-account. Every
   map request goes through the page's `bc://` protocol: tiles come from Cache Storage first (`pebbly-maps` for downloaded
-  areas and style files, `pebbly-maps-seen` for the newest ~5,000 viewed tiles) under fixed keys `https://bc.tiles/<layer>/z/x/y`;
+  areas and style files, `pebbly-maps-seen` for the newest 10,000 viewed tiles; Offline maps shows both sizes and can clear the seen cache) under fixed keys `https://bc.tiles/<layer>/z/x/y`;
   missing photo tiles are cut from a parent tile. Never save empty tiles (an empty saved tile is treated as missing and refetched; an
   early version saved empty ones and the street map showed white). Marker CSS must not set `position` on the marker root
   (it overrides MapLibre's absolute positioning and markers drift with zoom; the test checks every dot's pixel spot).
@@ -210,6 +210,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   GeoJSON per z11 square (private land left out), cached like tiles (`https://bc.tiles/pad/11/x/y`, offline downloads too),
   colored by manager type; tapping shows name, manager, access. PAD-US marks MN WMAs "restricted", so never present
   access as hunting permission (the sheet says to check DNR rules). Its tile service only goes to ~z10, hence features.
+  Sync cadence (`syncEvery`): 3 s, 15 s with Battery saver (`pebbly_basecamp_ui.saver`), 10 s when nobody moved >10 m for 2 min.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
   kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:
   `webkitCompassHeading` after a tap). Test: `tests/basecamp_test.js` (map servers stubbed; WebGL via SwiftShader flags).
