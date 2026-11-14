@@ -2077,48 +2077,52 @@ function fmtUntil(t) {
   if (d.toDateString() === today.toDateString()) return 'today at ' + tm;
   return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + tm;
 }
+// This phone's OwnTracks setup (its personal key), shared by every map it's turned on for. Per phone, not backed up.
+var K_OTDEV = 'pebbly_basecamp_otdev';
+function otDevice() { var d = load(K_OTDEV, null); return d && d.key ? d : null; }
 function openOwnTracks() {
-  var me = meMember(), on = !!(S.me && S.me.ot), trail = !!(S.me && S.me.ot_trail);
+  var me = meMember(), on = !!(S.me && S.me.ot), trail = !!(S.me && S.me.ot_trail), dev = otDevice();
   var ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
   var last = me && me.ot_at ? fmtAgo(srvNow() - me.ot_at) : '';
+  var join = !on && dev;                // OwnTracks is already set up on this phone (for another map): just turn this map on
   openSheet('ot', head('📡 Share with the screen off') +
     '<p class="hint" style="margin-bottom:12px">Basecamp can only share while it’s on your screen. The free <b>OwnTracks</b> app can keep sending your location to this map ' +
       'with the phone locked in your pocket. Everyone still uses Basecamp to see the map.</p>' +
-    (on ? '<div class="note" style="position:static;margin-bottom:12px;flex-wrap:wrap"><div class="t"><b>On ' + (S.me.ot_until ? 'until ' + esc(fmtUntil(S.me.ot_until)) : 'until you stop it') + '.</b> ' +
-        (last ? 'Last report from OwnTracks: ' + esc(last) + '.' : 'No report from OwnTracks yet. Open OwnTracks once and allow location.') +
-        (S.me.ot_v === 2 && S.me.ot_until ? ' Then OwnTracks is switched to Quiet automatically.' : '') + '</div>' +
+    (on ? '<div class="note" style="position:static;margin-bottom:12px;flex-wrap:wrap"><div class="t"><b>On for this map ' + (S.me.ot_until ? 'until ' + esc(fmtUntil(S.me.ot_until)) : 'until you stop it') + '.</b> ' +
+        (last ? 'Last report from OwnTracks: ' + esc(last) + '.' : 'No report from OwnTracks yet. Open OwnTracks once and allow location.') + '</div>' +
         '<div class="btns" style="width:100%;margin-top:6px"><button type="button" class="btn small" data-ext="today">Through today</button>' +
         '<button type="button" class="btn small" data-ext="3d">3 more days</button><button type="button" class="btn small" data-ext="week">A week</button>' +
         '<button type="button" class="btn small" data-ext="forever">Until I stop</button></div></div>' +
-      (S.me.ot_v === 2 ? '' : '<div class="note warn" style="position:static;margin-bottom:12px"><div class="t"><b>Set up OwnTracks again</b> (button below) so Pebbly can switch it off ' +
-        'on its own when sharing ends. Your current setup can’t be switched off from here.</div></div>') : '') +
-    '<ol class="how" style="margin:0 0 14px;color:var(--ink)">' +
+      (S.me.ot_v === 2 && dev ? '' : '<div class="note warn" style="position:static;margin-bottom:12px"><div class="t"><b>Set up OwnTracks again</b> (button below) so this phone ' +
+        'remembers its setup and Pebbly can switch OwnTracks off on its own when sharing ends.</div></div>') : '') +
+    (join ? '<div class="note" style="position:static;margin-bottom:12px"><div class="t"><b>OwnTracks is already set up on this phone</b> for your other maps. ' +
+        'Turn it on here too; there’s no need to open OwnTracks again.</div></div>' :
+      '<ol class="how" style="margin:0 0 14px;color:var(--ink)">' +
       '<li><b>Install OwnTracks</b> (free): <a href="' + (ios ? OT_IOS : OT_PLAY) + '" target="_blank" rel="noopener">' + (ios ? 'App Store' : 'Play Store') + '</a>.</li>' +
       '<li><b>Tap “Set up OwnTracks”</b> below. OwnTracks opens with everything filled in. Tap to accept the settings.</li>' +
-      '<li><b>Allow location “All the time”</b> when OwnTracks asks' + (ios ? '' : ', and in Android Settings → Apps → OwnTracks → Battery, choose <b>Unrestricted</b>') + '.</li></ol>' +
-    (on ? '' : '<span class="lbl">Share for</span><div class="seg" style="grid-template-columns:1fr 1fr" role="group" aria-label="How long">' +
+      '<li><b>Allow location “All the time”</b> when OwnTracks asks' + (ios ? '' : ', and in Android Settings → Apps → OwnTracks → Battery, choose <b>Unrestricted</b>') + '.</li></ol>') +
+    (on ? '' : '<span class="lbl">Share with this map for</span><div class="seg" style="grid-template-columns:1fr 1fr" role="group" aria-label="How long">' +
       '<button type="button" data-dur="today">Through today</button><button type="button" data-dur="3d" aria-pressed="true">3 days</button>' +
       '<button type="button" data-dur="week">A week</button><button type="button" data-dur="forever">Until I stop</button></div>' +
-      '<p class="hint" style="margin:-4px 0 12px" id="otDurHint">When it ends, Pebbly switches OwnTracks to Quiet so it stops sending, even if someone forgets.</p>') +
-    '<label class="toggle"><span class="tx">Record my trail while the screen is off<small>Draws a trail from OwnTracks’ reports. A new trail starts after 30 minutes without moving.</small></span>' +
+      '<p class="hint" style="margin:-4px 0 12px" id="otDurHint">When it ends, this map stops getting your location. Once no map is left, Pebbly switches OwnTracks to Quiet.</p>') +
+    '<label class="toggle"><span class="tx">Record my trail while the screen is off<small>Draws a trail on this map from OwnTracks’ reports. A new trail starts after 30 minutes without moving.</small></span>' +
       '<input type="checkbox" id="otTrail"' + (trail ? ' checked' : '') + '></label>' +
     '<p class="err" id="otErr" role="alert"></p>' +
-    '<div class="btns"><a class="btn primary" id="otGo" href="#">' + (on ? 'Set up OwnTracks again' : 'Set up OwnTracks') + '</a></div>' +
-    '<div class="btns" style="margin-top:8px"><button type="button" class="btn small" id="otFile">Download settings file instead</button>' +
-      (on ? '<button type="button" class="btn small danger" id="otStop">Stop screen-off sharing</button>' : '') + '</div>' +
-    '<p class="hint" style="margin-top:12px">How often it updates: OwnTracks starts in “Significant” mode (about every minute or 20 yards while moving; ' +
+    '<div class="btns"><a class="btn primary" id="otGo" href="#">' + (join ? 'Turn on for this map' : on ? 'Open OwnTracks setup again' : 'Set up OwnTracks') + '</a></div>' +
+    '<div class="btns" style="margin-top:8px">' + (join ? '' : '<button type="button" class="btn small" id="otFile">Download settings file instead</button>') +
+      (on ? '<button type="button" class="btn small danger" id="otStop">Stop for this map</button>' : '') + '</div>' +
+    '<p class="hint" style="margin-top:12px"><b>All your maps:</b> one OwnTracks setup works for every map you turn it on in. Each map has its own end time and Stop; ' +
+      'OwnTracks only switches to Quiet when sharing has ended on all of them.</p>' +
+    '<p class="hint" style="margin-top:8px">How often it updates: OwnTracks starts in “Significant” mode (about every minute or 20 yards while moving; ' +
       'easy on the battery). In OwnTracks, switch to <b>Move</b> mode for updates every few seconds (uses more battery). ' +
-      'If nobody opens this map for 12 hours, Pebbly tells OwnTracks to report less often (about every half mile or half hour); ' +
-      'when someone opens it, each phone speeds back up at its next report. ' +
-      (on ? 'Setting up again makes a new link; the old one stops working.' : '') + '</p>' +
-    '<p class="hint" style="margin-top:8px"><b>One map at a time:</b> OwnTracks holds one setup, so setting it up from another Basecamp map moves it there, ' +
-      'and this map stops getting your updates.</p>' +
-    '<p class="hint" style="margin-top:8px">OwnTracks only sends to Pebbly. To pause it, open OwnTracks and choose <b>Quiet</b> mode, or tap Stop here.</p>', function (d) {
+      'If nobody opens any of your maps for 12 hours, Pebbly tells OwnTracks to report less often (about every half mile or half hour); ' +
+      'when someone opens one, it speeds back up at its next report.</p>' +
+    '<p class="hint" style="margin-top:8px">OwnTracks only sends to Pebbly. To pause it everywhere, open OwnTracks and choose <b>Quiet</b> mode.</p>', function (d) {
     var err = $('#otErr', d), dur = '3d';
     $$('[data-dur]', d).forEach(function (b) { b.onclick = function () {
       dur = b.dataset.dur; $$('[data-dur]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
-      $('#otDurHint', d).textContent = dur === 'forever' ? 'It keeps going until you tap Stop here (or leave the map, or the map is deleted); then Pebbly switches OwnTracks to Quiet.' :
-        'When it ends, Pebbly switches OwnTracks to Quiet so it stops sending, even if someone forgets.';
+      $('#otDurHint', d).textContent = dur === 'forever' ? 'It keeps going until you tap Stop for this map (or leave it, or it’s deleted).' :
+        'When it ends, this map stops getting your location. Once no map is left, Pebbly switches OwnTracks to Quiet.';
     }; });
     $$('[data-ext]', d).forEach(function (b) {
       b.onclick = function () {
@@ -2129,26 +2133,31 @@ function openOwnTracks() {
         }, function (e) { err.textContent = friendly(e); });
       };
     });
+    // Turns this map on, reusing this phone's setup if it has one (the server makes a new one if that key is gone).
     function link() {
-      return rpc('bc_ot_link', { p_code: CODE, p_member: ME.key, p_trail: $('#otTrail', d).checked, p_minutes: otMinutes(on ? '3d' : dur) }).then(function (r) {
+      var dv = otDevice();
+      return rpc('bc_ot_link', { p_code: CODE, p_member: ME.key, p_trail: $('#otTrail', d).checked,
+        p_minutes: on ? (S.me.ot_until ? Math.max(30, Math.round((S.me.ot_until - srvNow()) / 60000)) : 0) : otMinutes(dur), p_device: dv ? dv.key : null }).then(function (r) {
+        store(K_OTDEV, { key: r.token, tid: r.tid });
         if (S.me) { S.me.ot = true; S.me.ot_trail = $('#otTrail', d).checked; S.me.ot_until = r.until; S.me.ot_v = 2; }
-        return otConfig(r.token, r.tid);
+        return { cfg: otConfig(r.token, r.tid), joined: !!r.joined };
       });
     }
     $('#otGo', d).onclick = function (ev) {
       ev.preventDefault(); err.textContent = '';
-      var a = ev.currentTarget; a.textContent = 'Setting up…';
-      link().then(function (cfg) {
-        a.href = otLink(cfg); a.textContent = 'Open OwnTracks';
+      var a = ev.currentTarget, label = a.textContent; a.textContent = join ? 'Turning on…' : 'Setting up…';
+      link().then(function (res) {
+        if (join && res.joined) { closeSheet(); syncSoon(); toast('Screen-off sharing is on for this map too.'); return; }
+        a.href = otLink(res.cfg); a.textContent = 'Open OwnTracks';
         a.onclick = null;
         location.href = a.href;
         setTimeout(function () { if (document.visibilityState === 'visible') toast('If OwnTracks didn’t open, install it first, then tap Open OwnTracks.'); }, 1800);
-      }, function (e) { a.textContent = 'Set up OwnTracks'; err.textContent = friendly(e); });
+      }, function (e) { a.textContent = label; err.textContent = friendly(e); });
     };
-    $('#otFile', d).onclick = function () {
+    if ($('#otFile', d)) $('#otFile', d).onclick = function () {
       err.textContent = '';
-      link().then(function (cfg) {
-        var blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/octet-stream' }), u = URL.createObjectURL(blob), a = document.createElement('a');
+      link().then(function (res) {
+        var blob = new Blob([JSON.stringify(res.cfg, null, 2)], { type: 'application/octet-stream' }), u = URL.createObjectURL(blob), a = document.createElement('a');
         a.href = u; a.download = 'basecamp.otrc'; document.body.appendChild(a); a.click(); a.remove();
         setTimeout(function () { URL.revokeObjectURL(u); }, 5000);
         toast('Saved basecamp.otrc. In OwnTracks: Preferences → Configuration management → Import.');
@@ -2161,9 +2170,9 @@ function openOwnTracks() {
         function (e) { err.textContent = friendly(e); });
     };
     if ($('#otStop', d)) $('#otStop', d).onclick = function () {
-      if (!confirm('Stop screen-off sharing for this map? Reports from OwnTracks will be ignored. (You can uninstall OwnTracks or set it to Quiet too.)')) return;
+      if (!confirm('Stop screen-off sharing for this map? Your other maps keep getting your location; once none are left, OwnTracks is switched to Quiet.')) return;
       rpc('bc_ot_stop', { p_code: CODE, p_member: ME.key }).then(function () {
-        if (S.me) { S.me.ot = false; S.me.ot_trail = false; } closeSheet(); syncSoon(); toast('Screen-off sharing stopped.');
+        if (S.me) { S.me.ot = false; S.me.ot_trail = false; } closeSheet(); syncSoon(); toast('Screen-off sharing stopped for this map.');
       }, function (e) { err.textContent = friendly(e); });
     };
   });

@@ -150,7 +150,7 @@
 
   // What's backed up: every Pebbly key except per-phone and in-progress things.
   var INCLUDE = /^(rsvp\.|meetup\.|pick\.|pebbly_)/;
-  var SKIP = /(\.local\.db$|^pick\.justCreated$|_undo$|_ui$|_view$|_section$|_new$|^pebbly_push$|^pebbly_backup|^pebbly_play_|^pebbly_basecamp_(areas|queue)$|^pebbly_(bracket|codebreaker|colorstack|darts_game|dots|farkle|gomoku|mancala|namegame|qwixx2|score_game|teams|timer_cd|timer_game|trivia_game|worddash)$)/;
+  var SKIP = /(\.local\.db$|^pick\.justCreated$|_undo$|_ui$|_view$|_section$|_new$|^pebbly_push$|^pebbly_backup|^pebbly_play_|^pebbly_basecamp_(areas|queue|otdev)$|^pebbly_(bracket|codebreaker|colorstack|darts_game|dots|farkle|gomoku|mancala|namegame|qwixx2|score_game|teams|timer_cd|timer_game|trivia_game|worddash)$)/;
   // Dropped first if a backup gets too big.
   var OPTIONAL = /^pebbly_(trivia_|live_quizzes|live_sessions|colorstack_best|worddash_stats|names_prefs)/;
   var OWNERS = ['rsvp.owners', 'meetup.owners', 'pick.owners', 'pebbly_doc_owners', 'pebbly_santa_owners'];

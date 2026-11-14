@@ -508,17 +508,17 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await amy.click('#moreBtn');
   check(/On, through the OwnTracks app/.test(await amy.textContent('#mOt')), 'menu says it’s on');
   await amy.click('#mOt');
-  check(/On until/.test(await amy.textContent('dialog.sheet')) && /switched to Quiet automatically/.test(await amy.textContent('dialog.sheet')), 'shows when it ends');
+  check(/On for this map until/.test(await amy.textContent('dialog.sheet')) && /switches to Quiet when sharing has ended on all/.test(await amy.textContent('dialog.sheet')), 'shows when it ends');
   await amy.click('[data-ext=week]');
   check(await until(amy, () => { const u = __bc.state().me.ot_until; return u > Date.now() + 6.9 * 864e5 && u < Date.now() + 7.1 * 864e5; }), 'extended to a week');
   await amy.waitForSelector('[data-ext=forever]');
   await amy.click('[data-ext=forever]');
   check(await until(amy, () => __bc.state().me.ot_until === null && /until you stop it/.test(document.querySelector('dialog.sheet').textContent)), 'Until I stop: no end time');
-  check(/One map at a time/.test(await amy.textContent('dialog.sheet')), 'explains one map at a time');
+  check(/one OwnTracks setup works for every map/.test(await amy.textContent('dialog.sheet')), 'explains it works with all your maps');
   await amy.waitForSelector('#otStop');
   await amy.click('#otStop');
   await amy.waitForTimeout(500);
-  check(owntracks(otKey, { _type: 'location', lat: 45.1, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) + 10 }) === 'unknown', 'after Stop, the old key is refused');
+  check(owntracks(otKey, { _type: 'location', lat: 45.1, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) + 10 }) === 'ended', 'after Stop (her only map), OwnTracks is told to go Quiet');
 
   // dark mode screenshot
   await amy.emulateMedia({ colorScheme: 'dark' });
@@ -537,7 +537,42 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await amy.evaluate(() => window.confirm = () => true);
   await amy.click('#moreBtn'); await amy.click('#mLeave');
   check(await until(ben, () => __bc.state().members.length === 1, null, 10000), 'Amy left the map');
-  check(owntracks(key2, { _type: 'location', lat: 45.1, lon: -93.21, acc: 10 }) === 'unknown', 'after leaving, her OwnTracks gets “go Quiet”');
+  check(owntracks(key2, { _type: 'location', lat: 45.1, lon: -93.21, acc: 10 }) === 'ended', 'after leaving, her OwnTracks gets “go Quiet”');
+
+  // ---- one OwnTracks setup, several maps: Ben shares with Deer camp and a second map
+  await ben.evaluate(() => window.confirm = () => true);
+  await ben.click('#moreBtn'); await ben.click('#mOt');
+  await ben.click('[data-dur=forever]');
+  await ben.click('#otGo');
+  await until(ben, () => /^owntracks:/.test(document.getElementById('otGo').getAttribute('href')));
+  const benKey = await ben.evaluate(() => JSON.parse(localStorage.getItem('pebbly_basecamp_otdev')).key);
+  check(/^[0-9a-f]{64}$/.test(benKey), 'this phone remembers its OwnTracks setup');
+  await ben.click('dialog.sheet [data-close]');
+  await ben.goto(BASE);
+  await ben.fill('[name=name]', 'Ben & Kate'); await ben.fill('[name=who]', 'Ben');
+  await ben.click('#createForm [type=submit]');
+  await ben.waitForSelector('#map canvas');
+  await ben.click('#moreBtn'); await ben.click('#mOt');
+  await shot(ben, 'otjoin');
+  check(/already set up on this phone/.test(await ben.textContent('dialog.sheet')) && (await ben.textContent('#otGo')) === 'Turn on for this map', 'second map: just turn it on');
+  await ben.click('#otGo');
+  check(await until(ben, () => !document.querySelector('dialog.sheet') && __bc.state().me.ot === true), 'turned on without opening OwnTracks again');
+  await setVisible(ben, false); leftScreen('Ben');           // phone in the pocket
+  check(owntracks(benKey, { _type: 'location', lat: 45.111, lon: -93.222, acc: 8 }) === 'ok', 'one report…');
+  const both = spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'],
+    { input: `select count(*) from bc_members where name = 'Ben' and lat = 45.111;`, encoding: 'utf8' }).stdout.trim();
+  check(both === '2', '…moves Ben on both maps');
+  // Ben stops sharing on the second map: Deer camp still gets his location, no "go Quiet"
+  await setVisible(ben, true);
+  await ben.click('#moreBtn'); await ben.click('#mOt'); await ben.click('#otStop');
+  await ben.waitForTimeout(500);
+  await setVisible(ben, false); leftScreen('Ben');
+  const r1 = spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'],
+    { input: `set role service_role;\nselect bc_owntracks('${benKey}', '{"_type":"location","lat":45.112,"lon":-93.222,"acc":8}'::jsonb)::text;`, encoding: 'utf8' }).stdout.trim().split('\n').pop();
+  check(/"status": "ok"/.test(r1) && !/monitoring": -1/.test(r1), 'stopping one map keeps the others going (no Quiet): ' + r1);
+  const r2 = spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'],
+    { input: `select s.name from bc_members m join bc_sessions s on s.id = m.session_id where m.name = 'Ben' and m.lat = 45.112;`, encoding: 'utf8' }).stdout.trim();
+  check(r2 === 'Deer camp', 'only Deer camp moved');
 
   [ben, amy, carl].forEach((p, i) => check(!p.errs.length, 'page errors on phone ' + i + ': ' + p.errs.join(' | ')));
   console.log(pass + ' passed, ' + fail + ' failed');

@@ -82,6 +82,22 @@ const env = (n) => ({ SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SERV
   r = await call('POST', '?k=' + link.token, { _type: 'location', lat: 45.2, lon: -93.4, acc: 9, tst: now + 9 });
   check(quiet(await r.text()), 'after the end time: told to go Quiet');
   check(pos().ot === false, 'and it’s off');
+  // one setup, two maps: the second map joins with the phone's key; it keeps going after the first ends
+  const c2 = JSON.parse(sql(`select bc_create('Camp 2', 'Amy');`, 'anon'));
+  const c3 = JSON.parse(sql(`select bc_create('Camp 3', 'Amy');`, 'anon'));
+  const l2 = JSON.parse(sql(`select gated_bc_ot_link(${lit(c2.code)}, ${lit(c2.member_key)}, false, 60);`, 'anon'));
+  const l3 = JSON.parse(sql(`select gated_bc_ot_link(${lit(c3.code)}, ${lit(c3.member_key)}, false, 0, ${lit(l2.token)});`, 'anon'));
+  check(l3.token === l2.token && l3.joined === true && l3.until == null, 'second map joins the same setup (until stopped)');
+  sql(`select gated_bc_sync(${lit(c2.code)}, null, null, null, null, 0, 0); select gated_bc_sync(${lit(c3.code)}, null, null, null, null, 0, 0);`, 'anon');
+  r = await call('POST', '?k=' + l2.token, { _type: 'location', lat: 46.5, lon: -94.5, acc: 9, tst: now + 20 });
+  const where = (c, k) => JSON.parse(sql(`select gated_bc_sync(${lit(c)}, ${lit(k)}, null, null, null, 0, 0);`, 'anon')).members[0].lat;
+  check(where(c2.code, c2.member_key) === 46.5 && where(c3.code, c3.member_key) === 46.5, 'one report updates both maps');
+  sql(`update bc_members set ot_until = now() - interval '1 minute' where session_id = (select id from bc_sessions where name = 'Camp 2');`);
+  r = await call('POST', '?k=' + l2.token, { _type: 'location', lat: 46.6, lon: -94.5, acc: 9, tst: now + 21 });
+  check((await r.text()) === '[]' && where(c3.code, c3.member_key) === 46.6 && where(c2.code, c2.member_key) === 46.5, 'first map ended: the other keeps going, no Quiet');
+  sql(`select gated_bc_ot_stop(${lit(c3.code)}, ${lit(c3.member_key)});`, 'anon');
+  r = await call('POST', '?k=' + l2.token, { _type: 'location', lat: 46.7, lon: -94.5, acc: 9, tst: now + 22 });
+  check(quiet(await r.text()), 'last map stopped: told to go Quiet');
   console.log(pass + ' passed, ' + fail + ' failed');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
