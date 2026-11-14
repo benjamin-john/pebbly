@@ -480,7 +480,6 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await amy.click('#mOt');
   await amy.waitForSelector('#otGo');
   check(/Play Store/.test(await amy.textContent('dialog.sheet')), 'links to OwnTracks in the Play Store');
-  await amy.check('#otTrail');
   await amy.evaluate(() => { window.__opened = []; const a = document.getElementById('otGo'); a.addEventListener('click', () => {}, true); });
   await shot(amy, 'owntracks');
   await amy.click('#otGo');
@@ -506,7 +505,9 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(await until(ben, () => /📡/.test(document.querySelector('#plist').textContent)), 'People list marks screen-off sharing');
   await ben.click('dialog.sheet [data-close]');
   owntracks(otKey, { _type: 'location', lat: 45.0710, lon: -93.21, acc: 10, tst: tNow + 30 });
-  check(await until(ben, () => __bc.state().trails.some(t => t.by === 'Amy') && Object.values(__bc.state().pts).some(a => a.length === 2), null, 10000), 'screen-off trail recorded');
+  await ben.waitForTimeout(3500);
+  check(spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'],
+    { input: `select count(*) from bc_points where lat in (45.07, 45.071);`, encoding: 'utf8' }).stdout.trim() === '0', 'OwnTracks alone records no trail (only the Trail button does)');
   // no word from OwnTracks for over an hour: flagged in red on the map and in People
   spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'],
     { input: `update bc_members set ot_at = now() - interval '75 minutes', pos_at = now() - interval '75 minutes' where name = 'Amy';`, encoding: 'utf8' });

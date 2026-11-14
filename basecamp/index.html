@@ -2118,7 +2118,7 @@ function fmtUntil(t) {
 var K_OTDEV = 'pebbly_basecamp_otdev';
 function otDevice() { var d = load(K_OTDEV, null); return d && d.key ? d : null; }
 function openOwnTracks() {
-  var me = meMember(), on = !!(S.me && S.me.ot), trail = !!(S.me && S.me.ot_trail), dev = otDevice();
+  var me = meMember(), on = !!(S.me && S.me.ot), dev = otDevice();
   var ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
   var last = me && me.ot_at ? fmtAgo(srvNow() - me.ot_at) : '';
   var join = !on && dev;                // OwnTracks is already set up on this phone (for another map): just turn this map on
@@ -2142,8 +2142,8 @@ function openOwnTracks() {
       '<button type="button" data-dur="today">Through today</button><button type="button" data-dur="3d" aria-pressed="true">3 days</button>' +
       '<button type="button" data-dur="week">A week</button><button type="button" data-dur="forever">Until I stop</button></div>' +
       '<p class="hint" style="margin:-4px 0 12px" id="otDurHint">When it ends, this map stops getting your location. Once no map is left, Pebbly switches OwnTracks to Quiet.</p>') +
-    '<label class="toggle"><span class="tx">Record my trail while the screen is off<small>Draws a trail on this map from OwnTracks’ reports. A new trail starts after 30 minutes without moving.</small></span>' +
-      '<input type="checkbox" id="otTrail"' + (trail || !on ? ' checked' : '') + '></label>' +
+    '<p class="hint" style="margin:0 0 12px"><b>Trails:</b> tap Trail on the map as usual. With screen-off sharing on, the trail keeps going ' +
+      'when you lock the phone, until you tap Stop. No trail is recorded unless you start one.</p>' +
     '<p class="err" id="otErr" role="alert"></p>' +
     '<div class="btns"><a class="btn primary" id="otGo" href="#">' + (join ? 'Turn on for this map' : on ? 'Open OwnTracks setup again' : 'Set up OwnTracks') + '</a></div>' +
     '<div class="btns" style="margin-top:8px">' + (join ? '' : '<button type="button" class="btn small" id="otFile">Download settings file instead</button>') +
@@ -2173,10 +2173,10 @@ function openOwnTracks() {
     // Turns this map on, reusing this phone's setup if it has one (the server makes a new one if that key is gone).
     function link() {
       var dv = otDevice();
-      return rpc('bc_ot_link', { p_code: CODE, p_member: ME.key, p_trail: $('#otTrail', d).checked,
+      return rpc('bc_ot_link', { p_code: CODE, p_member: ME.key, p_trail: false,
         p_minutes: on ? (S.me.ot_until ? Math.max(30, Math.round((S.me.ot_until - srvNow()) / 60000)) : 0) : otMinutes(dur), p_device: dv ? dv.key : null }).then(function (r) {
         store(K_OTDEV, { key: r.token, tid: r.tid });
-        if (S.me) { S.me.ot = true; S.me.ot_trail = $('#otTrail', d).checked; S.me.ot_until = r.until; S.me.ot_v = 2; }
+        if (S.me) { S.me.ot = true; S.me.ot_trail = false; S.me.ot_until = r.until; S.me.ot_v = 2; }
         return { cfg: otConfig(r.token, r.tid), joined: !!r.joined };
       });
     }
@@ -2199,12 +2199,6 @@ function openOwnTracks() {
         setTimeout(function () { URL.revokeObjectURL(u); }, 5000);
         toast('Saved basecamp.otrc. In OwnTracks: Preferences → Configuration management → Import.');
       }, function (e) { err.textContent = friendly(e); });
-    };
-    $('#otTrail', d).onchange = function () {
-      if (!(S.me && S.me.ot)) return;
-      var c = this.checked;
-      rpc('bc_ot_set', { p_code: CODE, p_member: ME.key, p_trail: c }).then(function () { if (S.me) S.me.ot_trail = c; toast(c ? 'OwnTracks will record your trail too.' : 'OwnTracks won’t record trails.'); },
-        function (e) { err.textContent = friendly(e); });
     };
     if ($('#otStop', d)) $('#otStop', d).onclick = function () {
       if (!confirm('Stop screen-off sharing for this map? Your other maps keep getting your location; once none are left, OwnTracks is switched to Quiet.')) return;
