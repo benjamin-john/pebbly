@@ -217,7 +217,8 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   OwnTracks app in HTTP mode POSTs reports to the `owntracks` Edge Function (no JWT; personal key `?k=` from
   `bc_ot_link`, hash in `bc_members.ot_hash`), which calls `bc_owntracks` (service role only) for each. Newer reports
   move the dot; `ot_trail` also records trails (new trail after 30 min, point per 10 m). "Hide my location" sets
-  `bc_members.hidden`, which OwnTracks reports respect. The setup link is `owntracks:///config?inline=<base64 config>`
+  `bc_members.hidden`, which OwnTracks reports respect. While Basecamp itself sent the person's location in the last 30 s (`bc_members.web_at`,
+  `20261115010000_basecamp_ot_prefer_app.sql`), OwnTracks reports are dropped (dot and trail), so the app's GPS wins. The setup link is `owntracks:///config?inline=<base64 config>`
   (or a .otrc file). Tests: `tests/owntracks_test.js` (handler in Node), Basecamp test (flow via psql as service_role).
   Sync cadence (`syncEvery`): 3 s, 15 s with Battery saver (`pebbly_basecamp_ui.saver`), 10 s when nobody moved >10 m for 2 min.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is

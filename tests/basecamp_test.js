@@ -18,6 +18,14 @@ function owntracks(token, body) {
     { input: `set role service_role;\nselect bc_owntracks(${lit(token)}, ${lit(JSON.stringify(body))}::jsonb);`, encoding: 'utf8' });
   return r.stdout.trim().split('\n').pop();
 }
+// as if Basecamp last sent this person's location more than 30 seconds ago (they left the screen)
+function leftScreen(name) {
+  spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'],
+    { input: `update bc_members set web_at = now() - interval '31 seconds' where name = '${name}';`, encoding: 'utf8' });
+}
+async function setVisible(p, on) {
+  await p.evaluate(v => { Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => v ? 'visible' : 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); }, on);
+}
 const DB = process.env.DB || 'basecamp', PORT = process.env.PORT || 8791, BASE = 'http://localhost:' + PORT + '/basecamp/', SHOTS = process.env.SHOTS;
 let pass = 0, fail = 0;
 const check = (ok, m) => { if (ok) pass++; else { fail++; console.log('FAIL', m); } };
@@ -440,7 +448,14 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(cfg._type === 'configuration' && cfg.mode === 3 && /\/functions\/v1\/owntracks\?k=/.test(cfg.url) && /^[0-9a-f]{64}$/.test(otKey) && cfg.tid === 'AM',
     'OwnTracks settings: HTTP mode to the receiver with a personal key, tracker id ' + cfg.tid);
   const tNow = Math.floor(Date.now() / 1000);
-  check(owntracks(otKey, { _type: 'location', lat: 45.07, lon: -93.21, acc: 10, tst: tNow, vel: 0 }) === 'ok', 'a report from OwnTracks is taken');
+  // Amy still has Basecamp open: her OwnTracks reports are ignored (Basecamp's GPS wins, no double trail)
+  await amy.click('dialog.sheet [data-close]').catch(() => {});
+  await amy.waitForTimeout(3500);
+  check(owntracks(otKey, { _type: 'location', lat: 45.07, lon: -93.21, acc: 10, tst: tNow, vel: 0 }) === 'app', 'while Basecamp is open, its location wins over OwnTracks');
+  // Amy leaves the screen: OwnTracks takes over
+  await setVisible(amy, false);
+  leftScreen('Amy');
+  check(owntracks(otKey, { _type: 'location', lat: 45.07, lon: -93.21, acc: 10, tst: tNow, vel: 0 }) === 'ok', 'after leaving the screen, OwnTracks reports are taken');
   check(await until(ben, () => { const a = __bc.state().members.find(m => m.name === 'Amy'); return a && a.lat === 45.07 && a.ot; }, null, 10000), 'Ben sees Amy’s OwnTracks location');
   await ben.click('#peopleBtn');
   check(await until(ben, () => /📡/.test(document.querySelector('#plist').textContent)), 'People list marks screen-off sharing');
@@ -448,13 +463,16 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   owntracks(otKey, { _type: 'location', lat: 45.0710, lon: -93.21, acc: 10, tst: tNow + 30 });
   check(await until(ben, () => __bc.state().trails.some(t => t.by === 'Amy') && Object.values(__bc.state().pts).some(a => a.length === 2), null, 10000), 'screen-off trail recorded');
   // hiding in Basecamp also hides OwnTracks reports; sharing again lets them through
-  await amy.click('dialog.sheet [data-close]').catch(() => {});
+  await setVisible(amy, true);
   await amy.click('#moreBtn'); await amy.click('#mHide');
   check(await until(ben, () => __bc.state().members.find(m => m.name === 'Amy').lat == null, null, 10000), 'hidden');
   check(owntracks(otKey, { _type: 'location', lat: 45.08, lon: -93.21, acc: 10, tst: tNow + 60 }) === 'hidden', 'OwnTracks reports ignored while hidden');
   await amy.click('[data-act=share-on]');
   await amy.waitForTimeout(3500);
-  check(owntracks(otKey, { _type: 'location', lat: 45.09, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) + 5 }) === 'ok', 'taken again after sharing again');
+  check(owntracks(otKey, { _type: 'location', lat: 45.09, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) + 5 }) === 'app', 'sharing again (Basecamp open): Basecamp’s location');
+  await setVisible(amy, false); leftScreen('Amy');
+  check(owntracks(otKey, { _type: 'location', lat: 45.09, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) + 6 }) === 'ok', 'and OwnTracks again once off the screen');
+  await setVisible(amy, true);
   // stop
   await amy.evaluate(() => window.confirm = () => true);
   await amy.click('#moreBtn');
