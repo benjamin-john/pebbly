@@ -165,6 +165,11 @@ body.in-map #app{height:100%}
   display:grid;place-items:center;color:#fff;font:800 12px/1 var(--body);text-shadow:0 1px 1px rgba(0,0,0,.35)}
 .pm.me .dot{width:30px;height:30px;left:17px;top:17px}
 .pm.stale .dot{filter:grayscale(.6);opacity:.7}
+.pm.lost .dot{filter:none;opacity:1;box-shadow:0 0 0 3px #E0261B,0 1px 4px rgba(0,0,0,.45)}
+.pm.lost .lbl{color:#B8362F}
+.pm.lost .lbl small{color:#B8362F;font-weight:700}
+.row .sw.lost{box-shadow:0 0 0 3px #E0261B}
+.row .tx small.lostmsg{color:var(--bad);font-weight:600}
 .pm.stale .cone{display:none}
 .pm .lbl,.wp .lbl{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 12px/1.2 var(--body);color:#1F2A27;
   background:rgba(255,255,255,.92);padding:2px 7px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,.25);max-width:160px;overflow:hidden;text-overflow:ellipsis}
@@ -1407,9 +1412,11 @@ function renderPeopleMarkers() {
     }
     mk.setLngLat([p.lng, p.lat]);
     var el = mk.getElement(), age = srvNow() - (p.at || 0), stale = !p.live && age > STALE_MS;
-    el.classList.toggle('stale', stale);
-    el.style.zIndex = isMe ? 3 : stale ? 1 : 2;
-    el.querySelector('.lbl').innerHTML = esc(isMe ? 'You' : m.name) + (stale ? ' <small>' + esc(fmtAgo(age)) + '</small>' : '');
+    var isLost = lost(m);
+    el.classList.toggle('stale', stale && !isLost);
+    el.classList.toggle('lost', isLost);
+    el.style.zIndex = isMe ? 3 : stale && !isLost ? 1 : 2;
+    el.querySelector('.lbl').innerHTML = esc(isMe ? 'You' : m.name) + (isLost ? ' <small>⚠ ' + esc(fmtAgo(age)) + '</small>' : stale ? ' <small>' + esc(fmtAgo(age)) + '</small>' : '');
     setCone(el, stale ? null : p.heading);
     mk._heading = stale ? null : p.heading;
   });
@@ -1608,6 +1615,14 @@ function openPeople() {
     $('#fitAll', d).onclick = function () { closeSheet(); showEveryone(); };
   });
 }
+// Screen-off sharing is on, but neither OwnTracks nor Basecamp has sent anything for over an hour: the phone may be off
+// or dead, out of signal, or OwnTracks stopped. Flagged in red on the map and in People.
+var LOST_MS = 60 * 60 * 1000;
+function lost(m) {
+  if (!m || !m.ot || (ME && m.id === ME.id)) return false;
+  var now = srvNow();
+  return now - (m.ot_at || 0) > LOST_MS && now - (m.pos_at || 0) > LOST_MS;
+}
 function personStatus(m) {
   var p = personPlace(m), isMe = ME && m.id === ME.id;
   if (isMe) {
@@ -1615,6 +1630,8 @@ function personStatus(m) {
     if (!FIX) return (m.ot ? '📡 Screen-off sharing on · ' : '') + (geoErr === 'denied' ? 'Location blocked' : 'Looking for GPS…');
     return (m.ot ? '📡 ' : '') + 'Sharing · ±' + fmtFeet(FIX.acc);
   }
+  if (lost(m)) return '📡 No word from OwnTracks ' + (m.ot_at ? 'for ' + fmtAgo(srvNow() - m.ot_at).replace(' ago', '') : 'yet') +
+    ': phone off or dead, no signal, or OwnTracks stopped' + (p ? ' · last seen here ' + fmtAgo(srvNow() - p.at) : '');
   if (!p) return m.ot ? '📡 Screen-off sharing · no report yet' : 'Not sharing';
   var age = srvNow() - p.at;
   return (m.ot ? '📡 ' : '') + (age < 30000 ? 'Here now' : fmtAgo(age)) + (p.acc != null ? ' · ±' + fmtFeet(p.acc) : '') +
@@ -1629,8 +1646,9 @@ function renderPeopleList() {
   });
   function inner(m) {
     var p = personPlace(m), isMe = ME && m.id === ME.id;
-    return '<span class="sw" style="background:' + m.color + '">' + esc(initial(m.name)) + '</span>' +
-      '<span class="tx"><b>' + esc(m.name) + (isMe ? ' (you)' : '') + '</b><small>' + esc(personStatus(m)) + '</small></span>' + (isMe ? '' : fromMe(p));
+    var isLost = lost(m);
+    return '<span class="sw' + (isLost ? ' lost' : '') + '" style="background:' + m.color + '">' + esc(initial(m.name)) + '</span>' +
+      '<span class="tx"><b>' + esc(m.name) + (isMe ? ' (you)' : '') + '</b><small' + (isLost ? ' class="lostmsg"' : '') + '>' + esc(personStatus(m)) + '</small></span>' + (isMe ? '' : fromMe(p));
   }
   var sig = list.map(function (m) { return m.id; }).join(',');
   if (ul._sig !== sig) {

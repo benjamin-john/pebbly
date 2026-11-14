@@ -467,6 +467,16 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('dialog.sheet [data-close]');
   owntracks(otKey, { _type: 'location', lat: 45.0710, lon: -93.21, acc: 10, tst: tNow + 30 });
   check(await until(ben, () => __bc.state().trails.some(t => t.by === 'Amy') && Object.values(__bc.state().pts).some(a => a.length === 2), null, 10000), 'screen-off trail recorded');
+  // no word from OwnTracks for over an hour: flagged in red on the map and in People
+  spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'],
+    { input: `update bc_members set ot_at = now() - interval '75 minutes', pos_at = now() - interval '75 minutes' where name = 'Amy';`, encoding: 'utf8' });
+  check(await until(ben, () => { const e = [...document.querySelectorAll('.pm')].find(x => x.textContent.includes('Amy')); return e && e.classList.contains('lost') && /⚠/.test(e.textContent); }, null, 10000), 'Amy flagged red on the map');
+  await ben.click('#peopleBtn');
+  check(await until(ben, () => /No word from OwnTracks for 1 hr/.test(document.querySelector('#plist').textContent) && document.querySelector('#plist .sw.lost')), 'and in People, with what it may mean');
+  await shot(ben, 'lost');
+  await ben.click('dialog.sheet [data-close]');
+  owntracks(otKey, { _type: 'location', lat: 45.0712, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) });
+  check(await until(ben, () => { const e = [...document.querySelectorAll('.pm')].find(x => x.textContent.includes('Amy')); return e && !e.classList.contains('lost'); }, null, 10000), 'a new report clears the flag');
   // hiding in Basecamp also hides OwnTracks reports; sharing again lets them through
   await setVisible(amy, true);
   await amy.click('#moreBtn'); await amy.click('#mHide');
