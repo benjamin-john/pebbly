@@ -228,6 +228,8 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   (or a .otrc file). Tests: `tests/owntracks_test.js` (handler in Node), Basecamp test (flow via psql as service_role).
   Someone with screen-off sharing on whose OwnTracks and Basecamp have both been silent for over an hour (`lost()`) shows a
   red ring and "No word from OwnTracks" in People.
+  Waypoint and person sheets have "Open in Google Maps" (`gmapsUrl`: google.com/maps/search/?api=1&query=lat,lng, opens the
+  app on phones); long-pressing the map opens a spot sheet (distance, Add a waypoint here, Google Maps, Copy coordinates).
   Sync cadence (`syncEvery`): 3 s, 15 s with Battery saver (`pebbly_basecamp_ui.saver`), 10 s when nobody moved >10 m for 2 min.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
   kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:

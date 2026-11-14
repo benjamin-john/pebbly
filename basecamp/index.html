@@ -1560,7 +1560,7 @@ function longPress() {
     t = setTimeout(function () {
       t = null; var ll = MAP.unproject(pt);
       if (navigator.vibrate) try { navigator.vibrate(30); } catch (x) {}
-      openWaypointEdit(null, { lat: ll.lat, lng: ll.lng });
+      openSpot({ lat: ll.lat, lng: ll.lng });
     }, 550);
   }, { passive: true });
   box.addEventListener('touchmove', function (e) {
@@ -1568,7 +1568,7 @@ function longPress() {
     var touch = e.touches[0]; if (e.touches.length > 1 || Math.abs(touch.clientX - start.x) + Math.abs(touch.clientY - start.y) > 12) cancel();
   }, { passive: true });
   box.addEventListener('touchend', cancel); box.addEventListener('touchcancel', cancel);
-  MAP.on('contextmenu', function (e) { if (!pick) openWaypointEdit(null, { lat: e.lngLat.lat, lng: e.lngLat.lng }); });
+  MAP.on('contextmenu', function (e) { if (!pick) openSpot({ lat: e.lngLat.lat, lng: e.lngLat.lng }); });
 }
 function startPick(at, text, done) {
   closeSheet();
@@ -1581,6 +1581,24 @@ function startPick(at, text, done) {
 function endPick() {
   pick = null; var c = $('#cross'); if (!c) return;
   c.hidden = true; $('#pickbar').hidden = true; $('#bbar').hidden = false; $('#meBtn').hidden = false;
+}
+
+/* ------------------------------------------------------------------ Google Maps, and a long-pressed spot */
+// Opens the Google Maps app on Android/iPhone (or the website) with a pin there; Google's own Directions button is one tap away.
+function gmapsUrl(p) { return 'https://www.google.com/maps/search/?api=1&query=' + p.lat.toFixed(6) + '%2C' + p.lng.toFixed(6); }
+function gmapsBtn(p) { return '<a class="btn" data-gmaps href="' + gmapsUrl(p) + '" target="_blank" rel="noopener">Open in Google Maps</a>'; }
+function openSpot(ll) {
+  var where = ll.lat.toFixed(5) + ', ' + ll.lng.toFixed(5);
+  openSheet('spot', head('📍 This spot') +
+    '<p class="facts">' + (FIX ? '<b style="color:var(--ink)">' + esc(fmtDist(dist(FIX, ll))) + ' ' + dir8(bearing(FIX, ll)) + '</b> of you · ' : '') + esc(where) + '</p>' +
+    '<div class="menu">' +
+      '<button type="button" class="btn" id="spAdd"><span>📌 Add a waypoint here</span></button>' +
+      '<a class="btn" data-gmaps href="' + gmapsUrl(ll) + '" target="_blank" rel="noopener"><span>🗺️ Open in Google Maps<small>Directions, street view and more</small></span></a>' +
+      '<button type="button" class="btn" id="spCopy"><span>📋 Copy coordinates<small>' + esc(where) + '</small></span></button>' +
+    '</div>', function (d) {
+    $('#spAdd', d).onclick = function () { openWaypointEdit(null, ll); };
+    $('#spCopy', d).onclick = function () { copyText(where).then(function (ok) { toast(ok ? 'Copied ' + where + '.' : where); }); };
+  });
 }
 
 /* ================================================================== sheets */
@@ -1677,7 +1695,7 @@ function openPerson(id) {
   var pts = 0; allTrails().forEach(function (t) { if (t.member === id) pts++; });
   openSheet('person', head('<span class="sw" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + m.color + ';margin-right:6px"></span>' + esc(m.name) + (isMe ? ' (you)' : '')) +
     '<p class="facts">' + esc(personStatus(m)) + (p && FIX && !isMe ? ' · ' + esc(fmtDist(dist(FIX, p))) + ' ' + dir8(bearing(FIX, p)) + ' of you' : '') + '</p>' +
-    '<div class="btns">' + (p ? '<button type="button" class="btn primary" id="pGo">Show on map</button>' : '') +
+    '<div class="btns">' + (p ? '<button type="button" class="btn primary" id="pGo">Show on map</button>' + gmapsBtn(p) : '') +
       (isMe ? '<button type="button" class="btn" id="pMe">Change my name or color</button>' : '') +
       (!isMe && S.isOwner ? '<button type="button" class="btn danger" id="pRm">Take off this map</button>' : '') + '</div>', function (d) {
     if ($('#pGo', d)) $('#pGo', d).onclick = function () { closeSheet(); if (isMe) $('#meBtn').click(); else flyTo(p.lat, p.lng); };
@@ -1718,7 +1736,7 @@ function openWaypoint(id) {
     '<p class="facts">' + (FIX ? '<b style="color:var(--ink)">' + esc(fmtDist(dist(FIX, w))) + ' ' + dir8(bearing(FIX, w)) + '</b> of you · ' : '') +
       'Added by ' + esc(ME && w.member === ME.id ? 'you' : by) + (w.at ? ' · ' + esc(fmtWhen(w.at)) : '') + (w.pending ? ' · not sent yet' : '') + '</p>' +
     (w.note ? '<p class="wnote">' + esc(w.note) + '</p>' : '') +
-    '<div class="btns"><button type="button" class="btn primary" id="wGo">Show on map</button>' +
+    '<div class="btns"><button type="button" class="btn primary" id="wGo">Show on map</button>' + gmapsBtn(w) +
       (canEdit(w) ? '<button type="button" class="btn" id="wEdit">Edit</button>' : '') + '</div>', function (d) {
     $('#wGo', d).onclick = function () { closeSheet(); flyTo(w.lat, w.lng); };
     if ($('#wEdit', d)) $('#wEdit', d).onclick = function () { openWaypointEdit(w); };

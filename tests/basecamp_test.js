@@ -147,6 +147,12 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   // Amy moves
   await amy.context().setGeolocation({ latitude: 45.053, longitude: -93.198, accuracy: 5 });
   check(await until(ben, () => { const a = __bc.state().members[1]; return a.lat === 45.053; }, null, 12000), 'Amy’s move shows on Ben’s phone');
+  // tapping Amy's dot: her sheet has Open in Google Maps at her spot
+  await ben.evaluate(() => [...document.querySelectorAll('.pm')].find(e => e.textContent.includes('Amy')).click());
+  await ben.waitForSelector('dialog.sheet [data-gmaps]');
+  const pq = new URL(await ben.getAttribute('dialog.sheet [data-gmaps]', 'href')).searchParams.get('query').split(',').map(Number);
+  check(Math.abs(pq[0] - 45.053) < 1e-5 && Math.abs(pq[1] + 93.198) < 1e-5, 'person: Open in Google Maps at their spot');
+  await ben.click('dialog.sheet [data-close]');
 
   // ---- waypoints
   await ben.click('#pinBtn');
@@ -165,7 +171,13 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
     el.dispatchEvent(new TouchEvent('touchstart', { touches: [t], targetTouches: [t], changedTouches: [t], bubbles: true }));
   }, [box.x + 100, box.y + 300]);
   await amy.waitForTimeout(800);
-  check(await amy.isVisible('#wpForm'), 'long-press opens a new waypoint');
+  check(await amy.isVisible('#spAdd') && /of you/.test(await amy.textContent('dialog.sheet')), 'long-press shows the spot, with distance');
+  const spotLink = await amy.getAttribute('dialog.sheet [data-gmaps]', 'href');
+  const ll = await amy.evaluate(([x, y]) => { const m = __bc.map(), r = m.getCanvas().getBoundingClientRect(); return m.unproject([x - r.left, y - r.top]); }, [box.x + 100, box.y + 300]);
+  const q = new URL(spotLink).searchParams.get('query').split(',').map(Number);
+  check(/^https:\/\/www\.google\.com\/maps\/search\/\?api=1&query=/.test(spotLink) && Math.abs(q[0] - ll.lat) < 1e-4 && Math.abs(q[1] - ll.lng) < 1e-4, 'Open in Google Maps points at that spot');
+  await amy.click('#spAdd');
+  check(await amy.isVisible('#wpForm'), 'Add a waypoint here opens the waypoint form');
   await amy.fill('#wpForm [name=name]', 'Truck');
   await amy.click('#wpForm .icons label:nth-child(2)');
   await amy.click('#wpForm [type=submit]');
@@ -175,6 +187,9 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await amy.waitForSelector('#wGo');
   check(!(await amy.isVisible('#wEdit')), 'Amy can’t edit Ben’s waypoint');
   check(/Saw him at dawn/.test(await amy.textContent('dialog.sheet')) && /of you/.test(await amy.textContent('dialog.sheet')), 'waypoint sheet shows note and distance');
+  const wq = new URL(await amy.getAttribute('dialog.sheet [data-gmaps]', 'href')).searchParams.get('query').split(',').map(Number);
+  const buck = await amy.evaluate(() => __bc.state().waypoints.find(x => x.name === 'Big buck'));
+  check(Math.abs(wq[0] - buck.lat) < 1e-5 && Math.abs(wq[1] - buck.lng) < 1e-5, 'waypoint: Open in Google Maps at its spot');
   await amy.click('dialog.sheet [data-close]');
   // Ben (host) edits Amy's
   await ben.evaluate(() => document.querySelectorAll('.wp').forEach(e => { if (e.textContent.includes('Truck')) e.click(); }));
