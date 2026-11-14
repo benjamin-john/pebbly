@@ -15,7 +15,7 @@ const { spawnSync } = require('child_process');
 function owntracks(token, body) {
   const lit = (x) => "'" + String(x).replace(/'/g, "''") + "'";
   const r = spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At', '-v', 'ON_ERROR_STOP=1'],
-    { input: `set role service_role;\nselect bc_owntracks(${lit(token)}, ${lit(JSON.stringify(body))}::jsonb);`, encoding: 'utf8' });
+    { input: `set role service_role;\nselect bc_owntracks(${lit(token)}, ${lit(JSON.stringify(body))}::jsonb)->>'status';`, encoding: 'utf8' });
   return r.stdout.trim().split('\n').pop();
 }
 // as if Basecamp last sent this person's location more than 30 seconds ago (they left the screen)
@@ -447,6 +447,9 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   const otKey = new URL(cfg.url).searchParams.get('k');
   check(cfg._type === 'configuration' && cfg.mode === 3 && /\/functions\/v1\/owntracks\?k=/.test(cfg.url) && /^[0-9a-f]{64}$/.test(otKey) && cfg.tid === 'AM',
     'OwnTracks settings: HTTP mode to the receiver with a personal key, tracker id ' + cfg.tid);
+  check(cfg.cmd === true && cfg.remoteConfiguration === true, 'remote commands allowed (so Pebbly can slow it down or switch it off)');
+  const otUntil = await amy.evaluate(() => __bc.state().me.ot_until);
+  check(otUntil > Date.now() + 71 * 3600e3 && otUntil < Date.now() + 73 * 3600e3, 'shares for 3 days by default');
   const tNow = Math.floor(Date.now() / 1000);
   // Amy still has Basecamp open: her OwnTracks reports are ignored (Basecamp's GPS wins, no double trail)
   await amy.click('dialog.sheet [data-close]').catch(() => {});
@@ -477,7 +480,12 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await amy.evaluate(() => window.confirm = () => true);
   await amy.click('#moreBtn');
   check(/On, through the OwnTracks app/.test(await amy.textContent('#mOt')), 'menu says it’s on');
-  await amy.click('#mOt'); await amy.click('#otStop');
+  await amy.click('#mOt');
+  check(/On until/.test(await amy.textContent('dialog.sheet')) && /switched to Quiet automatically/.test(await amy.textContent('dialog.sheet')), 'shows when it ends');
+  await amy.click('[data-ext=week]');
+  check(await until(amy, () => { const u = __bc.state().me.ot_until; return u > Date.now() + 6.9 * 864e5 && u < Date.now() + 7.1 * 864e5; }), 'extended to a week');
+  await amy.waitForSelector('#otStop');
+  await amy.click('#otStop');
   await amy.waitForTimeout(500);
   check(owntracks(otKey, { _type: 'location', lat: 45.1, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) + 10 }) === 'unknown', 'after Stop, the old key is refused');
 

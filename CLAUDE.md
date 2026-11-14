@@ -219,6 +219,12 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   move the dot; `ot_trail` also records trails (new trail after 30 min, point per 10 m). "Hide my location" sets
   `bc_members.hidden`, which OwnTracks reports respect. While Basecamp itself sent the person's location in the last 30 s (`bc_members.web_at`,
   `20261115010000_basecamp_ot_prefer_app.sql`), OwnTracks reports are dropped (dot and trail), so the app's GPS wins. The setup link is `owntracks:///config?inline=<base64 config>`
+  (or a .otrc file; it allows remote commands: `cmd`, `remoteConfiguration`). `bc_owntracks` returns `{status, reply}` and the
+  receiver sends `reply` (OwnTracks commands) back: after `ot_until` (picked at setup: today / 3 days / a week;
+  `bc_ot_extend`) or for unknown keys → setConfiguration monitoring -1 (Quiet); while nobody has had the map open for
+  30 min (`bc_sessions.viewed_at`, touched by `bc_sync`) → "report less" once; someone looks → normal settings at the
+  next report (Move mode restored from the report's `m`). OwnTracks only hears replies to its own reports.
+  (`20261116000000_basecamp_ot_limits.sql`.)
   (or a .otrc file). Tests: `tests/owntracks_test.js` (handler in Node), Basecamp test (flow via psql as service_role).
   Sync cadence (`syncEvery`): 3 s, 15 s with Battery saver (`pebbly_basecamp_ui.saver`), 10 s when nobody moved >10 m for 2 min.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is

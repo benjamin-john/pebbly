@@ -1619,7 +1619,8 @@ function personStatus(m) {
   }
   if (!p) return m.ot ? '📡 Screen-off sharing · no report yet' : 'Not sharing';
   var age = srvNow() - p.at;
-  return (m.ot ? '📡 ' : '') + (age < 30000 ? 'Here now' : fmtAgo(age)) + (p.acc != null ? ' · ±' + fmtFeet(p.acc) : '');
+  return (m.ot ? '📡 ' : '') + (age < 30000 ? 'Here now' : fmtAgo(age)) + (p.acc != null ? ' · ±' + fmtFeet(p.acc) : '') +
+    (m.ot && m.ot_slow ? ' · updates soon (it reported less while nobody was watching)' : '');
 }
 // The rows stay in a fixed order (you first, then in the order people joined) and are updated in place,
 // so a tap is never lost to a redraw while times and distances tick.
@@ -2019,11 +2020,21 @@ var OT_PLAY = 'https://play.google.com/store/apps/details?id=org.owntracks.andro
 function otConfig(token, tid) {
   return { _type: 'configuration', mode: 3, url: URL_ + '/functions/v1/owntracks?k=' + encodeURIComponent(token), tid: tid,
     monitoring: 1, locatorDisplacement: 20, locatorInterval: 60, moveModeLocatorInterval: 10, pubExtendedData: true,
-    cmd: false, remoteConfiguration: false, auth: false, username: 'basecamp', deviceId: 'phone' };
+    cmd: true, remoteConfiguration: true, auth: false, username: 'basecamp', deviceId: 'phone' };
 }
 function otLink(cfg) {
   var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(cfg))));
   return 'owntracks:///config?inline=' + encodeURIComponent(b64);
+}
+// How long screen-off sharing lasts: minutes until the end of today (at least an hour), 3 days, or a week.
+function otMinutes(which) {
+  if (which === 'today') { var e = new Date(); e.setHours(23, 59, 0, 0); return Math.max(60, Math.round((e - Date.now()) / 60000)); }
+  return which === 'week' ? 10080 : 4320;
+}
+function fmtUntil(t) {
+  var d = new Date(t), today = new Date(), tm = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  if (d.toDateString() === today.toDateString()) return 'today at ' + tm;
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + ' at ' + tm;
 }
 function openOwnTracks() {
   var me = meMember(), on = !!(S.me && S.me.ot), trail = !!(S.me && S.me.ot_trail);
@@ -2032,12 +2043,20 @@ function openOwnTracks() {
   openSheet('ot', head('📡 Share with the screen off') +
     '<p class="hint" style="margin-bottom:12px">Basecamp can only share while it’s on your screen. The free <b>OwnTracks</b> app can keep sending your location to this map ' +
       'with the phone locked in your pocket. Everyone still uses Basecamp to see the map.</p>' +
-    (on ? '<div class="note" style="position:static;margin-bottom:12px"><div class="t"><b>On for this map.</b> ' +
-        (last ? 'Last report from OwnTracks: ' + esc(last) + '.' : 'No report from OwnTracks yet. Open OwnTracks once and allow location.') + '</div></div>' : '') +
+    (on ? '<div class="note" style="position:static;margin-bottom:12px;flex-wrap:wrap"><div class="t"><b>On ' + (S.me.ot_until ? 'until ' + esc(fmtUntil(S.me.ot_until)) : 'for this map') + '.</b> ' +
+        (last ? 'Last report from OwnTracks: ' + esc(last) + '.' : 'No report from OwnTracks yet. Open OwnTracks once and allow location.') +
+        (S.me.ot_v === 2 ? ' Then OwnTracks is switched to Quiet automatically.' : '') + '</div>' +
+        '<div class="btns" style="width:100%;margin-top:6px"><button type="button" class="btn small" data-ext="today">Through today</button>' +
+        '<button type="button" class="btn small" data-ext="3d">3 more days</button><button type="button" class="btn small" data-ext="week">A week</button></div></div>' +
+      (S.me.ot_v === 2 ? '' : '<div class="note warn" style="position:static;margin-bottom:12px"><div class="t"><b>Set up OwnTracks again</b> (button below) so Pebbly can switch it off ' +
+        'on its own when sharing ends. Your current setup can’t be switched off from here.</div></div>') : '') +
     '<ol class="how" style="margin:0 0 14px;color:var(--ink)">' +
       '<li><b>Install OwnTracks</b> (free): <a href="' + (ios ? OT_IOS : OT_PLAY) + '" target="_blank" rel="noopener">' + (ios ? 'App Store' : 'Play Store') + '</a>.</li>' +
       '<li><b>Tap “Set up OwnTracks”</b> below. OwnTracks opens with everything filled in. Tap to accept the settings.</li>' +
       '<li><b>Allow location “All the time”</b> when OwnTracks asks' + (ios ? '' : ', and in Android Settings → Apps → OwnTracks → Battery, choose <b>Unrestricted</b>') + '.</li></ol>' +
+    (on ? '' : '<span class="lbl">Share for</span><div class="seg" role="group" aria-label="How long">' +
+      '<button type="button" data-dur="today">Through today</button><button type="button" data-dur="3d" aria-pressed="true">3 days</button><button type="button" data-dur="week">A week</button></div>' +
+      '<p class="hint" style="margin:-4px 0 12px">When it ends, Pebbly switches OwnTracks to Quiet so it stops sending, even if someone forgets.</p>') +
     '<label class="toggle"><span class="tx">Record my trail while the screen is off<small>Draws a trail from OwnTracks’ reports. A new trail starts after 30 minutes without moving.</small></span>' +
       '<input type="checkbox" id="otTrail"' + (trail ? ' checked' : '') + '></label>' +
     '<p class="err" id="otErr" role="alert"></p>' +
@@ -2046,12 +2065,24 @@ function openOwnTracks() {
       (on ? '<button type="button" class="btn small danger" id="otStop">Stop screen-off sharing</button>' : '') + '</div>' +
     '<p class="hint" style="margin-top:12px">How often it updates: OwnTracks starts in “Significant” mode (about every minute or 20 yards while moving; ' +
       'easy on the battery). In OwnTracks, switch to <b>Move</b> mode for updates every few seconds (uses more battery). ' +
+      'While nobody has this map open for 30 minutes, Pebbly tells OwnTracks to report less often (about every half mile or half hour); ' +
+      'when someone opens it, each phone speeds back up at its next report. ' +
       (on ? 'Setting up again makes a new link; the old one stops working.' : '') + '</p>' +
     '<p class="hint" style="margin-top:8px">OwnTracks only sends to Pebbly. To pause it, open OwnTracks and choose <b>Quiet</b> mode, or tap Stop here.</p>', function (d) {
-    var err = $('#otErr', d);
+    var err = $('#otErr', d), dur = '3d';
+    $$('[data-dur]', d).forEach(function (b) { b.onclick = function () { dur = b.dataset.dur; $$('[data-dur]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }; });
+    $$('[data-ext]', d).forEach(function (b) {
+      b.onclick = function () {
+        err.textContent = '';
+        rpc('bc_ot_extend', { p_code: CODE, p_member: ME.key, p_minutes: otMinutes(b.dataset.ext === '3d' ? '3d' : b.dataset.ext) }).then(function (r) {
+          if (S.me) S.me.ot_until = r.until;
+          toast('Screen-off sharing on until ' + fmtUntil(r.until) + '.'); closeSheet(); openOwnTracks();
+        }, function (e) { err.textContent = friendly(e); });
+      };
+    });
     function link() {
-      return rpc('bc_ot_link', { p_code: CODE, p_member: ME.key, p_trail: $('#otTrail', d).checked }).then(function (r) {
-        if (S.me) { S.me.ot = true; S.me.ot_trail = $('#otTrail', d).checked; }
+      return rpc('bc_ot_link', { p_code: CODE, p_member: ME.key, p_trail: $('#otTrail', d).checked, p_minutes: otMinutes(on ? '3d' : dur) }).then(function (r) {
+        if (S.me) { S.me.ot = true; S.me.ot_trail = $('#otTrail', d).checked; S.me.ot_until = r.until; S.me.ot_v = 2; }
         return otConfig(r.token, r.tid);
       });
     }
@@ -2127,7 +2158,7 @@ window.addEventListener('pagehide', function () { if (screen === 'map' && REC) s
 
 window.__bc = {
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
-  mode: function () { return MODE; }, otConfig: otConfig, otLink: otLink, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
+  mode: function () { return MODE; }, otMinutes: otMinutes, otConfig: otConfig, otLink: otLink, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
   idleNow: function () { lastMoveAt = 0; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
   areaPlan: areaPlan, areaTiles: areaTiles, fmtDist: fmtDist, dir8: dir8, layers: LAYERS, tileKey: tileKey,
   orient: onOrient, sync: function () { return syncCall(); }
