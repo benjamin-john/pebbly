@@ -203,7 +203,10 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   Layers: OpenFreeMap vector "liberty" (Map), USGS ImageryOnly (Satellite) and USGSTopo (Topo), all no-account. Every
   map request goes through the page's `bc://` protocol: tiles come from Cache Storage first (`pebbly-maps` for downloaded
   areas and style files, `pebbly-maps-seen` for the newest 10,000 viewed tiles; Offline maps shows both sizes and can clear the seen cache) under fixed keys `https://bc.tiles/<layer>/z/x/y`;
-  missing photo tiles are cut from a parent tile. Never save empty tiles (an empty saved tile is treated as missing and refetched; an
+  missing photo tiles are cut from a parent tile. USGS ImageryOnly only has tiles to z16 (blurry closer in), so inside
+  Minnesota (z>=12, `satLayer`) Satellite uses MnGeo's free WMS (`imageserver.gisdata.mn.gov`, layer `fsa2025`: USDA
+  NAIP 2025, ~2 ft/px, 512px GetMap per tile, key `mn`); pieces under ~6 KB are blank (outside the photos) and fall
+  back to USGS, never saved. USGS's own NAIP ImageServer is too slow (~20 s per image) to use live. Never save empty tiles (an empty saved tile is treated as missing and refetched; an
   early version saved empty ones and the street map showed white). Marker CSS must not set `position` on the marker root
   (it overrides MapLibre's absolute positioning and markers drift with zoom; the test checks every dot's pixel spot).
   Public land: USGS PAD-US feature service (`PADUS_Public_Access`, services.arcgis.com, public domain, CORS open), fetched as

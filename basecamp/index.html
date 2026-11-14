@@ -385,7 +385,10 @@ var OFM_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 var USGS = 'https://basemap.nationalmap.gov/arcgis/rest/services/';
 var LAYERS = {
   map:  { label: 'Map', vector: true, max: 14, kb: 45 },
-  sat:  { label: 'Satellite', url: USGS + 'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', max: 19, kb: 24, attr: 'Imagery: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>' },
+  sat:  { label: 'Satellite', url: USGS + 'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', max: 19, kb: 24, attr: 'Imagery: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>, Minnesota: <a href="https://www.mngeo.state.mn.us/chouse/wms/geo_image_server.html" target="_blank" rel="noopener">MnGeo</a> / USDA' },
+  // Inside Minnesota the Satellite view uses the state's 2025 aerial photos (USDA farm survey, ~2 ft per pixel, drawn
+  // on request by MnGeo's free image server): far sharper than USGS's ready-made pieces, which stop at zoom 16.
+  mn:   { label: 'Satellite', max: 19, kb: 30 },
   pad:  { label: 'Public land', max: 11, kb: 300 },
   topo: { label: 'Topo', url: USGS + 'USGSTopo/MapServer/tile/{z}/{y}/{x}', max: 16, kb: 20, attr: 'Topo: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>' }
 };
@@ -425,11 +428,25 @@ function trimSeen() {
     if (keys.length > SEEN_MAX) return Promise.all(keys.slice(0, keys.length - SEEN_MAX + 1000).map(function (k) { return c.delete(k); }));
   }); }).catch(function () {});
 }
+var MN_BOX = [-97.24, 43.49, -89.48, 49.39], MN_MINZ = 12, MN_WMS = 'https://imageserver.gisdata.mn.gov/cgi-bin/wms', MN_LAYER = 'fsa2025';
+// Which photos a Satellite piece comes from: 'mn' (Minnesota's) when it's in Minnesota and zoomed in, else 'sat' (USGS).
+function satLayer(z, x, y) {
+  if (z < MN_MINZ) return 'sat';
+  var b = tileBox(x, y, z), lng = (b[0] + b[2]) / 2, lat = (b[1] + b[3]) / 2;
+  return lng > MN_BOX[0] && lng < MN_BOX[2] && lat > MN_BOX[1] && lat < MN_BOX[3] ? 'mn' : 'sat';
+}
+function mercBox(x, y, z) {
+  var s = 20037508.342789244, n = Math.pow(2, z);
+  return [x / n * 2 * s - s, s - (y + 1) / n * 2 * s, (x + 1) / n * 2 * s - s, s - y / n * 2 * s];
+}
 function tileUrl(layer, z, x, y) {
+  if (layer === 'mn') return MN_WMS + '?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=' + MN_LAYER + '&STYLES=&SRS=EPSG:3857&BBOX=' +
+    mercBox(x, y, z).map(function (v) { return v.toFixed(2); }).join(',') + '&WIDTH=512&HEIGHT=512&FORMAT=image/jpeg';
   var tpl = layer.indexOf('m~') === 0 ? TPL[layer.slice(2)] : LAYERS[layer] && LAYERS[layer].url;
   if (!tpl) return null;
   return tpl.replace('{z}', z).replace('{x}', x).replace('{y}', y);
 }
+var MN_BLANK = 6000;      // a 512px piece outside the photos is one flat color, about 5 KB; real ones are 13–60 KB
 function tileKey(layer, z, x, y) { return TKEY + layer + '/' + z + '/' + x + '/' + y; }
 // One tile as an ArrayBuffer: this phone's copy first, then the internet (saved for later).
 function getTile(layer, z, x, y, signal, noNet) {
@@ -444,6 +461,7 @@ function getTile(layer, z, x, y, signal, noNet) {
       if (r.status === 404 || r.status === 204) return layer.indexOf('m~') === 0 ? new ArrayBuffer(0) : null;   // no map there
       if (!r.ok || /html|json/.test(r.headers.get('content-type') || '')) return saved;
       return r.arrayBuffer().then(function (buf) {
+        if (layer === 'mn' && buf.byteLength < MN_BLANK) return saved;
         if (buf.byteLength) { cachePut(SEEN, key, buf.slice(0), r.headers.get('content-type')); trimSeen(); }
         return buf;
       });
@@ -490,8 +508,12 @@ function addProtocol() {
     var u = params.url, signal = abort && abort.signal, m = u.match(/^bc:\/\/t\/([^/]+)\/(\d+)\/(\d+)\/(\d+)/);
     if (m) {
       var layer = m[1], z = +m[2], x = +m[3], y = +m[4];
-      return getTile(layer, z, x, y, signal).then(function (buf) {
+      var src = layer === 'sat' ? satLayer(z, x, y) : layer;
+      return getTile(src, z, x, y, signal).then(function (buf) {
         if (buf) return buf;
+        if (src === 'mn') return fromParent('mn', z, x, y, signal).then(function (b) {
+          return b || getTile('sat', z, x, y, signal).then(function (b2) { return b2 || fromParent('sat', z, x, y, signal); });
+        });
         if (layer.indexOf('m~') !== 0) return fromParent(layer, z, x, y, signal);
         return null;
       }).then(function (buf) {
@@ -563,7 +585,7 @@ function layerKeyId(id) { return id === 'map' ? 'm~' + (TPL.openmaptiles ? 'open
 // Download every tile of an area (skipping ones already saved). onProgress(done, total, bytes). Returns {done, bytes, failed}.
 function downloadArea(area, onProgress, signal) {
   var jobs = [];
-  area.layers.forEach(function (l) { areaTiles(area.bounds, l.minz, l.maxz, function (z, x, y) { jobs.push([l.key, z, x, y]); }); });
+  area.layers.forEach(function (l) { areaTiles(area.bounds, l.minz, l.maxz, function (z, x, y) { jobs.push([l.key === 'sat' ? satLayer(z, x, y) : l.key, z, x, y]); }); });
   var i = 0, done = 0, bytes = 0, failed = 0, total = jobs.length;
   return caches.open(DL).then(function (c) {
     function worker() {
@@ -583,7 +605,7 @@ function downloadArea(area, onProgress, signal) {
           return fetchT(url, 20000, signal).then(function (r) {
             if (r.status === 404 || r.status === 204) return;          // nothing there: nothing to save
             if (!r.ok) throw new Error('http');
-            return r.arrayBuffer().then(function (buf) { bytes += buf.byteLength; return c.put(key, new Response(buf, { headers: { 'Content-Type': r.headers.get('content-type') || '' } })); });
+            return r.arrayBuffer().then(function (buf) { if (j[0] === 'mn' && buf.byteLength < MN_BLANK) return; bytes += buf.byteLength; return c.put(key, new Response(buf, { headers: { 'Content-Type': r.headers.get('content-type') || '' } })); });
           });
         }
       }).catch(function () { failed++; }).then(function () { done++; onProgress(done, total, bytes); return worker(); });
@@ -615,10 +637,11 @@ function deleteArea(id) {
   store(K_AREAS, rest);
   if (!a || !hasCaches()) return Promise.resolve();
   var keep = {};
-  rest.forEach(function (o) { o.layers.forEach(function (l) { areaTiles(o.bounds, l.minz, l.maxz, function (z, x, y) { keep[tileKey(l.key, z, x, y)] = 1; }); }); });
+  function keysOf(l, z, x, y) { return l.key === 'sat' ? [tileKey('sat', z, x, y), tileKey('mn', z, x, y)] : [tileKey(l.key, z, x, y)]; }
+  rest.forEach(function (o) { o.layers.forEach(function (l) { areaTiles(o.bounds, l.minz, l.maxz, function (z, x, y) { keysOf(l, z, x, y).forEach(function (k) { keep[k] = 1; }); }); }); });
   return caches.open(DL).then(function (c) {
     var dels = [];
-    a.layers.forEach(function (l) { areaTiles(a.bounds, l.minz, l.maxz, function (z, x, y) { var k = tileKey(l.key, z, x, y); if (!keep[k]) dels.push(k); }); });
+    a.layers.forEach(function (l) { areaTiles(a.bounds, l.minz, l.maxz, function (z, x, y) { keysOf(l, z, x, y).forEach(function (k) { if (!keep[k]) dels.push(k); }); }); });
     var i = 0;
     function step() { var chunk = dels.slice(i, i + 200); i += 200; if (!chunk.length) return; return Promise.all(chunk.map(function (k) { return c.delete(k); })).then(step); }
     return step();

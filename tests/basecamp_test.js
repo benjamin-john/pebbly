@@ -26,7 +26,18 @@ function png(r, g, b) {
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
 }
 const SAT = png(74, 112, 64), TOPO = png(232, 226, 204);
-const hits = { sat: 0, topo: 0, vec: 0, pad: 0 };
+// Minnesota photos stand-in: noisy (so it isn't mistaken for a blank piece, which is ~5 KB); blank outside Minnesota
+function noisePng(n) {
+  const w = n, h = n, raw = Buffer.alloc((w * 3 + 1) * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w * 3; x++) raw[y * (w * 3 + 1) + 1 + x] = (Math.random() * 256) | 0;
+  const t = []; for (let k = 0; k < 256; k++) { let c = k; for (let j = 0; j < 8; j++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[k] = c >>> 0; }
+  const crc = buf => { let x = 0xffffffff; for (const v of buf) x = t[(x ^ v) & 255] ^ (x >>> 8); return (x ^ 0xffffffff) >>> 0; };
+  const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+const MNPHOTO = noisePng(64), BLANK = png(255, 255, 255);
+const hits = { sat: 0, topo: 0, vec: 0, pad: 0, mn: 0, mnblank: 0 };
 // stand-in for USGS PAD-US: one state wildlife area around the test spot, one county park inside it
 const PAD = { type: 'FeatureCollection', features: [
   { type: 'Feature', id: 11, properties: { OBJECTID: 11, Unit_Nm: 'Test Lake State Wildlife Management Area', Pub_Access: 'RA', MngNm_Desc: 'State Fish and Wildlife', MngTp_Desc: 'State', DesTp_Desc: 'State Conservation Area', GIS_Acres: 640 },
@@ -38,6 +49,14 @@ const PAD = { type: 'FeatureCollection', features: [
     geometry: { type: 'Polygon', coordinates: [[[-93.2050, 45.0450], [-93.2030, 45.0450], [-93.2030, 45.0470], [-93.2050, 45.0470], [-93.2050, 45.0450]]] } }] };
 let offline = false;
 async function stubMaps(ctx) {
+  await ctx.route('https://imageserver.gisdata.mn.gov/**', r => {
+    if (offline) return r.abort('internetdisconnected');
+    const q = new URL(r.request().url()).searchParams, bb = (q.get('BBOX') || '').split(',').map(Number);
+    const lng = ((bb[0] + bb[2]) / 2) / 20037508.34 * 180;
+    const inMn = q.get('LAYERS') === 'fsa2025' && q.get('SRS') === 'EPSG:3857' && lng < -92.8;   // pretend the state line is at -92.8
+    hits[inMn ? 'mn' : 'mnblank']++;
+    r.fulfill({ status: 200, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, body: inMn ? MNPHOTO : BLANK });
+  });
   await ctx.route('https://basemap.nationalmap.gov/**', r => {
     if (offline) return r.abort('internetdisconnected');
     const sat = r.request().url().includes('Imagery'); hits[sat ? 'sat' : 'topo']++;
@@ -85,7 +104,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(/^[a-z0-9]{8}$/.test(code || ''), 'map code in the link: ' + code);
   check(await until(ben, () => __bc.state() && __bc.state().members[0] && __bc.state().members[0].lat === 45.05), 'Ben’s location reaches the server');
   check(await until(ben, () => document.querySelector('.pm.me .lbl') && document.querySelector('.pm.me .lbl').textContent === 'You'), 'Ben sees his own dot');
-  check(hits.sat > 0, 'satellite is the default map type');
+  check(hits.mn > 0, 'satellite is the default map type, from Minnesota’s photos when zoomed in in Minnesota');
   await shot(ben, 'map');
 
   // ---- Amy joins
@@ -248,6 +267,14 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(await ben.evaluate(() => !!__bc.map().getSource('trails')), 'trails stay after switching map type');
   await ben.click('.layers [data-layer=sat]');
 
+  // ---- outside Minnesota's photos: USGS instead, and blank pieces aren't kept
+  const satBefore = hits.sat;
+  await ben.evaluate(() => __bc.map().jumpTo({ center: [-92.6, 45.05], zoom: 16 }));
+  check(await until(ben, () => true) && (await ben.waitForTimeout(2500), hits.mnblank > 0 && hits.sat > satBefore), 'past the state line: USGS photos (' + hits.mnblank + ' blank, ' + (hits.sat - satBefore) + ' USGS)');
+  check(await ben.evaluate(() => caches.open('pebbly-maps-seen').then(c => c.keys()).then(k => Promise.all(k.filter(r => r.url.includes('bc.tiles/mn/')).map(r => caches.match(r).then(x => x.blob()))))
+    .then(bs => bs.every(b => b.size > 6000))), 'no blank Minnesota pieces saved');
+  await ben.evaluate(() => __bc.map().jumpTo({ center: [-93.2, 45.05], zoom: 16 }));
+
   // ---- public land
   await ben.evaluate(() => __bc.map().jumpTo({ center: [-93.2, 45.05], zoom: 14 }));
   check(await ben.isHidden('#padLegend'), 'public land is off at first');
@@ -305,7 +332,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('[data-det=normal]');
   await ben.click('#aGo');
   check(await until(ben, () => /works offline/.test(document.querySelector('#aProgT').textContent), null, 60000), 'download finishes: ' + await ben.textContent('#aProgT'));
-  const nCached = await ben.evaluate(() => caches.open('pebbly-maps').then(c => c.keys()).then(k => k.filter(r => r.url.includes('bc.tiles/sat/')).length));
+  const nCached = await ben.evaluate(() => caches.open('pebbly-maps').then(c => c.keys()).then(k => k.filter(r => /bc\.tiles\/(sat|mn)\//.test(r.url)).length));
   const plan = await ben.evaluate(() => __bc.areas()[0]);
   check(nCached > 10 && plan.tiles > 10, 'satellite tiles saved: ' + nCached + ' of plan ' + plan.tiles);
   check(/Deer camp/.test(await ben.textContent('#areaList')), 'saved area listed');
@@ -319,7 +346,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.waitForTimeout(500);
   const after = await ben.evaluate(() => { const m = document.querySelector('#storeInfo').textContent.match(/([\d,]+) of up to/); return m ? +m[1].replace(/,/g, '') : -1; });
   check(after >= 0 && after < seenN / 2, 'Clear recently viewed empties it (' + seenN + ' → ' + after + '; the map behind may save a few again right away)');
-  check(await ben.evaluate(() => caches.open('pebbly-maps').then(c => c.keys()).then(k => k.some(r => r.url.includes('bc.tiles/sat/')))), 'downloaded areas stay');
+  check(await ben.evaluate(() => caches.open('pebbly-maps').then(c => c.keys()).then(k => k.some(r => /bc\.tiles\/(sat|mn)\//.test(r.url)))), 'downloaded areas stay');
   await shot(ben, 'offline');
   await ben.click('dialog.sheet [data-close]');
 
@@ -329,12 +356,12 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.waitForTimeout(16000);
   offline = true;
   await ben.context().route('https://xujtuijpbwujduuzlwat.supabase.co/**', r => r.abort('internetdisconnected'));
-  const before = hits.sat;
+  const before = hits.sat + hits.mn;
   await ben.reload();
   check(await until(ben, () => document.querySelector('#sync') && /No signal/.test(document.querySelector('#sync').textContent), null, 15000), 'opens with no signal');
   check(await ben.evaluate(() => __bc.state().waypoints.length) >= 2, 'waypoints shown from last time');
   await ben.waitForTimeout(2500);
-  check(hits.sat === before, 'no tile requests reached the network');
+  check(hits.sat + hits.mn === before, 'no tile requests reached the network');
   const shown = await ben.evaluate(() => __bc.fromPhone());
   check(shown > 0, 'satellite tiles drawn from the phone: ' + shown);
   check(await until(ben, () => __bc.padShown() === 2, null, 8000), 'public land shown offline from the download');
@@ -385,7 +412,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('#moreBtn'); await ben.click('#mOffline');
   await ben.click('[data-adel]');
   check(await until(ben, () => !document.querySelector('[data-adel]')), 'saved area deleted');
-  const left = await ben.evaluate(() => caches.open('pebbly-maps').then(c => c.keys()).then(k => k.filter(r => r.url.includes('bc.tiles/sat/')).length));
+  const left = await ben.evaluate(() => caches.open('pebbly-maps').then(c => c.keys()).then(k => k.filter(r => /bc\.tiles\/(sat|mn)\//.test(r.url)).length));
   check(left === 0, 'its tiles are gone: ' + left);
   await ben.click('dialog.sheet [data-close]');
 
