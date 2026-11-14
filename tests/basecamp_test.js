@@ -284,6 +284,19 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.evaluate(() => clearInterval(window.__fakeCompass));
   check(Math.abs(await ben.evaluate(() => __bc.map().getBearing())) < 1, 'north-up again');
 
+  // ---- battery saver, and slowing down when nobody moves
+  check(await ben.evaluate(() => __bc.syncEvery()) === 3000, 'checks in every 3 seconds normally');
+  await ben.click('#moreBtn'); await ben.click('#mSaver');
+  check(await ben.evaluate(() => __bc.syncEvery()) === 15000 && /battery saver/.test(await ben.textContent('#sync')), 'battery saver: every 15 seconds');
+  await ben.click('#moreBtn');
+  check(/Battery saver is on/.test(await ben.textContent('#mSaver')), 'menu says it’s on');
+  await ben.click('#mSaver');
+  check(await ben.evaluate(() => __bc.syncEvery()) === 3000, 'battery saver off');
+  await ben.evaluate(() => __bc.idleNow());
+  check(await ben.evaluate(() => __bc.syncEvery()) === 10000, 'nobody moving for 2 minutes: every 10 seconds');
+  await amy.context().setGeolocation({ latitude: 45.0545, longitude: -93.1975, accuracy: 5 });
+  check(await until(ben, () => __bc.syncEvery() === 3000, null, 15000), 'someone moves: back to every 3 seconds');
+
   // ---- offline download
   await ben.evaluate(() => __bc.map().jumpTo({ center: [-93.199, 45.051], zoom: 16 }));
   await ben.click('#moreBtn'); await ben.click('#mOffline');
@@ -296,6 +309,17 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   const plan = await ben.evaluate(() => __bc.areas()[0]);
   check(nCached > 10 && plan.tiles > 10, 'satellite tiles saved: ' + nCached + ' of plan ' + plan.tiles);
   check(/Deer camp/.test(await ben.textContent('#areaList')), 'saved area listed');
+  // space used: downloaded vs recently viewed, and clearing recently viewed
+  check(await until(ben, () => /Downloaded areas/.test(document.querySelector('#storeInfo').textContent) && /of up to 10,000/.test(document.querySelector('#storeInfo').textContent)), 'shows space used');
+  const seenN = await ben.evaluate(() => caches.open('pebbly-maps-seen').then(c => c.keys()).then(k => k.length));
+  check(seenN > 0 && (await ben.textContent('#storeInfo')).includes(seenN.toLocaleString('en-US') + ' of up to'), 'recently viewed count: ' + seenN);
+  await ben.evaluate(() => window.confirm = () => true);
+  await ben.click('#clearSeen');
+  await until(ben, () => !document.querySelector('#clearSeen') || !document.querySelector('#clearSeen').disabled, null, 8000);
+  await ben.waitForTimeout(500);
+  const after = await ben.evaluate(() => { const m = document.querySelector('#storeInfo').textContent.match(/([\d,]+) of up to/); return m ? +m[1].replace(/,/g, '') : -1; });
+  check(after >= 0 && after < seenN / 2, 'Clear recently viewed empties it (' + seenN + ' → ' + after + '; the map behind may save a few again right away)');
+  check(await ben.evaluate(() => caches.open('pebbly-maps').then(c => c.keys()).then(k => k.some(r => r.url.includes('bc.tiles/sat/')))), 'downloaded areas stay');
   await shot(ben, 'offline');
   await ben.click('dialog.sheet [data-close]');
 

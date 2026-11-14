@@ -259,7 +259,7 @@ dialog.sheet::backdrop{background:rgba(10,20,16,.45)}
 var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bpV96pme2gEyfeelqqDYXA_CpAoj9OZ';
 var K_RECENT = 'pebbly_basecamp_recent', K_OWNERS = 'pebbly_basecamp_owners', K_ME = 'pebbly_basecamp_me', K_NAME = 'pebbly_basecamp_name',
   K_UI = 'pebbly_basecamp_ui', K_QUEUE = 'pebbly_basecamp_queue', K_AREAS = 'pebbly_basecamp_areas';
-var SYNC_MS = 3000, STALE_MS = 2 * 60 * 1000;
+var SYNC_MS = 3000, SAVER_MS = 15000, IDLE_MS = 10000, STALE_MS = 2 * 60 * 1000;
 var COLORS = ['#E4572E', '#2E86DE', '#F4B400', '#8E44AD', '#16A085', '#E84393', '#6D4C41', '#00ACC1', '#7CB342', '#FF7043', '#3949AB', '#C0CA33'];
 var ICONS = ['📍', '🚙', '🦌', '🪜', '🏕️', '⛺', '🔥', '🏠', '🚻', '🍔', '🎡', '⭐', '🚩', '⚠️', '💧', '🩸', '🅿️', '🎯'];
 var $app = document.getElementById('app');
@@ -390,7 +390,21 @@ var LAYERS = {
   topo: { label: 'Topo', url: USGS + 'USGSTopo/MapServer/tile/{z}/{y}/{x}', max: 16, kb: 20, attr: 'Topo: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>' }
 };
 var TPL = {};                        // vector map: the real tile address of each source ("m~<source>")
-var seenPuts = 0, fromPhone = 0;
+var seenPuts = 0, fromPhone = 0, SEEN_MAX = 10000;
+// How much the saved maps take: downloaded areas (and map style files) vs recently viewed pieces.
+function cacheSize(name) {
+  if (!hasCaches()) return Promise.resolve({ n: 0, bytes: 0 });
+  return caches.open(name).then(function (c) { return c.keys().then(function (keys) {
+    var bytes = 0, i = 0;
+    function step() {
+      var chunk = keys.slice(i, i + 300); i += 300;
+      if (!chunk.length) return { n: keys.length, bytes: bytes };
+      return Promise.all(chunk.map(function (k) { return c.match(k).then(function (r) { return r ? r.blob() : null; }).then(function (b) { if (b) bytes += b.size; }); })).then(step);
+    }
+    return step();
+  }); }).catch(function () { return { n: 0, bytes: 0 }; });
+}
+function clearSeen() { return hasCaches() ? caches.delete(SEEN).catch(function () {}) : Promise.resolve(); }
 function hasCaches() { return 'caches' in window; }
 function fetchT(url, ms, signal) {
   var ctl = new AbortController(), t = setTimeout(function () { ctl.abort(); }, ms);
@@ -408,7 +422,7 @@ function cachePut(name, key, buf, type) {
 function trimSeen() {
   if (!hasCaches() || ++seenPuts % 200) return;
   caches.open(SEEN).then(function (c) { return c.keys().then(function (keys) {
-    if (keys.length > 5000) return Promise.all(keys.slice(0, keys.length - 4000).map(function (k) { return c.delete(k); }));
+    if (keys.length > SEEN_MAX) return Promise.all(keys.slice(0, keys.length - SEEN_MAX + 1000).map(function (k) { return c.delete(k); }));
   }); }).catch(function () {});
 }
 function tileUrl(layer, z, x, y) {
@@ -611,6 +625,28 @@ function deleteArea(id) {
   });
 }
 
+// The "Space used on this phone" part of Offline maps.
+function renderStorage(d) {
+  var el = $('#storeInfo', d); if (!el) return;
+  el.innerHTML = '<p class="hint">Counting what’s saved…</p>';
+  Promise.all([cacheSize(DL), cacheSize(SEEN)]).then(function (r) {
+    if (!$('#storeInfo', d)) return;
+    var dl = r[0], seen = r[1];
+    el.innerHTML = '<ul class="list"><li><div class="row" style="cursor:default"><span class="em">⬇️</span><span class="tx"><b>Downloaded areas</b>' +
+        '<small>' + (areas().length ? areas().length + (areas().length === 1 ? ' area' : ' areas') + ', kept until you delete them above' : 'None yet') + '</small></span><span class="far">' + esc(fmtMB(dl.bytes)) + '</span></div></li>' +
+      '<li><div class="row" style="cursor:default"><span class="em">👀</span><span class="tx"><b>Recently viewed</b>' +
+        '<small>' + seen.n.toLocaleString() + ' of up to ' + SEEN_MAX.toLocaleString() + ' map pieces you’ve looked at, so they work offline too</small></span>' +
+        '<span class="far">' + esc(fmtMB(seen.bytes)) + '</span></div></li></ul>' +
+      '<div class="btns" style="margin-bottom:6px"><button type="button" class="btn small" id="clearSeen"' + (seen.n ? '' : ' disabled') + '>Clear recently viewed</button></div>';
+    var b = $('#clearSeen', d);
+    if (b) b.onclick = function () {
+      if (!confirm('Clear the ' + seen.n.toLocaleString() + ' recently viewed map pieces (' + fmtMB(seen.bytes) + ')? Downloaded areas stay.')) return;
+      b.disabled = true;
+      clearSeen().then(function () { toast('Recently viewed maps cleared.'); renderStorage(d); });
+    };
+  });
+}
+
 /* ================================================================== app state */
 var CODE = '', S = null, ME = null, MAP = null, timers = [], screen = '';
 // S: { session, isOwner, rev, since, members: [], waypoints: [], trails: [], pts: { trailId: [[id, lat, lng, t]] }, offset }
@@ -779,9 +815,24 @@ function posToSend() {
 function angleDiff(a, b) { if (a == null && b == null) return 0; if (a == null || b == null) return 180; var d = ((b - a) % 360 + 540) % 360 - 180; return d; }
 
 // One round trip: send queued changes, this phone's location and trail points; get everything new.
+// How often to check in: every 3 s normally, 15 s with Battery saver, 10 s when nobody has moved for 2 minutes
+// (your own changes, like a new waypoint, still go out right away).
+var lastSyncAt = 0, lastMoveAt = Date.now(), lastSeenPos = {};
+function saver() { return !!ui().saver; }
+function idle() {
+  if (REC || queue(CODE).pts.length || queue(CODE).ops.length) return false;
+  return Date.now() - lastMoveAt > 2 * 60 * 1000;
+}
+function syncEvery() { return saver() ? SAVER_MS : idle() ? IDLE_MS : SYNC_MS; }
+function noteMoves(members) {
+  members.forEach(function (m) {
+    var was = lastSeenPos[m.id];
+    if (m.lat != null && (!was || dist(was, m) > 10)) { if (was) lastMoveAt = Date.now(); lastSeenPos[m.id] = { lat: m.lat, lng: m.lng }; }
+  });
+}
 function syncCall(firstTime) {
   if (syncing) { syncAgain = true; return Promise.resolve(S ? true : null); }
-  syncing = true;
+  syncing = true; lastSyncAt = Date.now();
   var code = CODE, q = queue(code);
   return runOps(code).then(function () {
     q = queue(code);
@@ -810,6 +861,7 @@ function applySync(r) {
   var first = !S || !S.session;
   if (first) S = { rev: -1, since: 0, members: [], waypoints: [], trails: [], pts: {} };
   S.session = r.session; S.isOwner = !!r.is_owner; S.members = r.members || []; S.offset = (r.now || Date.now()) - Date.now();
+  noteMoves(S.members);
   if (r.waypoints) {
     S.waypoints = r.waypoints;
     Object.keys(pending).forEach(function (id) { if (pending[id].sent) delete pending[id]; });
@@ -878,7 +930,7 @@ function setStatus(st) {
   var who = ppl + (ppl === 1 ? ' person' : ' people');
   el.className = 'sync ' + (st === 'live' ? '' : st);
   el.textContent = st === 'offline' ? (offlineView ? 'No signal · showing what you saw last' : 'No signal' + (n ? ' · ' + n + ' waiting to send' : ' · will keep trying'))
-    : st === 'saving' ? who + ' · sending…' : who + ' · live';
+    : st === 'saving' ? who + ' · sending…' : who + (saver() ? ' · battery saver' : ' · live');
 }
 
 // What this phone last saw, for opening the map with no signal.
@@ -909,6 +961,7 @@ function onFix(p) {
   var c = p.coords, first = !FIX;
   FIX = { lat: c.latitude, lng: c.longitude, acc: c.accuracy || 50, speed: c.speed, heading: c.heading, t: Date.now() };
   geoErr = null;
+  if (!lastSeenPos._me || dist(lastSeenPos._me, FIX) > 10) { if (lastSeenPos._me) lastMoveAt = Date.now(); lastSeenPos._me = { lat: FIX.lat, lng: FIX.lng }; }
   if (REC) recordPoint();
   renderMe();
   if (first) {
@@ -1087,7 +1140,10 @@ function showMap() {
   startGeo();
   renderAll();
   setStatus(offlineView ? 'offline' : status === 'offline' ? 'offline' : 'live');
-  timers.push(setInterval(function () { if (document.visibilityState === 'visible' && screen === 'map') syncCall().catch(syncErr); }, SYNC_MS));
+  timers.push(setInterval(function () {
+    if (document.visibilityState !== 'visible' || screen !== 'map') return;
+    if (Date.now() - lastSyncAt >= syncEvery()) syncCall().catch(syncErr);
+  }, 1000));
   timers.push(setInterval(function () { if (screen === 'map') { renderPeopleMarkers(); if (openSheetName === 'people') renderPeopleList(); } }, 10000));
 }
 function stopMap() {
@@ -1097,6 +1153,7 @@ function stopMap() {
   closeSheet(); closePocket();
   if (MAP) { saveView(); MAP.remove(); MAP = null; }
   FOLLOW = false; userMoved = false; FIX = null; pick = null;
+  lastSeenPos = {}; lastMoveAt = Date.now();
 }
 function saveView() {
   if (!MAP || !CODE) return;
@@ -1777,6 +1834,8 @@ function openMenu() {
       '<button type="button" class="btn" id="mShare"><span>🔗 Share the link<small>Send it to your group so they can join</small></span></button>' +
       '<button type="button" class="btn" id="mHide"><span>' + (sh ? '🙈 Hide my location<small>Others won’t see where you are</small>' : '📡 Share my location<small>You’re hidden right now</small>') + '</span></button>' +
       '<button type="button" class="btn" id="mOffline"><span>⬇️ Offline maps<small>Download the area so the map works with no signal</small></span></button>' +
+      '<button type="button" class="btn" id="mSaver"><span>' + (saver() ? '🔋 Battery saver is on<small>Updates every 15 seconds. Tap to go back to every 3 seconds.</small>' :
+        '🔋 Battery saver<small>Update every 15 seconds instead of every 3. Dots move less often.</small>') + '</span></button>' +
       '<button type="button" class="btn" id="mPocket"><span>🌑 Pocket mode<small>Black screen that keeps sharing; uses less battery</small></span></button>' +
       '<button type="button" class="btn" id="mMe"><span>🎨 My name and color</span></button>' +
     '</div>' +
@@ -1794,6 +1853,10 @@ function openMenu() {
     $('#mHide', d).onclick = function () { closeSheet(); setSharing(!sh); };
     $('#mOffline', d).onclick = openOffline;
     $('#mPocket', d).onclick = function () { closeSheet(); openPocket(); };
+    $('#mSaver', d).onclick = function () {
+      var on = !saver(); setUi(function (u) { u.saver = on; }); closeSheet(); setStatus(status);
+      toast(on ? 'Battery saver on: updates every 15 seconds.' : 'Battery saver off: updates every 3 seconds.');
+    };
     $('#mMe', d).onclick = openMeEdit;
     $('#mLeave', d).onclick = function () {
       if (!confirm('Leave this map? You’ll be taken off it. You can join again with the link.')) return;
@@ -1832,6 +1895,7 @@ function openOffline() {
   openSheet('offline', head('Offline maps') +
     '<p class="hint" style="margin-bottom:12px">Download an area at home on Wi-Fi so the map works where there’s no signal. GPS works without signal; dots and pins update when a bar comes back.</p>' +
     '<div id="areaList"></div>' +
+    '<p class="sec">Space used on this phone</p><div id="storeInfo"></div>' +
     '<p class="sec">Download the area on screen</p>' +
     '<label class="fld"><span>Name</span><input type="text" id="aName" maxlength="40" value="' + esc(S.session.name) + '"></label>' +
     '<div class="checks">' + ['sat', 'topo', 'map', 'pad'].map(function (id) {
@@ -1853,7 +1917,7 @@ function openOffline() {
     }
     $$('[data-al]', d).forEach(function (c) { c.onchange = function () { sel.layers = $$('[data-al]', d).filter(function (x) { return x.checked; }).map(function (x) { return x.dataset.al; }); est(); }; });
     $$('[data-det]', d).forEach(function (b) { b.onclick = function () { sel.detail = b.dataset.det; $$('[data-det]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); est(); }; });
-    est(); renderAreas(d);
+    est(); renderAreas(d); renderStorage(d);
     if (navigator.storage && navigator.storage.estimate) navigator.storage.estimate().then(function (e) {
       if (e.quota) { var el = $('#aEst', d); if (el) el.insertAdjacentHTML('afterend', '<p class="hint" style="margin:-6px 0 12px">Space Pebbly can use on this phone: about ' + fmtMB(Math.max(0, e.quota - e.usage)) + '.</p>'); }
     }).catch(function () {});
@@ -1885,7 +1949,7 @@ function openOffline() {
           if (!ctl.signal.aborted) $('.bar i', d).style.width = '100%';
           $('#aProgT', d).textContent = ctl.signal.aborted ? 'Stopped. What downloaded is kept.' :
             res.failed ? 'Done, but ' + res.failed.toLocaleString() + ' pieces didn’t download. Tap Download again to fill them in.' : 'Done. This area works offline now.';
-          renderAreas(d);
+          renderAreas(d); renderStorage(d);
         }
         if (!ctl.signal.aborted && !res.failed) toast('Area saved for offline use.');
       }, function () {
@@ -1959,7 +2023,8 @@ window.addEventListener('pagehide', function () { if (screen === 'map' && REC) s
 
 window.__bc = {
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
-  mode: function () { return MODE; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
+  mode: function () { return MODE; }, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
+  idleNow: function () { lastMoveAt = 0; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
   areaPlan: areaPlan, areaTiles: areaTiles, fmtDist: fmtDist, dir8: dir8, layers: LAYERS, tileKey: tileKey,
   orient: onOrient, sync: function () { return syncCall(); }
 };
