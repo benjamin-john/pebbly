@@ -26,5 +26,5 @@ jobs:
             echo "::error::Add the SUPABASE_ACCESS_TOKEN repository secret first (see supabase/README.md), then run this again."
             exit 1
           fi
-          supabase functions deploy notify-push --project-ref xujtuijpbwujduuzlwat --no-verify-jwt
-          supabase functions deploy owntracks --project-ref xujtuijpbwujduuzlwat --no-verify-jwt
+          supabase functions deploy notify-push --project-ref xujtuijpbwujduuzlwat --no-verify-jwt --yes
+          supabase functions deploy owntracks --project-ref xujtuijpbwujduuzlwat --no-verify-jwt --yes
