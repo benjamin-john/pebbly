@@ -210,7 +210,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   NAIP 2025, ~2 ft/px, 512px GetMap per tile, key `mn`); pieces under ~6 KB are blank (outside the photos) and fall
   back to USGS, never saved. USGS's own NAIP ImageServer is too slow (~20 s per image) to use live. Never save empty tiles (an empty saved tile is treated as missing and refetched; an
   early version saved empty ones and the street map showed white). Marker CSS must not set `position` on the marker root
-  (it overrides MapLibre's absolute positioning and markers drift with zoom; the test checks every dot's pixel spot).
+  (it overrides MapLibre's absolute positioning and markers drift with zoom; the test checks every dot's pixel spot). Markers carry a z-index (your dot on top), so `.maplibregl-canvas-container` has `isolation:isolate` to keep them under the map's buttons.
   Public land: USGS PAD-US feature service (`PADUS_Public_Access`, services.arcgis.com, public domain, CORS open), fetched as
   GeoJSON per z11 square (private land left out), cached like tiles (`https://bc.tiles/pad/11/x/y`, offline downloads too),
   colored by manager type (toggle in the ☰ More menu; the color key shows on the map while on); tapping shows name, manager, access. PAD-US marks MN WMAs "restricted", so never present

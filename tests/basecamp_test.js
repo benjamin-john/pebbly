@@ -308,6 +308,17 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('[data-tab=wp]'); await ben.waitForSelector('#wlist [data-wgo]');
   await ben.click('dialog.sheet [data-close]');
 
+  // ---- dots never cover the buttons: put Amy's dot right under the bottom bar and the zoom buttons
+  const covered = await ben.evaluate(() => {
+    const m = __bc.map(), amy = __bc.state().members.find(x => x.name === 'Amy'), box = m.getContainer().getBoundingClientRect();
+    const hit = (sel) => { const r = document.querySelector(sel).getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+      m.jumpTo({ center: m.unproject([m.project([amy.lng, amy.lat]).x - (x - box.left) + box.width / 2, m.project([amy.lng, amy.lat]).y - (y - box.top) + box.height / 2]) });
+      const el = document.elementFromPoint(x, y); return !!el.closest('.pm'); };
+    return [hit('#peopleBtn'), hit('#zIn'), hit('#compass')];
+  });
+  check(!covered.some(Boolean), 'a dot under a button stays under it: ' + JSON.stringify(covered));
+  await ben.evaluate(() => __bc.map().jumpTo({ center: [-93.2, 45.05], zoom: 16 }));
+
   // ---- zoom buttons (one-handed)
   await ben.waitForTimeout(1200);
   const z0 = await ben.evaluate(() => __bc.map().getZoom());

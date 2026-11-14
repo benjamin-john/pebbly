@@ -106,6 +106,8 @@ body.in-map #app{height:100%}
 .ibtn svg{width:24px;height:24px}
 #map{position:relative;flex:1;min-height:0;background:#dfe6e2}
 .maplibregl-ctrl-attrib{font-size:11px}
+/* dots and waypoints keep their stacking among themselves, always under the map's buttons and bars */
+.maplibregl-canvas-container{isolation:isolate}
 .maplibregl-ctrl-bottom-left{bottom:calc(76px + env(safe-area-inset-bottom));display:flex;flex-direction:column-reverse;align-items:flex-start}
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 6px 10px}
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl.maplibregl-ctrl-attrib{max-width:calc(100vw - 86px) !important;box-sizing:border-box}
