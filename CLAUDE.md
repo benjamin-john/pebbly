@@ -246,6 +246,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   "Ask for location" (person sheet → `bc_ask`): the person gets a 🔔/phone alert; opening it opens the map, which shares while
   open (a browser can't read location from an alert). Basecamp has a bell in its header and registers the phone with
   `PebblyNotify.feed('basecamp', code, 'guest', memberKey, memberId)`.
+  Zoom: a slim + / − column (`.zoomfab`) on the right just above the location button, for one-handed use.
   Sync cadence (`syncEvery`): 3 s, 15 s with Battery saver (`pebbly_basecamp_ui.saver`), 10 s when nobody moved >10 m for 2 min.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
   kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:

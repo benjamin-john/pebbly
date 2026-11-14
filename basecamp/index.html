@@ -124,6 +124,13 @@ body.in-map #app{height:100%}
 .fab .n{position:absolute;bottom:2px;font:800 9px/1 var(--body);letter-spacing:.05em}
 #compass svg{transition:transform .15s linear}
 .mefab{position:absolute;right:10px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:2}
+/* zoom: a slim + / − column just above the location button, within thumb reach */
+.zoomfab{position:absolute;right:12px;bottom:calc(138px + env(safe-area-inset-bottom));z-index:2;display:flex;flex-direction:column;
+  width:44px;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.zoomfab button{width:44px;height:44px;border:0;background:none;color:var(--ink);font:500 26px/1 var(--body);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;touch-action:manipulation;display:grid;place-items:center;padding:0}
+.zoomfab button:active{background:var(--brand-t)}
+.zoomfab button+button{border-top:1px solid var(--line)}
 .bbar{position:absolute;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom));z-index:2;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;
   background:var(--surface);border-radius:16px;box-shadow:var(--shadow);padding:5px}
 .bbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:54px;border:0;border-radius:12px;background:none;
@@ -1145,6 +1152,7 @@ function showMap() {
         '<div class="legend" id="padLegend" hidden></div></div>' +
       '<div class="notes" id="notes"></div></div>' +
       '<div class="fabs"><button type="button" class="fab" id="compass" aria-label="North up">' + ICON.compass + '<span class="n">N</span></button></div>' +
+      '<div class="zoomfab"><button type="button" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zOut" aria-label="Zoom out">−</button></div>' +
       '<button type="button" class="fab mefab" id="meBtn" aria-label="Go to my location">' + ICON.me + '</button>' +
       '<nav class="bbar" id="bbar">' +
         '<button type="button" id="pinBtn">' + ICON.pin + '<span>Pin</span></button>' +
@@ -1163,6 +1171,9 @@ function showMap() {
   $('#wpsBtn').onclick = function () { openSaved(ui().savedTab === 'tr' ? 'tr' : 'wp'); };
   $('#pinBtn').onclick = function () { if (FIX) openWaypointEdit(null, { lat: FIX.lat, lng: FIX.lng }, true); else startPick(null); };
   $('#trailBtn').onclick = function () { if (REC) stopTrail(); else startTrail(); };
+  // zooms around the middle of the screen (on you, while following)
+  $('#zIn').onclick = function () { MAP.zoomIn({ duration: 250 }); };
+  $('#zOut').onclick = function () { MAP.zoomOut({ duration: 250 }); };
   $('#meBtn').onclick = function () {
     if (!FIX) { startGeo(); toast(geoErr === 'denied' ? 'Location is blocked for Basecamp. See the note at the top.' : 'Finding your location…'); FOLLOW = true; renderFabs(); return; }
     FOLLOW = true; MAP.flyTo({ center: [FIX.lng, FIX.lat], zoom: Math.max(MAP.getZoom(), 16), bearing: MODE === 'heading' ? (headingNow() || MAP.getBearing()) : 0, duration: 700 });

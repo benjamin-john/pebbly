@@ -308,6 +308,18 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('[data-tab=wp]'); await ben.waitForSelector('#wlist [data-wgo]');
   await ben.click('dialog.sheet [data-close]');
 
+  // ---- zoom buttons (one-handed)
+  await ben.waitForTimeout(1200);
+  const z0 = await ben.evaluate(() => __bc.map().getZoom());
+  await ben.click('#zIn'); await ben.waitForTimeout(600);
+  const z1 = await ben.evaluate(() => __bc.map().getZoom());
+  await ben.click('#zOut'); await ben.waitForTimeout(600); await ben.click('#zOut'); await ben.waitForTimeout(600);
+  const z2 = await ben.evaluate(() => __bc.map().getZoom());
+  check(Math.abs(z1 - z0 - 1) < 0.05 && Math.abs(z2 - z0 + 1) < 0.05, 'zoom buttons: + then − − (' + [z0, z1, z2].map(z => z.toFixed(2)).join(' → ') + ')');
+  check(await ben.evaluate(() => { const z = document.querySelector('.zoomfab').getBoundingClientRect(), m = document.getElementById('meBtn').getBoundingClientRect(), b = document.getElementById('bbar').getBoundingClientRect();
+    return z.right > innerWidth - 20 && z.bottom <= m.top && m.bottom <= b.top && z.width <= 48; }), 'right side, above the location button, slim');
+  await ben.click('#zIn'); await ben.waitForTimeout(400);
+
   // ---- map types
   await ben.click('.layers [data-layer=topo]');
   check(await until(ben, () => true) && (await ben.waitForTimeout(1500), hits.topo > 0), 'Topo loads USGS topo tiles');
