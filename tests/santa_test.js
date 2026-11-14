@@ -140,7 +140,7 @@ async function toastHas(p, s) { await p.waitForFunction(s => document.getElement
   check((await phones[benGiver].textContent('.reveal .wish')).includes('cozy socks'), 'Ben’s Santa sees his wish list');
   const noWish = Object.keys(match).find(k => match[k] !== 'Ben');
   check((await phones[noWish].textContent('.reveal .wish')).includes('No wish list yet'), 'no wish list message');
-  check((await phones[noWish].textContent('.reveal')).includes('$25'), 'budget on reveal card');
+  check(!(await phones[noWish].textContent('.reveal')).includes('$25') && (await phones[noWish].textContent('.head')).includes('$25'), 'budget only at the top, not repeated on the reveal card');
   // the organizer's page and data hold only their own match
   const orgData = await org.evaluate(c => fetch('https://xujtuijpbwujduuzlwat.supabase.co/rest/v1/rpc/gated_santa_get', { method: 'POST',
     body: JSON.stringify({ p_code: c, p_participant: localStorage.getItem('pebbly_santa_pid').replace(/"/g, ''), p_owner_token: JSON.parse(localStorage.getItem('pebbly_santa_owners'))[c], p_key: null }) }).then(r => r.json()), code);

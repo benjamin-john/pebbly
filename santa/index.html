@@ -555,11 +555,8 @@ function meHtml() {
       if (!S.revealed) {
         out += '<button type="button" class="gift" data-act="reveal" aria-label="Tap to reveal who you’re buying for"><span class="inner"><span class="tagline">Tap to reveal<small>who you’re buying for. Make sure nobody’s peeking!</small></span></span></button>';
       } else {
-        var f = [];
-        if (g.budget) f.push(budgetFact(g));
-        if (g.swap_date) f.push(dateFact(g));
+        // (the spending limit and swap date are already at the top of the page)
         out += '<section class="reveal" aria-live="polite"><p class="kicker">🎁 You’re buying for…</p><p class="who" id="matchName">' + esc(G.match.name) + '</p>' +
-          (f.length ? factsHtml('reveal', f) : '') +
           '<div class="wish"><h3>' + esc(G.match.name) + '’s wish list</h3>' +
           (G.match.wish ? '<p>' + esc(G.match.wish) + '</p>' : '<p class="hint">No wish list yet — check back later.</p>') + '</div>' +
           '<button type="button" class="link" data-act="hide">Hide it again</button></section>';
