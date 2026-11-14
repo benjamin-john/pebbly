@@ -1,7 +1,7 @@
 // Basecamp's OwnTracks receiver (supabase/functions/owntracks/handler.js), run in Node against the test Postgres:
 // the function's database calls go to psql as service_role. Checks: GET answers, reports without a key or with an
 // unknown one get "go Quiet" back, a location report moves the person's dot, a list of reports works, other report
-// types are ignored, nobody watching → "report less", someone watching again → normal settings back (Move mode if it
+// types are ignored, nobody watching for 12 hours → "report less", someone watching again → normal settings back (Move mode if it
 // was in Move), after the end time → "go Quiet", and database trouble answers 503 (so OwnTracks sends it again later).
 // Setup: sh tests/setup_db.sh owntracks; then:  node tests/owntracks_test.js
 const { spawnSync } = require('child_process');
@@ -57,10 +57,13 @@ const env = (n) => ({ SUPABASE_URL: 'https://example.supabase.co', SUPABASE_SERV
   const pts = JSON.parse(sql(`select gated_bc_sync(${lit(c.code)}, ${lit(c.member_key)}, null, null, null, 0, 0);`, 'anon')).points;
   check(pts.length === 2, 'trail recorded from the reports: ' + pts.length + ' points');
   // nobody looking for 30 minutes: told to report less; someone looks: normal again, back in Move mode
-  sql(`update bc_sessions set viewed_at = now() - interval '31 minutes';`);
+  sql(`update bc_sessions set viewed_at = now() - interval '11 hours';`);
+  r = await call('POST', '?k=' + link.token, { _type: 'location', lat: 45.1240, lon: -93.4321, acc: 9, tst: now + 1, m: 2 });
+  check((await r.text()) === '[]', 'nobody looking for 11 hours: still normal');
+  sql(`update bc_sessions set viewed_at = now() - interval '12 hours 1 minute';`);
   r = await call('POST', '?k=' + link.token, { _type: 'location', lat: 45.1241, lon: -93.4321, acc: 9, tst: now + 2, m: 2 });
   let j = JSON.parse(await r.text());
-  check(j.length === 1 && j[0].configuration.monitoring === 1 && j[0].configuration.locatorDisplacement >= 500, 'nobody watching: report less');
+  check(j.length === 1 && j[0].configuration.monitoring === 1 && j[0].configuration.locatorDisplacement >= 500, 'nobody looking for 12 hours: report less');
   r = await call('POST', '?k=' + link.token, { _type: 'location', lat: 45.1242, lon: -93.4321, acc: 9, tst: now + 3, m: 1 });
   check((await r.text()) === '[]', 'told once, not every time');
   check(pos().ot_slow === true, 'shown as slow while nobody watches');

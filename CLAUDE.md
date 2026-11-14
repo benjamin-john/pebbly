@@ -222,7 +222,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   (or a .otrc file; one OwnTracks setup per phone, so one map at a time; it allows remote commands: `cmd`, `remoteConfiguration`). `bc_owntracks` returns `{status, reply}` and the
   receiver sends `reply` (OwnTracks commands) back: after `ot_until` (picked at setup: today / 3 days / a week;
   `bc_ot_extend`; "Until I stop" = p_minutes 0 = `ot_until` null, `20261116010000_basecamp_ot_forever.sql`) or for unknown keys (left the map, taken off, map deleted) → setConfiguration monitoring -1 (Quiet); while nobody has had the map open for
-  30 min (`bc_sessions.viewed_at`, touched by `bc_sync`) → "report less" once; someone looks → normal settings at the
+  12 hours (`20261116020000_basecamp_ot_slow_12h.sql`; was 30 min) (`bc_sessions.viewed_at`, touched by `bc_sync`) → "report less" once; someone looks → normal settings at the
   next report (Move mode restored from the report's `m`). OwnTracks only hears replies to its own reports.
   (`20261116000000_basecamp_ot_limits.sql`.)
   (or a .otrc file). Tests: `tests/owntracks_test.js` (handler in Node), Basecamp test (flow via psql as service_role).
