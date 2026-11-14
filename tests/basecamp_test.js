@@ -294,7 +294,9 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   // ---- public land
   await ben.evaluate(() => __bc.map().jumpTo({ center: [-93.2, 45.05], zoom: 14 }));
   check(await ben.isHidden('#padLegend'), 'public land is off at first');
-  await ben.click('#padBtn');
+  await ben.click('#moreBtn');
+  check(/Show public land/.test(await ben.textContent('#mPad')), 'public land toggle is in the menu');
+  await ben.click('#mPad');
   check(await until(ben, () => __bc.padShown() === 2, null, 8000), 'public land shows the areas in view, without the closed one');
   check(/Federal/.test(await ben.textContent('#padLegend')) && /State/.test(await ben.textContent('#padLegend')), 'legend shows the colors');
   await ben.waitForTimeout(500);
@@ -484,6 +486,10 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(/On until/.test(await amy.textContent('dialog.sheet')) && /switched to Quiet automatically/.test(await amy.textContent('dialog.sheet')), 'shows when it ends');
   await amy.click('[data-ext=week]');
   check(await until(amy, () => { const u = __bc.state().me.ot_until; return u > Date.now() + 6.9 * 864e5 && u < Date.now() + 7.1 * 864e5; }), 'extended to a week');
+  await amy.waitForSelector('[data-ext=forever]');
+  await amy.click('[data-ext=forever]');
+  check(await until(amy, () => __bc.state().me.ot_until === null && /until you stop it/.test(document.querySelector('dialog.sheet').textContent)), 'Until I stop: no end time');
+  check(/One map at a time/.test(await amy.textContent('dialog.sheet')), 'explains one map at a time');
   await amy.waitForSelector('#otStop');
   await amy.click('#otStop');
   await amy.waitForTimeout(500);
@@ -493,10 +499,20 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await amy.emulateMedia({ colorScheme: 'dark' });
   await amy.click('#peopleBtn'); await shot(amy, 'people-dark'); await amy.click('dialog.sheet [data-close]');
 
-  // Amy leaves
+  // Amy sets up OwnTracks again ("Until I stop"), then leaves the map: her phone is told to go Quiet
+  await amy.emulateMedia({ colorScheme: 'light' });
+  await amy.click('#moreBtn'); await amy.click('#mOt');
+  await amy.click('[data-dur=forever]');
+  check(/keeps going until you tap Stop/.test(await amy.textContent('#otDurHint')), 'Until I stop explained');
+  await amy.click('#otGo');
+  await until(amy, () => /^owntracks:/.test(document.getElementById('otGo').getAttribute('href')));
+  const key2 = await amy.evaluate(() => new URL(JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(document.getElementById('otGo').getAttribute('href').split('inline=')[1]))))).url).searchParams.get('k'));
+  check(await amy.evaluate(() => __bc.state().me.ot_until) === null, 'set up with no end time');
+  await amy.click('dialog.sheet [data-close]');
   await amy.evaluate(() => window.confirm = () => true);
   await amy.click('#moreBtn'); await amy.click('#mLeave');
   check(await until(ben, () => __bc.state().members.length === 1, null, 10000), 'Amy left the map');
+  check(owntracks(key2, { _type: 'location', lat: 45.1, lon: -93.21, acc: 10 }) === 'unknown', 'after leaving, her OwnTracks gets “go Quiet”');
 
   [ben, amy, carl].forEach((p, i) => check(!p.errs.length, 'page errors on phone ' + i + ': ' + p.errs.join(' | ')));
   console.log(pass + ' passed, ' + fail + ' failed');

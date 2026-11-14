@@ -211,7 +211,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   (it overrides MapLibre's absolute positioning and markers drift with zoom; the test checks every dot's pixel spot).
   Public land: USGS PAD-US feature service (`PADUS_Public_Access`, services.arcgis.com, public domain, CORS open), fetched as
   GeoJSON per z11 square (private land left out), cached like tiles (`https://bc.tiles/pad/11/x/y`, offline downloads too),
-  colored by manager type; tapping shows name, manager, access. PAD-US marks MN WMAs "restricted", so never present
+  colored by manager type (toggle in the ☰ More menu; the color key shows on the map while on); tapping shows name, manager, access. PAD-US marks MN WMAs "restricted", so never present
   access as hunting permission (the sheet says to check DNR rules). Its tile service only goes to ~z10, hence features.
   Screen-off sharing (`supabase/migrations/20261115000000_basecamp_owntracks.sql`, `supabase/functions/owntracks/`): the free
   OwnTracks app in HTTP mode POSTs reports to the `owntracks` Edge Function (no JWT; personal key `?k=` from
@@ -219,9 +219,9 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   move the dot; `ot_trail` also records trails (new trail after 30 min, point per 10 m). "Hide my location" sets
   `bc_members.hidden`, which OwnTracks reports respect. While Basecamp itself sent the person's location in the last 30 s (`bc_members.web_at`,
   `20261115010000_basecamp_ot_prefer_app.sql`), OwnTracks reports are dropped (dot and trail), so the app's GPS wins. The setup link is `owntracks:///config?inline=<base64 config>`
-  (or a .otrc file; it allows remote commands: `cmd`, `remoteConfiguration`). `bc_owntracks` returns `{status, reply}` and the
+  (or a .otrc file; one OwnTracks setup per phone, so one map at a time; it allows remote commands: `cmd`, `remoteConfiguration`). `bc_owntracks` returns `{status, reply}` and the
   receiver sends `reply` (OwnTracks commands) back: after `ot_until` (picked at setup: today / 3 days / a week;
-  `bc_ot_extend`) or for unknown keys → setConfiguration monitoring -1 (Quiet); while nobody has had the map open for
+  `bc_ot_extend`; "Until I stop" = p_minutes 0 = `ot_until` null, `20261116010000_basecamp_ot_forever.sql`) or for unknown keys (left the map, taken off, map deleted) → setConfiguration monitoring -1 (Quiet); while nobody has had the map open for
   30 min (`bc_sessions.viewed_at`, touched by `bc_sync`) → "report less" once; someone looks → normal settings at the
   next report (Move mode restored from the report's `m`). OwnTracks only hears replies to its own reports.
   (`20261116000000_basecamp_ot_limits.sql`.)

@@ -107,6 +107,7 @@ body.in-map #app{height:100%}
 .maplibregl-ctrl-attrib{font-size:11px}
 .maplibregl-ctrl-bottom-left{bottom:calc(76px + env(safe-area-inset-bottom));display:flex;flex-direction:column-reverse;align-items:flex-start}
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 6px 10px}
+.maplibregl-ctrl-bottom-left .maplibregl-ctrl.maplibregl-ctrl-attrib{max-width:calc(100vw - 86px) !important;box-sizing:border-box}
 
 /* layer switch, floating buttons, bottom bar */
 .leftcol{position:absolute;top:10px;left:10px;right:68px;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:8px;pointer-events:none}
@@ -140,10 +141,6 @@ body.in-map #app{height:100%}
 .notes{align-self:stretch;display:grid;gap:8px}
 .notes:empty{display:none}
 .padbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
-.padbtn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:0;border-radius:12px;background:var(--surface);color:var(--ink);
-  box-shadow:var(--shadow);font-weight:600;font-size:14px;cursor:pointer}
-.padbtn .bx{width:18px;height:18px;border-radius:5px;border:2px solid var(--field);display:grid;place-items:center;font-size:12px;line-height:1;color:var(--brand-ink)}
-.padbtn[aria-pressed=true] .bx{background:var(--brand);border-color:var(--brand)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 10px;background:var(--surface);border-radius:10px;box-shadow:var(--shadow);padding:5px 10px;font-size:12px;font-weight:600}
 .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 .facts2{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 12px;font-size:15px}
@@ -1115,7 +1112,7 @@ function showMap() {
       '<div class="leftcol"><div class="layers" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
         return '<button type="button" data-layer="' + id + '">' + LAYERS[id].label + '</button>';
       }).join('') + '</div>' +
-      '<div class="padbar"><button type="button" class="padbtn" id="padBtn" aria-pressed="false"><span class="bx" aria-hidden="true"></span>Public land</button>' +
+      '<div class="padbar">' +
         '<div class="legend" id="padLegend" hidden></div></div>' +
       '<div class="notes" id="notes"></div></div>' +
       '<div class="fabs"><button type="button" class="fab" id="compass" aria-label="North up">' + ICON.compass + '<span class="n">N</span></button></div>' +
@@ -1134,7 +1131,6 @@ function showMap() {
   initMap();
   $('#moreTop').onclick = $('#moreBtn').onclick = openMenu;
   $('#peopleBtn').onclick = openPeople;
-  $('#padBtn').onclick = function () { setUi(function (u) { u.publand = !u.publand; }); if (ui().publand) padSeen(); updatePad(); };
   $('#wpsBtn').onclick = function () { openSaved(ui().savedTab === 'tr' ? 'tr' : 'wp'); };
   $('#pinBtn').onclick = function () { if (FIX) openWaypointEdit(null, { lat: FIX.lat, lng: FIX.lng }, true); else startPick(null); };
   $('#trailBtn').onclick = function () { if (REC) stopTrail(); else startTrail(); };
@@ -1206,6 +1202,8 @@ function initMap() {
   MAP.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
   MAP.on('error', function () {});
   MAP.on('style.load', addOverlays);
+  // start the credits folded to the (i) button so they don't cover the map or the location button
+  MAP.on('styledata', function () { var a = MAP.getContainer().querySelector('.maplibregl-compact-show'); if (a && !a._seen) { a._seen = true; a.classList.remove('maplibregl-compact-show'); } });
   MAP.on('dragstart', function (e) { if (e.originalEvent) userMoved = true; if (e.originalEvent && FOLLOW) { FOLLOW = false; renderFabs(); } });
   MAP.on('rotate', function () { renderFabs(); renderConesOnly(); });
   MAP.on('moveend', function () { clearTimeout(MAP._sv); MAP._sv = setTimeout(saveView, 800); updatePad(); });
@@ -1860,6 +1858,8 @@ function openMenu() {
       '<button type="button" class="btn" id="mHide"><span>' + (sh ? '🙈 Hide my location<small>Others won’t see where you are</small>' : '📡 Share my location<small>You’re hidden right now</small>') + '</span></button>' +
       '<button type="button" class="btn" id="mOt"><span>📡 Share with the screen off' +
         '<small>' + (S.me && S.me.ot ? 'On, through the OwnTracks app' : 'Keep sharing with the phone in your pocket (free OwnTracks app)') + '</small></span></button>' +
+      '<button type="button" class="btn" id="mPad"><span>' + (ui().publand ? '🏞️ Hide public land<small>Public land is shown on the map</small>' :
+        '🏞️ Show public land<small>Shade federal, state and county land, colored by who manages it</small>') + '</span></button>' +
       '<button type="button" class="btn" id="mOffline"><span>⬇️ Offline maps<small>Download the area so the map works with no signal</small></span></button>' +
       '<button type="button" class="btn" id="mSaver"><span>' + (saver() ? '🔋 Battery saver is on<small>Updates every 15 seconds. Tap to go back to every 3 seconds.</small>' :
         '🔋 Battery saver<small>Update every 15 seconds instead of every 3. Dots move less often.</small>') + '</span></button>' +
@@ -1879,6 +1879,10 @@ function openMenu() {
     $('#mShare', d).onclick = function () { copyText(baseUrl() + '?m=' + CODE).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : baseUrl() + '?m=' + CODE); }); };
     $('#mHide', d).onclick = function () { closeSheet(); setSharing(!sh); };
     $('#mOffline', d).onclick = openOffline;
+    $('#mPad', d).onclick = function () {
+      setUi(function (u) { u.publand = !u.publand; }); closeSheet(); updatePad();
+      if (ui().publand) padSeen(); else toast('Public land hidden.');
+    };
     $('#mOt', d).onclick = openOwnTracks;
     $('#mPocket', d).onclick = function () { closeSheet(); openPocket(); };
     $('#mSaver', d).onclick = function () {
@@ -2029,6 +2033,7 @@ function otLink(cfg) {
 // How long screen-off sharing lasts: minutes until the end of today (at least an hour), 3 days, or a week.
 function otMinutes(which) {
   if (which === 'today') { var e = new Date(); e.setHours(23, 59, 0, 0); return Math.max(60, Math.round((e - Date.now()) / 60000)); }
+  if (which === 'forever') return 0;                     // no end time
   return which === 'week' ? 10080 : 4320;
 }
 function fmtUntil(t) {
@@ -2043,20 +2048,22 @@ function openOwnTracks() {
   openSheet('ot', head('📡 Share with the screen off') +
     '<p class="hint" style="margin-bottom:12px">Basecamp can only share while it’s on your screen. The free <b>OwnTracks</b> app can keep sending your location to this map ' +
       'with the phone locked in your pocket. Everyone still uses Basecamp to see the map.</p>' +
-    (on ? '<div class="note" style="position:static;margin-bottom:12px;flex-wrap:wrap"><div class="t"><b>On ' + (S.me.ot_until ? 'until ' + esc(fmtUntil(S.me.ot_until)) : 'for this map') + '.</b> ' +
+    (on ? '<div class="note" style="position:static;margin-bottom:12px;flex-wrap:wrap"><div class="t"><b>On ' + (S.me.ot_until ? 'until ' + esc(fmtUntil(S.me.ot_until)) : 'until you stop it') + '.</b> ' +
         (last ? 'Last report from OwnTracks: ' + esc(last) + '.' : 'No report from OwnTracks yet. Open OwnTracks once and allow location.') +
-        (S.me.ot_v === 2 ? ' Then OwnTracks is switched to Quiet automatically.' : '') + '</div>' +
+        (S.me.ot_v === 2 && S.me.ot_until ? ' Then OwnTracks is switched to Quiet automatically.' : '') + '</div>' +
         '<div class="btns" style="width:100%;margin-top:6px"><button type="button" class="btn small" data-ext="today">Through today</button>' +
-        '<button type="button" class="btn small" data-ext="3d">3 more days</button><button type="button" class="btn small" data-ext="week">A week</button></div></div>' +
+        '<button type="button" class="btn small" data-ext="3d">3 more days</button><button type="button" class="btn small" data-ext="week">A week</button>' +
+        '<button type="button" class="btn small" data-ext="forever">Until I stop</button></div></div>' +
       (S.me.ot_v === 2 ? '' : '<div class="note warn" style="position:static;margin-bottom:12px"><div class="t"><b>Set up OwnTracks again</b> (button below) so Pebbly can switch it off ' +
         'on its own when sharing ends. Your current setup can’t be switched off from here.</div></div>') : '') +
     '<ol class="how" style="margin:0 0 14px;color:var(--ink)">' +
       '<li><b>Install OwnTracks</b> (free): <a href="' + (ios ? OT_IOS : OT_PLAY) + '" target="_blank" rel="noopener">' + (ios ? 'App Store' : 'Play Store') + '</a>.</li>' +
       '<li><b>Tap “Set up OwnTracks”</b> below. OwnTracks opens with everything filled in. Tap to accept the settings.</li>' +
       '<li><b>Allow location “All the time”</b> when OwnTracks asks' + (ios ? '' : ', and in Android Settings → Apps → OwnTracks → Battery, choose <b>Unrestricted</b>') + '.</li></ol>' +
-    (on ? '' : '<span class="lbl">Share for</span><div class="seg" role="group" aria-label="How long">' +
-      '<button type="button" data-dur="today">Through today</button><button type="button" data-dur="3d" aria-pressed="true">3 days</button><button type="button" data-dur="week">A week</button></div>' +
-      '<p class="hint" style="margin:-4px 0 12px">When it ends, Pebbly switches OwnTracks to Quiet so it stops sending, even if someone forgets.</p>') +
+    (on ? '' : '<span class="lbl">Share for</span><div class="seg" style="grid-template-columns:1fr 1fr" role="group" aria-label="How long">' +
+      '<button type="button" data-dur="today">Through today</button><button type="button" data-dur="3d" aria-pressed="true">3 days</button>' +
+      '<button type="button" data-dur="week">A week</button><button type="button" data-dur="forever">Until I stop</button></div>' +
+      '<p class="hint" style="margin:-4px 0 12px" id="otDurHint">When it ends, Pebbly switches OwnTracks to Quiet so it stops sending, even if someone forgets.</p>') +
     '<label class="toggle"><span class="tx">Record my trail while the screen is off<small>Draws a trail from OwnTracks’ reports. A new trail starts after 30 minutes without moving.</small></span>' +
       '<input type="checkbox" id="otTrail"' + (trail ? ' checked' : '') + '></label>' +
     '<p class="err" id="otErr" role="alert"></p>' +
@@ -2068,15 +2075,21 @@ function openOwnTracks() {
       'While nobody has this map open for 30 minutes, Pebbly tells OwnTracks to report less often (about every half mile or half hour); ' +
       'when someone opens it, each phone speeds back up at its next report. ' +
       (on ? 'Setting up again makes a new link; the old one stops working.' : '') + '</p>' +
+    '<p class="hint" style="margin-top:8px"><b>One map at a time:</b> OwnTracks holds one setup, so setting it up from another Basecamp map moves it there, ' +
+      'and this map stops getting your updates.</p>' +
     '<p class="hint" style="margin-top:8px">OwnTracks only sends to Pebbly. To pause it, open OwnTracks and choose <b>Quiet</b> mode, or tap Stop here.</p>', function (d) {
     var err = $('#otErr', d), dur = '3d';
-    $$('[data-dur]', d).forEach(function (b) { b.onclick = function () { dur = b.dataset.dur; $$('[data-dur]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); }); }; });
+    $$('[data-dur]', d).forEach(function (b) { b.onclick = function () {
+      dur = b.dataset.dur; $$('[data-dur]', d).forEach(function (x) { x.setAttribute('aria-pressed', x === b); });
+      $('#otDurHint', d).textContent = dur === 'forever' ? 'It keeps going until you tap Stop here (or leave the map, or the map is deleted); then Pebbly switches OwnTracks to Quiet.' :
+        'When it ends, Pebbly switches OwnTracks to Quiet so it stops sending, even if someone forgets.';
+    }; });
     $$('[data-ext]', d).forEach(function (b) {
       b.onclick = function () {
         err.textContent = '';
-        rpc('bc_ot_extend', { p_code: CODE, p_member: ME.key, p_minutes: otMinutes(b.dataset.ext === '3d' ? '3d' : b.dataset.ext) }).then(function (r) {
+        rpc('bc_ot_extend', { p_code: CODE, p_member: ME.key, p_minutes: otMinutes(b.dataset.ext) }).then(function (r) {
           if (S.me) S.me.ot_until = r.until;
-          toast('Screen-off sharing on until ' + fmtUntil(r.until) + '.'); closeSheet(); openOwnTracks();
+          toast(r.until ? 'Screen-off sharing on until ' + fmtUntil(r.until) + '.' : 'Screen-off sharing on until you stop it.'); closeSheet(); openOwnTracks();
         }, function (e) { err.textContent = friendly(e); });
       };
     });
