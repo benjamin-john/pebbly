@@ -1185,12 +1185,13 @@ function tileBox(x, y, z) {
   var n = Math.pow(2, z), lat = function (yy) { return Math.atan(Math.sinh(Math.PI * (1 - 2 * yy / n))) * 180 / Math.PI; };
   return [x / n * 360 - 180, lat(y + 1), (x + 1) / n * 360 - 180, lat(y)];
 }
-// One square of public land from USGS as GeoJSON text (several pages if it's a busy area). Private land is left out.
+// One square of public land from USGS as GeoJSON text (several pages if it's a busy area). Private land and land
+// closed to the public are left out (also filtered when drawing, for squares saved before that).
 function padFetch(x, y, signal) {
   var b = tileBox(x, y, PAD_Z), all = [], page = 0;
   function one() {
     var q = new URLSearchParams({ geometry: b.map(function (v) { return v.toFixed(6); }).join(','), geometryType: 'esriGeometryEnvelope', inSR: '4326',
-      spatialRel: 'esriSpatialRelIntersects', where: "MngTp_Desc <> 'Private'", outFields: 'OBJECTID,Unit_Nm,Pub_Access,MngNm_Desc,MngTp_Desc,DesTp_Desc,GIS_Acres',
+      spatialRel: 'esriSpatialRelIntersects', where: "MngTp_Desc <> 'Private' AND Pub_Access <> 'XA'", outFields: 'OBJECTID,Unit_Nm,Pub_Access,MngNm_Desc,MngTp_Desc,DesTp_Desc,GIS_Acres',
       outSR: '4326', maxAllowableOffset: '0.00004', geometryPrecision: '5', orderByFields: 'OBJECTID', resultOffset: String(page * 2000), resultRecordCount: '2000', f: 'geojson' });
     return fetchT(PAD_URL + '?' + q, 30000, signal).then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); }).then(function (j) {
       if (!j || !Array.isArray(j.features)) throw new Error('bad');
@@ -1231,7 +1232,7 @@ function updatePad() {
     var xy = c.split('/');
     padLoad(+xy[0], +xy[1]).then(function (txt) {
       var fc = JSON.parse(txt);
-      padCells[c] = fc.features.map(function (f) {
+      padCells[c] = fc.features.filter(function (f) { return f.properties && f.properties.Pub_Access !== 'XA'; }).map(function (f) {
         var id = f.id != null ? f.id : f.properties.OBJECTID;
         f.properties.k = padKind(f.properties.MngTp_Desc); padFeats[id] = f; return id;
       });

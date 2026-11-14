@@ -32,7 +32,10 @@ const PAD = { type: 'FeatureCollection', features: [
   { type: 'Feature', id: 11, properties: { OBJECTID: 11, Unit_Nm: 'Test Lake State Wildlife Management Area', Pub_Access: 'RA', MngNm_Desc: 'State Fish and Wildlife', MngTp_Desc: 'State', DesTp_Desc: 'State Conservation Area', GIS_Acres: 640 },
     geometry: { type: 'Polygon', coordinates: [[[-93.21, 45.04], [-93.19, 45.04], [-93.19, 45.06], [-93.21, 45.06], [-93.21, 45.04]]] } },
   { type: 'Feature', id: 12, properties: { OBJECTID: 12, Unit_Nm: 'Pine Grove County Park', Pub_Access: 'OA', MngNm_Desc: 'County Land', MngTp_Desc: 'Local Government', DesTp_Desc: 'Local Park', GIS_Acres: 40 },
-    geometry: { type: 'Polygon', coordinates: [[[-93.2095, 45.0405], [-93.2075, 45.0405], [-93.2075, 45.0425], [-93.2095, 45.0425], [-93.2095, 45.0405]]] } }] };
+    geometry: { type: 'Polygon', coordinates: [[[-93.2095, 45.0405], [-93.2075, 45.0405], [-93.2075, 45.0425], [-93.2095, 45.0425], [-93.2095, 45.0405]]] } },
+  // closed to the public: must never show (the stand-in ignores the query's filter, like a square saved before it)
+  { type: 'Feature', id: 13, properties: { OBJECTID: 13, Unit_Nm: 'Closed Research Station', Pub_Access: 'XA', MngNm_Desc: 'State Land Board', MngTp_Desc: 'State', DesTp_Desc: 'Research Area', GIS_Acres: 20 },
+    geometry: { type: 'Polygon', coordinates: [[[-93.2050, 45.0450], [-93.2030, 45.0450], [-93.2030, 45.0470], [-93.2050, 45.0470], [-93.2050, 45.0450]]] } }] };
 let offline = false;
 async function stubMaps(ctx) {
   await ctx.route('https://basemap.nationalmap.gov/**', r => {
@@ -57,7 +60,7 @@ async function stubMaps(ctx) {
     if (offline) return r.abort('internetdisconnected');
     hits.pad++;
     const q = new URL(r.request().url()).searchParams;
-    const ok = q.get('f') === 'geojson' && /Private/.test(q.get('where') || '') && q.get('inSR') === '4326';
+    const ok = q.get('f') === 'geojson' && /Private/.test(q.get('where') || '') && /Pub_Access <> 'XA'/.test(q.get('where') || '') && q.get('inSR') === '4326';
     r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(ok ? PAD : { error: 'bad query' }) });
   });
 }
@@ -249,7 +252,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.evaluate(() => __bc.map().jumpTo({ center: [-93.2, 45.05], zoom: 14 }));
   check(await ben.isHidden('#padLegend'), 'public land is off at first');
   await ben.click('#padBtn');
-  check(await until(ben, () => __bc.padShown() === 2, null, 8000), 'public land shows the areas in view');
+  check(await until(ben, () => __bc.padShown() === 2, null, 8000), 'public land shows the areas in view, without the closed one');
   check(/Federal/.test(await ben.textContent('#padLegend')) && /State/.test(await ben.textContent('#padLegend')), 'legend shows the colors');
   await ben.waitForTimeout(500);
   const parkPt = await ben.evaluate(() => { const m = __bc.map(); const p = m.project([-93.2085, 45.0415]); return [p.x, p.y]; });
