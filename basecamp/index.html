@@ -884,6 +884,7 @@ function applySync(r) {
   var first = !S || !S.session;
   if (first) S = { rev: -1, since: 0, members: [], waypoints: [], trails: [], pts: {} };
   S.session = r.session; S.isOwner = !!r.is_owner; S.members = r.members || []; S.offset = (r.now || Date.now()) - Date.now();
+  S.me = r.me || null;
   noteMoves(S.members);
   if (r.waypoints) {
     S.waypoints = r.waypoints;
@@ -1613,12 +1614,12 @@ function personStatus(m) {
   var p = personPlace(m), isMe = ME && m.id === ME.id;
   if (isMe) {
     if (!sharing()) return 'Hidden from others';
-    if (!FIX) return geoErr === 'denied' ? 'Location blocked' : 'Looking for GPS…';
-    return 'Sharing · ±' + fmtFeet(FIX.acc);
+    if (!FIX) return (m.ot ? '📡 Screen-off sharing on · ' : '') + (geoErr === 'denied' ? 'Location blocked' : 'Looking for GPS…');
+    return (m.ot ? '📡 ' : '') + 'Sharing · ±' + fmtFeet(FIX.acc);
   }
-  if (!p) return 'Not sharing';
+  if (!p) return m.ot ? '📡 Screen-off sharing · no report yet' : 'Not sharing';
   var age = srvNow() - p.at;
-  return (age < 30000 ? 'Here now' : fmtAgo(age)) + (p.acc != null ? ' · ±' + fmtFeet(p.acc) : '');
+  return (m.ot ? '📡 ' : '') + (age < 30000 ? 'Here now' : fmtAgo(age)) + (p.acc != null ? ' · ±' + fmtFeet(p.acc) : '');
 }
 // The rows stay in a fixed order (you first, then in the order people joined) and are updated in place,
 // so a tap is never lost to a redraw while times and distances tick.
@@ -1856,6 +1857,8 @@ function openMenu() {
     '<div class="menu">' +
       '<button type="button" class="btn" id="mShare"><span>🔗 Share the link<small>Send it to your group so they can join</small></span></button>' +
       '<button type="button" class="btn" id="mHide"><span>' + (sh ? '🙈 Hide my location<small>Others won’t see where you are</small>' : '📡 Share my location<small>You’re hidden right now</small>') + '</span></button>' +
+      '<button type="button" class="btn" id="mOt"><span>📡 Share with the screen off' +
+        '<small>' + (S.me && S.me.ot ? 'On, through the OwnTracks app' : 'Keep sharing with the phone in your pocket (free OwnTracks app)') + '</small></span></button>' +
       '<button type="button" class="btn" id="mOffline"><span>⬇️ Offline maps<small>Download the area so the map works with no signal</small></span></button>' +
       '<button type="button" class="btn" id="mSaver"><span>' + (saver() ? '🔋 Battery saver is on<small>Updates every 15 seconds. Tap to go back to every 3 seconds.</small>' :
         '🔋 Battery saver<small>Update every 15 seconds instead of every 3. Dots move less often.</small>') + '</span></button>' +
@@ -1875,6 +1878,7 @@ function openMenu() {
     $('#mShare', d).onclick = function () { copyText(baseUrl() + '?m=' + CODE).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : baseUrl() + '?m=' + CODE); }); };
     $('#mHide', d).onclick = function () { closeSheet(); setSharing(!sh); };
     $('#mOffline', d).onclick = openOffline;
+    $('#mOt', d).onclick = openOwnTracks;
     $('#mPocket', d).onclick = function () { closeSheet(); openPocket(); };
     $('#mSaver', d).onclick = function () {
       var on = !saver(); setUi(function (u) { u.saver = on; }); closeSheet(); setStatus(status);
@@ -2008,6 +2012,83 @@ function renderAreas(d) {
   });
 }
 
+/* ------------------------------------------------------------------ sharing with the screen off (OwnTracks)
+   The free OwnTracks app reports this person's location in the background to the `owntracks` Edge Function, with a
+   personal key in the address (bc_ot_link). The setup link (owntracks:///config?inline=…) fills in OwnTracks' settings. */
+var OT_PLAY = 'https://play.google.com/store/apps/details?id=org.owntracks.android', OT_IOS = 'https://apps.apple.com/app/owntracks/id692424691';
+function otConfig(token, tid) {
+  return { _type: 'configuration', mode: 3, url: URL_ + '/functions/v1/owntracks?k=' + encodeURIComponent(token), tid: tid,
+    monitoring: 1, locatorDisplacement: 20, locatorInterval: 60, moveModeLocatorInterval: 10, pubExtendedData: true,
+    cmd: false, remoteConfiguration: false, auth: false, username: 'basecamp', deviceId: 'phone' };
+}
+function otLink(cfg) {
+  var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(cfg))));
+  return 'owntracks:///config?inline=' + encodeURIComponent(b64);
+}
+function openOwnTracks() {
+  var me = meMember(), on = !!(S.me && S.me.ot), trail = !!(S.me && S.me.ot_trail);
+  var ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  var last = me && me.ot_at ? fmtAgo(srvNow() - me.ot_at) : '';
+  openSheet('ot', head('📡 Share with the screen off') +
+    '<p class="hint" style="margin-bottom:12px">Basecamp can only share while it’s on your screen. The free <b>OwnTracks</b> app can keep sending your location to this map ' +
+      'with the phone locked in your pocket. Everyone still uses Basecamp to see the map.</p>' +
+    (on ? '<div class="note" style="position:static;margin-bottom:12px"><div class="t"><b>On for this map.</b> ' +
+        (last ? 'Last report from OwnTracks: ' + esc(last) + '.' : 'No report from OwnTracks yet. Open OwnTracks once and allow location.') + '</div></div>' : '') +
+    '<ol class="how" style="margin:0 0 14px;color:var(--ink)">' +
+      '<li><b>Install OwnTracks</b> (free): <a href="' + (ios ? OT_IOS : OT_PLAY) + '" target="_blank" rel="noopener">' + (ios ? 'App Store' : 'Play Store') + '</a>.</li>' +
+      '<li><b>Tap “Set up OwnTracks”</b> below. OwnTracks opens with everything filled in. Tap to accept the settings.</li>' +
+      '<li><b>Allow location “All the time”</b> when OwnTracks asks' + (ios ? '' : ', and in Android Settings → Apps → OwnTracks → Battery, choose <b>Unrestricted</b>') + '.</li></ol>' +
+    '<label class="toggle"><span class="tx">Record my trail while the screen is off<small>Draws a trail from OwnTracks’ reports. A new trail starts after 30 minutes without moving.</small></span>' +
+      '<input type="checkbox" id="otTrail"' + (trail ? ' checked' : '') + '></label>' +
+    '<p class="err" id="otErr" role="alert"></p>' +
+    '<div class="btns"><a class="btn primary" id="otGo" href="#">' + (on ? 'Set up OwnTracks again' : 'Set up OwnTracks') + '</a></div>' +
+    '<div class="btns" style="margin-top:8px"><button type="button" class="btn small" id="otFile">Download settings file instead</button>' +
+      (on ? '<button type="button" class="btn small danger" id="otStop">Stop screen-off sharing</button>' : '') + '</div>' +
+    '<p class="hint" style="margin-top:12px">How often it updates: OwnTracks starts in “Significant” mode (about every minute or 20 yards while moving; ' +
+      'easy on the battery). In OwnTracks, switch to <b>Move</b> mode for updates every few seconds (uses more battery). ' +
+      (on ? 'Setting up again makes a new link; the old one stops working.' : '') + '</p>' +
+    '<p class="hint" style="margin-top:8px">OwnTracks only sends to Pebbly. To pause it, open OwnTracks and choose <b>Quiet</b> mode, or tap Stop here.</p>', function (d) {
+    var err = $('#otErr', d);
+    function link() {
+      return rpc('bc_ot_link', { p_code: CODE, p_member: ME.key, p_trail: $('#otTrail', d).checked }).then(function (r) {
+        if (S.me) { S.me.ot = true; S.me.ot_trail = $('#otTrail', d).checked; }
+        return otConfig(r.token, r.tid);
+      });
+    }
+    $('#otGo', d).onclick = function (ev) {
+      ev.preventDefault(); err.textContent = '';
+      var a = ev.currentTarget; a.textContent = 'Setting up…';
+      link().then(function (cfg) {
+        a.href = otLink(cfg); a.textContent = 'Open OwnTracks';
+        a.onclick = null;
+        location.href = a.href;
+        setTimeout(function () { if (document.visibilityState === 'visible') toast('If OwnTracks didn’t open, install it first, then tap Open OwnTracks.'); }, 1800);
+      }, function (e) { a.textContent = 'Set up OwnTracks'; err.textContent = friendly(e); });
+    };
+    $('#otFile', d).onclick = function () {
+      err.textContent = '';
+      link().then(function (cfg) {
+        var blob = new Blob([JSON.stringify(cfg, null, 2)], { type: 'application/octet-stream' }), u = URL.createObjectURL(blob), a = document.createElement('a');
+        a.href = u; a.download = 'basecamp.otrc'; document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(u); }, 5000);
+        toast('Saved basecamp.otrc. In OwnTracks: Preferences → Configuration management → Import.');
+      }, function (e) { err.textContent = friendly(e); });
+    };
+    $('#otTrail', d).onchange = function () {
+      if (!(S.me && S.me.ot)) return;
+      var c = this.checked;
+      rpc('bc_ot_set', { p_code: CODE, p_member: ME.key, p_trail: c }).then(function () { if (S.me) S.me.ot_trail = c; toast(c ? 'OwnTracks will record your trail too.' : 'OwnTracks won’t record trails.'); },
+        function (e) { err.textContent = friendly(e); });
+    };
+    if ($('#otStop', d)) $('#otStop', d).onclick = function () {
+      if (!confirm('Stop screen-off sharing for this map? Reports from OwnTracks will be ignored. (You can uninstall OwnTracks or set it to Quiet too.)')) return;
+      rpc('bc_ot_stop', { p_code: CODE, p_member: ME.key }).then(function () {
+        if (S.me) { S.me.ot = false; S.me.ot_trail = false; } closeSheet(); syncSoon(); toast('Screen-off sharing stopped.');
+      }, function (e) { err.textContent = friendly(e); });
+    };
+  });
+}
+
 /* ------------------------------------------------------------------ pocket mode */
 var pocketEl = null;
 function openPocket() {
@@ -2046,7 +2127,7 @@ window.addEventListener('pagehide', function () { if (screen === 'map' && REC) s
 
 window.__bc = {
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
-  mode: function () { return MODE; }, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
+  mode: function () { return MODE; }, otConfig: otConfig, otLink: otLink, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
   idleNow: function () { lastMoveAt = 0; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
   areaPlan: areaPlan, areaTiles: areaTiles, fmtDist: fmtDist, dir8: dir8, layers: LAYERS, tileKey: tileKey,
   orient: onOrient, sync: function () { return syncCall(); }

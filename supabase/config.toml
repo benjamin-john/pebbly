@@ -7,3 +7,7 @@ project_id = "pebbly"
 # Phone alerts sender: called by the database (pg_net) with no key.
 [functions.notify-push]
 verify_jwt = false
+
+# Basecamp's OwnTracks receiver: the OwnTracks app sends no Supabase key (a personal key is in the address).
+[functions.owntracks]
+verify_jwt = false

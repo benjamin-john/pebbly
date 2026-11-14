@@ -10,6 +10,14 @@
 const { chromium, devices } = require('playwright');
 const { phone } = require('./pg_bridge');
 const zlib = require('zlib');
+const { spawnSync } = require('child_process');
+// what the OwnTracks receiver (supabase/functions/owntracks) does with one report: bc_owntracks as service_role
+function owntracks(token, body) {
+  const lit = (x) => "'" + String(x).replace(/'/g, "''") + "'";
+  const r = spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At', '-v', 'ON_ERROR_STOP=1'],
+    { input: `set role service_role;\nselect bc_owntracks(${lit(token)}, ${lit(JSON.stringify(body))}::jsonb);`, encoding: 'utf8' });
+  return r.stdout.trim().split('\n').pop();
+}
 const DB = process.env.DB || 'basecamp', PORT = process.env.PORT || 8791, BASE = 'http://localhost:' + PORT + '/basecamp/', SHOTS = process.env.SHOTS;
 let pass = 0, fail = 0;
 const check = (ok, m) => { if (ok) pass++; else { fail++; console.log('FAIL', m); } };
@@ -415,6 +423,45 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   const left = await ben.evaluate(() => caches.open('pebbly-maps').then(c => c.keys()).then(k => k.filter(r => /bc\.tiles\/(sat|mn)\//.test(r.url)).length));
   check(left === 0, 'its tiles are gone: ' + left);
   await ben.click('dialog.sheet [data-close]');
+
+  // ---- sharing with the screen off (OwnTracks)
+  await amy.click('#moreBtn');
+  check(/pocket/.test(await amy.textContent('#mOt')), 'menu offers screen-off sharing');
+  await amy.click('#mOt');
+  await amy.waitForSelector('#otGo');
+  check(/Play Store/.test(await amy.textContent('dialog.sheet')), 'links to OwnTracks in the Play Store');
+  await amy.check('#otTrail');
+  await amy.evaluate(() => { window.__opened = []; const a = document.getElementById('otGo'); a.addEventListener('click', () => {}, true); });
+  await shot(amy, 'owntracks');
+  await amy.click('#otGo');
+  check(await until(amy, () => /^owntracks:\/\/\/config\?inline=/.test(document.getElementById('otGo') ? document.getElementById('otGo').getAttribute('href') : '')), 'setup link made');
+  const cfg = await amy.evaluate(() => JSON.parse(decodeURIComponent(escape(atob(decodeURIComponent(document.getElementById('otGo').getAttribute('href').split('inline=')[1]))))));
+  const otKey = new URL(cfg.url).searchParams.get('k');
+  check(cfg._type === 'configuration' && cfg.mode === 3 && /\/functions\/v1\/owntracks\?k=/.test(cfg.url) && /^[0-9a-f]{64}$/.test(otKey) && cfg.tid === 'AM',
+    'OwnTracks settings: HTTP mode to the receiver with a personal key, tracker id ' + cfg.tid);
+  const tNow = Math.floor(Date.now() / 1000);
+  check(owntracks(otKey, { _type: 'location', lat: 45.07, lon: -93.21, acc: 10, tst: tNow, vel: 0 }) === 'ok', 'a report from OwnTracks is taken');
+  check(await until(ben, () => { const a = __bc.state().members.find(m => m.name === 'Amy'); return a && a.lat === 45.07 && a.ot; }, null, 10000), 'Ben sees Amy’s OwnTracks location');
+  await ben.click('#peopleBtn');
+  check(await until(ben, () => /📡/.test(document.querySelector('#plist').textContent)), 'People list marks screen-off sharing');
+  await ben.click('dialog.sheet [data-close]');
+  owntracks(otKey, { _type: 'location', lat: 45.0710, lon: -93.21, acc: 10, tst: tNow + 30 });
+  check(await until(ben, () => __bc.state().trails.some(t => t.by === 'Amy') && Object.values(__bc.state().pts).some(a => a.length === 2), null, 10000), 'screen-off trail recorded');
+  // hiding in Basecamp also hides OwnTracks reports; sharing again lets them through
+  await amy.click('dialog.sheet [data-close]').catch(() => {});
+  await amy.click('#moreBtn'); await amy.click('#mHide');
+  check(await until(ben, () => __bc.state().members.find(m => m.name === 'Amy').lat == null, null, 10000), 'hidden');
+  check(owntracks(otKey, { _type: 'location', lat: 45.08, lon: -93.21, acc: 10, tst: tNow + 60 }) === 'hidden', 'OwnTracks reports ignored while hidden');
+  await amy.click('[data-act=share-on]');
+  await amy.waitForTimeout(3500);
+  check(owntracks(otKey, { _type: 'location', lat: 45.09, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) + 5 }) === 'ok', 'taken again after sharing again');
+  // stop
+  await amy.evaluate(() => window.confirm = () => true);
+  await amy.click('#moreBtn');
+  check(/On, through the OwnTracks app/.test(await amy.textContent('#mOt')), 'menu says it’s on');
+  await amy.click('#mOt'); await amy.click('#otStop');
+  await amy.waitForTimeout(500);
+  check(owntracks(otKey, { _type: 'location', lat: 45.1, lon: -93.21, acc: 10, tst: Math.floor(Date.now() / 1000) + 10 }) === 'unknown', 'after Stop, the old key is refused');
 
   // dark mode screenshot
   await amy.emulateMedia({ colorScheme: 'dark' });

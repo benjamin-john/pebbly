@@ -37,7 +37,7 @@ database for the apps that share data between people. See README.md for the app 
 | `sw.js` | Service worker (registered by the homepage and `nav.js`): network-first with `cache: 'no-cache'` (updates show right away); saves every page in `PAGES` plus shared files and Google Fonts up front and refreshes them daily, so all of Pebbly opens offline. |
 | `manifest.webmanifest`, `icons/` | Installable app (PWA). Shortcuts list in the manifest. |
 | `supabase/migrations/` | Database changes; applied automatically on push to `main` (see below). |
-| `supabase/functions/` | Edge Functions (`notify-push`: phone alerts). Deployed by `.github/workflows/deploy-functions.yml` (needs the `SUPABASE_ACCESS_TOKEN` repo secret; see `supabase/README.md`). |
+| `supabase/functions/` | Edge Functions (`notify-push`: phone alerts; `owntracks`: Basecamp screen-off sharing). Deployed by `.github/workflows/deploy-functions.yml` (needs the `SUPABASE_ACCESS_TOKEN` repo secret; see `supabase/README.md`). |
 | `tests/` | Playwright helpers and one test per app (`<app>_test.js`); `setup_db.sh` builds a test database. |
 
 ## Design conventions (match these in every app)
@@ -213,6 +213,12 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   GeoJSON per z11 square (private land left out), cached like tiles (`https://bc.tiles/pad/11/x/y`, offline downloads too),
   colored by manager type; tapping shows name, manager, access. PAD-US marks MN WMAs "restricted", so never present
   access as hunting permission (the sheet says to check DNR rules). Its tile service only goes to ~z10, hence features.
+  Screen-off sharing (`supabase/migrations/20261115000000_basecamp_owntracks.sql`, `supabase/functions/owntracks/`): the free
+  OwnTracks app in HTTP mode POSTs reports to the `owntracks` Edge Function (no JWT; personal key `?k=` from
+  `bc_ot_link`, hash in `bc_members.ot_hash`), which calls `bc_owntracks` (service role only) for each. Newer reports
+  move the dot; `ot_trail` also records trails (new trail after 30 min, point per 10 m). "Hide my location" sets
+  `bc_members.hidden`, which OwnTracks reports respect. The setup link is `owntracks:///config?inline=<base64 config>`
+  (or a .otrc file). Tests: `tests/owntracks_test.js` (handler in Node), Basecamp test (flow via psql as service_role).
   Sync cadence (`syncEvery`): 3 s, 15 s with Battery saver (`pebbly_basecamp_ui.saver`), 10 s when nobody moved >10 m for 2 min.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
   kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:

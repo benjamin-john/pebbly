@@ -1,4 +1,5 @@
-# Deploys the Supabase Edge Functions in supabase/functions/ (phone alerts: notify-push) whenever they
+# Deploys the Supabase Edge Functions in supabase/functions/ (phone alerts: notify-push; Basecamp's OwnTracks
+# receiver: owntracks) whenever they
 # change on main, or by hand from the Actions tab ("Run workflow").
 # Needs one repository secret, SUPABASE_ACCESS_TOKEN (see supabase/README.md → Edge Functions).
 name: Deploy Supabase functions
@@ -17,7 +18,7 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
-      - name: Deploy notify-push
+      - name: Deploy notify-push and owntracks
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
         run: |
@@ -26,3 +27,4 @@ jobs:
             exit 1
           fi
           supabase functions deploy notify-push --project-ref xujtuijpbwujduuzlwat --no-verify-jwt
+          supabase functions deploy owntracks --project-ref xujtuijpbwujduuzlwat --no-verify-jwt
