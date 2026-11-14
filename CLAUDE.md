@@ -206,6 +206,10 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   missing photo tiles are cut from a parent tile. Never save empty tiles (an empty saved tile is treated as missing and refetched; an
   early version saved empty ones and the street map showed white). Marker CSS must not set `position` on the marker root
   (it overrides MapLibre's absolute positioning and markers drift with zoom; the test checks every dot's pixel spot).
+  Public land: USGS PAD-US feature service (`PADUS_Public_Access`, services.arcgis.com, public domain, CORS open), fetched as
+  GeoJSON per z11 square (private land left out), cached like tiles (`https://bc.tiles/pad/11/x/y`, offline downloads too),
+  colored by manager type; tapping shows name, manager, access. PAD-US marks MN WMAs "restricted", so never present
+  access as hunting permission (the sheet says to check DNR rules). Its tile service only goes to ~z10, hence features.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
   kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:
   `webkitCompassHeading` after a tap). Test: `tests/basecamp_test.js` (map servers stubbed; WebGL via SwiftShader flags).

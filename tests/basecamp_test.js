@@ -26,7 +26,13 @@ function png(r, g, b) {
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
 }
 const SAT = png(74, 112, 64), TOPO = png(232, 226, 204);
-const hits = { sat: 0, topo: 0, vec: 0 };
+const hits = { sat: 0, topo: 0, vec: 0, pad: 0 };
+// stand-in for USGS PAD-US: one state wildlife area around the test spot, one county park inside it
+const PAD = { type: 'FeatureCollection', features: [
+  { type: 'Feature', id: 11, properties: { OBJECTID: 11, Unit_Nm: 'Test Lake State Wildlife Management Area', Pub_Access: 'RA', MngNm_Desc: 'State Fish and Wildlife', MngTp_Desc: 'State', DesTp_Desc: 'State Conservation Area', GIS_Acres: 640 },
+    geometry: { type: 'Polygon', coordinates: [[[-93.21, 45.04], [-93.19, 45.04], [-93.19, 45.06], [-93.21, 45.06], [-93.21, 45.04]]] } },
+  { type: 'Feature', id: 12, properties: { OBJECTID: 12, Unit_Nm: 'Pine Grove County Park', Pub_Access: 'OA', MngNm_Desc: 'County Land', MngTp_Desc: 'Local Government', DesTp_Desc: 'Local Park', GIS_Acres: 40 },
+    geometry: { type: 'Polygon', coordinates: [[[-93.2095, 45.0405], [-93.2075, 45.0405], [-93.2075, 45.0425], [-93.2095, 45.0425], [-93.2095, 45.0405]]] } }] };
 let offline = false;
 async function stubMaps(ctx) {
   await ctx.route('https://basemap.nationalmap.gov/**', r => {
@@ -47,6 +53,13 @@ async function stubMaps(ctx) {
     return r.fulfill({ status: 404, body: '' });
   });
   await ctx.route('https://static.cloudflareinsights.com/**', r => r.abort());
+  await ctx.route('https://services.arcgis.com/**', r => {
+    if (offline) return r.abort('internetdisconnected');
+    hits.pad++;
+    const q = new URL(r.request().url()).searchParams;
+    const ok = q.get('f') === 'geojson' && /Private/.test(q.get('where') || '') && q.get('inSR') === '4326';
+    r.fulfill({ status: 200, contentType: 'application/json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify(ok ? PAD : { error: 'bad query' }) });
+  });
 }
 const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'];
 
@@ -91,7 +104,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('#plist li:nth-child(2) .row');
   await ben.waitForTimeout(1200);
   const c1 = await ben.evaluate(() => __bc.map().getCenter());
-  check(Math.abs(c1.lat - 45.052) < 0.0005 && Math.abs(c1.lng + 93.198) < 0.0005, 'tapping Amy flies to her');
+  check(Math.abs(c1.lat - 45.052) < 0.0005 && Math.abs(c1.lng + 93.198) < 0.0005, 'tapping Amy flies to her ' + JSON.stringify(c1) + ' follow=' + await ben.evaluate(() => document.querySelector('#meBtn').getAttribute('aria-pressed')) + ' sheet=' + await ben.evaluate(() => !!document.querySelector('dialog.sheet')));
 
   // Amy moves
   await amy.context().setGeolocation({ latitude: 45.053, longitude: -93.198, accuracy: 5 });
@@ -232,6 +245,27 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(await ben.evaluate(() => !!__bc.map().getSource('trails')), 'trails stay after switching map type');
   await ben.click('.layers [data-layer=sat]');
 
+  // ---- public land
+  await ben.evaluate(() => __bc.map().jumpTo({ center: [-93.2, 45.05], zoom: 14 }));
+  check(await ben.isHidden('#padLegend'), 'public land is off at first');
+  await ben.click('#padBtn');
+  check(await until(ben, () => __bc.padShown() === 2, null, 8000), 'public land shows the areas in view');
+  check(/Federal/.test(await ben.textContent('#padLegend')) && /State/.test(await ben.textContent('#padLegend')), 'legend shows the colors');
+  await ben.waitForTimeout(500);
+  const parkPt = await ben.evaluate(() => { const m = __bc.map(); const p = m.project([-93.2085, 45.0415]); return [p.x, p.y]; });
+  const mapBox = await ben.locator('#map canvas').boundingBox();
+  await ben.mouse.click(mapBox.x + parkPt[0], mapBox.y + parkPt[1]);
+  await ben.waitForSelector('dialog.sheet .facts2');
+  const land = await ben.textContent('dialog.sheet');
+  check(/Pine Grove County Park/.test(land.split('Also here')[0]) && /Also here: Test Lake State Wildlife/.test(land), 'tapping shows the smallest area first, then the one around it');
+  check(/Restricted access/.test(land) && /Open access/.test(land) && /DNR/.test(land), 'shows access and the check-the-rules note');
+  await ben.click('dialog.sheet [data-close]');
+  await ben.evaluate(() => __bc.map().jumpTo({ zoom: 7 }));
+  check(await until(ben, () => __bc.padShown() === 0 && /Zoom in/.test(document.querySelector('#padLegend').textContent)), 'zoomed far out: asks to zoom in');
+  await ben.evaluate(() => __bc.map().jumpTo({ zoom: 14 }));
+  check(await until(ben, () => __bc.padShown() === 2), 'back when zoomed in');
+  await shot(ben, 'publand');
+
   // ---- heading-up
   await ben.waitForTimeout(800);
   await ben.click('#compass');
@@ -276,6 +310,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(hits.sat === before, 'no tile requests reached the network');
   const shown = await ben.evaluate(() => __bc.fromPhone());
   check(shown > 0, 'satellite tiles drawn from the phone: ' + shown);
+  check(await until(ben, () => __bc.padShown() === 2, null, 8000), 'public land shown offline from the download');
   // pin while offline: queued, sent when signal returns
   await ben.click('#pinBtn'); await ben.fill('#wpForm [name=name]', 'Offline pin'); await ben.click('#wpForm [type=submit]');
   check((await ben.evaluate(() => __bc.queue().ops.length)) === 1, 'offline pin waits to be sent');

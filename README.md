@@ -12,7 +12,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/bill/` | Split the Bill: shared expenses (equal or exact splits), balances and fewest payments to settle up (Supabase, doc.js) |
 | `/list/` | Shared List: groceries/packing/to-do list everyone edits live, with sections (Supabase, doc.js) |
 | `/babynames/` | Baby Names: two people swipe names (stars for likes), see the ones they both like, reorder and comment; 2,700+ built-in US names with nicknames and popularity, own suggestions, AI imports (Supabase, doc.js) |
-| `/basecamp/` | Basecamp: live group map (everyone's dot while the page is open), waypoints, recorded trails, Map/Satellite/Topo (OpenFreeMap, USGS), heading-up compass, offline area downloads, passwords (Supabase `bc_*`, MapLibre in `basecamp/maplibre/`) |
+| `/basecamp/` | Basecamp: live group map (everyone's dot while the page is open), waypoints, recorded trails, Map/Satellite/Topo (OpenFreeMap, USGS), heading-up compass, public land (USGS PAD-US), offline area downloads, passwords (Supabase `bc_*`, MapLibre in `basecamp/maplibre/`) |
 | `/santa/` | Secret Santa: names, exclusions and a private draw; each phone sees only its own match (Supabase) |
 | `/teams/` | Team Picker: random teams, pick someone, shuffle turn order |
 | `/timer/` | Game Timer: turn clock (time bank or per turn) and countdown with buzzer |

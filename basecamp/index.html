@@ -109,7 +109,9 @@ body.in-map #app{height:100%}
 .maplibregl-ctrl-bottom-left .maplibregl-ctrl{margin:0 0 6px 10px}
 
 /* layer switch, floating buttons, bottom bar */
-.layers{position:absolute;top:10px;left:10px;z-index:2;display:flex;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:3px;gap:2px}
+.leftcol{position:absolute;top:10px;left:10px;right:68px;z-index:2;display:flex;flex-direction:column;align-items:flex-start;gap:8px;pointer-events:none}
+.leftcol>*{pointer-events:auto}
+.layers{display:flex;background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:3px;gap:2px}
 .layers button{min-height:40px;padding:0 12px;border:0;border-radius:9px;background:none;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer}
 .layers button[aria-pressed=true]{background:var(--brand);color:var(--brand-ink)}
 .fabs{position:absolute;top:10px;right:10px;z-index:2;display:flex;flex-direction:column;gap:10px}
@@ -135,7 +137,18 @@ body.in-map #app{height:100%}
 .note.warn{background:var(--warn-t);border:1px solid var(--warn-line)}
 .note .t{flex:1;min-width:0}
 .note .btn{flex:none}
-.notes{position:absolute;left:10px;right:68px;top:62px;z-index:2;display:grid;gap:8px}
+.notes{align-self:stretch;display:grid;gap:8px}
+.notes:empty{display:none}
+.padbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.padbtn{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 12px;border:0;border-radius:12px;background:var(--surface);color:var(--ink);
+  box-shadow:var(--shadow);font-weight:600;font-size:14px;cursor:pointer}
+.padbtn .bx{width:18px;height:18px;border-radius:5px;border:2px solid var(--field);display:grid;place-items:center;font-size:12px;line-height:1;color:var(--brand-ink)}
+.padbtn[aria-pressed=true] .bx{background:var(--brand);border-color:var(--brand)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 10px;background:var(--surface);border-radius:10px;box-shadow:var(--shadow);padding:5px 10px;font-size:12px;font-weight:600}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.facts2{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;margin:0 0 12px;font-size:15px}
+.facts2 dt{color:var(--muted)}
+.facts2 dd{margin:0;font-weight:600;overflow-wrap:anywhere}
 .notes .note{position:static}
 
 /* picking a spot */
@@ -373,6 +386,7 @@ var USGS = 'https://basemap.nationalmap.gov/arcgis/rest/services/';
 var LAYERS = {
   map:  { label: 'Map', vector: true, max: 14, kb: 45 },
   sat:  { label: 'Satellite', url: USGS + 'USGSImageryOnly/MapServer/tile/{z}/{y}/{x}', max: 19, kb: 24, attr: 'Imagery: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>' },
+  pad:  { label: 'Public land', max: 11, kb: 300 },
   topo: { label: 'Topo', url: USGS + 'USGSTopo/MapServer/tile/{z}/{y}/{x}', max: 16, kb: 20, attr: 'Topo: <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>' }
 };
 var TPL = {};                        // vector map: the real tile address of each source ("m~<source>")
@@ -520,8 +534,8 @@ function areaTiles(b, minz, maxz, each) {
   }
   return n;
 }
-var DETAIL = { normal: { sat: 17, topo: 15, map: 14 }, high: { sat: 18, topo: 16, map: 14 }, max: { sat: 19, topo: 16, map: 14 } };
-var MINZ = { sat: 10, topo: 10, map: 6 };
+var DETAIL = { normal: { sat: 17, topo: 15, map: 14, pad: 11 }, high: { sat: 18, topo: 16, map: 14, pad: 11 }, max: { sat: 19, topo: 16, map: 14, pad: 11 } };
+var MINZ = { sat: 10, topo: 10, map: 6, pad: 11 };
 function areaPlan(b, layers, detail) {
   var plan = [], total = 0, bytes = 0;
   layers.forEach(function (id) {
@@ -550,6 +564,7 @@ function downloadArea(area, onProgress, signal) {
           return fetchIt();
         });
         function fetchIt() {
+          if (j[0] === 'pad') return padFetch(j[2], j[3], signal).then(function (t) { bytes += t.length; return c.put(key, new Response(t, { headers: { 'Content-Type': 'application/json' } })); });
           var url = tileUrl(j[0], j[1], j[2], j[3]);
           return fetchT(url, 20000, signal).then(function (r) {
             if (r.status === 404 || r.status === 204) return;          // nothing there: nothing to save
@@ -1020,11 +1035,13 @@ function showMap() {
       '<div class="ttl"><h1 id="mname"></h1><div id="sync" class="sync" role="status"></div></div>' +
       '<button type="button" class="ibtn" id="moreTop" aria-label="More">' + ICON.more + '</button></header>' +
     '<div id="map">' +
-      '<div class="layers" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
+      '<div class="leftcol"><div class="layers" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
         return '<button type="button" data-layer="' + id + '">' + LAYERS[id].label + '</button>';
       }).join('') + '</div>' +
+      '<div class="padbar"><button type="button" class="padbtn" id="padBtn" aria-pressed="false"><span class="bx" aria-hidden="true"></span>Public land</button>' +
+        '<div class="legend" id="padLegend" hidden></div></div>' +
+      '<div class="notes" id="notes"></div></div>' +
       '<div class="fabs"><button type="button" class="fab" id="compass" aria-label="North up">' + ICON.compass + '<span class="n">N</span></button></div>' +
-      '<div class="notes" id="notes"></div>' +
       '<button type="button" class="fab mefab" id="meBtn" aria-label="Go to my location">' + ICON.me + '</button>' +
       '<nav class="bbar" id="bbar">' +
         '<button type="button" id="pinBtn">' + ICON.pin + '<span>Pin</span></button>' +
@@ -1040,6 +1057,7 @@ function showMap() {
   initMap();
   $('#moreTop').onclick = $('#moreBtn').onclick = openMenu;
   $('#peopleBtn').onclick = openPeople;
+  $('#padBtn').onclick = function () { setUi(function (u) { u.publand = !u.publand; }); if (ui().publand) padSeen(); updatePad(); };
   $('#wpsBtn').onclick = function () { openSaved(ui().savedTab === 'tr' ? 'tr' : 'wp'); };
   $('#pinBtn').onclick = function () { if (FIX) openWaypointEdit(null, { lat: FIX.lat, lng: FIX.lng }, true); else startPick(null); };
   $('#trailBtn').onclick = function () { if (REC) stopTrail(); else startTrail(); };
@@ -1109,7 +1127,8 @@ function initMap() {
   MAP.on('style.load', addOverlays);
   MAP.on('dragstart', function (e) { if (e.originalEvent) userMoved = true; if (e.originalEvent && FOLLOW) { FOLLOW = false; renderFabs(); } });
   MAP.on('rotate', function () { renderFabs(); renderConesOnly(); });
-  MAP.on('moveend', function () { clearTimeout(MAP._sv); MAP._sv = setTimeout(saveView, 800); });
+  MAP.on('moveend', function () { clearTimeout(MAP._sv); MAP._sv = setTimeout(saveView, 800); updatePad(); });
+  MAP.on('click', 'pad-fill', function (e) { if (!pick) openLand(e); });
   function farClass() { var el = document.getElementById('map'); if (el) el.classList.toggle('far', MAP.getZoom() < 15); }
   MAP.on('zoom', farClass); farClass();
   if (!v && S.members.filter(function (m) { return m.lat != null; }).length + S.waypoints.length > 1) {
@@ -1134,6 +1153,11 @@ function setLayer(id, quiet) {
   });
 }
 function addOverlays() {
+  if (!MAP.getSource('pad')) {
+    MAP.addSource('pad', { type: 'geojson', data: { type: 'FeatureCollection', features: [] }, attribution: 'Public land: <a href="https://www.usgs.gov/programs/gap-analysis-project/science/pad-us-data-overview" target="_blank" rel="noopener">USGS PAD-US</a>' });
+    MAP.addLayer({ id: 'pad-fill', type: 'fill', source: 'pad', paint: { 'fill-color': PAD_COLOR, 'fill-opacity': 0.28 } });
+    MAP.addLayer({ id: 'pad-line', type: 'line', source: 'pad', paint: { 'line-color': PAD_COLOR, 'line-width': ['interpolate', ['linear'], ['zoom'], 10, 1, 15, 2.5], 'line-opacity': 0.95 } });
+  }
   if (!MAP.getSource('trails')) {
     MAP.addSource('trails', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
     MAP.addLayer({ id: 'trails-case', type: 'line', source: 'trails', layout: { 'line-join': 'round', 'line-cap': 'round' }, paint: { 'line-color': '#ffffff', 'line-width': 7, 'line-opacity': 0.9 } });
@@ -1144,7 +1168,115 @@ function addOverlays() {
     MAP.addLayer({ id: 'acc', type: 'fill', source: 'acc', paint: { 'fill-color': ['get', 'color'], 'fill-opacity': 0.14 } });
     MAP.addLayer({ id: 'acc-line', type: 'line', source: 'acc', paint: { 'line-color': ['get', 'color'], 'line-width': 1.5, 'line-opacity': 0.6 } });
   }
-  renderTrails(); renderMe();
+  renderTrails(); renderMe(); updatePad();
+}
+
+/* ------------------------------------------------------------------ public land (USGS PAD-US)
+   Fetched in z11 squares (about 9 miles across) when the map is zoomed in to 9 or closer, saved on the phone like map
+   tiles (key https://bc.tiles/pad/11/x/y), and included in offline downloads. Colored by who manages the land. */
+var PAD_URL = 'https://services.arcgis.com/v01gqwM5QqNysAAi/ArcGIS/rest/services/PADUS_Public_Access/FeatureServer/0/query', PAD_Z = 11, PAD_MINZOOM = 9;
+var PAD_KINDS = [['fed', 'Federal', '#D99A00'], ['state', 'State', '#1F78D1'], ['local', 'County / city', '#8E44AD'], ['tribal', 'Tribal', '#C0392B'], ['other', 'Other', '#5D6B66']];
+var PAD_COLOR = ['match', ['get', 'k'], 'fed', '#D99A00', 'state', '#1F78D1', 'local', '#8E44AD', 'tribal', '#C0392B', '#5D6B66'];
+var padCells = {}, padFeats = {}, padBusy = 0, padOrder = [];
+function padKind(t) {
+  return t === 'Federal' ? 'fed' : t === 'State' ? 'state' : (t === 'Local Government' || t === 'Regional Agency Special District') ? 'local' : t === 'American Indian Lands' ? 'tribal' : 'other';
+}
+function tileBox(x, y, z) {
+  var n = Math.pow(2, z), lat = function (yy) { return Math.atan(Math.sinh(Math.PI * (1 - 2 * yy / n))) * 180 / Math.PI; };
+  return [x / n * 360 - 180, lat(y + 1), (x + 1) / n * 360 - 180, lat(y)];
+}
+// One square of public land from USGS as GeoJSON text (several pages if it's a busy area). Private land is left out.
+function padFetch(x, y, signal) {
+  var b = tileBox(x, y, PAD_Z), all = [], page = 0;
+  function one() {
+    var q = new URLSearchParams({ geometry: b.map(function (v) { return v.toFixed(6); }).join(','), geometryType: 'esriGeometryEnvelope', inSR: '4326',
+      spatialRel: 'esriSpatialRelIntersects', where: "MngTp_Desc <> 'Private'", outFields: 'OBJECTID,Unit_Nm,Pub_Access,MngNm_Desc,MngTp_Desc,DesTp_Desc,GIS_Acres',
+      outSR: '4326', maxAllowableOffset: '0.00004', geometryPrecision: '5', orderByFields: 'OBJECTID', resultOffset: String(page * 2000), resultRecordCount: '2000', f: 'geojson' });
+    return fetchT(PAD_URL + '?' + q, 30000, signal).then(function (r) { if (!r.ok) throw new Error('http'); return r.json(); }).then(function (j) {
+      if (!j || !Array.isArray(j.features)) throw new Error('bad');
+      all = all.concat(j.features);
+      if (j.properties && j.properties.exceededTransferLimit && ++page < 10) return one();
+      return JSON.stringify({ type: 'FeatureCollection', features: all });
+    });
+  }
+  return one();
+}
+function padLoad(x, y) {
+  var key = tileKey('pad', PAD_Z, x, y);
+  return cacheGet(key).then(function (hit) { return hit ? hit.text() : null; }).then(function (txt) {
+    if (txt) return txt;
+    return padFetch(x, y).then(function (t) { cachePut(SEEN, key, t, 'application/json'); return t; });
+  });
+}
+function padInView() {
+  var b = MAP.getBounds(), cells = [];
+  areaTiles([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()], PAD_Z, PAD_Z, function (z, x, y) { cells.push(x + '/' + y); });
+  return cells.slice(0, 40);
+}
+function padSeen() { try { if (!load('pebbly_basecamp_padtip', 0)) { store('pebbly_basecamp_padtip', 1); toast('Tap any colored area to see who manages it.'); } } catch (e) {} }
+function updatePad() {
+  if (!MAP) return;
+  var on = !!ui().publand, btn = $('#padBtn'), leg = $('#padLegend');
+  if (btn) { btn.setAttribute('aria-pressed', on ? 'true' : 'false'); btn.querySelector('.bx').textContent = on ? '✓' : ''; }
+  var far = MAP.getZoom() < PAD_MINZOOM;
+  if (leg) {
+    leg.hidden = !on;
+    leg.innerHTML = far ? 'Zoom in to see public land' : padBusy ? 'Loading public land…' :
+      PAD_KINDS.slice(0, 3).map(function (k) { return '<span><i style="background:' + k[2] + '"></i>' + k[1] + '</span>'; }).join('');
+  }
+  if (!on || far) { drawPad(); return; }
+  padInView().forEach(function (c) {
+    if (padCells[c]) return;
+    padCells[c] = 'loading'; padBusy++;
+    var xy = c.split('/');
+    padLoad(+xy[0], +xy[1]).then(function (txt) {
+      var fc = JSON.parse(txt);
+      padCells[c] = fc.features.map(function (f) {
+        var id = f.id != null ? f.id : f.properties.OBJECTID;
+        f.properties.k = padKind(f.properties.MngTp_Desc); padFeats[id] = f; return id;
+      });
+      padOrder.push(c);
+      while (padOrder.length > 60) { var old = padOrder.shift(); delete padCells[old]; }
+    }, function () { delete padCells[c]; }).then(function () { padBusy--; drawPad(); updateLegendOnly(); });
+  });
+  updateLegendOnly(); drawPad();
+}
+function updateLegendOnly() {
+  var leg = $('#padLegend'); if (!leg || leg.hidden || !MAP) return;
+  if (MAP.getZoom() < PAD_MINZOOM) return;
+  leg.innerHTML = padBusy ? 'Loading public land…' : PAD_KINDS.slice(0, 3).map(function (k) { return '<span><i style="background:' + k[2] + '"></i>' + k[1] + '</span>'; }).join('');
+}
+var padShown = 0;
+function drawPad() {
+  if (!MAP) return;
+  var src = null; try { src = MAP.getSource('pad'); } catch (e) {} if (!src) return;
+  var feats = [];
+  if (ui().publand && MAP.getZoom() >= PAD_MINZOOM) {
+    var seen = {};
+    Object.keys(padCells).forEach(function (c) {
+      if (!Array.isArray(padCells[c])) return;
+      padCells[c].forEach(function (id) { if (!seen[id] && padFeats[id]) { seen[id] = 1; feats.push(padFeats[id]); } });
+    });
+  }
+  padShown = feats.length;
+  src.setData({ type: 'FeatureCollection', features: feats });
+}
+var ACCESS = { OA: ['Open access', 'Open to the public.'], RA: ['Restricted access', 'Open with limits (seasons, permits or certain uses). Many state wildlife areas are listed this way.'],
+  XA: ['Closed', 'Not open to the public.'], UK: ['Unknown', 'Access isn’t recorded.'] };
+function openLand(e) {
+  var seen = {}, list = MAP.queryRenderedFeatures(e.point, { layers: ['pad-fill'] }).filter(function (f) {
+    var k = f.properties.OBJECTID; if (seen[k]) return false; seen[k] = 1; return true;
+  }).sort(function (a, b) { return (a.properties.GIS_Acres || 0) - (b.properties.GIS_Acres || 0); }).slice(0, 3);
+  if (!list.length) return;
+  openSheet('land', head(esc(list[0].properties.Unit_Nm || 'Public land')) + list.map(function (f, i) {
+    var p = f.properties, a = ACCESS[p.Pub_Access] || ACCESS.UK, kind = PAD_KINDS.filter(function (k) { return k[0] === p.k; })[0] || PAD_KINDS[4];
+    return (i ? '<p class="sec">Also here: ' + esc(p.Unit_Nm || '') + '</p>' : '') + '<dl class="facts2">' +
+      '<dt>Managed by</dt><dd><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:' + kind[2] + ';margin-right:6px"></i>' + esc(p.MngNm_Desc || p.MngTp_Desc || 'Unknown') + '</dd>' +
+      (p.DesTp_Desc ? '<dt>Type</dt><dd>' + esc(p.DesTp_Desc) + '</dd>' : '') +
+      '<dt>Access</dt><dd>' + esc(a[0]) + '<br><span class="hint" style="font-weight:400">' + esc(a[1]) + '</span></dd>' +
+      (p.GIS_Acres ? '<dt>Size</dt><dd>' + Math.round(p.GIS_Acres).toLocaleString() + ' acres</dd>' : '') + '</dl>';
+  }).join('') +
+  '<p class="hint">From the USGS public lands database (PAD-US). Lines can be off by a little, and it doesn’t say whether hunting is allowed. Check the DNR’s rules for this area before you hunt.</p>');
 }
 
 /* ------------------------------------------------------------------ drawing */
@@ -1695,13 +1827,13 @@ function openMenu() {
 var dlCtl = null;
 function openOffline() {
   var b = MAP.getBounds(), bounds = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()].map(function (x) { return +x.toFixed(5); });
-  var sel = { layers: ['sat', 'topo', 'map'], detail: 'high' };
+  var sel = { layers: ['sat', 'topo', 'map', 'pad'], detail: 'high' };
   openSheet('offline', head('Offline maps') +
     '<p class="hint" style="margin-bottom:12px">Download an area at home on Wi-Fi so the map works where there’s no signal. GPS works without signal; dots and pins update when a bar comes back.</p>' +
     '<div id="areaList"></div>' +
     '<p class="sec">Download the area on screen</p>' +
     '<label class="fld"><span>Name</span><input type="text" id="aName" maxlength="40" value="' + esc(S.session.name) + '"></label>' +
-    '<div class="checks">' + ['sat', 'topo', 'map'].map(function (id) {
+    '<div class="checks">' + ['sat', 'topo', 'map', 'pad'].map(function (id) {
       return '<label class="toggle"><span class="tx">' + LAYERS[id].label + '</span><input type="checkbox" data-al="' + id + '" checked></label>';
     }).join('') + '</div>' +
     '<span class="lbl">Detail</span><div class="seg" role="group" aria-label="Detail">' +
@@ -1826,7 +1958,7 @@ window.addEventListener('pagehide', function () { if (screen === 'map' && REC) s
 
 window.__bc = {
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
-  mode: function () { return MODE; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
+  mode: function () { return MODE; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
   areaPlan: areaPlan, areaTiles: areaTiles, fmtDist: fmtDist, dir8: dir8, layers: LAYERS, tileKey: tileKey,
   orient: onOrient, sync: function () { return syncCall(); }
 };
