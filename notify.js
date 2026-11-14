@@ -35,7 +35,9 @@
     signup: { name: 'Sign-up Sheet', path: '/signup/', q: 'd', owners: 'pebbly_doc_owners', only: 'pebbly_signup_recent', pid: 'pebbly_signup_pid', lock: 'doc' },
     santa: { name: 'Secret Santa', path: '/santa/', q: 'g', owners: 'pebbly_santa_owners', pid: 'pebbly_santa_pid' },
     // a shared bracket: the page picks its game back up by itself, so the link is just the page
-    bracket: { name: 'Bracket', path: '/bracket/' }
+    bracket: { name: 'Bracket', path: '/bracket/' },
+    // Basecamp: only things meant for one person (key = their member key; the server checks it)
+    basecamp: { name: 'Basecamp', path: '/basecamp/', q: 'm' }
   };
   function eventUrl(app, code) { var a = APPS[app]; return !a ? '/' : a.q ? a.path + '?' + a.q + '=' + encodeURIComponent(code || '') : a.path; }
   var RSVP_STATUS = { going: 'Going', maybe: 'Maybe', no: 'Can’t go' };
@@ -70,7 +72,9 @@
     'santa.drawn': { app: 'santa', role: 'guest', label: 'Names are drawn', go: '#app', icon: function () { return '🎁'; },
       text: function () { return 'Names are drawn! Open it to see who you’re buying for.'; } },
     'bracket.champion': { app: 'bracket', role: 'guest', label: 'A winner is crowned', go: '#play', icon: function () { return '🏆'; },
-      text: function (n) { return n + ' won!'; } }
+      text: function (n) { return n + ' won!'; } },
+    'basecamp.ask': { app: 'basecamp', role: 'guest', label: 'Someone asks where you are', go: '#map', icon: function () { return '📍'; },
+      text: function (n) { return n + ' wants to see where you are. Tap to open the map and share your location.'; } }
   };
 
   // What a phone alert says (sw.js, for each push).

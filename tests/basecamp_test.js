@@ -153,6 +153,31 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   const pq = new URL(await ben.getAttribute('dialog.sheet [data-gmaps]', 'href')).searchParams.get('query').split(',').map(Number);
   check(Math.abs(pq[0] - 45.053) < 1e-5 && Math.abs(pq[1] + 93.198) < 1e-5, 'person: Open in Google Maps at their spot');
   await ben.click('dialog.sheet [data-close]');
+  // Ask for location: Amy gets it in her 🔔 (only her), with Ben's name
+  check(await amy.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('pebbly_notify_feeds') || '{}')).some(k => /^basecamp:/.test(k))), 'Amy’s phone listens for asks on this map');
+  await ben.evaluate(() => [...document.querySelectorAll('.pm')].find(e => e.textContent.includes('Amy')).click());
+  await ben.waitForSelector('#pAsk');
+  await shot(ben, 'ask');
+  await ben.click('#pAsk');
+  check(await until(ben, () => /Asked Amy/.test(document.getElementById('toast').textContent)), 'Ben is told it was sent: ' + await ben.textContent('#toast'));
+  const amyAsks = await amy.evaluate(() => (async () => {
+    const f = Object.values(JSON.parse(localStorage.getItem('pebbly_notify_feeds') || '{}')).find(x => x.app === 'basecamp' && x.code === new URL(location.href).searchParams.get('m'));
+    const r = await fetch('https://xujtuijpbwujduuzlwat.supabase.co/rest/v1/rpc/notify_feed', { method: 'POST',
+      body: JSON.stringify({ p_feeds: [{ app: f.app, code: f.code, role: f.role, key: f.key, pid: f.pid }] }) });
+    const j = await r.json(); return j[0].ok ? j[0].items.map(i => i.type + ':' + i.name) : null;
+  })());
+  check(JSON.stringify(amyAsks) === '["basecamp.ask:Ben"]', 'Amy’s bell has “Ben wants to see where you are”: ' + JSON.stringify(amyAsks));
+  const benAsks = await ben.evaluate(() => (async () => {
+    const f = Object.values(JSON.parse(localStorage.getItem('pebbly_notify_feeds') || '{}')).find(x => x.app === 'basecamp' && x.code === new URL(location.href).searchParams.get('m'));
+    const r = await fetch('https://xujtuijpbwujduuzlwat.supabase.co/rest/v1/rpc/notify_feed', { method: 'POST',
+      body: JSON.stringify({ p_feeds: [{ app: f.app, code: f.code, role: f.role, key: f.key, pid: f.pid }] }) });
+    const j = await r.json(); return j[0].ok ? j[0].items.map(i => i.type + ':' + i.name) : null;
+  })().then(x => x ? x.length : -1));
+  check(benAsks === 0, 'Ben’s own bell doesn’t get it');
+  check(/wants to see where you are/.test(await amy.evaluate(() => PebblyNotify.TYPES['basecamp.ask'].text('Ben', {}))), 'wording');
+  await ben.evaluate(() => [...document.querySelectorAll('.pm')].find(e => e.textContent.includes('Amy')).click());
+  await ben.waitForSelector('#pAsk'); await ben.click('#pAsk');
+  check(await until(ben, () => /already asked Amy/.test(document.getElementById('toast').textContent)), 'asking again right away: already asked');
 
   // ---- waypoints
   await ben.click('#pinBtn');

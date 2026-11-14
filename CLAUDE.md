@@ -171,7 +171,9 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   organizer; final date → guests), Poll (winner → voters; someone adds a choice → host), Sign-up Sheet (someone signs up → host; it's a shared
   document, so the trigger compares `signups` before and after), Secret Santa (names drawn → people who picked their
   name; never says who has whom), Bracket (champion → every phone in a shared bracket except the one that recorded it;
-  the page keeps `champ: {id, name, by}` in the shared game for this; phones are checked by their play_members key). `APPS` in notify.js has each app's page, link parameter and host-key storage
+  the page keeps `champ: {id, name, by}` in the shared game for this; phones are checked by their play_members key). Basecamp (someone asks where you are → just that person:
+  `notifications.recipient` = their member id; feeds are role 'guest' with the member key, `_notify_member` works out the id
+  from it for `notify_feed` and `push_targets.pid`; `bc_ask`, once per 2 min per pair, `20261117010000_basecamp_ask.sql`). `APPS` in notify.js has each app's page, link parameter and host-key storage
   (`_notify_title` in SQL has its name and emoji). A role with no kinds isn't followed. Tests: `tests/notify_test.js`,
   `tests/notify_apps_test.js`.
 - **Phone alerts** (Web Push; `supabase/migrations/20261028180000_notify_push.sql`, `supabase/functions/notify-push/`):
@@ -235,6 +237,9 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   red ring and "No word from OwnTracks" in People.
   Waypoint and person sheets have "Open in Google Maps" (`gmapsUrl`: google.com/maps/search/?api=1&query=lat,lng, opens the
   app on phones); long-pressing the map opens a spot sheet (distance, Add a waypoint here, Google Maps, Copy coordinates).
+  "Ask for location" (person sheet → `bc_ask`): the person gets a 🔔/phone alert; opening it opens the map, which shares while
+  open (a browser can't read location from an alert). Basecamp has a bell in its header and registers the phone with
+  `PebblyNotify.feed('basecamp', code, 'guest', memberKey, memberId)`.
   Sync cadence (`syncEvery`): 3 s, 15 s with Battery saver (`pebbly_basecamp_ui.saver`), 10 s when nobody moved >10 m for 2 min.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
   kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:

@@ -95,6 +95,7 @@ body.in-map #app{height:100%}
 .mbar{flex:none;display:flex;align-items:center;gap:4px;padding:4px 6px;background:var(--surface);border-bottom:1px solid var(--line);z-index:3;min-height:56px}
 .mbar .back{flex:none;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;color:var(--ink);text-decoration:none;font-size:24px}
 .mbar .ttl{flex:1;min-width:0}
+.mbell{flex:none;display:flex;align-items:center}
 .mbar h1{font-size:19px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sync{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sync::before{content:"";flex:none;width:8px;height:8px;border-radius:50%;background:var(--good)}
@@ -246,6 +247,7 @@ dialog.sheet::backdrop{background:rgba(10,20,16,.45)}
 </style>
 <script src="/lock.js"></script>
 <script src="/keepawake.js"></script>
+<script src="/notify.js"></script>
 <script src="/nav.js"></script>
 </head>
 <body>
@@ -1106,12 +1108,15 @@ var ICON = {
   list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="6" r="2" fill="#E0261B" stroke="none"/><circle cx="5" cy="12" r="2" fill="#E0261B" stroke="none"/><circle cx="5" cy="18" r="2" fill="#E0261B" stroke="none"/><path d="M10 6h10M10 12h10M10 18h10"/></svg>',
   rec: '<svg viewBox="0 0 24 24"><circle class="dotrec" cx="12" cy="12" r="7" fill="currentColor"/></svg>'
 };
+// This phone hears "someone asks where you are" for this map (the 🔔 bell and phone alerts, notify.js).
+function followAsks() { if (window.PebblyNotify && ME && CODE) PebblyNotify.feed('basecamp', CODE, 'guest', ME.key, ME.id); }
 function showMap() {
   screen = 'map'; pageMode(true); fitHeight();
   document.title = S.session.name + ' | Basecamp';
   $app.innerHTML = '<div class="mapview">' +
     '<header class="mbar"><a class="back" href="' + esc(baseUrl()) + '" aria-label="All maps">' + ICON.back + '</a>' +
       '<div class="ttl"><h1 id="mname"></h1><div id="sync" class="sync" role="status"></div></div>' +
+      '<span class="mbell" data-pn-bell data-app="basecamp" data-code="' + esc(CODE) + '"></span>' +
       '<button type="button" class="ibtn" id="moreTop" aria-label="More">' + ICON.more + '</button></header>' +
     '<div id="map">' +
       '<div class="leftcol"><div class="layers" role="group" aria-label="Map type">' + ['map', 'sat', 'topo'].map(function (id) {
@@ -1163,6 +1168,7 @@ function showMap() {
   MODE = ui().mode === 'heading' ? 'heading' : 'north';
   listenCompass();
   startGeo();
+  followAsks();
   renderAll();
   setStatus(offlineView ? 'offline' : status === 'offline' ? 'offline' : 'live');
   timers.push(setInterval(function () {
@@ -1696,10 +1702,19 @@ function openPerson(id) {
   openSheet('person', head('<span class="sw" style="display:inline-block;width:14px;height:14px;border-radius:50%;background:' + m.color + ';margin-right:6px"></span>' + esc(m.name) + (isMe ? ' (you)' : '')) +
     '<p class="facts">' + esc(personStatus(m)) + (p && FIX && !isMe ? ' · ' + esc(fmtDist(dist(FIX, p))) + ' ' + dir8(bearing(FIX, p)) + ' of you' : '') + '</p>' +
     '<div class="btns">' + (p ? '<button type="button" class="btn primary" id="pGo">Show on map</button>' + gmapsBtn(p) : '') +
-      (isMe ? '<button type="button" class="btn" id="pMe">Change my name or color</button>' : '') +
+      (isMe ? '<button type="button" class="btn" id="pMe">Change my name or color</button>' : '<button type="button" class="btn" id="pAsk">📣 Ask for location</button>') +
       (!isMe && S.isOwner ? '<button type="button" class="btn danger" id="pRm">Take off this map</button>' : '') + '</div>', function (d) {
     if ($('#pGo', d)) $('#pGo', d).onclick = function () { closeSheet(); if (isMe) $('#meBtn').click(); else flyTo(p.lat, p.lng); };
     if ($('#pMe', d)) $('#pMe', d).onclick = openMeEdit;
+    if ($('#pAsk', d)) $('#pAsk', d).onclick = function () {
+      var b = this; b.disabled = true;
+      rpc('bc_ask', { p_code: CODE, p_member: ME.key, p_id: id }).then(function (r) {
+        closeSheet();
+        toast(r.recent ? 'You already asked ' + m.name + ' a moment ago.' :
+          r.alerts ? 'Asked ' + m.name + '. A phone alert is on its way; their dot updates once they open the map.' :
+          'Asked ' + m.name + '. They haven’t turned on Pebbly phone alerts, so they’ll see it in the 🔔 next time Pebbly is open. A text might be quicker.');
+      }, function (e) { b.disabled = false; toast(friendly(e)); });
+    };
     if ($('#pRm', d)) $('#pRm', d).onclick = function () {
       if (!confirm('Take ' + m.name + ' off this map? Their waypoints and trails stay. They can join again with the link.')) return;
       rpc('bc_remove_member', { p_code: CODE, p_member: ME ? ME.key : null, p_owner_token: owner(CODE), p_id: id }).then(function () {
@@ -1899,6 +1914,7 @@ function openMenu() {
       '<button type="button" class="btn" id="mOffline"><span>⬇️ Offline maps<small>Download the area so the map works with no signal</small></span></button>' +
       '<button type="button" class="btn" id="mSaver"><span>' + (saver() ? '🔋 Battery saver is on<small>Updates every 15 seconds. Tap to go back to every 3 seconds.</small>' :
         '🔋 Battery saver<small>Update every 15 seconds instead of every 3. Dots move less often.</small>') + '</span></button>' +
+      '<a class="btn" href="/notifications/#alerts"><span>🔔 Phone alerts<small>Get an alert when someone on this map asks where you are</small></span></a>' +
       '<button type="button" class="btn" id="mPocket"><span>🌑 Pocket mode<small>Black screen that keeps sharing; uses less battery</small></span></button>' +
       '<button type="button" class="btn" id="mMe"><span>🎨 My name and color</span></button>' +
     '</div>' +
@@ -1929,6 +1945,7 @@ function openMenu() {
     $('#mLeave', d).onclick = function () {
       if (!confirm('Leave this map? You’ll be taken off it. You can join again with the link.')) return;
       rpc('bc_remove_member', { p_code: CODE, p_member: ME.key, p_owner_token: null, p_id: ME.id }).then(function () {
+        if (window.PebblyNotify) PebblyNotify.drop('basecamp', CODE);
         setMe(CODE, null); ME = null; if (!owner(CODE)) forget(CODE); stopMap(); go('');
       }, function (e) { toast(friendly(e)); });
     };
@@ -1950,7 +1967,7 @@ function openMenu() {
     $('#hClearP', d).onclick = function () { if (confirm('Clear everyone’s last location? People with Basecamp open show up again within seconds.')) host('clear_places', null, function () { closeSheet(); toast('Locations cleared.'); }); };
     $('#hDelete', d).onclick = function () {
       if (!confirm('Delete “' + S.session.name + '” for everyone? All waypoints and trails are lost. This can’t be undone.')) return;
-      host('delete', null, function () { setOwner(CODE, null); setMe(CODE, null); forget(CODE); stopMap(); go(''); toast('Map deleted.'); });
+      host('delete', null, function () { if (window.PebblyNotify) PebblyNotify.drop('basecamp', CODE); setOwner(CODE, null); setMe(CODE, null); forget(CODE); stopMap(); go(''); toast('Map deleted.'); });
     };
   });
 }
