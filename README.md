@@ -4,7 +4,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 
 | Path | App |
 |---|---|
-| `/` | Homepage linking to every app |
+| `/` | Homepage: "Yours" (this phone's events, lists and maps across apps; remove one, it returns when reopened) and every app |
 | `/rsvp/` | Event invites and RSVPs (Supabase) |
 | `/whichdayworks/` | Find a date that works for everyone (Supabase) |
 | `/poll/` | Group polls (Supabase) |

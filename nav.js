@@ -11,6 +11,21 @@
 
   var installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 
+  // The homepage's "Yours" list: note when an event/list/map was last opened, and bring it back if it was removed there.
+  // (Which page uses which link parameter; keep in step with MINE in index.html.)
+  try {
+    var OPEN = { '/rsvp/': ['rsvp', 'e'], '/whichdayworks/': ['wdw', 'e'], '/poll/': ['poll', 'p'], '/signup/': ['signup', 'd'],
+      '/bill/': ['bill', 'd'], '/list/': ['list', 'd'], '/babynames/': ['names', 'd'], '/santa/': ['santa', 'g'], '/basecamp/': ['basecamp', 'm'] };
+    var op = OPEN[location.pathname], oc = op && new URLSearchParams(location.search).get(op[1]);
+    if (oc) {
+      var ok = op[0] + ':' + oc.trim().toLowerCase(), rd = function (k) { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } };
+      var opened = rd('pebbly_home_opened'), hid = rd('pebbly_home_hidden');
+      opened[ok] = Date.now(); delete hid[ok];
+      localStorage.setItem('pebbly_home_opened', JSON.stringify(opened));
+      localStorage.setItem('pebbly_home_hidden', JSON.stringify(hid));
+    }
+  } catch (e) {}
+
   // Backups (backup.js) keep themselves up to date on every page once this phone has a backup key.
   try {
     if (localStorage.getItem('pebbly_backup') && !window.PebblyBackup) {

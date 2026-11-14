@@ -57,6 +57,22 @@
   .admin { margin: 10px 0 0; text-align: center; font-size: .8rem; }
   .admin a { color: var(--muted); text-decoration: none; padding: 8px 10px; display: inline-block; }
   @media (display-mode: standalone) { .install { display: none; } }
+  /* "Yours": events, lists and maps on this phone, across apps */
+  #mine[hidden] { display: none; }
+  .mine li { display: flex; align-items: stretch; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .mine a { flex: 1; min-width: 0; display: flex; gap: 12px; align-items: center; padding: 10px 4px 10px 14px; min-height: 56px; color: inherit; text-decoration: none; }
+  .mine a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .mine .icon { font-size: 1.4rem; width: 32px; }
+  .mine .t { display: block; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mine .s { display: block; color: var(--muted); font-size: .85rem; }
+  .mine .tag { font-size: .72rem; font-weight: 700; color: var(--accent); border: 1px solid var(--line); border-radius: 999px; padding: 1px 7px; margin-left: 4px; }
+  .mine .x { flex: none; width: 48px; border: 0; background: none; color: var(--muted); font-size: 1.05rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  .mine .x:hover, .mine .x:focus-visible { color: var(--text); }
+  .minemore { margin: 10px 0 0; }
+  .minemore button, .mineundo button { font: inherit; font-weight: 600; color: var(--accent); background: none; border: 0; min-height: 44px; padding: 0 4px; cursor: pointer; }
+  .mineundo { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; padding: 4px 6px 4px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-size: .95rem; color: var(--muted); }
+  .mineundo[hidden], .minemore[hidden] { display: none; }
+  .mineundo span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .bknote { display: flex; align-items: center; gap: 10px; margin: 28px 0 0; padding: 12px 14px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; font-size: .95rem; }
   .bknote[hidden] { display: none; }
   .bknote p { margin: 0; flex: 1; color: var(--muted); }
@@ -70,6 +86,13 @@
     <div class="hbar"><h1>Pebbly</h1><span data-pn-bell></span></div>
     <p>Small, free tools for planning get-togethers and playing games.</p>
   </header>
+
+  <section id="mine" hidden aria-labelledby="mineh">
+    <h2 id="mineh">Yours</h2>
+    <ul class="mine" id="minelist"></ul>
+    <p class="minemore" id="minemore" hidden><button type="button" id="mineall"></button></p>
+    <p class="mineundo" id="mineundo" hidden role="status"><span id="mineundot"></span><button type="button" id="mineundob">Undo</button></p>
+  </section>
 
   <h2>Plan</h2>
   <ul>
@@ -221,6 +244,72 @@
     show();
   })();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
+  // "Yours": every event, list and map this phone has opened or made, from each app's own saved list, newest opened
+  // first (nav.js notes when each was opened). ✕ hides one here; opening it again brings it back (nav.js).
+  (function () {
+    var MINE = [
+      { app: 'rsvp', key: 'rsvp.recent', path: '/rsvp/', q: 'e', name: 'RSVP', icon: '✉️', owners: 'rsvp.owners' },
+      { app: 'wdw', key: 'meetup.recent', path: '/whichdayworks/', q: 'e', name: 'Which Day Works?', icon: '📅', owners: 'meetup.owners' },
+      { app: 'poll', key: 'pick.recent', path: '/poll/', q: 'p', name: 'Poll', icon: '🗳️', owners: 'pick.owners' },
+      { app: 'signup', key: 'pebbly_signup_recent', path: '/signup/', q: 'd', name: 'Sign-up Sheet', icon: '📋', owners: 'pebbly_doc_owners' },
+      { app: 'bill', key: 'pebbly_bill_recent', path: '/bill/', q: 'd', name: 'Split the Bill', icon: '💸', owners: 'pebbly_doc_owners' },
+      { app: 'list', key: 'pebbly_list_recent', path: '/list/', q: 'd', name: 'Shared List', icon: '🛒', owners: 'pebbly_doc_owners' },
+      { app: 'names', key: 'pebbly_names_recent', path: '/babynames/', q: 'd', name: 'Baby Names', icon: '🍼', owners: 'pebbly_doc_owners' },
+      { app: 'santa', key: 'pebbly_santa_recent', path: '/santa/', q: 'g', name: 'Secret Santa', icon: '🎁', owners: 'pebbly_santa_owners' },
+      { app: 'basecamp', key: 'pebbly_basecamp_recent', path: '/basecamp/', q: 'm', name: 'Basecamp', icon: '⛺', owners: 'pebbly_basecamp_owners' }
+    ];
+    var SHOW = 6, all = false, lastHidden = null;
+    function get(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+    function put(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function items() {
+      var opened = get('pebbly_home_opened', {}) || {}, hidden = get('pebbly_home_hidden', {}) || {}, out = [], seen = {};
+      MINE.forEach(function (a, ai) {
+        var list = get(a.key, []), owners = get(a.owners, {}) || {};
+        if (!Array.isArray(list)) return;
+        list.forEach(function (r, i) {
+          if (!r || !r.code) return;
+          var code = String(r.code), id = a.app + ':' + code.trim().toLowerCase();
+          if (seen[id]) return; seen[id] = 1;
+          if (hidden[id] && !((opened[id] || 0) > hidden[id])) return;
+          // newest opened first; ones never opened since this list existed go after, in each app's own order
+          var when = opened[id] || r.at || 0;
+          out.push({ id: id, a: a, code: code, title: r.title || r.name || a.name, icon: r.emoji || a.icon,
+            host: !!(owners[code] || owners[code.toLowerCase()]), when: when, order: ai * 100 + i });
+        });
+      });
+      return out.sort(function (x, y) { return (y.when - x.when) || (x.order - y.order); });
+    }
+    var el = document.getElementById('mine'), ul = document.getElementById('minelist'), more = document.getElementById('minemore'), undo = document.getElementById('mineundo');
+    function render() {
+      var list = items(), shown = all ? list : list.slice(0, SHOW);
+      el.hidden = !list.length && undo.hidden;
+      ul.innerHTML = shown.map(function (x) {
+        return '<li><a href="' + x.a.path + '?' + x.a.q + '=' + encodeURIComponent(x.code) + '"><span class="icon" aria-hidden="true">' + esc(x.icon) + '</span>' +
+          '<span style="min-width:0"><span class="t">' + esc(x.title) + '</span><span class="s">' + esc(x.a.name) + (x.host ? '<span class="tag">host</span>' : '') + '</span></span></a>' +
+          '<button type="button" class="x" data-hide="' + esc(x.id) + '" data-title="' + esc(x.title) + '" aria-label="Remove ' + esc(x.title) + ' from this list">✕</button></li>';
+      }).join('');
+      more.hidden = list.length <= SHOW;
+      document.getElementById('mineall').textContent = all ? 'Show fewer' : 'Show all ' + list.length;
+    }
+    ul.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-hide]'); if (!b) return;
+      var hidden = get('pebbly_home_hidden', {}) || {};
+      hidden[b.dataset.hide] = Date.now(); put('pebbly_home_hidden', hidden);
+      lastHidden = b.dataset.hide;
+      document.getElementById('mineundot').textContent = 'Removed “' + b.dataset.title + '”. It comes back if you open it again.';
+      undo.hidden = false; render();
+    });
+    document.getElementById('mineundob').addEventListener('click', function () {
+      var hidden = get('pebbly_home_hidden', {}) || {};
+      if (lastHidden) delete hidden[lastHidden];
+      put('pebbly_home_hidden', hidden); lastHidden = null; undo.hidden = true; render();
+    });
+    document.getElementById('mineall').addEventListener('click', function () { all = !all; render(); });
+    addEventListener('pageshow', function () { undo.hidden = true; render(); });
+    render();
+    if (location.hash === '#mine' && !el.hidden) el.scrollIntoView();
+  })();
   // Backups: keep an existing one up to date (backup.js), or suggest one to hosts who have none.
   (function () {
     function get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }

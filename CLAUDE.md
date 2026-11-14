@@ -21,9 +21,9 @@ database for the apps that share data between people. See README.md for the app 
 
 | Path | What |
 |---|---|
-| `index.html` | Homepage: "Plan" and "Play" lists of app cards. Add new apps here. |
+| `index.html` | Homepage: "Yours" (every event/list/map on this phone, from each app's saved recent list; `MINE` table), then "Plan" and "Play" lists of app cards. Add new apps here (and to `MINE` + nav.js `OPEN` if they have shareable sessions). |
 | `<app>/index.html` | Each app is one self-contained HTML file (inline CSS and JS, no build step). |
-| `nav.js` | In the installed app, adds the "← Pebbly" home bar; also asks for persistent storage. Include in every app's `<head>`. |
+| `nav.js` | In the installed app, adds the "← Pebbly" home bar; also asks for persistent storage, and notes when an event/list/map is opened (`pebbly_home_opened`; reopening one removed from "Yours" brings it back, `pebbly_home_hidden`). Include in every app's `<head>`. Test: `tests/home_test.js`. |
 | `theme.js` | Applies the homepage's Theme switch (Auto/Light/Dark) before the page draws. |
 | `keepawake.js` | `keepAwake(true/false)`: Screen Wake Lock while a game is on screen. |
 | `play/sync.js`, `play/play.sql` | "Play together": share any game between phones with a 5-letter code. |

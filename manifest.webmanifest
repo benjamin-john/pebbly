@@ -15,6 +15,7 @@
     { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
+    { "name": "Yours", "short_name": "Yours", "description": "Your events, lists and maps", "url": "/#mine", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "RSVP", "url": "/rsvp/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Which Day Works?", "url": "/whichdayworks/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
     { "name": "Poll", "url": "/poll/", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
