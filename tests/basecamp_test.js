@@ -127,9 +127,17 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await amy.goto(BASE + '?m=' + code);
   await amy.waitForSelector('#joinForm');
   check((await amy.textContent('h1')) === 'Deer camp', 'join screen shows the map name');
+  const benColor = await ben.evaluate(() => __bc.state().members[0].color);
+  check(await amy.isDisabled(`#joinForm [name=color][value="${benColor}"]`) && !(await amy.isChecked(`#joinForm [name=color][value="${benColor}"]`)), 'join: Ben’s color is taken, a free one is picked');
   await amy.fill('#joinForm [name=who]', 'Amy');
   await amy.click('#joinForm [type=submit]');
   await amy.waitForSelector('#map canvas');
+  check(await until(ben, () => { const m = __bc.state().members; return m.length === 2 && m[0].color !== m[1].color; }, null, 8000), 'Amy got her own color');
+  // even if a phone asks for a color that's taken, the server hands out a free one
+  const dupe = spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', DB, '-At'],
+    { input: `select bc_join('${code}', 'Test', '${benColor}')->>'color';`, encoding: 'utf8' }).stdout.trim().split('\n').pop();
+  check(dupe && dupe !== benColor, 'taken color requested: server gives another (' + dupe + ')');
+  spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', DB, '-At'], { input: `delete from bc_members where name = 'Test';`, encoding: 'utf8' });
   check(await until(ben, () => __bc.state().members.length === 2 && __bc.state().members[1].lat != null, null, 10000), 'Ben sees Amy');
   check(await until(ben, () => [...document.querySelectorAll('.pm .lbl')].some(e => e.textContent.startsWith('Amy'))), 'Amy’s dot is on Ben’s map');
   check(await until(amy, () => /2 people/.test(document.querySelector('#sync').textContent)), 'Amy’s header counts 2 people');
@@ -390,6 +398,15 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   check(await until(ben, (n) => __bc.state().waypoints.length === n + 2 && __bc.state().waypoints.some(w => w.name === 'Camp A' && w.icon === '🏕️' && w.note === 'Flat and dry.'), wpBefore, 8000), 'waypoints added for everyone');
   check(await ben.evaluate(() => !JSON.parse(localStorage.getItem('pebbly_basecamp_ui')).analyze), 'done: starts fresh next time');
   check(await until(ben, () => __bc.state().waypoints.filter(w => w.ai).length === 2, null, 8000), 'marked as from AI');
+  // dot colors: each person's color, AI's black
+  const cols = await ben.evaluate(() => {
+    const st = __bc.state(), me = st.members.find(m => m.id === st.me.id), out = {};
+    document.querySelectorAll('.wp').forEach(el => { const t = el.textContent; out[t] = getComputedStyle(el.querySelector('.wd')).backgroundColor; });
+    const hex = (c) => { const m = c.match(/\d+/g); return '#' + m.slice(0, 3).map(n => (+n).toString(16).padStart(2, '0')).join('').toUpperCase(); };
+    return { camp: out['Camp A'] && hex(out['Camp A']), mine: Object.entries(out).filter(([t]) => st.waypoints.some(w => w.name === t && !w.ai && w.member === me.id)).map(([, c]) => hex(c)), me: me.color.toUpperCase() };
+  });
+  check(cols.camp === '#1F2A27', 'AI waypoints are black: ' + cols.camp);
+  check(cols.mine.length > 0 && cols.mine.every(c => c === cols.me), 'my waypoints are my color: ' + JSON.stringify(cols));
   await ben.click('#wpsBtn');
   check(/by ✨ AI/.test(await ben.textContent('#wlist')), 'Saved list: “by ✨ AI”');
   await ben.click('[data-all=mine]');

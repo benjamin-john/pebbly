@@ -84,6 +84,7 @@ textarea{min-height:80px;resize:vertical}
 .colors input{position:absolute;opacity:0;pointer-events:none}
 .colors span{display:block;width:40px;height:40px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 1px var(--line);cursor:pointer}
 .colors input:checked + span{box-shadow:0 0 0 3px var(--ink)}
+.colors input:disabled + span{opacity:.22;cursor:not-allowed;background-image:linear-gradient(135deg,transparent 46%,#fff 46%,#fff 54%,transparent 54%)}
 .colors input:focus-visible + span{outline:3px solid var(--brand);outline-offset:3px}
 .how{margin:18px 0 0;padding:0 0 0 20px;color:var(--muted);font-size:15px}
 .how li{margin-bottom:6px}
@@ -205,7 +206,7 @@ body.in-map #app{height:100%}
 .wp{width:30px;height:30px;cursor:pointer}
 .wp .wd{position:absolute;left:8px;top:8px;width:14px;height:14px;border-radius:50%;background:#E0261B;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5)}
 .wp .lbl{top:6px;left:24px;transform:none;font-size:11px;padding:1px 6px}
-.wp.pending .wd{background:#F08A84}
+.wp.pending .wd{opacity:.55}
 #map.far .wp .lbl{display:none}
 .row .ck{flex:none;width:44px;height:44px;display:grid;place-items:center}
 .row .ck input{width:22px;height:22px;accent-color:var(--brand)}
@@ -290,7 +291,10 @@ var URL_ = 'https://xujtuijpbwujduuzlwat.supabase.co', KEY_ = 'sb_publishable_bp
 var K_RECENT = 'pebbly_basecamp_recent', K_OWNERS = 'pebbly_basecamp_owners', K_ME = 'pebbly_basecamp_me', K_NAME = 'pebbly_basecamp_name',
   K_UI = 'pebbly_basecamp_ui', K_QUEUE = 'pebbly_basecamp_queue', K_AREAS = 'pebbly_basecamp_areas';
 var SYNC_MS = 3000, SAVER_MS = 15000, IDLE_MS = 10000, STALE_MS = 2 * 60 * 1000;
-var COLORS = ['#E4572E', '#2E86DE', '#F4B400', '#8E44AD', '#16A085', '#E84393', '#6D4C41', '#00ACC1', '#7CB342', '#FF7043', '#3949AB', '#C0CA33'];
+var COLORS = ['#2E86DE', '#E4572E', '#16A085', '#F4B400', '#8E44AD', '#E84393', '#00ACC1', '#6D4C41', '#7CB342', '#3949AB', '#FF7043', '#C0CA33'];
+var AI_COLOR = '#1F2A27';            // waypoints from Analyze this area: near-black, a color no person can have
+// A waypoint's dot is the color of the person who added it (AI's are black).
+function wpColor(w) { if (w.ai) return AI_COLOR; var m = member(w.member); return m && m.color || '#E0261B'; }
 var ICONS = ['📍', '🚙', '🦌', '🪜', '🏕️', '⛺', '🔥', '🏠', '🚻', '🍔', '🎡', '⭐', '🚩', '⚠️', '💧', '🩸', '🅿️', '🎯'];
 var $app = document.getElementById('app');
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -375,6 +379,7 @@ var MSG = {
   network: 'Couldn’t reach the server. Check your signal and try again.',
   map_not_found: 'This map doesn’t exist anymore. It may have been deleted.',
   not_member: 'You’re not on this map anymore. Join it again.',
+  color_taken: 'Someone on this map already has that color. Pick another.',
   map_paused: 'Tracking is paused on this map. The host can resume it from ☰ More.',
   not_owner: 'Only the host can do that.',
   not_allowed: 'Only the person who added it (or the host) can change that.',
@@ -842,7 +847,8 @@ function renderJoin(note) {
     '<form id="joinForm" class="card" novalidate autocomplete="off">' +
       '<label class="fld"><span>Your name</span><input type="text" name="who" maxlength="30" value="' + esc(load(K_NAME, '')) + '"></label>' +
       '<div class="fld"><span class="lbl">Your color</span><div class="colors">' + COLORS.map(function (c) {
-        return '<label><input type="radio" name="color" value="' + c + '"' + (c === free ? ' checked' : '') + ' aria-label="Color ' + c + '"><span style="background:' + c + '"></span></label>';
+        var taken = used.indexOf(c) >= 0;
+        return '<label><input type="radio" name="color" value="' + c + '"' + (c === free ? ' checked' : '') + (taken ? ' disabled' : '') + ' aria-label="Color ' + c + (taken ? ' (taken)' : '') + '"><span style="background-color:' + c + '"></span></label>';
       }).join('') + '</div></div>' +
       '<p class="hint" style="margin-bottom:14px">Your location is shared with the people on this map only while Basecamp is open on your screen. You can turn it off any time.</p>' +
       '<button class="btn primary wide" type="submit">Join map</button><p class="err" id="joinErr" role="alert"></p></form>' +
@@ -1588,13 +1594,13 @@ function renderWaypoints() {
   var seen = {};
   visibleWaypoints().forEach(function (w) {
     seen[w.id] = 1;
-    var sig = [w.name, !!w.pending].join('|');
+    var col = wpColor(w), sig = [w.name, !!w.pending, col].join('|');
     var mk = markers.w[w.id];
     if (!mk || mk._sig !== sig) {
       if (mk) mk.remove();
       var el = document.createElement('div');
       el.className = 'wp' + (w.pending ? ' pending' : '');
-      el.innerHTML = '<div class="wd"></div>' + (w.name ? '<div class="lbl">' + esc(w.name) + '</div>' : '');
+      el.innerHTML = '<div class="wd" style="background:' + col + '"></div>' + (w.name ? '<div class="lbl">' + esc(w.name) + '</div>' : '');
       el.addEventListener('click', function (ev) { ev.stopPropagation(); openWaypoint(w.id); });
       mk = markers.w[w.id] = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([w.lng, w.lat]).addTo(MAP);
       mk._sig = sig;
@@ -1831,7 +1837,7 @@ function analyzePrompt(a, what, count, img) {
     img ? '' : '',
     img ? 'I’ve attached a picture of exactly this area (north is up; its edges are the edges above). It has a grid of ' + GRID_N + ' columns (A to ' +
       String.fromCharCode(64 + GRID_N) + ', west to east) and ' + GRID_N + ' rows (1 to ' + GRID_N + ', north to south). Each grid line has its longitude (along the top) ' +
-      'or latitude (down the left side) printed on it: longitudes ' + img.cols.join(', ') + '; latitudes ' + img.rows.join(', ') + '. Red dots are my existing waypoints. ' +
+      'or latitude (down the left side) printed on it: longitudes ' + img.cols.join(', ') + '; latitudes ' + img.rows.join(', ') + '. Small dots are my existing waypoints. ' +
       'Study the picture closely (woods, water, fields, edges, roads, buildings) and place each spot where it is in the picture, working out its coordinates ' +
       'from the grid lines around it.' : '',
     '',
@@ -1903,7 +1909,7 @@ function captureMap() {
     visibleWaypoints().forEach(function (w) {
       if (!inBox(w, a)) return;
       var p = MAP.project([w.lng, w.lat]), px = p.x * k, py = p.y * k;
-      x.beginPath(); x.arc(px, py, 5 * k, 0, 2 * Math.PI); x.fillStyle = '#D63B30'; x.fill(); x.lineWidth = 2 * k; x.strokeStyle = '#fff'; x.stroke();
+      x.beginPath(); x.arc(px, py, 5 * k, 0, 2 * Math.PI); x.fillStyle = wpColor(w); x.fill(); x.lineWidth = 2 * k; x.strokeStyle = '#fff'; x.stroke();
       if (w.name) label(w.name.slice(0, 24), px + 8 * k, py - 7 * k, 11, 'left');
     });
     // caption: the edges of the picture
@@ -2221,10 +2227,12 @@ function openPerson(id) {
 }
 function openMeEdit() {
   var m = meMember(); if (!m) return;
+  var used = S.members.filter(function (x) { return x.id !== m.id; }).map(function (x) { return x.color; });
   openSheet('me', head('You on this map') +
     '<form id="meForm" novalidate autocomplete="off"><label class="fld"><span>Your name</span><input type="text" name="who" maxlength="30" value="' + esc(m.name) + '"></label>' +
     '<div class="fld"><span class="lbl">Your color</span><div class="colors">' + COLORS.map(function (c) {
-      return '<label><input type="radio" name="color" value="' + c + '"' + (c === m.color ? ' checked' : '') + ' aria-label="Color ' + c + '"><span style="background:' + c + '"></span></label>';
+      var taken = used.indexOf(c) >= 0;
+      return '<label><input type="radio" name="color" value="' + c + '"' + (c === m.color ? ' checked' : '') + (taken ? ' disabled' : '') + ' aria-label="Color ' + c + (taken ? ' (taken)' : '') + '"><span style="background-color:' + c + '"></span></label>';
     }).join('') + '</div></div><p class="err" role="alert"></p><button class="btn primary wide" type="submit">Save</button></form>', function (d) {
     $('#meForm', d).onsubmit = function (ev) {
       ev.preventDefault();

@@ -264,6 +264,10 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   outside the area start unticked, and the picked ones are saved with `ai: true` (`bc_waypoints.ai`,
   `20261120000000_basecamp_ai_waypoints.sql`): shown "by ✨ AI", hidden by "Only mine", and there's a "Hide AI" button. The person who
   added them owns them. The draft (area, request) waits in `pebbly_basecamp_ui.analyze` while they're in the AI app.
+  Colors (`20261121000000_basecamp_colors.sql`): every person on a map has their own color (`bc_join` hands out the first free
+  one even if the phone asked for a taken one; `bc_me_update` refuses `color_taken`; pickers grey out taken colors; palette order
+  blue, red, green, yellow, purple…). Waypoint dots are the color of whoever added them (`wpColor`); AI waypoints are near-black
+  (`AI_COLOR`, not in the palette).
   "Save map image" (`captureMap`): turns the map north up, waits for tiles, grabs the map canvas in a `render` event (no
   preserveDrawingBuffer needed), draws an 8×8 lettered grid with each line's longitude/latitude (from `MAP.unproject`, since
   latitude lines aren't evenly spaced), the waypoints and a caption with the edges; JPEG download or share sheet (file only).
