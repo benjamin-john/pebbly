@@ -1034,8 +1034,11 @@ function startGeo() {
   }, { enableHighAccuracy: true, maximumAge: 0, timeout: 30000 });
 }
 function stopGeo() { if (watchId != null) { navigator.geolocation.clearWatch(watchId); watchId = null; } }
+// A rough fix (worse than ±100 m: often a cell-tower guess, far off) doesn't replace a good one from the last 30 minutes.
+var ROUGH_M = 100, ROUGH_KEEP_MS = 30 * 60000;
 function onFix(p) {
   var c = p.coords, first = !FIX;
+  if ((c.accuracy || 50) > ROUGH_M && FIX && FIX.acc <= ROUGH_M && Date.now() - FIX.t < ROUGH_KEEP_MS) return;
   FIX = { lat: c.latitude, lng: c.longitude, acc: c.accuracy || 50, speed: c.speed, heading: c.heading, t: Date.now() };
   geoErr = null;
   if (!lastSeenPos._me || dist(lastSeenPos._me, FIX) > 10) { if (lastSeenPos._me) lastMoveAt = Date.now(); lastSeenPos._me = { lat: FIX.lat, lng: FIX.lng }; }

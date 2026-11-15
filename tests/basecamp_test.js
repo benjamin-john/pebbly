@@ -155,6 +155,14 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   // Amy moves
   await amy.context().setGeolocation({ latitude: 45.053, longitude: -93.198, accuracy: 5 });
   check(await until(ben, () => { const a = __bc.state().members[1]; return a.lat === 45.053; }, null, 12000), 'Amy’s move shows on Ben’s phone');
+  // a rough fix (±800 m, a cell-tower guess far away) doesn't replace her good spot, on her phone or Ben's
+  await amy.context().setGeolocation({ latitude: 45.07, longitude: -93.25, accuracy: 800 });
+  await amy.waitForTimeout(4000);
+  check(await amy.evaluate(() => __bc.fix().lat === 45.053) && await ben.evaluate(() => __bc.state().members[1].lat === 45.053), 'rough far-off fix ignored while a good one is recent');
+  const rough = spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', DB, '-At'],
+    { input: `select _bc_rough(800, 8, now() - interval '5 minutes'), _bc_rough(800, 8, now() - interval '40 minutes'), _bc_rough(60, 8, now()), _bc_rough(800, 800, now()), _bc_rough(800, null, null);`, encoding: 'utf8' }).stdout.trim();
+  check(rough === 't|f|f|f|f', 'server: rough only replaces a good spot once it’s 30+ min old (' + rough + ')');
+  await amy.context().setGeolocation({ latitude: 45.053, longitude: -93.198, accuracy: 5 });
   // tapping Amy's dot: her sheet has Open in Google Maps at her spot
   await ben.evaluate(() => [...document.querySelectorAll('.pm')].find(e => e.textContent.includes('Amy')).click());
   await ben.waitForSelector('dialog.sheet [data-gmaps]');

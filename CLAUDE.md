@@ -276,6 +276,8 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   open (a browser can't read location from an alert). Basecamp has a bell in its header and registers the phone with
   `PebblyNotify.feed('basecamp', code, 'guest', memberKey, memberId)`.
   Zoom: a slim + / − column (`.zoomfab`) on the right just above the location button, for one-handed use.
+  Rough fixes (`20261122000000_basecamp_rough_fixes.sql`, `_bc_rough`; page `onFix` `ROUGH_M`): a location worse than ±100 m (often a
+  cell-tower guess, far off) doesn't replace a good one (±100 m or better) from the last 30 minutes, for Basecamp and OwnTracks alike.
   Sync cadence (`syncEvery`): 3 s, 15 s with Battery saver (`pebbly_basecamp_ui.saver`), 10 s when nobody moved >10 m for 2 min.
   The Saved sheet (Waypoints / Trails tabs) hides items per phone (`pebbly_basecamp_ui.hidden`). `sw.js` must not delete `pebbly-maps*` caches. The last data seen is
   kept for opening with no signal. Heading-up uses GPS heading when moving, else `deviceorientationabsolute` (iPhone:
