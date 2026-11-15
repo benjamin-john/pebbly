@@ -215,7 +215,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   (it overrides MapLibre's absolute positioning and markers drift with zoom; the test checks every dot's pixel spot). Markers carry a z-index (your dot on top), so `.maplibregl-canvas-container` has `isolation:isolate` to keep them under the map's buttons.
   Public land: USGS PAD-US feature service (`PADUS_Public_Access`, services.arcgis.com, public domain, CORS open), fetched as
   GeoJSON per z11 square (private land left out), cached like tiles (`https://bc.tiles/pad/11/x/y`, offline downloads too),
-  colored by manager type (toggle in the ☰ More menu; the color key shows on the map while on); tapping shows name, manager, access. PAD-US marks MN WMAs "restricted", so never present
+  colored by manager type (toggle in the ☰ More menu; the color key shows on the map while on); tapping shows name, manager, access, size. PAD-US lumps some tracts per county into one listing (e.g. "Wright County Waterfowl Production Area": 5,033 acres in 32 pieces, the real names like Goose Lake WPA aren't in it), so the size is worked out for the tapped piece plus pieces touching it (`pieceAcres`, from the full shape in `padFeats`), with the listing's total underneath. PAD-US marks MN WMAs "restricted", so never present
   access as hunting permission (the sheet says to check DNR rules). Its tile service only goes to ~z10, hence features.
   Screen-off sharing (`supabase/migrations/20261115000000_basecamp_owntracks.sql`, `supabase/functions/owntracks/`): the free
   OwnTracks app in HTTP mode POSTs reports to the `owntracks` Edge Function (no JWT; personal key `?k=` from

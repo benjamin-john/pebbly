@@ -424,6 +424,14 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.evaluate(() => __bc.map().jumpTo({ zoom: 14 }));
   check(await until(ben, () => __bc.padShown() === 2), 'back when zoomed in');
   await shot(ben, 'publand');
+  // one listing with many pieces (PAD-US lumps a county's waterfowl areas together): the size is for the piece tapped
+  const pcs = await ben.evaluate(() => {
+    const sq = (x, y, d) => [[[x, y], [x + d, y], [x + d, y + d], [x, y + d], [x, y]]];
+    const f = { geometry: { type: 'MultiPolygon', coordinates: [sq(-93, 45, 0.01), sq(-92.99, 45, 0.01), sq(-92, 45, 0.08)] } };
+    return [__bc.pieceAcres(f, { lng: -92.995, lat: 45.005 }), __bc.pieceAcres(f, { lng: -91.98, lat: 45.02 }), __bc.pieceAcres(f, { lng: -80, lat: 30 })];
+  });
+  check(pcs[0] && Math.abs(pcs[0].acres - 430) < 15 && pcs[0].pieces === 2, 'tapped piece (with the one touching it): its own acres: ' + JSON.stringify(pcs[0]));
+  check(pcs[1] === null && pcs[2] === null, 'the piece that is nearly all of it, or outside: the listing’s acres');
 
   // ---- heading-up
   await ben.waitForTimeout(800);

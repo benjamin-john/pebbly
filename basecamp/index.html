@@ -1405,6 +1405,42 @@ function drawPad() {
 }
 var ACCESS = { OA: ['Open access', 'Open to the public.'], RA: ['Restricted access', 'Open with limits (seasons, permits or certain uses). Many state wildlife areas are listed this way.'],
   XA: ['Closed', 'Not open to the public.'], UK: ['Unknown', 'Access isn’t recorded.'] };
+// PAD-US often lumps every tract of one kind in a county into one entry (e.g. all of "Wright County Waterfowl Production
+// Area", 5,033 acres in 32 pieces), so its acres are for all of them. Work out the piece that was tapped (plus any pieces
+// touching it) from the full shape, so the size is for the land you're looking at.
+function ringAcres(r) {
+  var s = 0, k = Math.PI / 180;
+  for (var i = 0; i < r.length - 1; i++) s += (r[i + 1][0] - r[i][0]) * k * (2 + Math.sin(r[i][1] * k) + Math.sin(r[i + 1][1] * k));
+  return Math.abs(s * 6378137 * 6378137 / 2) / 4046.856;
+}
+function inRing(pt, r) {
+  var c = false;
+  for (var i = 0, j = r.length - 1; i < r.length; j = i++)
+    if ((r[i][1] > pt[1]) !== (r[j][1] > pt[1]) && pt[0] < (r[j][0] - r[i][0]) * (pt[1] - r[i][1]) / (r[j][1] - r[i][1]) + r[i][0]) c = !c;
+  return c;
+}
+function pieceAcres(f, ll) {
+  var g = f && f.geometry; if (!g) return null;
+  var polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : null;
+  if (!polys || polys.length < 2) return null;
+  var pt = [ll.lng, ll.lat], hit = -1, area = polys.map(function (p) {
+    return p.slice(1).reduce(function (a, h) { return a - ringAcres(h); }, ringAcres(p[0]));
+  });
+  polys.forEach(function (p, i) { if (hit < 0 && inRing(pt, p[0]) && !p.slice(1).some(function (h) { return inRing(pt, h); })) hit = i; });
+  if (hit < 0) return null;
+  // pieces that touch (share a corner point) count as one piece
+  var key = function (c) { return c[0].toFixed(5) + ',' + c[1].toFixed(5); }, pts = polys.map(function (p) {
+    var o = {}; p[0].forEach(function (c) { o[key(c)] = 1; }); return o; });
+  var group = {}, todo = [hit]; group[hit] = 1;
+  while (todo.length) {
+    var a = todo.pop();
+    polys.forEach(function (p, i) { if (!group[i] && Object.keys(pts[i]).some(function (k) { return pts[a][k]; })) { group[i] = 1; todo.push(i); } });
+  }
+  var mine = 0, total = 0;
+  area.forEach(function (v, i) { total += v; if (group[i]) mine += v; });
+  if (mine > total * 0.9) return null;
+  return { acres: mine, pieces: polys.length - Object.keys(group).length + 1 };
+}
 function openLand(e) {
   var seen = {}, list = MAP.queryRenderedFeatures(e.point, { layers: ['pad-fill'] }).filter(function (f) {
     var k = f.properties.OBJECTID; if (seen[k]) return false; seen[k] = 1; return true;
@@ -1416,7 +1452,12 @@ function openLand(e) {
       '<dt>Managed by</dt><dd><i style="display:inline-block;width:11px;height:11px;border-radius:3px;background:' + kind[2] + ';margin-right:6px"></i>' + esc(p.MngNm_Desc || p.MngTp_Desc || 'Unknown') + '</dd>' +
       (p.DesTp_Desc ? '<dt>Type</dt><dd>' + esc(p.DesTp_Desc) + '</dd>' : '') +
       '<dt>Access</dt><dd>' + esc(a[0]) + '<br><span class="hint" style="font-weight:400">' + esc(a[1]) + '</span></dd>' +
-      (p.GIS_Acres ? '<dt>Size</dt><dd>' + Math.round(p.GIS_Acres).toLocaleString() + ' acres</dd>' : '') + '</dl>';
+      (function () {
+        var pc = pieceAcres(padFeats[p.OBJECTID] || padFeats[f.id], e.lngLat);
+        if (pc) return '<dt>Size</dt><dd>' + Math.round(pc.acres).toLocaleString() + ' acres<br><span class="hint" style="font-weight:400">This piece. The listing covers ' +
+          pc.pieces + ' separate pieces, ' + Math.round(p.GIS_Acres || 0).toLocaleString() + ' acres in all.</span></dd>';
+        return p.GIS_Acres ? '<dt>Size</dt><dd>' + Math.round(p.GIS_Acres).toLocaleString() + ' acres</dd>' : '';
+      })() + '</dl>';
   }).join('') +
   '<p class="hint">From the USGS public lands database (PAD-US). Lines can be off by a little, and it doesn’t say whether hunting is allowed. Check the DNR’s rules for this area before you hunt.</p>');
 }
@@ -2381,7 +2422,7 @@ document.addEventListener('visibilitychange', function () {
 });
 window.addEventListener('pagehide', function () { if (screen === 'map' && REC && !otOn()) stopTrail('leave'); saveView(); });
 
-window.__bc = { openWaypoint: function (id) { openWaypoint(id); }, parseCoords: parseCoords, spotLink: function (p, n) { return spotLink(p, n); }, spotShown: function () { return spotMk ? spotMk.getLngLat() : null; }, splitGaps: splitGaps, otOn: function () { return otOn(); },
+window.__bc = { pieceAcres: pieceAcres, openWaypoint: function (id) { openWaypoint(id); }, parseCoords: parseCoords, spotLink: function (p, n) { return spotLink(p, n); }, spotShown: function () { return spotMk ? spotMk.getLngLat() : null; }, splitGaps: splitGaps, otOn: function () { return otOn(); },
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
   mode: function () { return MODE; }, otMinutes: otMinutes, otConfig: otConfig, otLink: otLink, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
   idleNow: function () { lastMoveAt = 0; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
