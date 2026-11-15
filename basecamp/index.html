@@ -129,7 +129,7 @@ body.in-map #app{height:100%}
 .fab svg{width:26px;height:26px}
 .fab[aria-pressed=true]{background:var(--brand);color:var(--brand-ink)}
 .fab .n{position:absolute;bottom:2px;font:800 9px/1 var(--body);letter-spacing:.05em}
-#compass svg{transition:transform .15s linear}
+#compass svg{width:26px;height:32px;transition:transform .15s linear}
 .mefab{position:absolute;right:10px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:2}
 /* zoom: a slim + / − column just above the location button, within thumb reach */
 .zoomfab{position:absolute;right:12px;bottom:calc(138px + env(safe-area-inset-bottom));z-index:2;display:flex;flex-direction:column;
@@ -1158,7 +1158,9 @@ var ICON = {
   trail: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 17c4-1 2-6 6-7s3-3 4-3" stroke-dasharray="2.5 2.5"/></svg>',
   people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.4"/><path d="M16 14.2c2.8.2 5 2.5 5 5.3"/></svg>',
   me: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3"/></svg>',
-  compass: '<svg viewBox="0 0 24 24"><path d="M12 2.5l4 9.5h-8z" fill="#D63B30"/><path d="M12 21.5l-4-9.5h8z" fill="currentColor" opacity=".55"/></svg>',
+  // N sits above the red (north) tip, and both turn together with the map
+  compass: '<svg viewBox="0 0 24 30"><text x="12" y="7.5" text-anchor="middle" font-size="8" font-weight="800" fill="currentColor" font-family="Figtree,sans-serif">N</text>' +
+    '<path d="M12 9l3.6 9.5h-7.2z" fill="#D63B30"/><path d="M12 28l-3.6-9.5h7.2z" fill="currentColor" opacity=".55"/></svg>',
   show: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/></svg>',
   list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="6" r="2" fill="#E0261B" stroke="none"/><circle cx="5" cy="12" r="2" fill="#E0261B" stroke="none"/><circle cx="5" cy="18" r="2" fill="#E0261B" stroke="none"/><path d="M10 6h10M10 12h10M10 18h10"/></svg>',
   rec: '<svg viewBox="0 0 24 24"><circle class="dotrec" cx="12" cy="12" r="7" fill="currentColor"/></svg>'
@@ -1180,7 +1182,7 @@ function showMap() {
       '<div class="padbar">' +
         '<div class="legend" id="padLegend" hidden></div></div>' +
       '<div class="notes" id="notes"></div></div>' +
-      '<div class="fabs"><button type="button" class="fab" id="compass" aria-label="North up">' + ICON.compass + '<span class="n">N</span></button></div>' +
+      '<div class="fabs"><button type="button" class="fab" id="compass" aria-label="North up">' + ICON.compass + '</button></div>' +
       '<div class="zoomfab"><button type="button" id="zIn" aria-label="Zoom in">+</button><button type="button" id="zOut" aria-label="Zoom out">−</button></div>' +
       '<button type="button" class="fab mefab" id="meBtn" aria-label="Go to my location">' + ICON.me + '</button>' +
       '<nav class="bbar" id="bbar">' +
