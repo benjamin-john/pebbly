@@ -106,6 +106,11 @@ body.in-map #app{height:100%}
 .ibtn svg{width:24px;height:24px}
 #map{position:relative;flex:1;min-height:0;background:#dfe6e2}
 .maplibregl-ctrl-attrib{font-size:11px}
+.spotmk{width:30px;height:30px;border-radius:50%;border:4px solid #1E88E5;background:rgba(30,136,229,.18);box-shadow:0 0 0 2px #fff,0 1px 5px rgba(0,0,0,.5);cursor:pointer;pointer-events:auto}
+.spotmk::after{content:'';display:block;width:6px;height:6px;margin:8px auto 0;border-radius:50%;background:#1E88E5}
+.spotlbl{position:absolute;top:30px;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 12px/1.2 var(--body);color:#1F2A27;
+  background:rgba(255,255,255,.92);border-radius:8px;padding:2px 7px;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+.coordin{font:600 16px/1.3 var(--body)}
 /* dots and waypoints keep their stacking among themselves, always under the map's buttons and bars */
 .maplibregl-canvas-container{isolation:isolate}
 .maplibregl-ctrl-bottom-left{bottom:calc(76px + env(safe-area-inset-bottom));display:flex;flex-direction:column-reverse;align-items:flex-start}
@@ -701,6 +706,12 @@ function route() {
   stopMap();
   var q = new URLSearchParams(location.search), code = (q.get('m') || '').trim().toLowerCase();
   if (!code) { renderHome(); return; }
+  var at = q.get('at') && parseCoords(q.get('at'));
+  if (at) {
+    SHARED = { lat: at.lat, lng: at.lng, name: tidy(q.get('n') || '').slice(0, 60) };
+    q.delete('at'); q.delete('n');
+    try { history.replaceState(null, '', location.pathname + '?' + q.toString()); } catch (e) {}
+  }
   var tok = q.get('o');
   if (tok) {
     setOwner(code, tok.trim()); q.delete('o');
@@ -708,6 +719,7 @@ function route() {
   }
   openSession(code);
 }
+var SHARED = null;                   // a spot from a shared link, shown when the map opens
 function go(code) { history.pushState(null, '', baseUrl() + (code ? '?m=' + code : '')); route(); }
 window.addEventListener('popstate', route);
 
@@ -1220,7 +1232,7 @@ function stopMap() {
   if (REC) stopTrail('leave');
   closeSheet(); closePocket();
   if (MAP) { saveView(); MAP.remove(); MAP = null; }
-  FOLLOW = false; userMoved = false; FIX = null; pick = null;
+  FOLLOW = false; userMoved = false; FIX = null; pick = null; spotMk = null;
   lastSeenPos = {}; lastMoveAt = Date.now();
 }
 function saveView() {
@@ -1237,7 +1249,8 @@ if (window.visualViewport) window.visualViewport.addEventListener('resize', fitH
 
 function initMap() {
   addProtocol();
-  var v = ui().views[CODE], center = [-94.5, 39.5], zoom = 3.5;
+  var v = ui().views[CODE], center = [-94.5, 39.5], zoom = 3.5, shared = SHARED; SHARED = null;
+  if (shared) { v = { c: [shared.lng, shared.lat], z: 16.5 }; userMoved = true; }
   if (v) { center = v.c; zoom = v.z; }
   else {
     var pts = S.waypoints.map(function (w) { return [w.lng, w.lat]; }).concat(S.members.filter(function (m) { return m.lat != null; }).map(function (m) { return [m.lng, m.lat]; }));
@@ -1263,6 +1276,7 @@ function initMap() {
   }
   setLayer(ui().layer || 'sat', true);
   longPress();
+  if (shared) { showSpot(shared); setTimeout(function () { toast((shared.name ? '“' + shared.name + '”' : 'The shared spot') + ' is the blue circle. Tap it for more.'); }, 400); }
 }
 function setLayer(id, quiet) {
   if (!LAYERS[id] || !MAP) return;
@@ -1641,16 +1655,109 @@ function endPick() {
 // Opens the Google Maps app on Android/iPhone (or the website) with a pin there; Google's own Directions button is one tap away.
 function gmapsUrl(p) { return 'https://www.google.com/maps/search/?api=1&query=' + p.lat.toFixed(6) + '%2C' + p.lng.toFixed(6); }
 function gmapsBtn(p) { return '<a class="btn" data-gmaps href="' + gmapsUrl(p) + '" target="_blank" rel="noopener">Open in Google Maps</a>'; }
-function openSpot(ll) {
+// A link to a spot: opens this map there with a blue circle (people not on the map join first). The message also has the
+// coordinates and a Google Maps link, so it's useful to anyone.
+function spotLink(p, name) {
+  return baseUrl() + '?m=' + CODE + '&at=' + p.lat.toFixed(6) + ',' + p.lng.toFixed(6) + (name ? '&n=' + encodeURIComponent(name) : '');
+}
+function shareSpot(p, name) {
+  var url = spotLink(p, name), where = p.lat.toFixed(6) + ', ' + p.lng.toFixed(6);
+  var text = (name ? name : 'A spot') + ' on our Basecamp map “' + S.session.name + '”\n' + where + '\nGoogle Maps: ' + gmapsUrl(p);
+  if (navigator.share) {
+    return navigator.share({ title: name || 'A spot on the map', text: text, url: url }).catch(function (e) {
+      if (e && e.name === 'AbortError') return;
+      copyText(text + '\n' + url).then(function (ok) { toast(ok ? 'Link copied.' : url); });
+    });
+  }
+  return copyText(text + '\n' + url).then(function (ok) { toast(ok ? 'Link copied. Paste it into a text or group chat.' : url); });
+}
+var spotMk = null;
+function showSpot(p) {
+  if (!MAP) return;
+  if (spotMk) spotMk.remove();
+  var el = document.createElement('div');
+  el.className = 'spotmk'; el.setAttribute('role', 'button'); el.setAttribute('aria-label', p.name || 'Marked spot');
+  el.innerHTML = p.name ? '<span class="spotlbl">' + esc(p.name) + '</span>' : '';
+  el.addEventListener('click', function (e) { e.stopPropagation(); openSpot(p, true); });
+  spotMk = new maplibregl.Marker({ element: el, anchor: 'center' }).setLngLat([p.lng, p.lat]).addTo(MAP);
+}
+function clearSpot() { if (spotMk) { spotMk.remove(); spotMk = null; } }
+// Coordinates however people paste them: "45.1452, -94.2734", 45°8'43"N 94°16'24"W, N45 08.716 W094 16.407,
+// or a Google Maps / Apple Maps link that has them in it. Returns {lat, lng} or null.
+function parseCoords(str) {
+  var s = String(str || '').trim(); if (!s) return null;
+  var m = s.match(/@(-?\d{1,2}\.\d+),\s*(-?\d{1,3}\.\d+)/) ||
+    s.match(/[?&](?:q|query|ll|sll|at|destination|daddr|center)=(?:loc:)?(-?\d{1,2}(?:\.\d+)?)\s*(?:,|%2C)\s*(?:%20|\+)*(-?\d{1,3}(?:\.\d+)?)/i) ||
+    s.match(/!3d(-?\d{1,2}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+  if (m) return ok(+m[1], +m[2]);
+  if (/^https?:/i.test(s)) return null;
+  var toks = [], re = /(?<![A-Z])([NSEW])(?![A-Z])|(-?\d+(?:\.\d+)?)/g, t, up = s.toUpperCase();
+  while ((t = re.exec(up))) toks.push(t[1] ? { h: t[1] } : { n: +t[2], neg: t[2].charAt(0) === '-' });
+  var hs = toks.filter(function (x) { return x.h; }), groups = [];
+  if (hs.length === 2) {
+    var prefix = !!toks[0].h, cur = null;
+    toks.forEach(function (x) {
+      if (x.h) { if (prefix) { cur = { h: x.h, n: [] }; groups.push(cur); } else { if (cur) cur.h = x.h; cur = null; } }
+      else { if (!cur) { cur = { n: [] }; groups.push(cur); } cur.n.push(x); }
+    });
+  } else if (!hs.length) {
+    var nums = toks, k = nums.length / 2;
+    if (nums.length % 2 || k < 1 || k > 3) return null;
+    groups = [{ n: nums.slice(0, k) }, { n: nums.slice(k) }];
+  } else return null;
+  if (groups.length !== 2) return null;
+  var vals = groups.map(function (g) {
+    if (!g.n.length || g.n.length > 3) return null;
+    var d = Math.abs(g.n[0].n), mm = g.n[1] ? g.n[1].n : 0, ss = g.n[2] ? g.n[2].n : 0;
+    if (mm >= 60 || ss >= 60 || (g.n.length > 1 && d % 1)) return null;
+    var v = d + mm / 60 + ss / 3600;
+    if (g.n[0].neg || g.h === 'S' || g.h === 'W') v = -v;
+    return { v: v, h: g.h };
+  });
+  if (!vals[0] || !vals[1]) return null;
+  if (vals[0].h === 'E' || vals[0].h === 'W' || vals[1].h === 'N' || vals[1].h === 'S') return ok(vals[1].v, vals[0].v);
+  return ok(vals[0].v, vals[1].v);
+  function ok(lat, lng) { return isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat: lat, lng: lng } : null; }
+}
+function openGoTo() {
+  openSheet('goto', head('🎯 Go to coordinates') +
+    '<p class="hint" style="margin-bottom:12px">Paste or type a spot, like <b>45.1452, -94.2734</b>, <b>45°8′43″N 94°16′24″W</b>, ' +
+      'or a Google Maps link that shows the numbers.</p>' +
+    '<label class="fld"><span>Coordinates</span><input type="text" id="gtIn" class="coordin" inputmode="text" autocomplete="off" spellcheck="false" placeholder="45.1452, -94.2734"></label>' +
+    '<p class="err" id="gtErr" role="alert"></p>' +
+    '<div class="btns">' + (navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="btn" id="gtPaste">Paste</button>' : '') +
+      '<button type="button" class="btn primary" id="gtGo">Go there</button></div>', function (d) {
+    var inp = $('#gtIn', d), err = $('#gtErr', d);
+    function go() {
+      var p = parseCoords(inp.value);
+      if (!p) { err.textContent = /^https?:/i.test(inp.value.trim()) ? 'That link doesn’t have the coordinates in it (short links don’t). Copy the numbers instead.' : 'Those don’t look like coordinates. Try something like 45.1452, -94.2734.'; return; }
+      closeSheet(); showSpot(p); flyTo(p.lat, p.lng);
+      toast('There it is: the blue circle. Tap it to add a waypoint or share it.');
+    }
+    $('#gtGo', d).onclick = go;
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } });
+    inp.addEventListener('input', function () { err.textContent = ''; });
+    if ($('#gtPaste', d)) $('#gtPaste', d).onclick = function () {
+      navigator.clipboard.readText().then(function (t) { inp.value = (t || '').trim().slice(0, 500); if (parseCoords(inp.value)) go(); else inp.focus(); },
+        function () { err.textContent = 'Couldn’t read what you copied. Long-press the box and choose Paste.'; inp.focus(); });
+    };
+    setTimeout(function () { inp.focus(); }, 50);
+  });
+}
+function openSpot(ll, marked) {
   var where = ll.lat.toFixed(5) + ', ' + ll.lng.toFixed(5);
-  openSheet('spot', head('📍 This spot') +
+  openSheet('spot', head('📍 ' + (ll.name ? esc(ll.name) : 'This spot')) +
     '<p class="facts">' + (FIX ? '<b style="color:var(--ink)">' + esc(fmtDist(dist(FIX, ll))) + ' ' + dir8(bearing(FIX, ll)) + '</b> of you · ' : '') + esc(where) + '</p>' +
     '<div class="menu">' +
       '<button type="button" class="btn" id="spAdd"><span>📌 Add a waypoint here</span></button>' +
       '<a class="btn" data-gmaps href="' + gmapsUrl(ll) + '" target="_blank" rel="noopener"><span>🗺️ Open in Google Maps<small>Directions, street view and more</small></span></a>' +
+      '<button type="button" class="btn" id="spShare"><span>🔗 Share this spot<small>Send a link that opens the map right here</small></span></button>' +
       '<button type="button" class="btn" id="spCopy"><span>📋 Copy coordinates<small>' + esc(where) + '</small></span></button>' +
+      (marked ? '<button type="button" class="btn" id="spClear"><span>✕ Remove the blue circle</span></button>' : '') +
     '</div>', function (d) {
-    $('#spAdd', d).onclick = function () { openWaypointEdit(null, ll); };
+    $('#spAdd', d).onclick = function () { openWaypointEdit(null, { lat: ll.lat, lng: ll.lng }); };
+    $('#spShare', d).onclick = function () { shareSpot(ll, ll.name || ''); };
+    if ($('#spClear', d)) $('#spClear', d).onclick = function () { clearSpot(); closeSheet(); };
     $('#spCopy', d).onclick = function () { copyText(where).then(function (ok) { toast(ok ? 'Copied ' + where + '.' : where); }); };
   });
 }
@@ -1800,8 +1907,10 @@ function openWaypoint(id) {
       'Added by ' + esc(ME && w.member === ME.id ? 'you' : by) + (w.at ? ' · ' + esc(fmtWhen(w.at)) : '') + (w.pending ? ' · not sent yet' : '') + '</p>' +
     (w.note ? '<p class="wnote">' + esc(w.note) + '</p>' : '') +
     '<div class="btns"><button type="button" class="btn primary" id="wGo">Show on map</button>' + gmapsBtn(w) +
+      '<button type="button" class="btn" id="wShare">Share</button>' +
       (canEdit(w) ? '<button type="button" class="btn" id="wEdit">Edit</button>' : '') + '</div>', function (d) {
     $('#wGo', d).onclick = function () { closeSheet(); flyTo(w.lat, w.lng); };
+    $('#wShare', d).onclick = function () { shareSpot(w, ((w.icon && w.icon !== '📍' ? w.icon + ' ' : '') + (w.name || 'Waypoint')).slice(0, 60)); };
     if ($('#wEdit', d)) $('#wEdit', d).onclick = function () { openWaypointEdit(w); };
   });
 }
@@ -1957,6 +2066,7 @@ function openMenu() {
       '<button type="button" class="btn" id="mHide"><span>' + (sh ? '🙈 Hide my location<small>Others won’t see where you are</small>' : '📡 Share my location<small>You’re hidden right now</small>') + '</span></button>' +
       '<button type="button" class="btn" id="mOt"><span>📡 Share with the screen off' +
         '<small>' + (S.me && S.me.ot ? 'On, through the OwnTracks app' : 'Keep sharing with the phone in your pocket (free OwnTracks app)') + '</small></span></button>' +
+      '<button type="button" class="btn" id="mGoto"><span>🎯 Go to coordinates<small>Paste a spot someone sent you</small></span></button>' +
       '<button type="button" class="btn" id="mPad"><span>' + (ui().publand ? '🏞️ Hide public land<small>Public land is shown on the map</small>' :
         '🏞️ Show public land<small>Shade federal, state and county land, colored by who manages it</small>') + '</span></button>' +
       '<button type="button" class="btn" id="mOffline"><span>⬇️ Offline maps<small>Download the area so the map works with no signal</small></span></button>' +
@@ -1979,6 +2089,7 @@ function openMenu() {
     $('#mShare', d).onclick = function () { copyText(baseUrl() + '?m=' + CODE).then(function (ok) { toast(ok ? 'Link copied. Paste it into your group chat.' : baseUrl() + '?m=' + CODE); }); };
     $('#mHide', d).onclick = function () { closeSheet(); setSharing(!sh); };
     $('#mOffline', d).onclick = openOffline;
+    $('#mGoto', d).onclick = openGoTo;
     $('#mPad', d).onclick = function () {
       setUi(function (u) { u.publand = !u.publand; }); closeSheet(); updatePad();
       if (ui().publand) padSeen(); else toast('Public land hidden.');
@@ -2275,7 +2386,7 @@ document.addEventListener('visibilitychange', function () {
 });
 window.addEventListener('pagehide', function () { if (screen === 'map' && REC && !otOn()) stopTrail('leave'); saveView(); });
 
-window.__bc = { splitGaps: splitGaps, otOn: function () { return otOn(); },
+window.__bc = { openWaypoint: function (id) { openWaypoint(id); }, parseCoords: parseCoords, spotLink: function (p, n) { return spotLink(p, n); }, spotShown: function () { return spotMk ? spotMk.getLngLat() : null; }, splitGaps: splitGaps, otOn: function () { return otOn(); },
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
   mode: function () { return MODE; }, otMinutes: otMinutes, otConfig: otConfig, otLink: otLink, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
   idleNow: function () { lastMoveAt = 0; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,

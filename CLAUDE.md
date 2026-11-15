@@ -248,6 +248,11 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   red ring and "No word from OwnTracks" in People.
   Waypoint and person sheets have "Open in Google Maps" (`gmapsUrl`: google.com/maps/search/?api=1&query=lat,lng, opens the
   app on phones); long-pressing the map opens a spot sheet (distance, Add a waypoint here, Google Maps, Copy coordinates).
+  Sharing a spot (waypoint sheet "Share", spot sheet "Share this spot"; `shareSpot`): Android share sheet (copy as fallback) with
+  a link `?m=<code>&at=lat,lng&n=name` (opens the map centered there with a blue circle, `showSpot`/`spotMk`; non-members join
+  first; `route` keeps it in `SHARED` and tidies the address), plus coordinates and a Google Maps link in the text for anyone.
+  ☰ More → "Go to coordinates" (`openGoTo`, `parseCoords`): decimal, DMS, degrees+minutes, N/S/E/W before or after, or a map link
+  with the numbers in it (short links can't be read). Spot marker CSS must not set `position` on its root either.
   "Ask for location" (person sheet → `bc_ask`): the person gets a 🔔/phone alert; opening it opens the map, which shares while
   open (a browser can't read location from an alert). Basecamp has a bell in its header and registers the phone with
   `PebblyNotify.feed('basecamp', code, 'guest', memberKey, memberId)`.

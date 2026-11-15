@@ -308,6 +308,54 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('[data-tab=wp]'); await ben.waitForSelector('#wlist [data-wgo]');
   await ben.click('dialog.sheet [data-close]');
 
+  // ---- coordinates, however they're pasted
+  const pc = await ben.evaluate(() => [
+    '45.1452769,-94.2734587', '45.1452 -94.2734', 'Lat: 45.1452, Long: -94.2734', `45°8'43"N 94°16'24"W`, '45° 8.716′ N, 94° 16.407′ W',
+    'N45 08.716 W094 16.407', '94.2734 W 45.1452 N', 'https://www.google.com/maps/place/Lake/@45.1452,-94.2734,17z/data=!3m1',
+    'https://www.google.com/maps/search/?api=1&query=45.1452%2C-94.2734', 'https://maps.apple.com/?ll=45.1452,-94.2734&q=Stand',
+    'hello', '45.1', '95, 10', 'https://maps.app.goo.gl/abc123'].map(t => __bc.parseCoords(t)));
+  const near = (p, lat, lng, tol = 0.0005) => p && Math.abs(p.lat - lat) < tol && Math.abs(p.lng - lng) < tol;
+  check(pc.slice(0, 10).every(p => near(p, 45.1452, -94.2734)), 'coordinates read in every common format: ' + JSON.stringify(pc.slice(0, 10)));
+  check(pc.slice(10).every(p => p === null), 'not coordinates: refused');
+
+  // ---- share a waypoint, share a long-pressed spot (link opens the map there)
+  await ben.evaluate(() => { window.__shared = []; navigator.share = (d) => { window.__shared.push(d); return Promise.resolve(); }; });
+  const wp0 = await ben.evaluate(() => __bc.state().waypoints[0]);
+  await ben.evaluate(id => __bc.openWaypoint(id), wp0.id);
+  await ben.click('#wShare');
+  let sh = await ben.evaluate(() => window.__shared.pop());
+  check(sh && sh.url.includes('?m=' + code) && sh.url.includes('&at=' + wp0.lat.toFixed(6) + ',' + wp0.lng.toFixed(6)) && /&n=/.test(sh.url) &&
+    sh.text.includes(wp0.lat.toFixed(6)) && /google\.com\/maps/.test(sh.text), 'waypoint share: map link, coordinates, Google Maps: ' + JSON.stringify(sh));
+  await ben.click('dialog.sheet [data-close]');
+  await ben.click('#map canvas', { button: 'right', position: { x: 200, y: 300 } });
+  await ben.waitForSelector('#spShare');
+  await ben.click('#spShare');
+  sh = await ben.evaluate(() => window.__shared.pop());
+  check(sh && /&at=-?\d+\.\d{6},-?\d+\.\d{6}$/.test(sh.url), 'long-pressed spot: share link');
+  await ben.click('dialog.sheet [data-close]');
+  const spotUrl = sh.url.replace(/^https?:\/\/[^/]+/, 'http://localhost:' + PORT).replace(/\/basecamp\/\?/, '/basecamp/?') + '&n=Ground%20blind';
+  const at = spotUrl.match(/at=(-?[\d.]+),(-?[\d.]+)/);
+  await amy.goto(spotUrl);
+  await amy.waitForSelector('#map canvas');
+  check(await until(amy, (a) => { const s = __bc.spotShown(), c = __bc.map().getCenter(); return s && Math.abs(s.lat - a[0]) < 1e-5 && Math.abs(c.lat - a[0]) < 1e-4 && Math.abs(c.lng - a[1]) < 1e-4; }, [+at[1], +at[2]], 8000),
+    'opening the link: map centered on the spot, with the blue circle');
+  check(/Ground blind/.test(await amy.textContent('.spotmk')) && !/[?&]at=/.test(amy.url()), 'with its name; link tidied');
+  await shot(amy, 'spot');
+  await amy.click('.spotmk');
+  check(/Ground blind/.test(await amy.textContent('dialog.sheet h2')) && await amy.isVisible('#spClear'), 'tap the circle: spot sheet');
+  await amy.click('#spClear');
+  check(!(await amy.evaluate(() => __bc.spotShown())), 'circle removed');
+
+  // ---- go to pasted coordinates
+  await ben.click('#moreBtn'); await ben.click('#mGoto');
+  await ben.fill('#gtIn', 'nonsense'); await ben.click('#gtGo');
+  check(/don’t look like coordinates/.test(await ben.textContent('#gtErr')), 'bad input: says so');
+  await ben.fill('#gtIn', `45°3'0"N 93°12'0"W`);
+  await shot(ben, 'goto');
+  await ben.click('#gtGo');
+  check(await until(ben, () => { const s = __bc.spotShown(), c = __bc.map().getCenter(); return s && Math.abs(s.lat - 45.05) < 1e-6 && Math.abs(c.lat - 45.05) < 1e-4 && Math.abs(c.lng + 93.2) < 1e-4; }, null, 6000),
+    'Go to coordinates: flies there and marks it');
+
   // ---- dots never cover the buttons: put Amy's dot right under the bottom bar and the zoom buttons
   const covered = await ben.evaluate(() => {
     const m = __bc.map(), amy = __bc.state().members.find(x => x.name === 'Amy'), box = m.getContainer().getBoundingClientRect();
