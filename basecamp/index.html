@@ -64,7 +64,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .fld{display:block;margin-bottom:16px}
 .fld>span,.lbl{display:block;font-weight:600;margin-bottom:6px;font-size:15px}
 .fld small{display:block;color:var(--muted);margin-top:5px;font-size:13px}
-input[type=text],select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font-size:17px}
+input[type=text],input[type=number],select,textarea{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--field);border-radius:10px;background:var(--surface);color:var(--ink);font-size:17px}
 textarea{min-height:80px;resize:vertical}
 .pl-opt{font-weight:400;color:var(--muted)}
 .state{text-align:center;padding:40px 8px}
@@ -111,6 +111,17 @@ body.in-map #app{height:100%}
 .spotlbl{position:absolute;top:30px;left:50%;transform:translateX(-50%);white-space:nowrap;font:700 12px/1.2 var(--body);color:#1F2A27;
   background:rgba(255,255,255,.92);border-radius:8px;padding:2px 7px;max-width:200px;overflow:hidden;text-overflow:ellipsis}
 .coordin{font:600 16px/1.3 var(--body)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:36px;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);font:600 14px/1.2 var(--body);cursor:pointer}
+.chip:active{background:var(--brand-t)}
+.linkbtn{border:0;background:none;padding:4px 2px;color:var(--brand);font-weight:700;font-size:inherit;font-family:var(--body);text-decoration:underline;cursor:pointer;min-height:32px}
+.anl{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:6px}
+.anl label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer}
+.anl input{width:22px;height:22px;margin:2px 0 0;flex:none;accent-color:var(--brand)}
+.anl .ic{font-size:20px;line-height:1.2}
+.anl .tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.anl small{color:var(--muted);font-size:13px;line-height:1.35}
+.anl em.warn{font-style:normal;font-size:12px;color:#B3261E}
 /* dots and waypoints keep their stacking among themselves, always under the map's buttons and bars */
 .maplibregl-canvas-container{isolation:isolate}
 .maplibregl-ctrl-bottom-left{bottom:calc(76px + env(safe-area-inset-bottom));display:flex;flex-direction:column-reverse;align-items:flex-start}
@@ -1781,6 +1792,159 @@ function parseCoords(str) {
   return ok(vals[0].v, vals[1].v);
   function ok(lat, lng) { return isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat: lat, lng: lng } : null; }
 }
+/* ------------------------------------------------------------------ analyze this area (with the person's own AI) */
+// Basecamp writes a prompt about the area on screen; the person pastes it into ChatGPT/Claude/Gemini, then pastes the
+// answer back and the waypoints are added. No AI service is called from here.
+var ICON_MEANING = { '📍': 'general spot', '🚙': 'parking or vehicle', '🦌': 'deer or wildlife', '🪜': 'tree stand or blind', '🏕️': 'campsite',
+  '⛺': 'tent site', '🔥': 'campfire', '🏠': 'building or cabin', '🚻': 'restroom', '🍔': 'food', '🎡': 'attraction', '⭐': 'favorite or best spot',
+  '🚩': 'meeting point or marker', '⚠️': 'hazard or caution', '💧': 'water', '🩸': 'blood trail or tracking', '🅿️': 'parking', '🎯': 'target spot or stand idea' };
+function areaNow() {
+  var b = MAP.getBounds(), n = b.getNorth(), so = b.getSouth(), e = b.getEast(), w = b.getWest();
+  var wide = dist({ lat: (n + so) / 2, lng: w }, { lat: (n + so) / 2, lng: e }), tall = dist({ lat: n, lng: w }, { lat: so, lng: w });
+  return { n: +n.toFixed(5), s: +so.toFixed(5), e: +e.toFixed(5), w: +w.toFixed(5), wide: wide, tall: tall, acres: Math.round(wide * tall / 4046.86) };
+}
+function fmtMiles(m) { var mi = m / 1609.34; return mi < 0.95 ? (Math.round(mi * 10) / 10) + ' mi' : (Math.round(mi * 10) / 10) + ' mi'; }
+function inBox(p, a, pad) {
+  var dy = (a.n - a.s) * (pad || 0), dx = (a.e - a.w) * (pad || 0);
+  return p.lat <= a.n + dy && p.lat >= a.s - dy && p.lng <= a.e + dx && p.lng >= a.w - dx;
+}
+function analyzePrompt(a, what, count) {
+  var c = { lat: ((a.n + a.s) / 2).toFixed(5), lng: ((a.e + a.w) / 2).toFixed(5) };
+  var wps = (S.waypoints || []).filter(function (w) { return inBox(w, a); }).slice(0, 40);
+  var land = [];
+  if (ui().publand && MAP.getLayer('pad-fill')) {
+    var seen = {};
+    MAP.queryRenderedFeatures({ layers: ['pad-fill'] }).forEach(function (f) {
+      var k = (f.properties.Unit_Nm || '') + ' (' + (f.properties.MngNm_Desc || f.properties.MngTp_Desc || '') + ')';
+      if (!seen[k]) { seen[k] = 1; land.push(k); }
+    });
+  }
+  return [
+    'I’m using a map app called Basecamp. Please look at this area and suggest waypoints for: ' + what + '.',
+    '',
+    'The area (what’s on my screen):',
+    '- North edge: ' + a.n + ', South edge: ' + a.s,
+    '- West edge: ' + a.w + ', East edge: ' + a.e,
+    '- Center: ' + c.lat + ', ' + c.lng + ' (about ' + fmtMiles(a.wide) + ' wide by ' + fmtMiles(a.tall) + ' tall, roughly ' + a.acres.toLocaleString() + ' acres)',
+    land.length ? '- Public land on screen: ' + land.slice(0, 15).join('; ') : '',
+    wps.length ? '- Waypoints already there: ' + wps.map(function (w) { return (w.name || 'unnamed') + ' ' + (w.icon || '') + ' at ' + w.lat.toFixed(5) + ', ' + w.lng.toFixed(5); }).join('; ') : '',
+    '',
+    'How to answer:',
+    '- Use satellite or aerial imagery, maps and what you know about this exact place. If you can’t view imagery, say so briefly and use what you know.',
+    count ? '- Give exactly ' + count + ' waypoints.' : '- Give between 1 and 10 waypoints: as many as are genuinely good for this request and this size of area, best first.',
+    '- Every waypoint must be inside the area above, at the exact spot (5 decimal places).',
+    '- For each: a short name (under 40 characters), an icon, and a note (under 300 characters) saying why it’s good and any tips (for hunting: best wind and time of day).',
+    '- Icons, pick the best fit: ' + ICONS.map(function (i) { return i + ' ' + ICON_MEANING[i]; }).join(', ') + '.',
+    '- Respect laws and rules (for example, stay on public land or land the request allows, and away from buildings where required).',
+    '',
+    'End your answer with the waypoints in exactly this JSON format, in a code block:',
+    '```json',
+    '{"waypoints": [{"name": "Short name", "icon": "📍", "lat": 45.12345, "lng": -94.12345, "note": "Why it’s good."}]}',
+    '```'
+  ].filter(function (l, i, all) { return l !== '' || all[i - 1] !== ''; }).join('\n');
+}
+// Waypoints from the AI's answer: the JSON block if there is one, otherwise lines that have coordinates in them.
+function parseAiWaypoints(text) {
+  var t = String(text || ''), list = null;
+  var blocks = t.match(/```(?:json)?\s*([\s\S]*?)```/gi) || [];
+  var cands = blocks.map(function (b) { return b.replace(/```(?:json)?/i, '').replace(/```$/, ''); });
+  var i0 = t.indexOf('{'), i1 = t.lastIndexOf('}'), a0 = t.indexOf('['), a1 = t.lastIndexOf(']');
+  if (i0 >= 0 && i1 > i0) cands.push(t.slice(i0, i1 + 1));
+  if (a0 >= 0 && a1 > a0) cands.push(t.slice(a0, a1 + 1));
+  for (var k = 0; k < cands.length && !list; k++) {
+    try {
+      var j = JSON.parse(cands[k].trim().replace(/[“”]/g, '"'));
+      list = Array.isArray(j) ? j : j && (j.waypoints || j.points || j.spots || j.places || j.locations);
+      if (!Array.isArray(list)) list = null;
+    } catch (e) {}
+  }
+  var out = [];
+  if (list) list.forEach(function (o) {
+    if (!o || typeof o !== 'object') return;
+    var lat = +(o.lat != null ? o.lat : o.latitude), lng = +(o.lng != null ? o.lng : o.lon != null ? o.lon : o.long != null ? o.long : o.longitude);
+    if ((!isFinite(lat) || !isFinite(lng)) && (o.coordinates || o.coords)) { var pc = parseCoords(String(o.coordinates || o.coords)); if (pc) { lat = pc.lat; lng = pc.lng; } }
+    if (!isFinite(lat) || !isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return;
+    out.push({ name: tidy(String(o.name || o.title || o.label || '')).slice(0, 60), icon: ICONS.indexOf(o.icon) >= 0 ? o.icon : '📍',
+      note: String(o.note || o.description || o.notes || o.why || '').trim().slice(0, 500), lat: lat, lng: lng });
+  });
+  else t.split(/\n/).forEach(function (line) {
+    var m = line.match(/(-?\d{1,2}\.\d{3,})\s*[,\s]\s*(-?\d{1,3}\.\d{3,})/); if (!m) return;
+    var p = parseCoords(m[1] + ', ' + m[2]); if (!p) return;
+    var name = tidy(line.slice(0, m.index).replace(/^[\s>*#\-\d.)]+/, '').replace(/[*_`]/g, '').replace(/[:\-–(\s]+$/, '')).slice(0, 60);
+    out.push({ name: name, icon: '📍', note: tidy(line.slice(m.index + m[0].length).replace(/^[)\s:\-–]+/, '').replace(/[*_`]/g, '')).slice(0, 500), lat: p.lat, lng: p.lng });
+  });
+  return out.slice(0, 30);
+}
+function openAnalyze(fresh) {
+  var saved = ui().analyze, st = !fresh && saved && saved.code === CODE && Date.now() - saved.at < 7 * 864e5 ? saved : null;
+  if (!st) {
+    var a = areaNow();
+    if (MAP.getZoom() < 9) { toast('Zoom in to the area you want looked at first.'); return; }
+    st = { code: CODE, area: a, what: '', count: '', at: Date.now(), step: 1 };
+  }
+  var a0 = st.area, EX = ['Whitetail hunting', 'Duck hunting', 'Places to camp', 'Fishing spots', 'Parking and access', 'Scenic spots to hike'];
+  function keep() { setUi(function (u) { u.analyze = st; }); }
+  openSheet('analyze', head('✨ Analyze this area') +
+    '<p class="hint" style="margin-bottom:10px">Get waypoints from your own AI app (ChatGPT, Claude, Gemini…). Basecamp writes the question; you paste the answer back.</p>' +
+    '<p class="facts" id="anArea">Area: what was on your screen, about ' + esc(fmtMiles(a0.wide)) + ' × ' + esc(fmtMiles(a0.tall)) + ' (' + a0.acres.toLocaleString() + ' acres).' +
+      (fresh || !saved || saved.code !== CODE || st !== saved ? '' : ' <button type="button" class="linkbtn" id="anRedo">Use the screen now</button>') + '</p>' +
+    '<p class="sec">1. What should it look for?</p>' +
+    '<label class="fld"><input type="text" id="anWhat" maxlength="200" placeholder="Whitetail hunting" value="' + esc(st.what) + '"></label>' +
+    '<div class="chips" style="margin:-4px 0 10px">' + EX.map(function (x) { return '<button type="button" class="chip" data-ex="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
+    '<label class="fld"><span>How many spots? (optional)</span><input type="number" id="anCount" min="1" max="30" inputmode="numeric" placeholder="Let the AI decide (1 to 10)" value="' + esc(st.count) + '"></label>' +
+    '<div class="btns"><button type="button" class="btn primary" id="anCopy">Copy the question</button></div>' +
+    '<p class="hint" id="anCopied" style="margin-top:8px"' + (st.step > 1 ? '' : ' hidden') + '>Copied. Paste it into your AI app, wait for the answer, then copy the whole answer and come back here.</p>' +
+    '<p class="sec">2. Paste the AI’s answer</p>' +
+    '<label class="fld"><textarea id="anAns" rows="4" placeholder="Paste the whole answer here"></textarea></label>' +
+    '<p class="err" id="anErr" role="alert"></p>' +
+    '<div class="btns">' + (navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="btn" id="anPaste">Paste</button>' : '') +
+      '<button type="button" class="btn primary" id="anRead">Show the waypoints</button></div>' +
+    '<div id="anList"></div>', function (d) {
+    var what = $('#anWhat', d), cnt = $('#anCount', d), ans = $('#anAns', d), err = $('#anErr', d), found = [];
+    $$('[data-ex]', d).forEach(function (b) { b.onclick = function () { what.value = b.dataset.ex; what.focus(); }; });
+    if ($('#anRedo', d)) $('#anRedo', d).onclick = function () { setUi(function (u) { delete u.analyze; }); openAnalyze(true); };
+    $('#anCopy', d).onclick = function () {
+      var w = tidy(what.value); if (!w) { what.focus(); toast('Type what to look for, like “Whitetail hunting”.'); return; }
+      var n = Math.max(0, Math.min(30, parseInt(cnt.value, 10) || 0));
+      st.what = w; st.count = n ? String(n) : ''; st.step = 2; st.at = Date.now(); keep();
+      copyText(analyzePrompt(a0, w, n)).then(function (ok) { $('#anCopied', d).hidden = false; toast(ok ? 'Question copied. Paste it into your AI app.' : 'Couldn’t copy. Try again.'); });
+    };
+    if ($('#anPaste', d)) $('#anPaste', d).onclick = function () {
+      navigator.clipboard.readText().then(function (t) { ans.value = t || ''; read(); }, function () { err.textContent = 'Couldn’t read what you copied. Long-press the box and choose Paste.'; ans.focus(); });
+    };
+    $('#anRead', d).onclick = read;
+    function read() {
+      err.textContent = ''; found = parseAiWaypoints(ans.value);
+      if (!found.length) { $('#anList', d).innerHTML = ''; err.textContent = 'No waypoints found in that. Make sure you copied the whole answer, including the part with the coordinates.'; return; }
+      found.forEach(function (p) { p.out = !inBox(p, a0, 0.25); p.on = !p.out; });
+      draw();
+    }
+    function draw() {
+      var n = found.filter(function (p) { return p.on; }).length;
+      $('#anList', d).innerHTML = '<p class="sec">3. Pick the ones to add</p><ul class="anl">' + found.map(function (p, i) {
+        return '<li><label><input type="checkbox" data-i="' + i + '"' + (p.on ? ' checked' : '') + '><span class="ic">' + esc(p.icon) + '</span><span class="tx"><b>' +
+          esc(p.name || 'Waypoint ' + (i + 1)) + '</b>' + (p.out ? ' <em class="warn">outside the area</em>' : '') + (p.note ? '<small>' + esc(p.note) + '</small>' : '') + '</span></label></li>';
+      }).join('') + '</ul><div class="btns"><button type="button" class="btn primary" id="anAdd"' + (n ? '' : ' disabled') + '>Add ' + n + ' waypoint' + (n === 1 ? '' : 's') + '</button></div>';
+      $$('[data-i]', d).forEach(function (c) { c.onchange = function () { found[+c.dataset.i].on = c.checked; draw(); }; });
+      $('#anAdd', d).onclick = add;
+    }
+    function add() {
+      var pick = found.filter(function (p) { return p.on; }); if (!pick.length) return;
+      var me = (meMember() || {}).name, b = new maplibregl.LngLatBounds();
+      pick.forEach(function (p) {
+        var id = uuid(), data = { name: p.name, icon: p.icon, note: p.note, lat: p.lat, lng: p.lng, ai: true };
+        addOp('bc_waypoint_save', { p_code: CODE, p_member: ME.key, p_owner_token: owner(CODE), p_id: id, p_wp: data }, id, Object.assign({ by: me }, data));
+        b.extend([p.lng, p.lat]);
+      });
+      setUi(function (u) { delete u.analyze; });
+      closeSheet();
+      FOLLOW = false; userMoved = true; renderFabs();
+      if (pick.length > 1) MAP.fitBounds(b, { padding: { top: 90, bottom: 130, left: 50, right: 70 }, maxZoom: 16, duration: 700, bearing: MAP.getBearing() });
+      else flyTo(pick[0].lat, pick[0].lng);
+      toast('Added ' + pick.length + ' waypoint' + (pick.length === 1 ? '' : 's') + '. Tap one to see why, edit or delete it.');
+    }
+  });
+}
 function openGoTo() {
   openSheet('goto', head('🎯 Go to coordinates') +
     '<p class="hint" style="margin-bottom:12px">Paste or type a spot, like <b>45.1452, -94.2734</b>, <b>45°8′43″N 94°16′24″W</b>, ' +
@@ -1960,13 +2124,15 @@ function openMeEdit() {
 
 /* ------------------------------------------------------------------ waypoints */
 function wpById(id) { return allWaypoints().concat(S.waypoints).filter(function (w) { return w.id === id; })[0] || null; }
+// Who a waypoint is from: AI (Analyze this area, added by someone), you, or the person who added it.
+function wpBy(w) { var m = member(w.member); return w.ai ? '✨ AI' : ME && w.member === ME.id ? 'you' : (m ? m.name : w.by || 'someone'); }
 function canEdit(w) { return S.isOwner || (ME && (w.member === ME.id || !w.member && w.pending)); }
 function openWaypoint(id) {
   var w = wpById(id); if (!w) return;
   var m = member(w.member), by = m ? m.name : w.by || 'someone';
   openSheet('wp', head(esc(w.icon || '📍') + ' ' + esc(w.name || 'Waypoint')) +
     '<p class="facts">' + (FIX ? '<b style="color:var(--ink)">' + esc(fmtDist(dist(FIX, w))) + ' ' + dir8(bearing(FIX, w)) + '</b> of you · ' : '') +
-      'Added by ' + esc(ME && w.member === ME.id ? 'you' : by) + (w.at ? ' · ' + esc(fmtWhen(w.at)) : '') + (w.pending ? ' · not sent yet' : '') + '</p>' +
+      (w.ai ? 'From ✨ AI, added by ' + esc(ME && w.member === ME.id ? 'you' : by) : 'Added by ' + esc(ME && w.member === ME.id ? 'you' : by)) + (w.at ? ' · ' + esc(fmtWhen(w.at)) : '') + (w.pending ? ' · not sent yet' : '') + '</p>' +
     (w.note ? '<p class="wnote">' + esc(w.note) + '</p>' : '') +
     '<div class="btns"><button type="button" class="btn primary" id="wGo">Show on map</button>' + gmapsBtn(w) +
       '<button type="button" class="btn" id="wShare">Share</button>' +
@@ -2027,15 +2193,17 @@ function openSaved(tab) {
       '<button type="button" role="tab" data-tab="wp" aria-pressed="' + (tab === 'wp') + '">Waypoints</button>' +
       '<button type="button" role="tab" data-tab="tr" aria-pressed="' + (tab === 'tr') + '">Trails</button></div>' +
     '<div class="btns" style="margin-bottom:12px"><button type="button" class="btn small" data-all="show">Show all</button>' +
-      '<button type="button" class="btn small" data-all="hide">Hide all</button><button type="button" class="btn small" data-all="mine">Only mine</button></div>' +
+      '<button type="button" class="btn small" data-all="hide">Hide all</button><button type="button" class="btn small" data-all="mine">Only mine</button>' +
+      (tab === 'wp' && allWaypoints().some(function (w) { return w.ai; }) ? '<button type="button" class="btn small" data-all="noai">Hide AI</button>' : '') + '</div>' +
     '<div id="wlist"></div>', function (d) {
     $$('[data-tab]', d).forEach(function (b) { b.onclick = function () { closeSheet(); openSaved(b.dataset.tab); }; });
     $$('[data-all]', d).forEach(function (b) {
       b.onclick = function () {
         var how = b.dataset.all, items = tab === 'wp' ? allWaypoints() : allTrails();
         setHidden(tab, function (h) {
+          if (how === 'noai') { items.forEach(function (x) { if (x.ai) h[x.id] = 1; }); return; }   // adds to what's hidden
           Object.keys(h).forEach(function (k) { delete h[k]; });
-          if (how !== 'show') items.forEach(function (x) { if (how === 'hide' || !(ME && x.member === ME.id)) h[x.id] = 1; });
+          if (how !== 'show') items.forEach(function (x) { if (how === 'hide' || !(ME && x.member === ME.id) || x.ai) h[x.id] = 1; });
         });
         renderSaved(d);
       };
@@ -2053,7 +2221,7 @@ function renderWaypointList(d) {
   var shown = list.filter(function (w) { return !h[w.id]; }).length;
   el.innerHTML = '<p class="hint" style="margin:0 0 8px 4px">' + shown + ' of ' + list.length + ' shown on the map' + (FIX ? ' · closest first' : '') + '</p>' +
     '<ul class="list">' + list.map(function (w) {
-      var m = member(w.member), by = ME && w.member === ME.id ? 'you' : (m ? m.name : w.by || 'someone');
+      var by = wpBy(w);
       return '<li class="wrow"><label class="ck"><input type="checkbox" data-wvis="' + w.id + '"' + (h[w.id] ? '' : ' checked') + ' aria-label="Show ' + esc(w.name || 'waypoint') + ' on the map"></label>' +
         '<button type="button" class="row" data-wgo="' + w.id + '" style="padding-left:0"><span class="em">' + esc(w.icon || '📍') + '</span>' +
         '<span class="tx"><b>' + esc(w.name || 'Waypoint') + '</b><small>by ' + esc(by) + (w.pending ? ' · not sent yet' : '') + '</small></span>' + fromMe(w) + '</button></li>';
@@ -2128,6 +2296,7 @@ function openMenu() {
       '<button type="button" class="btn" id="mHide"><span>' + (sh ? '🙈 Hide my location<small>Others won’t see where you are</small>' : '📡 Share my location<small>You’re hidden right now</small>') + '</span></button>' +
       '<button type="button" class="btn" id="mOt"><span>📡 Share with the screen off' +
         '<small>' + (S.me && S.me.ot ? 'On, through the OwnTracks app' : 'Keep sharing with the phone in your pocket (free OwnTracks app)') + '</small></span></button>' +
+      '<button type="button" class="btn" id="mAnalyze"><span>✨ Analyze this area<small>Ask your AI app (ChatGPT, Claude…) for spots here, then add them as waypoints</small></span></button>' +
       '<button type="button" class="btn" id="mGoto"><span>🎯 Go to coordinates<small>Paste a spot someone sent you</small></span></button>' +
       '<button type="button" class="btn" id="mPad"><span>' + (ui().publand ? '🏞️ Hide public land<small>Public land is shown on the map</small>' :
         '🏞️ Show public land<small>Shade federal, state and county land, colored by who manages it</small>') + '</span></button>' +
@@ -2154,6 +2323,7 @@ function openMenu() {
     $('#mHide', d).onclick = function () { closeSheet(); setSharing(!sh); };
     $('#mOffline', d).onclick = openOffline;
     $('#mGoto', d).onclick = openGoTo;
+    $('#mAnalyze', d).onclick = function () { if (!ME) return; openAnalyze(false); };
     $('#mPad', d).onclick = function () {
       setUi(function (u) { u.publand = !u.publand; }); closeSheet(); updatePad();
       if (ui().publand) padSeen(); else toast('Public land hidden.');
@@ -2451,7 +2621,7 @@ document.addEventListener('visibilitychange', function () {
 });
 window.addEventListener('pagehide', function () { if (screen === 'map' && REC && !otOn()) stopTrail('leave'); saveView(); });
 
-window.__bc = { pieceAcres: pieceAcres, openWaypoint: function (id) { openWaypoint(id); }, parseCoords: parseCoords, spotLink: function (p, n) { return spotLink(p, n); }, spotShown: function () { return spotMk ? spotMk.getLngLat() : null; }, splitGaps: splitGaps, otOn: function () { return otOn(); },
+window.__bc = { parseAiWaypoints: parseAiWaypoints, analyzePrompt: function (w, n) { return analyzePrompt(areaNow(), w, n); }, pieceAcres: pieceAcres, openWaypoint: function (id) { openWaypoint(id); }, parseCoords: parseCoords, spotLink: function (p, n) { return spotLink(p, n); }, spotShown: function () { return spotMk ? spotMk.getLngLat() : null; }, splitGaps: splitGaps, otOn: function () { return otOn(); },
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
   mode: function () { return MODE; }, otMinutes: otMinutes, otConfig: otConfig, otLink: otLink, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
   idleNow: function () { lastMoveAt = 0; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,

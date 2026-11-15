@@ -258,6 +258,12 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   first; `route` keeps it in `SHARED` and tidies the address).
   ☰ More → "Go to coordinates" (`openGoTo`, `parseCoords`): decimal, DMS, degrees+minutes, N/S/E/W before or after, or a map link
   with the numbers in it (short links can't be read). Spot marker CSS must not set `position` on its root either.
+  ☰ More → "Analyze this area" (`openAnalyze`): no AI is called from Pebbly. It copies a prompt (`analyzePrompt`: the screen's
+  edges/size, the request, optional count else "1 to 10", public land and waypoints on screen, allowed icons, a fixed JSON format)
+  for the person's own AI app; they paste the answer back, `parseAiWaypoints` reads the JSON (or lines with coordinates), ones
+  outside the area start unticked, and the picked ones are saved with `ai: true` (`bc_waypoints.ai`,
+  `20261120000000_basecamp_ai_waypoints.sql`): shown "by ✨ AI", hidden by "Only mine", and there's a "Hide AI" button. The person who
+  added them owns them. The draft (area, request) waits in `pebbly_basecamp_ui.analyze` while they're in the AI app.
   "Ask for location" (person sheet → `bc_ask`): the person gets a 🔔/phone alert; opening it opens the map, which shares while
   open (a browser can't read location from an alert). Basecamp has a bell in its header and registers the phone with
   `PebblyNotify.feed('basecamp', code, 'guest', memberKey, memberId)`.

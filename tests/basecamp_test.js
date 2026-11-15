@@ -346,6 +346,52 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await amy.click('#spClear');
   check(!(await amy.evaluate(() => __bc.spotShown())), 'circle removed');
 
+  // ---- analyze this area: a prompt for the person's own AI, and its answer back as waypoints
+  const ai = await ben.evaluate(() => {
+    const ans = 'Here are some ideas.\n\n1. **Oak ridge** – great.\n\n```json\n{"waypoints": [{"name": "Oak ridge", "icon": "🪜", "lat": 45.051, "lng": -93.201, "note": "Wind NW."}, {"name": "Bad icon", "icon": "🐻", "latitude": 45.0505, "longitude": -93.2005, "description": "x"}]}\n```';
+    const lines = '1. Creek crossing: 45.05123, -93.20111 (deer cross here)\n2. Ridge top - 45.0498, -93.1987';
+    return { j: __bc.parseAiWaypoints(ans), l: __bc.parseAiWaypoints(lines), none: __bc.parseAiWaypoints('no idea'),
+      p0: __bc.analyzePrompt('Whitetail hunting', 0), p3: __bc.analyzePrompt('Places to camp', 3) };
+  });
+  check(ai.j.length === 2 && ai.j[0].name === 'Oak ridge' && ai.j[0].icon === '🪜' && ai.j[1].icon === '📍' && ai.j[1].lat === 45.0505 && ai.j[1].note === 'x', 'AI answer: JSON block read (icons checked, other key names): ' + JSON.stringify(ai.j));
+  check(ai.l.length === 2 && ai.l[0].name === 'Creek crossing' && /deer cross/.test(ai.l[0].note) && ai.l[1].name === 'Ridge top', 'AI answer without JSON: lines with coordinates: ' + JSON.stringify(ai.l));
+  check(ai.none.length === 0, 'no coordinates: nothing');
+  check(/Whitetail hunting/.test(ai.p0) && /North edge: 45\.\d+/.test(ai.p0) && /between 1 and 10/.test(ai.p0) && /"waypoints"/.test(ai.p0) && /🪜 tree stand/.test(ai.p0), 'prompt: request, edges, 1–10 by default, JSON format, icons');
+  check(/exactly 3 waypoints/.test(ai.p3), 'prompt: a set number when asked');
+  await ben.evaluate(() => { window.__clip = ''; navigator.clipboard.writeText = (t) => { window.__clip = t; return Promise.resolve(); }; });
+  const c0 = await ben.evaluate(() => __bc.map().getCenter());
+  await ben.click('#moreBtn'); await ben.click('#mAnalyze');
+  await ben.click('[data-ex="Places to camp"]');
+  await ben.click('#anCopy');
+  check(await until(ben, () => /Places to camp/.test(window.__clip) && !document.getElementById('anCopied').hidden), 'Copy the question');
+  await ben.click('dialog.sheet [data-close]');
+  await ben.click('#moreBtn'); await ben.click('#mAnalyze');
+  check(await ben.inputValue('#anWhat') === 'Places to camp' && await ben.isVisible('#anRedo'), 'coming back from the AI app: still there');
+  const wpBefore = await ben.evaluate(() => __bc.state().waypoints.length);
+  await ben.fill('#anAns', 'Sure!\n```json\n' + JSON.stringify({ waypoints: [
+    { name: 'Camp A', icon: '🏕️', lat: c0.lat + 0.0005, lng: c0.lng, note: 'Flat and dry.' },
+    { name: 'Camp B', icon: '⛺', lat: c0.lat, lng: c0.lng + 0.0005, note: 'Near water.' },
+    { name: 'Far away', icon: '📍', lat: c0.lat + 2, lng: c0.lng, note: '' }] }) + '\n```');
+  await ben.click('#anRead');
+  check(await ben.locator('.anl li').count() === 3 && /outside the area/.test(await ben.textContent('.anl li:nth-child(3)')) && !(await ben.isChecked('.anl li:nth-child(3) input')), 'answer read; the one outside the area is left unticked');
+  await shot(ben, 'analyze');
+  check((await ben.textContent('#anAdd')) === 'Add 2 waypoints', 'Add 2');
+  await ben.click('#anAdd');
+  check(await until(ben, (n) => __bc.state().waypoints.length === n + 2 && __bc.state().waypoints.some(w => w.name === 'Camp A' && w.icon === '🏕️' && w.note === 'Flat and dry.'), wpBefore, 8000), 'waypoints added for everyone');
+  check(await ben.evaluate(() => !JSON.parse(localStorage.getItem('pebbly_basecamp_ui')).analyze), 'done: starts fresh next time');
+  check(await until(ben, () => __bc.state().waypoints.filter(w => w.ai).length === 2, null, 8000), 'marked as from AI');
+  await ben.click('#wpsBtn');
+  check(/by ✨ AI/.test(await ben.textContent('#wlist')), 'Saved list: “by ✨ AI”');
+  await ben.click('[data-all=mine]');
+  const aiHidden = await ben.evaluate(() => { const h = (JSON.parse(localStorage.getItem('pebbly_basecamp_ui')).hidden.wp || {})[__bc.state().session.code] || {};
+    const ws = __bc.state().waypoints; return { ai: ws.filter(w => w.ai).every(w => h[w.id]), mine: ws.filter(w => !w.ai && w.member === __bc.state().me.id).every(w => !h[w.id]) }; });
+  check(aiHidden.ai && aiHidden.mine, '“Only mine” hides the AI ones: ' + JSON.stringify(aiHidden));
+  await ben.click('[data-all=show]');
+  await ben.click('[data-all=noai]');
+  check(await ben.evaluate(() => { const h = JSON.parse(localStorage.getItem('pebbly_basecamp_ui')).hidden.wp[__bc.state().session.code]; return Object.keys(h).length === 2; }), '“Hide AI” hides just those');
+  await ben.click('[data-all=show]');
+  await ben.click('dialog.sheet [data-close]');
+
   // ---- go to pasted coordinates
   await ben.click('#moreBtn'); await ben.click('#mGoto');
   await ben.fill('#gtIn', 'nonsense'); await ben.click('#gtGo');
