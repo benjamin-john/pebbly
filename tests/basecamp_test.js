@@ -325,7 +325,7 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   await ben.click('#wShare');
   let sh = await ben.evaluate(() => window.__shared.pop());
   check(sh && sh.url.includes('?m=' + code) && sh.url.includes('&at=' + wp0.lat.toFixed(6) + ',' + wp0.lng.toFixed(6)) && /&n=/.test(sh.url) &&
-    sh.text.includes(wp0.lat.toFixed(6)) && /google\.com\/maps/.test(sh.text), 'waypoint share: map link, coordinates, Google Maps: ' + JSON.stringify(sh));
+    Object.keys(sh).join() === 'url', 'waypoint share: just the link: ' + JSON.stringify(sh));
   await ben.click('dialog.sheet [data-close]');
   await ben.click('#map canvas', { button: 'right', position: { x: 200, y: 300 } });
   await ben.waitForSelector('#spShare');

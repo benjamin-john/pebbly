@@ -60,6 +60,8 @@ database for the apps that share data between people. See README.md for the app 
   (outlined) and plain variants. Tap targets ≥ 44px. Always include `[hidden]{display:none !important}`
   (button `display` rules otherwise override `hidden`).
 - Mobile first: works at 360px wide, 16px side padding. Plain, friendly wording; no jargon.
+- Sharing: a share (`navigator.share`, or Copy link) is **just the link**: `navigator.share({ url })`, no title or text,
+  no coordinates or extra lines. Ben has asked for this more than once.
 - Remembered player names are shared across games in localStorage `pebbly_score_memory` (`{players:[], games:[]}`).
 - Game setup screens: Players list (↑ ↓ ✕, chips of remembered names), options, Start. Games keep
   their state in localStorage, have Undo (snapshot stack), and call `keepAwake(true)` while playing.
@@ -249,8 +251,8 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   Waypoint and person sheets have "Open in Google Maps" (`gmapsUrl`: google.com/maps/search/?api=1&query=lat,lng, opens the
   app on phones); long-pressing the map opens a spot sheet (distance, Add a waypoint here, Google Maps, Copy coordinates).
   Sharing a spot (waypoint sheet "Share", spot sheet "Share this spot"; `shareSpot`): Android share sheet (copy as fallback) with
-  a link `?m=<code>&at=lat,lng&n=name` (opens the map centered there with a blue circle, `showSpot`/`spotMk`; non-members join
-  first; `route` keeps it in `SHARED` and tidies the address), plus coordinates and a Google Maps link in the text for anyone.
+  just the link `?m=<code>&at=lat,lng&n=name` (opens the map centered there with a blue circle, `showSpot`/`spotMk`; non-members join
+  first; `route` keeps it in `SHARED` and tidies the address).
   ☰ More → "Go to coordinates" (`openGoTo`, `parseCoords`): decimal, DMS, degrees+minutes, N/S/E/W before or after, or a map link
   with the numbers in it (short links can't be read). Spot marker CSS must not set `position` on its root either.
   "Ask for location" (person sheet → `bc_ask`): the person gets a 🔔/phone alert; opening it opens the map, which shares while

@@ -1655,21 +1655,16 @@ function endPick() {
 // Opens the Google Maps app on Android/iPhone (or the website) with a pin there; Google's own Directions button is one tap away.
 function gmapsUrl(p) { return 'https://www.google.com/maps/search/?api=1&query=' + p.lat.toFixed(6) + '%2C' + p.lng.toFixed(6); }
 function gmapsBtn(p) { return '<a class="btn" data-gmaps href="' + gmapsUrl(p) + '" target="_blank" rel="noopener">Open in Google Maps</a>'; }
-// A link to a spot: opens this map there with a blue circle (people not on the map join first). The message also has the
-// coordinates and a Google Maps link, so it's useful to anyone.
+// A link to a spot: opens this map there with a blue circle (people not on the map join first).
+// Pebbly rule: a share is just the link, no extra text.
 function spotLink(p, name) {
   return baseUrl() + '?m=' + CODE + '&at=' + p.lat.toFixed(6) + ',' + p.lng.toFixed(6) + (name ? '&n=' + encodeURIComponent(name) : '');
 }
 function shareSpot(p, name) {
-  var url = spotLink(p, name), where = p.lat.toFixed(6) + ', ' + p.lng.toFixed(6);
-  var text = (name ? name : 'A spot') + ' on our Basecamp map “' + S.session.name + '”\n' + where + '\nGoogle Maps: ' + gmapsUrl(p);
-  if (navigator.share) {
-    return navigator.share({ title: name || 'A spot on the map', text: text, url: url }).catch(function (e) {
-      if (e && e.name === 'AbortError') return;
-      copyText(text + '\n' + url).then(function (ok) { toast(ok ? 'Link copied.' : url); });
-    });
-  }
-  return copyText(text + '\n' + url).then(function (ok) { toast(ok ? 'Link copied. Paste it into a text or group chat.' : url); });
+  var url = spotLink(p, name);
+  function copy() { return copyText(url).then(function (ok) { toast(ok ? 'Link copied.' : url); }); }
+  if (navigator.share) return navigator.share({ url: url }).catch(function (e) { if (!(e && e.name === 'AbortError')) copy(); });
+  return copy();
 }
 var spotMk = null;
 function showSpot(p) {
