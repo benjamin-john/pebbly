@@ -653,6 +653,37 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
     { input: `select s.name from bc_members m join bc_sessions s on s.id = m.session_id where m.name = 'Ben' and m.lat = 45.112;`, encoding: 'utf8' }).stdout.trim();
   check(r2 === 'Deer camp', 'only Deer camp moved');
 
+  // ---- setting OwnTracks up again doesn't cut off the setup OwnTracks is still using (until it takes the new one)
+  const psqlq = (q) => spawnSync('psql', ['-h', '/tmp/pebbly-pgtest', '-p', '5439', '-U', 'postgres', '-d', process.env.DB || 'basecamp', '-At'], { input: q, encoding: 'utf8' }).stdout.trim();
+  await setVisible(ben, true);
+  await ben.goto(BASE + '?m=' + code);
+  await ben.waitForSelector('#map canvas');
+  await ben.evaluate(() => localStorage.removeItem('pebbly_basecamp_otdev'));         // e.g. a new phone setup, or cleared data
+  await ben.click('#moreBtn'); await ben.click('#mOt');
+  await ben.click('#otGo');
+  await until(ben, () => /^owntracks:/.test(document.getElementById('otGo').getAttribute('href')));
+  const benKey2 = await ben.evaluate(() => JSON.parse(localStorage.getItem('pebbly_basecamp_otdev')).key);
+  check(benKey2 && benKey2 !== benKey, 'a new setup key');
+  await ben.click('dialog.sheet [data-close]');
+  check(await until(ben, () => __bc.state().me.ot_pending === true, null, 8000), 'the map knows OwnTracks hasn’t used the new setup yet');
+  check(!(await ben.evaluate(() => __bc.otOn())), 'so a trail won’t carry on with the screen off');
+  await ben.click('#moreBtn'); await ben.click('#mOt');
+  check(/hasn’t used the new setup yet/.test(await ben.textContent('dialog.sheet')), 'the setup sheet says to tap Import in OwnTracks');
+  await ben.click('dialog.sheet [data-close]');
+  await setVisible(ben, false); leftScreen('Ben');
+  check(owntracks(benKey, { _type: 'location', lat: 45.113, lon: -93.222, acc: 8 }) === 'ok', 'OwnTracks still on the old setup: still shares');
+  check(psqlq(`select s.name from bc_members m join bc_sessions s on s.id = m.session_id where m.name = 'Ben' and m.lat = 45.113;`) === 'Deer camp', '…to the map');
+  check(owntracks(benKey2, { _type: 'location', lat: 45.114, lon: -93.222, acc: 8 }) === 'ok', 'OwnTracks takes the new setup');
+  check(owntracks(benKey, { _type: 'location', lat: 45.115, lon: -93.222, acc: 8 }) === 'ended', 'then the old setup is let go');
+  await setVisible(ben, true);
+  check(await until(ben, () => __bc.state().me.ot_pending === false && __bc.otOn(), null, 8000), 'working again: trails carry on with the screen off');
+
+  // ---- a trail with a long stretch and no points isn't drawn as a straight line across it
+  const parts = await ben.evaluate(() => __bc.splitGaps([[-93.2, 45, 0], [-93.2001, 45.0001, 60000], [-93.21, 45.01, 60000 + 30 * 60000], [-93.2101, 45.0101, 61 * 60000 + 60000]]));
+  check(parts.length === 2 && parts[0].length === 2 && parts[1].length === 2, 'gap: drawn as two pieces');
+  const parts2 = await ben.evaluate(() => __bc.splitGaps([[-93.2, 45, 0], [-93.2001, 45.0001, 30 * 60000]]));
+  check(parts2.length === 1, 'sitting still for a while: still one line');
+
   [ben, amy, carl].forEach((p, i) => check(!p.errs.length, 'page errors on phone ' + i + ': ' + p.errs.join(' | ')));
   console.log(pass + ' passed, ' + fail + ' failed');
   await browser.close();

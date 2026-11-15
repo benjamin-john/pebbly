@@ -1067,7 +1067,11 @@ function onHeading() {
 /* ------------------------------------------------------------------ trails */
 // With screen-off sharing on, the Trail button's trail carries on through OwnTracks when the screen goes off: the server
 // is told which trail is being recorded (bc_ot_follow) and adds OwnTracks' points to it; coming back picks it up again.
-function otOn() { return !!(S && S.me && S.me.ot); }
+// Only when OwnTracks is actually reporting (its new setup taken, a report in the last 90 minutes) does a trail carry on
+// with the screen off; otherwise leaving the screen stops it as usual, so a trail never jumps across a gap.
+var OT_LIVE_MS = 90 * 60000;
+function otSet() { return !!(S && S.me && S.me.ot); }
+function otOn() { return otSet() && !S.me.ot_pending && !!S.me.ot_at && srvNow() - S.me.ot_at < OT_LIVE_MS; }
 var stoppedFollow = null;           // a trail just stopped here (until the server hears, don't pick it back up)
 function startTrail() {
   REC = { id: uuid(), last: null, dist: 0, n: 0, at: Date.now() };
@@ -1083,7 +1087,7 @@ function stopTrail(why) {
   var r = REC; REC = null;
   if (why === 'leave' && otOn()) { renderBar(); renderTrails(); return; }      // OwnTracks carries on with it
   if (why === 'leave') recStoppedByLeave = true;
-  if (otOn()) { stoppedFollow = r.id; addOp('bc_ot_follow', { p_code: CODE, p_member: ME.key, p_trail: null }); }
+  if (otSet()) { stoppedFollow = r.id; addOp('bc_ot_follow', { p_code: CODE, p_member: ME.key, p_trail: null }); }
   renderBar(); renderNotes(); renderTrails(); syncSoon();
   if (why !== 'leave') { var t = trailById(r.id); toast((t ? t.pts.length : r.n) > 1 ? 'Trail saved: ' + fmtDist(t ? trailLength(t.pts) : r.dist) + '.' : 'Trail stopped.'); }
 }
@@ -1525,13 +1529,24 @@ function shownTrails() {
   return allTrails().filter(function (t) { return !h[t.id]; });
 }
 var drawnTrails = 0;
+// A trail with no points for over 10 minutes across more than 150 m: where they went in between isn't known, so don't draw a line.
+function splitGaps(c) {
+  var out = [], cur = [];
+  c.forEach(function (p, i) {
+    var q = c[i - 1];
+    if (q && p[2] && q[2] && p[2] - q[2] > 600000 && dist({ lat: q[1], lng: q[0] }, { lat: p[1], lng: p[0] }) > 150) { out.push(cur); cur = []; }
+    cur.push([p[0], p[1]]);
+  });
+  out.push(cur);
+  return out;
+}
 function renderTrails() {
   if (!MAP || !S || !MAP.getSource('trails')) return;
   var feats = [];
   shownTrails().forEach(function (t) {
-    var c = t.pts.map(function (p) { return [p[2], p[1]]; });
-    if (REC && t.id === REC.id && FIX && c.length) c.push([FIX.lng, FIX.lat]);
-    if (c.length >= 2) feats.push({ type: 'Feature', properties: { color: t.color }, geometry: { type: 'LineString', coordinates: c } });
+    var parts = splitGaps(t.pts.map(function (p) { return [p[2], p[1], p[3]]; }).concat(REC && t.id === REC.id && FIX && t.pts.length ? [[FIX.lng, FIX.lat, srvNow()]] : []));
+    parts = parts.filter(function (q) { return q.length >= 2; });
+    if (parts.length) feats.push({ type: 'Feature', properties: { color: t.color }, geometry: { type: 'MultiLineString', coordinates: parts } });
   });
   drawnTrails = feats.length;
   MAP.getSource('trails').setData({ type: 'FeatureCollection', features: feats });
@@ -2143,6 +2158,8 @@ function openOwnTracks() {
         '<div class="btns" style="width:100%;margin-top:6px"><button type="button" class="btn small" data-ext="today">Through today</button>' +
         '<button type="button" class="btn small" data-ext="3d">3 more days</button><button type="button" class="btn small" data-ext="week">A week</button>' +
         '<button type="button" class="btn small" data-ext="forever">Until I stop</button></div></div>' +
+      (S.me.ot_pending ? '<div class="note warn" style="position:static;margin-bottom:12px"><div class="t"><b>OwnTracks hasn’t used the new setup yet.</b> ' +
+        'Tap “Open OwnTracks setup again” below; when OwnTracks opens, tap <b>Import</b> (or OK) to accept it. ' + (last ? 'Until then, the old setup keeps sharing.' : '') + '</div></div>' : '') +
       (S.me.ot_v === 2 && dev ? '' : '<div class="note warn" style="position:static;margin-bottom:12px"><div class="t"><b>Set up OwnTracks again</b> (button below) so this phone ' +
         'remembers its setup and Pebbly can switch OwnTracks off on its own when sharing ends.</div></div>') : '') +
     (join ? '<div class="note" style="position:static;margin-bottom:12px"><div class="t"><b>OwnTracks is already set up on this phone</b> for your other maps. ' +
@@ -2258,7 +2275,7 @@ document.addEventListener('visibilitychange', function () {
 });
 window.addEventListener('pagehide', function () { if (screen === 'map' && REC && !otOn()) stopTrail('leave'); saveView(); });
 
-window.__bc = {
+window.__bc = { splitGaps: splitGaps, otOn: function () { return otOn(); },
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
   mode: function () { return MODE; }, otMinutes: otMinutes, otConfig: otConfig, otLink: otLink, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
   idleNow: function () { lastMoveAt = 0; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,

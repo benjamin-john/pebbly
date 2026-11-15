@@ -232,6 +232,11 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   other maps join with `bc_ot_link(..., p_device)`. Each report goes to every attached map (`_bc_ot_apply`); a map leaves
   when its `ot_until` passes or on Stop/leave/delete; Quiet only when none is left (the device row is then deleted);
   pace is normal if any of its maps was viewed in 12 h.
+  Setting up again (`20261118000000_basecamp_ot_pending.sql`): the new key only takes over once OwnTracks reports with it; until
+  then the setup OwnTracks is still using keeps feeding the map (`bc_members.ot_prev`), and `me.ot_pending` makes the sheet say
+  to tap Import. (Larry re-ran setup, OwnTracks never imported it, and every report was refused for hours.) The page's `otOn()`
+  (trail carries on with the screen off) needs a report in the last 90 min and no pending setup. Trails are drawn broken where
+  there were no points for 10+ min across 150+ m (`splitGaps`), never a straight line across the gap.
   Tests: `tests/owntracks_test.js` (handler in Node), Basecamp test (flow via psql as service_role).
   Trail hand-off (`20261117020000_basecamp_trail_handoff.sql`): with screen-off sharing on, starting the Trail button tells the
   server the trail id (`bc_ot_follow` → `bc_members.ot_follow`); OwnTracks reports then add to that trail (Basecamp's own
