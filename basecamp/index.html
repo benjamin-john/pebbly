@@ -144,6 +144,7 @@ body.in-map #app{height:100%}
   font-weight:600;font-size:13px;color:var(--ink);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation;padding:2px}
 .bbar button:active{background:var(--brand-t)}
 .bbar svg{width:24px;height:24px}
+.bbar button.off{opacity:.45}
 .bbar button.rec{background:var(--rec);color:#fff}
 .bbar button.rec .dotrec{animation:blink 1.2s infinite}
 @keyframes blink{50%{opacity:.25}}
@@ -363,6 +364,7 @@ var MSG = {
   network: 'Couldn’t reach the server. Check your signal and try again.',
   map_not_found: 'This map doesn’t exist anymore. It may have been deleted.',
   not_member: 'You’re not on this map anymore. Join it again.',
+  map_paused: 'Tracking is paused on this map. The host can resume it from ☰ More.',
   not_owner: 'Only the host can do that.',
   not_allowed: 'Only the person who added it (or the host) can change that.',
   too_many_people: 'This map already has 60 people on it.',
@@ -850,7 +852,10 @@ function renderJoin(note) {
 }
 
 /* ================================================================== syncing */
+// The host paused tracking: nothing is shared (the server ignores locations too); the map, waypoints and trails stay.
+function paused() { return !!(S && S.session && S.session.paused); }
 function posToSend() {
+  if (paused()) return null;
   if (!sharing()) { if (offSent) return null; return { off: true }; }
   if (!FIX) return null;
   var h = headingNow(), now = Date.now(), turned = lastSent && Math.abs(angleDiff(lastSent.heading, h)) >= 12;
@@ -908,9 +913,14 @@ function syncCall(firstTime) {
 function applySync(r) {
   var first = !S || !S.session;
   if (first) S = { rev: -1, since: 0, members: [], waypoints: [], trails: [], pts: {} };
+  var wasPaused = paused();
   S.session = r.session; S.isOwner = !!r.is_owner; S.members = r.members || []; S.offset = (r.now || Date.now()) - Date.now();
   S.me = r.me || null;
   if (S.me && !S.me.ot_follow && stoppedFollow) stoppedFollow = null;
+  if (paused() !== wasPaused && screen === 'map') {
+    if (paused() && REC) { REC = null; renderBar(); renderTrails(); }
+    renderNotes(); renderBar();
+  }
   noteMoves(S.members);
   if (r.waypoints) {
     S.waypoints = r.waypoints;
@@ -980,7 +990,7 @@ function setStatus(st) {
   var who = ppl + (ppl === 1 ? ' person' : ' people');
   el.className = 'sync ' + (st === 'live' ? '' : st);
   el.textContent = st === 'offline' ? (offlineView ? 'No signal · showing what you saw last' : 'No signal' + (n ? ' · ' + n + ' waiting to send' : ' · will keep trying'))
-    : st === 'saving' ? who + ' · sending…' : who + (saver() ? ' · battery saver' : ' · live');
+    : st === 'saving' ? who + ' · sending…' : paused() ? who + ' · tracking paused' : who + (saver() ? ' · battery saver' : ' · live');
 }
 
 // What this phone last saw, for opening the map with no signal.
@@ -1086,6 +1096,7 @@ function otSet() { return !!(S && S.me && S.me.ot); }
 function otOn() { return otSet() && !S.me.ot_pending && !!S.me.ot_at && srvNow() - S.me.ot_at < OT_LIVE_MS; }
 var stoppedFollow = null;           // a trail just stopped here (until the server hears, don't pick it back up)
 function startTrail() {
+  if (paused()) { toast('Tracking is paused on this map, so trails can’t be recorded.'); return; }
   REC = { id: uuid(), last: null, dist: 0, n: 0, at: Date.now() };
   recStoppedByLeave = false; stoppedFollow = null;
   if (FIX) recordPoint();
@@ -1608,7 +1619,7 @@ function renderTrails() {
 }
 function renderBar() {
   var b = $('#trailBtn'); if (!b) return;
-  b.classList.toggle('rec', !!REC);
+  b.classList.toggle('rec', !!REC); b.classList.toggle('off', paused() && !REC);
   b.innerHTML = REC ? ICON.rec + '<span>Stop · ' + esc(fmtDist(REC.dist)) + '</span>' : ICON.trail + '<span>Trail</span>';
   b.setAttribute('aria-label', REC ? 'Stop recording the trail' : 'Record a trail');
 }
@@ -1624,7 +1635,9 @@ function renderNotes() {
   var h = '';
   if (geoErr === 'denied') h += '<div class="note warn"><div class="t"><b>Location is blocked.</b> Others can’t see you. To fix: tap the icon left of the web address (or, in the installed app, long-press the Pebbly icon → App info) → Permissions → Location → Allow. Then reload.</div></div>';
   else if (!FIX && sharing() && geoErr === 'searching') h += '<div class="note"><div class="t">Looking for GPS… Stepping outside helps.</div></div>';
-  if (!sharing()) h += '<div class="note"><div class="t">You’re hidden. Others can’t see where you are.</div><button type="button" class="btn small" data-act="share-on">Share</button></div>';
+  if (paused()) h += '<div class="note"><div class="t"><b>Tracking is paused.</b> Nobody’s location is shared. Waypoints and trails are still here.</div>' +
+    (S.isOwner ? '<button type="button" class="btn small" data-act="resume">Resume</button>' : '') + '</div>';
+  else if (!sharing()) h += '<div class="note"><div class="t">You’re hidden. Others can’t see where you are.</div><button type="button" class="btn small" data-act="share-on">Share</button></div>';
   if (recStoppedByLeave) h += '<div class="note"><div class="t">Your trail stopped when you left Basecamp.</div><button type="button" class="btn small" data-act="trail-again">New trail</button>' +
     '<button type="button" class="btn small" data-act="trail-ok" aria-label="OK">OK</button></div>';
   el.innerHTML = h;
@@ -1633,9 +1646,20 @@ $app.addEventListener('click', function (ev) {
   var b = ev.target.closest('[data-act]'); if (!b) return;
   var a = b.dataset.act;
   if (a === 'share-on') setSharing(true);
+  if (a === 'resume') setPaused(false);
   if (a === 'trail-again') { recStoppedByLeave = false; startTrail(); }
   if (a === 'trail-ok') { recStoppedByLeave = false; renderNotes(); }
 });
+function setPaused(on) {
+  if (on && !confirm('Pause tracking on “' + S.session.name + '”?\n\nNobody’s location will be shared until you resume, and trails stop. ' +
+    'Everyone’s waypoints and trails stay. Screen-off sharing (OwnTracks) is turned off for this map.')) return Promise.resolve();
+  return raw('bc_host', { p_code: CODE, p_owner_token: owner(CODE), p_action: on ? 'pause' : 'resume', p_value: null }).then(function () {
+    S.session.paused = on ? Date.now() : null;
+    if (on && REC) { REC = null; renderTrails(); }
+    closeSheet(); renderNotes(); renderBar(); setStatus(status); S.rev = -1; lastSent = null; syncSoon();
+    toast(on ? 'Tracking paused. Resume it any time from ☰ More.' : 'Tracking is back on. Anyone who used screen-off sharing turns it on again in ☰ More.');
+  }, function (e) { toast(friendly(e)); });
+}
 function setSharing(on) {
   setUi(function (u) { u.sharing[CODE] = !!on; });
   offSent = false; lastSent = null;
@@ -2113,6 +2137,8 @@ function openMenu() {
       '<button type="button" class="btn" id="mMe"><span>🎨 My name and color</span></button>' +
     '</div>' +
     (isOwner ? '<p class="sec">Host tools</p><div class="menu">' +
+      (paused() ? '<button type="button" class="btn" id="hPause"><span>▶️ Resume tracking<small>Paused since ' + esc(fmtWhen(S.session.paused)) + '. Turn location sharing back on.</small></span></button>'
+        : '<button type="button" class="btn" id="hPause"><span>⏸️ Pause tracking<small>Stop everyone’s location sharing, e.g. after the season. Waypoints and trails stay.</small></span></button>') +
       '<button type="button" class="btn" id="hRename"><span>✏️ Rename the map</span></button>' +
       '<button type="button" class="btn" id="hLock"><span>🔒 Password</span></button>' +
       '<button type="button" class="btn" id="hHostLink"><span>🔑 Copy host link<small>Open the host tools on your other devices</small></span></button>' +
@@ -2130,7 +2156,7 @@ function openMenu() {
       setUi(function (u) { u.publand = !u.publand; }); closeSheet(); updatePad();
       if (ui().publand) padSeen(); else toast('Public land hidden.');
     };
-    $('#mOt', d).onclick = openOwnTracks;
+    $('#mOt', d).onclick = function () { if (paused()) toast(MSG.map_paused); else openOwnTracks(); };
     $('#mPocket', d).onclick = function () { closeSheet(); openPocket(); };
     $('#mSaver', d).onclick = function () {
       var on = !saver(); setUi(function (u) { u.saver = on; }); closeSheet(); setStatus(status);
@@ -2149,6 +2175,7 @@ function openMenu() {
       return raw('bc_host', { p_code: CODE, p_owner_token: owner(CODE), p_action: action, p_value: value || null }).then(function () { S.rev = -1; syncSoon(); if (done) done(); },
         function (e) { toast(friendly(e)); });
     }
+    $('#hPause', d).onclick = function () { setPaused(!paused()); };
     $('#hRename', d).onclick = function () {
       var n = prompt('New name for the map', S.session.name); n = tidy(n);
       if (n) host('rename', n, function () { S.session.name = n; renderAll(); closeSheet(); toast('Renamed.'); });

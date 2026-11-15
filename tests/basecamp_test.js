@@ -740,6 +740,27 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   const parts2 = await ben.evaluate(() => __bc.splitGaps([[-93.2, 45, 0], [-93.2001, 45.0001, 30 * 60000]]));
   check(parts2.length === 1, 'sitting still for a while: still one line');
 
+  // ---- host pauses tracking (e.g. after the season): nothing shared, waypoints and trails stay; resume brings it back
+  const wpCount = psqlq(`select count(*) from bc_waypoints w join bc_sessions s on s.id = w.session_id where s.code = '${code}';`);
+  await ben.evaluate(() => window.confirm = () => true);
+  await ben.click('#moreBtn');
+  check(/Pause tracking/.test(await ben.textContent('#hPause')), 'host tools: Pause tracking');
+  await ben.click('#hPause');
+  check(await until(ben, () => /tracking paused/.test(document.getElementById('sync').textContent) && /Tracking is paused/.test(document.getElementById('notes').textContent)), 'paused: status and note');
+  await shot(ben, 'paused');
+  check(psqlq(`select count(*) from bc_members m join bc_sessions s on s.id = m.session_id where s.code = '${code}' and m.lat is not null;`) === '0', 'everyone’s dot is cleared');
+  check(owntracks(benKey2, { _type: 'location', lat: 45.116, lon: -93.222, acc: 8 }) === 'ended', 'screen-off sharing leaves the map (OwnTracks told to go Quiet)');
+  await ben.click('#trailBtn');
+  check(!(await ben.evaluate(() => __bc.rec())), 'no trails while paused');
+  await ben.evaluate(() => __bc.state().session.paused && (window.__fake = 1));
+  await ben.waitForTimeout(4000);
+  check(psqlq(`select count(*) from bc_members m join bc_sessions s on s.id = m.session_id where s.code = '${code}' and m.lat is not null;`) === '0', 'the open map doesn’t share either');
+  check(psqlq(`select count(*) from bc_waypoints w join bc_sessions s on s.id = w.session_id where s.code = '${code}';`) === wpCount && +wpCount > 0, 'waypoints kept');
+  await ben.click('#notes [data-act=resume]');
+  check(await until(ben, () => !/paused/.test(document.getElementById('sync').textContent)), 'Resume (from the note)');
+  check(await until(ben, (c) => true, null, 100) && await (async () => { for (let i = 0; i < 20; i++) { if (psqlq(`select count(*) from bc_members m join bc_sessions s on s.id = m.session_id where s.code = '${code}' and m.name = 'Ben' and m.lat is not null;`) === '1') return true; await ben.waitForTimeout(500); } return false; })(),
+    'resumed: Ben shows on the map again');
+
   [ben, amy, carl].forEach((p, i) => check(!p.errs.length, 'page errors on phone ' + i + ': ' + p.errs.join(' | ')));
   console.log(pass + ' passed, ' + fail + ' failed');
   await browser.close();

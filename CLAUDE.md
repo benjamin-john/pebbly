@@ -202,7 +202,10 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   go up, everyone's locations come back, plus waypoints/trails when `rev` changed and trail points newer than `p_since`
   (point inserts take a per-map advisory lock so ids arrive in order). Waypoint and trail ids are made on the phone, and
   changes wait in `pebbly_basecamp_queue` when there's no signal. Maps are never deleted automatically (Ben's choice: keep
-  people's waypoints); only the host (`bc_host`) or admin removes them. Browsers only share location while the page is on
+  people's waypoints); only the host (`bc_host`) or admin removes them. Instead the host can Pause tracking (☰ More → host tools, `bc_host` 'pause'/'resume',
+  `bc_sessions.paused_at`, `20261119000000_basecamp_pause.sql`): no locations or trail points stored (Basecamp or OwnTracks),
+  dots cleared, everyone's OwnTracks taken off the map, `bc_ot_link`/`bc_ask` refuse `map_paused`; the page (`paused()`) keeps
+  your own dot locally only and greys out Trail. Browsers only share location while the page is on
   screen, so a trail stops when you leave the screen. Map: MapLibre GL JS, vendored in `basecamp/maplibre/` (offline).
   Layers: OpenFreeMap vector "liberty" (Map), USGS ImageryOnly (Satellite) and USGSTopo (Topo), all no-account. Every
   map request goes through the page's `bc://` protocol: tiles come from Cache Storage first (`pebbly-maps` for downloaded
