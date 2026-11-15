@@ -264,6 +264,10 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   outside the area start unticked, and the picked ones are saved with `ai: true` (`bc_waypoints.ai`,
   `20261120000000_basecamp_ai_waypoints.sql`): shown "by ✨ AI", hidden by "Only mine", and there's a "Hide AI" button. The person who
   added them owns them. The draft (area, request) waits in `pebbly_basecamp_ui.analyze` while they're in the AI app.
+  "Save map image" (`captureMap`): turns the map north up, waits for tiles, grabs the map canvas in a `render` event (no
+  preserveDrawingBuffer needed), draws an 8×8 lettered grid with each line's longitude/latitude (from `MAP.unproject`, since
+  latitude lines aren't evenly spaced), the waypoints and a caption with the edges; JPEG download or share sheet (file only).
+  The area then becomes the picture's, and the question describes the grid (`analyzePrompt(..., img)`).
   "Ask for location" (person sheet → `bc_ask`): the person gets a 🔔/phone alert; opening it opens the map, which shares while
   open (a browser can't read location from an alert). Basecamp has a bell in its header and registers the phone with
   `PebblyNotify.feed('basecamp', code, 'guest', memberKey, memberId)`.

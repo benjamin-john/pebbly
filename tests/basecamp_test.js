@@ -362,8 +362,18 @@ const GL = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swifts
   const c0 = await ben.evaluate(() => __bc.map().getCenter());
   await ben.click('#moreBtn'); await ben.click('#mAnalyze');
   await ben.click('[data-ex="Places to camp"]');
+  // map image for the AI: north up, grid with each line's coordinates, saved as a download
+  await ben.evaluate(() => __bc.map().jumpTo({ bearing: 30 }));
+  const [dl] = await Promise.all([ben.waitForEvent('download', { timeout: 15000 }), ben.click('#anImg')]);
+  check(/^basecamp-.+\.jpg$/.test(dl.suggestedFilename()), 'map image downloads: ' + dl.suggestedFilename());
+  const mi = await ben.evaluate(() => __bc.lastMapImage());
+  check(mi && mi.size > 20000 && mi.w > 500 && mi.h > mi.w && mi.grid.cols.length === 9 && mi.grid.rows[0] > mi.grid.rows[8] && mi.grid.cols[0] < mi.grid.cols[8], 'image: real picture, grid lines west→east and north→south: ' + JSON.stringify(mi && { size: mi.size, w: mi.w, h: mi.h }));
+  check(Math.abs(await ben.evaluate(() => __bc.map().getBearing())) < 0.01, 'turned north up for the picture');
+  check(!(await ben.isHidden('#anImgDone')), 'says to attach it');
+  if (SHOTS) await dl.saveAs(SHOTS + '/mapimage.jpg');
   await ben.click('#anCopy');
   check(await until(ben, () => /Places to camp/.test(window.__clip) && !document.getElementById('anCopied').hidden), 'Copy the question');
+  check(await ben.evaluate((g) => /I’ve attached a picture of exactly this area/.test(window.__clip) && window.__clip.includes(String(g.cols[4])) && window.__clip.includes(String(g.rows[4])) && /Base the spots on the attached picture/.test(window.__clip), mi.grid), 'question explains the picture and its grid lines');
   await ben.click('dialog.sheet [data-close]');
   await ben.click('#moreBtn'); await ben.click('#mAnalyze');
   check(await ben.inputValue('#anWhat') === 'Places to camp' && await ben.isVisible('#anRedo'), 'coming back from the AI app: still there');

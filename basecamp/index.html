@@ -1808,7 +1808,7 @@ function inBox(p, a, pad) {
   var dy = (a.n - a.s) * (pad || 0), dx = (a.e - a.w) * (pad || 0);
   return p.lat <= a.n + dy && p.lat >= a.s - dy && p.lng <= a.e + dx && p.lng >= a.w - dx;
 }
-function analyzePrompt(a, what, count) {
+function analyzePrompt(a, what, count, img) {
   var c = { lat: ((a.n + a.s) / 2).toFixed(5), lng: ((a.e + a.w) / 2).toFixed(5) };
   var wps = (S.waypoints || []).filter(function (w) { return inBox(w, a); }).slice(0, 40);
   var land = [];
@@ -1828,9 +1828,16 @@ function analyzePrompt(a, what, count) {
     '- Center: ' + c.lat + ', ' + c.lng + ' (about ' + fmtMiles(a.wide) + ' wide by ' + fmtMiles(a.tall) + ' tall, roughly ' + a.acres.toLocaleString() + ' acres)',
     land.length ? '- Public land on screen: ' + land.slice(0, 15).join('; ') : '',
     wps.length ? '- Waypoints already there: ' + wps.map(function (w) { return (w.name || 'unnamed') + ' ' + (w.icon || '') + ' at ' + w.lat.toFixed(5) + ', ' + w.lng.toFixed(5); }).join('; ') : '',
+    img ? '' : '',
+    img ? 'I’ve attached a picture of exactly this area (north is up; its edges are the edges above). It has a grid of ' + GRID_N + ' columns (A to ' +
+      String.fromCharCode(64 + GRID_N) + ', west to east) and ' + GRID_N + ' rows (1 to ' + GRID_N + ', north to south). Each grid line has its longitude (along the top) ' +
+      'or latitude (down the left side) printed on it: longitudes ' + img.cols.join(', ') + '; latitudes ' + img.rows.join(', ') + '. Red dots are my existing waypoints. ' +
+      'Study the picture closely (woods, water, fields, edges, roads, buildings) and place each spot where it is in the picture, working out its coordinates ' +
+      'from the grid lines around it.' : '',
     '',
     'How to answer:',
-    '- Use satellite or aerial imagery, maps and what you know about this exact place. If you can’t view imagery, say so briefly and use what you know.',
+    img ? '- Base the spots on the attached picture first, plus what you know about this place.' :
+      '- Use satellite or aerial imagery, maps and what you know about this exact place. If you can’t view imagery, say so briefly and use what you know.',
     count ? '- Give exactly ' + count + ' waypoints.' : '- Give between 1 and 10 waypoints: as many as are genuinely good for this request and this size of area, best first.',
     '- Every waypoint must be inside the area above, at the exact spot (5 decimal places).',
     '- For each: a short name (under 40 characters), an icon, and a note (under 300 characters) saying why it’s good and any tips (for hunting: best wind and time of day).',
@@ -1842,6 +1849,83 @@ function analyzePrompt(a, what, count) {
     '{"waypoints": [{"name": "Short name", "icon": "📍", "lat": 45.12345, "lng": -94.12345, "note": "Why it’s good."}]}',
     '```'
   ].filter(function (l, i, all) { return l !== '' || all[i - 1] !== ''; }).join('\n');
+}
+// A picture of the map for the AI: north up, exactly the screen's area, a lettered grid with each line's latitude or
+// longitude printed on it, the corner coordinates and the waypoints. Taken from the map's own drawing (no screenshot needed).
+var GRID_N = 8, lastMapImage = null;
+function gridLines(a) {
+  // the latitude/longitude of each grid line, from the map itself (latitude lines aren't evenly spaced on a web map)
+  var c = MAP.getCanvas(), w = c.clientWidth, h = c.clientHeight, cols = [], rows = [];
+  for (var i = 0; i <= GRID_N; i++) {
+    cols.push(+MAP.unproject([w * i / GRID_N, h / 2]).lng.toFixed(5));
+    rows.push(+MAP.unproject([w / 2, h * i / GRID_N]).lat.toFixed(5));
+  }
+  return { cols: cols, rows: rows };
+}
+function captureMap() {
+  return new Promise(function (resolve, reject) {
+    var was = MAP.getBearing(), done = false, timer;
+    function shoot() {
+      if (done) return; done = true; clearTimeout(timer);
+      MAP.once('render', function () {
+        try { resolve(compose()); } catch (e) { reject(e); }
+        if (Math.abs(was) > 0.5 && MODE === 'heading') MAP.jumpTo({ bearing: was });
+      });
+      MAP.triggerRepaint();
+    }
+    if (Math.abs(was) > 0.5) { FOLLOW = false; renderFabs(); MAP.jumpTo({ bearing: 0 }); }
+    if (Math.abs(was) <= 0.5 && MAP.areTilesLoaded()) shoot();
+    else { MAP.once('idle', shoot); timer = setTimeout(shoot, 8000); }
+  });
+  function compose() {
+    var src = MAP.getCanvas(), W = src.width, H = src.height, k = W / src.clientWidth, band = Math.round(52 * k);
+    var a = areaNow(), g = gridLines(a), out = document.createElement('canvas');
+    out.width = W; out.height = H + band;
+    var x = out.getContext('2d');
+    x.drawImage(src, 0, 0);
+    x.lineWidth = Math.max(1, k); x.strokeStyle = 'rgba(255,255,255,.7)';
+    x.textBaseline = 'top'; x.lineJoin = 'round';
+    function label(t, px, py, size, align) {
+      x.font = '700 ' + Math.round(size * k) + 'px Figtree, sans-serif'; x.textAlign = align || 'left';
+      x.lineWidth = Math.max(2, 3 * k); x.strokeStyle = 'rgba(0,0,0,.75)'; x.strokeText(t, px, py);
+      x.fillStyle = '#fff'; x.fillText(t, px, py); x.lineWidth = Math.max(1, k); x.strokeStyle = 'rgba(255,255,255,.7)';
+    }
+    for (var i = 1; i < GRID_N; i++) {
+      var gx = Math.round(W * i / GRID_N) + .5, gy = Math.round(H * i / GRID_N) + .5;
+      x.beginPath(); x.moveTo(gx, 0); x.lineTo(gx, H); x.stroke();
+      x.beginPath(); x.moveTo(0, gy); x.lineTo(W, gy); x.stroke();
+      label(String(g.cols[i]), gx + 3 * k, 4 * k, 10, 'left');
+      label(String(g.rows[i]), 4 * k, gy + 3 * k, 10, 'left');
+    }
+    for (var c = 0; c < GRID_N; c++) label(String.fromCharCode(65 + c), W * (c + .5) / GRID_N, 18 * k, 16, 'center');
+    for (var r = 0; r < GRID_N; r++) label(String(r + 1), 6 * k, H * (r + .5) / GRID_N - 8 * k, 16, 'left');
+    // waypoints already on the map
+    visibleWaypoints().forEach(function (w) {
+      if (!inBox(w, a)) return;
+      var p = MAP.project([w.lng, w.lat]), px = p.x * k, py = p.y * k;
+      x.beginPath(); x.arc(px, py, 5 * k, 0, 2 * Math.PI); x.fillStyle = '#D63B30'; x.fill(); x.lineWidth = 2 * k; x.strokeStyle = '#fff'; x.stroke();
+      if (w.name) label(w.name.slice(0, 24), px + 8 * k, py - 7 * k, 11, 'left');
+    });
+    // caption: the edges of the picture
+    x.fillStyle = '#1F2A27'; x.fillRect(0, H, W, band);
+    x.fillStyle = '#fff'; x.textAlign = 'left'; x.textBaseline = 'middle';
+    x.font = '700 ' + Math.round(13 * k) + 'px Figtree, sans-serif';
+    x.fillText('North is up · about ' + fmtMiles(a.wide) + ' wide × ' + fmtMiles(a.tall) + ' tall · Basecamp', 8 * k, H + band * 0.3);
+    x.font = '600 ' + Math.round(12 * k) + 'px Figtree, sans-serif';
+    x.fillText('Edges: N ' + a.n + '  S ' + a.s + '  W ' + a.w + '  E ' + a.e, 8 * k, H + band * 0.72);
+    return new Promise(function (res) {
+      out.toBlob(function (blob) { lastMapImage = { blob: blob, w: out.width, h: out.height, area: a, grid: g }; res(lastMapImage); }, 'image/jpeg', 0.9);
+    });
+  }
+}
+function mapImageName() {
+  var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+  return 'basecamp-' + CODE + '-' + d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + '-' + z(d.getHours()) + z(d.getMinutes()) + '.jpg';
+}
+function saveBlob(blob, name) {
+  var url = URL.createObjectURL(blob), el = document.createElement('a');
+  el.href = url; el.download = name; document.body.appendChild(el); el.click(); el.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
 }
 // Waypoints from the AI's answer: the JSON block if there is one, otherwise lines that have coordinates in them.
 function parseAiWaypoints(text) {
@@ -1886,15 +1970,22 @@ function openAnalyze(fresh) {
   function keep() { setUi(function (u) { u.analyze = st; }); }
   openSheet('analyze', head('✨ Analyze this area') +
     '<p class="hint" style="margin-bottom:10px">Get waypoints from your own AI app (ChatGPT, Claude, Gemini…). Basecamp writes the question; you paste the answer back.</p>' +
-    '<p class="facts" id="anArea">Area: what was on your screen, about ' + esc(fmtMiles(a0.wide)) + ' × ' + esc(fmtMiles(a0.tall)) + ' (' + a0.acres.toLocaleString() + ' acres).' +
+    '<p class="facts" id="anArea"><span>Area: what was on your screen, about ' + esc(fmtMiles(a0.wide)) + ' × ' + esc(fmtMiles(a0.tall)) + ' (' + a0.acres.toLocaleString() + ' acres).</span>' +
       (fresh || !saved || saved.code !== CODE || st !== saved ? '' : ' <button type="button" class="linkbtn" id="anRedo">Use the screen now</button>') + '</p>' +
     '<p class="sec">1. What should it look for?</p>' +
     '<label class="fld"><input type="text" id="anWhat" maxlength="200" placeholder="Whitetail hunting" value="' + esc(st.what) + '"></label>' +
     '<div class="chips" style="margin:-4px 0 10px">' + EX.map(function (x) { return '<button type="button" class="chip" data-ex="' + esc(x) + '">' + esc(x) + '</button>'; }).join('') + '</div>' +
     '<label class="fld"><span>How many spots? (optional)</span><input type="number" id="anCount" min="1" max="30" inputmode="numeric" placeholder="Let the AI decide (1 to 10)" value="' + esc(st.count) + '"></label>' +
+    '<p class="sec">2. Save a map image <span style="text-transform:none;letter-spacing:0;font-weight:600">(recommended)</span></p>' +
+    '<p class="hint" style="margin-bottom:8px">AI apps can’t see the map on their own. Attach this picture with the question and the spots come from what’s really there. ' +
+      'Tip: switch to Satellite (and turn on public land) first.</p>' +
+    '<div class="btns"><button type="button" class="btn" id="anImg">🖼️ Save map image</button>' +
+      (navigator.canShare && window.File ? '<button type="button" class="btn" id="anImgShare">Send image to an app</button>' : '') + '</div>' +
+    '<p class="hint" id="anImgDone" style="margin-top:8px"' + (st.img ? '' : ' hidden') + '>Image saved. Attach it in your AI app along with the question.</p>' +
+    '<p class="sec">3. Copy the question</p>' +
     '<div class="btns"><button type="button" class="btn primary" id="anCopy">Copy the question</button></div>' +
-    '<p class="hint" id="anCopied" style="margin-top:8px"' + (st.step > 1 ? '' : ' hidden') + '>Copied. Paste it into your AI app, wait for the answer, then copy the whole answer and come back here.</p>' +
-    '<p class="sec">2. Paste the AI’s answer</p>' +
+    '<p class="hint" id="anCopied" style="margin-top:8px"' + (st.step > 1 ? '' : ' hidden') + '>Copied. Paste it into your AI app' + (st.img ? ' with the map image attached' : '') + ', wait for the answer, then copy the whole answer and come back here.</p>' +
+    '<p class="sec">4. Paste the AI’s answer</p>' +
     '<label class="fld"><textarea id="anAns" rows="4" placeholder="Paste the whole answer here"></textarea></label>' +
     '<p class="err" id="anErr" role="alert"></p>' +
     '<div class="btns">' + (navigator.clipboard && navigator.clipboard.readText ? '<button type="button" class="btn" id="anPaste">Paste</button>' : '') +
@@ -1907,7 +1998,31 @@ function openAnalyze(fresh) {
       var w = tidy(what.value); if (!w) { what.focus(); toast('Type what to look for, like “Whitetail hunting”.'); return; }
       var n = Math.max(0, Math.min(30, parseInt(cnt.value, 10) || 0));
       st.what = w; st.count = n ? String(n) : ''; st.step = 2; st.at = Date.now(); keep();
-      copyText(analyzePrompt(a0, w, n)).then(function (ok) { $('#anCopied', d).hidden = false; toast(ok ? 'Question copied. Paste it into your AI app.' : 'Couldn’t copy. Try again.'); });
+      copyText(analyzePrompt(a0, w, n, st.img)).then(function (ok) { $('#anCopied', d).hidden = false; toast(ok ? 'Question copied. Paste it into your AI app.' : 'Couldn’t copy. Try again.'); });
+    };
+    function makeImage(btn) {
+      if (btn.disabled) return Promise.reject(new Error('busy'));
+      btn.disabled = true; var label = btn.textContent; btn.textContent = 'Making the image…';
+      return captureMap().then(function (im) {
+        btn.disabled = false; btn.textContent = label;
+        var moved = Math.abs(im.area.n - a0.n) > 1e-5 || Math.abs(im.area.w - a0.w) > 1e-5 || Math.abs(im.area.s - a0.s) > 1e-5 || Math.abs(im.area.e - a0.e) > 1e-5;
+        a0 = st.area = im.area; st.img = im.grid; st.at = Date.now();
+        if (moved && st.step > 1) { st.step = 1; $('#anCopied', d).hidden = true; toast('The area changed to match the picture. Copy the question again.'); }
+        keep();
+        $('#anArea', d).firstChild.textContent = 'Area: what’s in the picture, about ' + fmtMiles(a0.wide) + ' × ' + fmtMiles(a0.tall) + ' (' + a0.acres.toLocaleString() + ' acres).';
+        $('#anImgDone', d).hidden = false;
+        return im;
+      }, function (e) { btn.disabled = false; btn.textContent = label; toast('Couldn’t make the image. Try again.'); throw e; });
+    }
+    $('#anImg', d).onclick = function () {
+      makeImage(this).then(function (im) { saveBlob(im.blob, mapImageName()); toast('Map image saved to your downloads.'); }, function () {});
+    };
+    if ($('#anImgShare', d)) $('#anImgShare', d).onclick = function () {
+      makeImage(this).then(function (im) {
+        var f = new File([im.blob], mapImageName(), { type: 'image/jpeg' });
+        if (navigator.canShare({ files: [f] })) return navigator.share({ files: [f] }).catch(function () {});
+        saveBlob(im.blob, f.name); toast('Map image saved to your downloads.');
+      }, function () {});
     };
     if ($('#anPaste', d)) $('#anPaste', d).onclick = function () {
       navigator.clipboard.readText().then(function (t) { ans.value = t || ''; read(); }, function () { err.textContent = 'Couldn’t read what you copied. Long-press the box and choose Paste.'; ans.focus(); });
@@ -2621,7 +2736,7 @@ document.addEventListener('visibilitychange', function () {
 });
 window.addEventListener('pagehide', function () { if (screen === 'map' && REC && !otOn()) stopTrail('leave'); saveView(); });
 
-window.__bc = { parseAiWaypoints: parseAiWaypoints, analyzePrompt: function (w, n) { return analyzePrompt(areaNow(), w, n); }, pieceAcres: pieceAcres, openWaypoint: function (id) { openWaypoint(id); }, parseCoords: parseCoords, spotLink: function (p, n) { return spotLink(p, n); }, spotShown: function () { return spotMk ? spotMk.getLngLat() : null; }, splitGaps: splitGaps, otOn: function () { return otOn(); },
+window.__bc = { lastMapImage: function () { return lastMapImage && { size: lastMapImage.blob.size, w: lastMapImage.w, h: lastMapImage.h, grid: lastMapImage.grid }; }, parseAiWaypoints: parseAiWaypoints, analyzePrompt: function (w, n) { return analyzePrompt(areaNow(), w, n); }, pieceAcres: pieceAcres, openWaypoint: function (id) { openWaypoint(id); }, parseCoords: parseCoords, spotLink: function (p, n) { return spotLink(p, n); }, spotShown: function () { return spotMk ? spotMk.getLngLat() : null; }, splitGaps: splitGaps, otOn: function () { return otOn(); },
   state: function () { return S; }, map: function () { return MAP; }, fix: function () { return FIX; }, rec: function () { return REC; },
   mode: function () { return MODE; }, otMinutes: otMinutes, otConfig: otConfig, otLink: otLink, syncEvery: function () { return syncEvery(); }, seenMax: SEEN_MAX,
   idleNow: function () { lastMoveAt = 0; }, padShown: function () { return padShown; }, drawnTrails: function () { return drawnTrails; }, fromPhone: function () { return fromPhone; }, heading: headingNow, queue: function () { return queue(CODE); }, areas: areas,
