@@ -444,7 +444,7 @@ function relTime(ts) {
   if (s < 3600) return Math.floor(s / 60) + ' min ago';
   if (s < 86400) return Math.floor(s / 3600) + ' h ago';
   if (s < 6 * 86400) return d.toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  return fmtStampTime(ts);
 }
 
 /* -------------------------------------------------------------------- api */
@@ -1409,7 +1409,7 @@ function renderMe() {
 // Once you've replied (going or maybe): point to the bring list until you've signed up for something on it.
 function bringNudge() {
   var ev = S.ev, m = S.me;
-  if (S.isOwner || !m || m.status === 'no' || ev.bring_list === false || timing(ev).state === 'past') return '';
+  if (S.isOwner || !m || m.status === 'no' || ev.bring_list === false) return '';
   if (S.items.some(function (i) { return i.claims.some(function (c) { return c.mine; }); })) return '';
   var open = S.items.filter(function (i) { return !(i.needed > 0 && i.claims.length >= i.needed); }).length;
   if (!open && !ev.guests_add_items) return '';
