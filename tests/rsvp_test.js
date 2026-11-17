@@ -157,10 +157,16 @@ async function bridge(ctx) {
   check((await ana.textContent('.myans')).includes('You’re going +2'), 'ana summary');
   check((await ana.textContent('.counts')).includes('3 going (incl. 2 plus-ones)'), 'counts include plus-ones');
   check((await ana.textContent('#guests')).includes('Ana') && (await ana.textContent('#guests')).includes('(you)'), 'ana in list');
+  // bring-list reminder after replying, until something is claimed
+  check(await ana.locator('.bringnudge').isVisible(), 'bring-list reminder after RSVP');
+  await ana.click('[data-act=to-bring]');
+  await ana.waitForTimeout(800);
+  check(await ana.evaluate(() => { const r = document.querySelector('#bring').getBoundingClientRect(); return r.top >= 0 && r.top < innerHeight / 2; }), 'reminder scrolls to bring list');
   // claim + add item
   await ana.click('.item:has-text("Chips") [data-act=claim]');
   await ana.waitForSelector('.item:has-text("Chips") .cb[aria-pressed=true]');
   check(true, 'chips claimed');
+  check(!(await ana.locator('.bringnudge').count()), 'reminder gone once bringing something');
   await ana.fill('#newItem', 'Ice');
   await ana.click('#itemForm button');
   await ana.waitForSelector('.item:has-text("Ice") .cb[aria-pressed=true]');

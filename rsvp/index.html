@@ -14,7 +14,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --brand:#2F7A63;
+  --bg:#F4F6F5; --surface:#FFFFFF; --ink:#1F2A27; --muted:#5D6B66; --line:#DDE4E1; --brand:#2F7A63; --brand-t:#E6F2ED;
   --go:#2E8B57; --go-t:#DCEFE3; --maybe:#B7860B; --maybe-t:#FBF0CC; --no:#CC423D; --no-t:#F6DAD8; --gold-t:#FBF0CC;
   --head:"Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -36,6 +36,12 @@ button,input,textarea,select{font:inherit;color:inherit}
 .alertoffer{margin-top:14px;padding:12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:15px}
 .alertoffer b{display:block;margin-bottom:2px}
 .alertoffer .tools{margin-top:10px}
+.bringnudge{margin-top:14px;padding:12px;border-radius:12px;border:1px solid var(--brand);background:var(--surface);font-size:15px}
+.bringnudge b{display:block;margin-bottom:2px}
+.bringnudge .tools{margin-top:10px}
+#bring.flash{animation:bringflash 1.6s ease-out}
+#bring{scroll-margin-top:16px;border-radius:12px}
+@keyframes bringflash{0%,40%{background:var(--brand-t);box-shadow:0 0 0 8px var(--brand-t)}100%{background:transparent;box-shadow:0 0 0 8px transparent}}
 .annsent{margin-top:12px;padding:12px;border-radius:12px;background:var(--go-t);font-size:15px}
 .annsent .btn{margin-top:8px}
 .banner{background:var(--gold-t);border:1px solid #E5CB6B;border-radius:10px;padding:10px 12px;margin-bottom:16px;font-size:14px}
@@ -1392,12 +1398,24 @@ function renderMe() {
     el.innerHTML = '<div class="myans"><span class="e" aria-hidden="true">' + st.e + '</span><div><b>' + esc(st.you) + (m.status !== 'no' && m.plus_ones ? ' +' + m.plus_ones : '') + '</b>' +
       '<span class="sub" style="display:block">as ' + esc(m.name) + (m.note ? ' · “' + esc(m.note) + '”' : '') + '</span>' + ansHtml + '</div></div>' +
       (canEdit ? '<div class="tools"><button type="button" class="btn small" data-act="rsvp-change">Change RSVP</button></div>' : '') + deadline +
-      '<div id="alertOffer"></div>';
+      bringNudge() + '<div id="alertOffer"></div>';
     offerAlerts();
     return;
   }
   if (!canEdit) { el.innerHTML = '<h2>RSVPs are closed</h2>' + deadline + '<p class="hint" style="margin-top:6px">Contact the host if your plans change.</p>'; return; }
   el.innerHTML = '<h2>Will you be there?</h2>' + statusButtons(null) + deadline;
+}
+
+// Once you've replied (going or maybe): point to the bring list until you've signed up for something on it.
+function bringNudge() {
+  var ev = S.ev, m = S.me;
+  if (S.isOwner || !m || m.status === 'no' || ev.bring_list === false || timing(ev).state === 'past') return '';
+  if (S.items.some(function (i) { return i.claims.some(function (c) { return c.mine; }); })) return '';
+  var open = S.items.filter(function (i) { return !(i.needed > 0 && i.claims.length >= i.needed); }).length;
+  if (!open && !ev.guests_add_items) return '';
+  return '<div class="bringnudge"><p><b>🧺 Can you bring something?</b>' +
+    (open ? 'The host has a bring list' + (open > 1 ? ' with ' + open + ' things still needed.' : ' with something still needed.') : 'The host has a bring list. You can add what you’ll bring.') + '</p>' +
+    '<div class="tools"><button type="button" class="btn small primary" data-act="to-bring">See the bring list ↓</button></div></div>';
 }
 
 // Once you've replied: offer phone alerts, so announcements reach this phone even with the page closed (notify.js).
@@ -1940,6 +1958,7 @@ $app.addEventListener('click', function (e) {
       break;
     case 'item-edit': var it = itemById(id); if (it) { S.editingItem = id; S.editItemText = it.label; S.editItemNeeded = it.needed; renderBring(); var ie = $('#itemEdit'); if (ie) ie.focus(); } break;
     case 'item-edit-cancel': S.editingItem = null; renderBring(); break;
+    case 'to-bring': var bl = $('#bring'); if (bl) { bl.scrollIntoView({ behavior: 'smooth', block: 'start' }); bl.classList.remove('flash'); void bl.offsetWidth; bl.classList.add('flash'); } break;
     case 'item-rm':
       var ri = itemById(id);
       if (ri && confirm('Remove “' + ri.label + '” from the bring list?')) after(api.removeItem({ code: S.code, pid: S.pid, owner: S.owner, item: id }), 'Removed.');
