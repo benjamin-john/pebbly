@@ -239,7 +239,7 @@ async function bridge(ctx) {
   const [csvDl] = await Promise.all([host.waitForEvent('download'), host.click('[data-act=dl][data-id=guests]')]);
   const csv = require('fs').readFileSync(await csvDl.path(), 'utf8');
   check(csvDl.suggestedFilename() === 'fall-cookout-responses.csv', 'csv name ' + csvDl.suggestedFilename());
-  check(csv.startsWith('\ufeff"First name","Last name","Phone","Response"') && csv.includes('"Any allergies?"') && csv.includes('"Ana","Lee","(612) 978-6322","Maybe","2","3","Can’t wait!","peanuts"'), 'responses csv: ' + csv.slice(0, 300));
+  check(csv.startsWith('\ufeff"First name","Last name","Phone","Response"') && csv.includes('"Any allergies?"') && csv.includes('"Ana","Lee","(612) 978-6322","Maybe","2","","3","Can’t wait!","peanuts"'), 'responses csv: ' + csv.slice(0, 300));
   const [zipDl] = await Promise.all([host.waitForEvent('download'), host.click('[data-act=dl][data-id=all]')]);
   const zipPath = await zipDl.path();
   const listing = require('child_process').execFileSync('python3', ['-I', '-c',

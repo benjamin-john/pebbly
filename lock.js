@@ -13,7 +13,7 @@
 //   host:     PebblyLock.openHost({ app, code, owner, raw, what })
 (function () {
   var GATED = {
-    rsvp: ['rsvp_get', 'rsvp_respond', 'rsvp_post', 'rsvp_delete_post', 'rsvp_item_add', 'rsvp_item_edit', 'rsvp_item_remove', 'rsvp_item_claim'],
+    rsvp: ['rsvp_get', 'rsvp_respond', 'rsvp_post', 'rsvp_delete_post', 'rsvp_item_add', 'rsvp_item_edit', 'rsvp_item_remove', 'rsvp_item_claim', 'rsvp_plus_names', 'rsvp_claim_note'],
     poll: ['poll_get', 'poll_vote', 'poll_add_option', 'poll_edit_option', 'poll_remove_option'],
     wdw: ['wdw_get', 'get_event', 'save_response', 'delete_response'],
     doc: ['doc_get', 'doc_push'],

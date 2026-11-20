@@ -181,6 +181,13 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .g .ans i{color:var(--muted);font-style:normal}
 .g .grow{flex:1;min-width:0}
 .g .link{display:block;padding:2px 0;font-size:14px}
+.g.pg{padding:6px 0 8px 18px;border-top:0}
+.g.pg .nm{font-weight:500}
+.g .with{display:block;color:var(--muted);font-size:13px}
+.pnames{display:grid;gap:8px;margin:-4px 0 14px;padding:10px 12px;border-radius:12px;background:var(--brand-t)}
+.pnames>span{font-size:14px;font-weight:600}
+.pnames input{min-height:44px}
+.pnames small{color:var(--muted);font-size:13px}
 
 .items{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
 .item{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 12px 12px 14px}
@@ -190,6 +197,11 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .cb{min-width:112px;min-height:46px;border-radius:10px;border:2px solid var(--go);background:var(--surface);color:var(--go);font-weight:700;cursor:pointer;font-size:14px;padding:0 10px}
 .cb[aria-pressed="true"]{background:var(--go);color:#fff}
 .cb:disabled{border-color:var(--line);color:var(--muted);cursor:default}
+.item .cn{display:block;font-size:14px;color:var(--ink);overflow-wrap:anywhere}
+.item .cn i{color:var(--muted);font-style:normal}
+.item .notebtn{display:inline-block;margin-top:2px;padding:4px 0;font-size:14px;min-height:32px}
+.notef{grid-column:1/3;display:flex;gap:8px;flex-wrap:wrap}
+.notef input{flex:1 1 180px;min-height:44px}
 .ownrow{grid-column:1/3;display:flex;gap:14px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:4px;margin-top:2px}
 .ownrow .link{padding:4px 0;font-size:14px}
 .editf{grid-column:1/3;display:flex;gap:8px;flex-wrap:wrap}
@@ -449,6 +461,9 @@ function relTime(ts) {
 
 /* -------------------------------------------------------------------- api */
 
+// The plus-ones' names that still count (same rule as _rsvp_plus_names in the database).
+function plusNamesOf(g) { return g.status === 'no' ? [] : (g.plus_names || []).slice(0, g.plus_ones || 0); }
+
 function ApiError(message, status) { this.message = message; this.status = status; this.name = 'ApiError'; }
 ApiError.prototype = Object.create(Error.prototype);
 
@@ -486,6 +501,8 @@ var remoteApi = {
   inviteRemove: function (a) { return this.rpc('rsvp_invite_remove', { p_code: a.code, p_owner_token: a.owner, p_invite: a.invite }); },
   inviteLink: function (a) { return this.rpc('rsvp_invite_link', { p_code: a.code, p_owner_token: a.owner, p_invite: a.invite, p_guest: a.guest }); },
   claim: function (a) { return this.rpc('rsvp_item_claim', { p_code: a.code, p_participant: a.pid, p_name: a.name, p_item: a.item, p_claim: a.claim }); },
+  plusNames: function (a) { return this.rpc('rsvp_plus_names', { p_code: a.code, p_participant: a.pid, p_owner_token: a.owner, p_names: a.names }); },
+  claimNote: function (a) { return this.rpc('rsvp_claim_note', { p_code: a.code, p_participant: a.pid, p_item: a.item, p_note: a.note }); },
   // Admin functions report problems as {error: "..."} so failed guesses stay counted server-side.
   unwrap: function (p, key, dflt) {
     return p.then(function (d) { if (d && d.error) throw new ApiError(d.error); return key ? ((d && d[key]) || dflt) : d; });
@@ -563,7 +580,7 @@ var localApi = {
     var e = this.find(this.db(), code);
     if (!e) return this.ok(null);
     var own = this.isOwner(e, owner), me = null, counts = null, guests = null;
-    e.guests.forEach(function (g) { if (g.pid === pid) me = { id: g.id, name: g.name, first_name: g.first_name, last_name: g.last_name, phone: g.phone || '', status: g.status, plus_ones: g.plus_ones, note: g.note, answers: g.answers }; });
+    e.guests.forEach(function (g) { if (g.pid === pid) me = { id: g.id, name: g.name, first_name: g.first_name, last_name: g.last_name, phone: g.phone || '', status: g.status, plus_ones: g.plus_ones, plus_names: plusNamesOf(g), note: g.note, answers: g.answers }; });
     if (own || !e.hide_count) {
       counts = { going: 0, going_plus: 0, maybe: 0, no: 0 };
       e.guests.forEach(function (g) {
@@ -573,7 +590,7 @@ var localApi = {
     }
     if (own || !e.hide_guests) {
       guests = e.guests.map(function (g) {
-        return { id: g.id, name: g.name, first_name: g.first_name, last_name: g.last_name, status: g.status, plus_ones: g.plus_ones, note: g.note, mine: g.pid === pid, answers: own ? g.answers : null, phone: own ? g.phone || '' : null,
+        return { id: g.id, name: g.name, first_name: g.first_name, last_name: g.last_name, status: g.status, plus_ones: g.plus_ones, plus_names: plusNamesOf(g), note: g.note, mine: g.pid === pid, answers: own ? g.answers : null, phone: own ? g.phone || '' : null,
           replied_at: own ? g.created_at : null, updated_at: own ? g.updated_at : null };
       });
     }
@@ -583,11 +600,11 @@ var localApi = {
         max_plus_ones: e.max_plus_ones, rsvp_by: e.rsvp_by, rsvp_closed: rsvpClosed(e), hide_guests: e.hide_guests,
         hide_count: e.hide_count, guests_add_items: e.guests_add_items, bring_list: e.bring_list !== false, rsvp_lock: e.rsvp_lock !== false, require_phone: !!e.require_phone,
         questions: e.questions, links: e.links || [], host_phone: e.host_phone || '', host_email: e.host_email || '' },
-      is_owner: own, me: me, counts: counts, guests: guests,
+      is_owner: own, extras: true, me: me, counts: counts, guests: guests,
       posts: e.posts.map(function (p) { return { id: p.id, kind: p.kind, name: p.name, body: p.body, created_at: p.created_at, mine: !!p.pid && p.pid === pid }; }),
       items: e.items.map(function (i) {
         return { id: i.id, label: i.label, needed: i.needed, by_host: i.by_host, added_by: i.added_by, mine_added: !!i.pid && i.pid === pid,
-          claims: i.claims.map(function (c) { return { name: c.name, mine: c.pid === pid }; }) };
+          claims: i.claims.map(function (c) { return { name: c.name, mine: c.pid === pid, note: c.note || '' }; }) };
       })
     });
   },
@@ -721,6 +738,25 @@ var localApi = {
     }
     this.put(c.db); return this.ok();
   },
+  plusNames: function (a) {
+    var db = this.db(), e = this.find(db, a.code), self = this;
+    if (!e) return this.fail('event_not_found');
+    if (rsvpClosed(e) && !this.isOwner(e, a.owner)) return this.fail('rsvp_closed');
+    var g = e.guests.filter(function (x) { return x.pid === a.pid; })[0];
+    if (!g) return this.fail('guest_not_found');
+    var names = (a.names || []).map(function (n) { return self.clean(n); }).filter(Boolean);
+    if (names.some(function (n) { return self.len(n) > 40; })) return this.fail('plus_name_too_long');
+    g.plus_names = names.slice(0, g.plus_ones);
+    this.put(db); return this.ok();
+  },
+  claimNote: function (a) {
+    var c = this.itemFor(a); if (c.err) return this.fail(c.err);
+    var note = this.text(a.note), mine = c.i.claims.filter(function (x) { return x.pid === a.pid; })[0];
+    if (this.len(note) > 80) return this.fail('claim_note_too_long');
+    if (!mine) return this.fail('not_claimed');
+    mine.note = note;
+    this.put(c.db); return this.ok();
+  },
   // invite list (host only), same rules as rsvp_invite_add
   ownedEvent: function (a) {
     var db = this.db(), e = this.find(db, a.code);
@@ -811,6 +847,9 @@ function friendly(e) {
     invalid_status: 'Choose Going, Maybe or Can’t go.',
     note_too_long: 'Your note can be at most 200 characters.',
     too_many_plus_ones: 'That’s more guests than the host allows.',
+    plus_name_too_long: 'Each guest’s name can be at most 40 characters.',
+    claim_note_too_long: 'Keep the note short (80 characters at most).',
+    not_claimed: 'Tap “I’ll bring it” first, then add a note.',
     answer_too_long: 'Each answer can be at most 300 characters.',
     event_full: 'This event already has the maximum number of replies (300).',
     not_owner: 'Only the host can do that.',
@@ -852,7 +891,7 @@ function resetState() {
     justCreated: false, fromAdmin: !!A.events, rsvpOpen: false, form: null, editingItem: null, editItemText: '', editItemNeeded: 1,
     draft: { comment: '', ann: '', item: '', needed: 1, cfirst: '', clast: '', sms: '' },
     aud: { going: true, maybe: true, no: false, invited: false }, smsLink: true, texted: {}, calOpen: false, mode: 'view',
-    invites: null, invForm: false, invName: '', invPhone: '', repliedOpen: false };
+    invites: null, invForm: false, invName: '', invPhone: '', repliedOpen: false, noteFor: null, noteText: '', extras: false };
 }
 var A = { pw: '', events: null }; // the admin password lives only in memory, never saved
 
@@ -933,6 +972,7 @@ function route() {
 function applyData(d) {
   S.ev = d.event; S.isOwner = !!d.is_owner; S.me = d.me || null; S.counts = d.counts || null;
   S.guests = d.guests || null; S.posts = d.posts || []; S.items = d.items || [];
+  S.extras = !!d.extras;  // plus-one names and bring-list notes (needs the 2026-11-23 database update)
   S.invites = d.invites || null;
   // the 🔔 bell (notify.js): hosts hear about replies and comments, guests about announcements
   if (REMOTE && window.PebblyNotify) {
@@ -1357,7 +1397,7 @@ function renderAnnc() {
 function startForm(status) {
   var m = S.me;
   var sn = savedNames();
-  S.form = { phone: m && m.phone ? m.phone : store.get('rsvp.phone', '') || '', status: status || (m && m.status) || 'going', first: m && m.first_name ? m.first_name : sn.first, last: m && m.first_name ? (m.last_name || '') : sn.last, plus: m ? m.plus_ones : 0, note: m ? m.note : '', answers: m ? Object.assign({}, m.answers || {}) : {} };
+  S.form = { phone: m && m.phone ? m.phone : store.get('rsvp.phone', '') || '', status: status || (m && m.status) || 'going', first: m && m.first_name ? m.first_name : sn.first, last: m && m.first_name ? (m.last_name || '') : sn.last, plus: m ? m.plus_ones : 0, plusNames: m ? (m.plus_names || []).slice() : [], note: m ? m.note : '', answers: m ? Object.assign({}, m.answers || {}) : {} };
   S.rsvpOpen = true;
 }
 
@@ -1378,7 +1418,7 @@ function renderMe() {
         (ev.max_plus_ones > 0 && f.status !== 'no' ? '<label class="fld"><span>Bringing anyone?</span><select id="rPlus">' +
           Array.apply(null, { length: ev.max_plus_ones + 1 }).map(function (_, i) {
             return '<option value="' + i + '"' + (Math.min(f.plus, ev.max_plus_ones) === i ? ' selected' : '') + '>' + (i === 0 ? 'Just me' : '+' + i + (i === 1 ? ' guest' : ' guests')) + '</option>';
-          }).join('') + '</select></label>' : '') +
+          }).join('') + '</select></label>' + plusNameFields(f) : '') +
         '<label class="fld"><span>Note (optional)</span><input type="text" id="rNote" maxlength="200" autocomplete="off" placeholder="' +
           (f.status === 'no' ? 'Sorry I’ll miss it!' : 'Can’t wait!') + '" value="' + esc(f.note) + '">' +
           '<small>' + (ev.hide_guests ? 'Only the host sees this.' : 'Shown next to your name on the guest list.') + '</small></label>' +
@@ -1395,8 +1435,10 @@ function renderMe() {
     var st = STATUS[m.status], ansHtml = (ev.questions || []).filter(function (q) { return m.answers && m.answers[q.id]; }).map(function (q) {
       return '<span class="sub" style="display:block">' + esc(q.text) + ' ' + esc(m.answers[q.id]) + '</span>';
     }).join('');
+    var pn = m.status !== 'no' ? (m.plus_names || []).slice(0, m.plus_ones) : [], rest = m.status !== 'no' ? m.plus_ones - pn.length : 0;
     el.innerHTML = '<div class="myans"><span class="e" aria-hidden="true">' + st.e + '</span><div><b>' + esc(st.you) + (m.status !== 'no' && m.plus_ones ? ' +' + m.plus_ones : '') + '</b>' +
-      '<span class="sub" style="display:block">as ' + esc(m.name) + (m.note ? ' · “' + esc(m.note) + '”' : '') + '</span>' + ansHtml + '</div></div>' +
+      '<span class="sub" style="display:block">as ' + esc(m.name) + (m.note ? ' · “' + esc(m.note) + '”' : '') + '</span>' +
+      (pn.length ? '<span class="sub" style="display:block">with ' + esc(joinNames(pn.concat(rest ? ['+' + rest] : []))) + '</span>' : '') + ansHtml + '</div></div>' +
       (canEdit ? '<div class="tools"><button type="button" class="btn small" data-act="rsvp-change">Change RSVP</button></div>' : '') + deadline +
       bringNudge() + '<div id="alertOffer"></div>';
     offerAlerts();
@@ -1405,6 +1447,18 @@ function renderMe() {
   if (!canEdit) { el.innerHTML = '<h2>RSVPs are closed</h2>' + deadline + '<p class="hint" style="margin-top:6px">Contact the host if your plans change.</p>'; return; }
   el.innerHTML = '<h2>Will you be there?</h2>' + statusButtons(null) + deadline;
 }
+
+// One optional name box per plus-one. Skipped ones just show as "+1" next to you.
+function plusNameFields(f) {
+  var n = Math.min(Number(f.plus || 0), S.ev.max_plus_ones);
+  if (!n || !S.extras) return '';
+  var html = '<div class="pnames"><span>' + (n === 1 ? 'Your guest’s name' : 'Your guests’ names') + ' (optional)</span>';
+  for (var i = 0; i < n; i++) {
+    html += '<input type="text" data-pn="' + i + '" maxlength="40" autocapitalize="words" autocomplete="off" aria-label="Guest ' + (i + 1) + ' name" placeholder="Guest ' + (i + 1) + '" value="' + esc(f.plusNames[i] || '') + '">';
+  }
+  return html + '<small>' + (S.ev.hide_guests ? 'Only the host sees the guest list.' : 'Names show on the guest list. Leave blank to show “+' + n + '” next to you.') + '</small></div>';
+}
+function joinNames(a) { return a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1]; }
 
 // Once you've replied (going or maybe): point to the bring list until you've signed up for something on it.
 function bringNudge() {
@@ -1452,7 +1506,15 @@ function submitRsvp() {
   saveNames(f.first, f.last);
   if (f.phone) store.set('rsvp.phone', f.phone);
   btn.disabled = true;
-  api.respond({ code: S.code, pid: S.pid, owner: S.owner, first: f.first, last: f.last, phone: f.phone, status: f.status, plus_ones: f.status === 'no' ? 0 : Number(f.plus || 0), note: f.note, answers: f.answers })
+  var plus = f.status === 'no' ? 0 : Number(f.plus || 0);
+  var names = f.plusNames.slice(0, plus).map(function (n) { return nameCase(n || ''); });
+  var hadNames = S.me && (S.me.plus_names || []).length;
+  api.respond({ code: S.code, pid: S.pid, owner: S.owner, first: f.first, last: f.last, phone: f.phone, status: f.status, plus_ones: plus, note: f.note, answers: f.answers })
+    .then(function () {
+      // the names are saved separately; if that fails the RSVP still counts (they show as "+1")
+      if (!S.extras || !(names.some(Boolean) || hadNames)) return;
+      return api.plusNames({ code: S.code, pid: S.pid, owner: S.owner, names: names }).catch(function () {});
+    })
     .then(reload).then(function () {
       S.rsvpOpen = false; renderParts();
       toast(f.status === 'going' ? 'See you there! 🎉' : f.status === 'maybe' ? 'Got it. Hope you can make it.' : 'Thanks for letting the host know.');
@@ -1477,18 +1539,22 @@ function renderGuests() {
   ['going', 'maybe', 'no'].forEach(function (k) {
     var list = g.filter(function (x) { return x.status === k; });
     if (!list.length) return;
-    html += '<div class="gbox ' + k + '"><div class="ghead">' + STATUS[k].e + ' ' + STATUS[k].group + ' (' + list.length + ')</div><ul class="glist">' + list.map(function (x) {
+    var people = k === 'no' ? list.length : list.reduce(function (n, x) { return n + 1 + (x.plus_ones || 0); }, 0);
+    html += '<div class="gbox ' + k + '"><div class="ghead">' + STATUS[k].e + ' ' + STATUS[k].group + ' (' + people + ')</div><ul class="glist">' + list.map(function (x) {
+      var pn = k === 'no' ? [] : (x.plus_names || []).slice(0, x.plus_ones), rest = k === 'no' ? 0 : (x.plus_ones || 0) - pn.length;
       var ans = S.isOwner && x.answers ? qs.filter(function (q) { return x.answers[q.id]; }).map(function (q) {
         return '<span class="ans"><i>' + esc(q.text) + '</i> ' + esc(x.answers[q.id]) + '</span>';
       }).join('') : '';
       return '<li class="g"><div class="grow"><span class="nm">' + esc(x.name) + '</span>' +
-        (x.plus_ones && x.status !== 'no' ? '<span class="plus">+' + x.plus_ones + '</span>' : '') + (x.mine ? ' <span class="hint" style="font-size:13px">(you)</span>' : '') +
+        (rest > 0 ? '<span class="plus">+' + rest + '</span>' : '') + (x.mine ? ' <span class="hint" style="font-size:13px">(you)</span>' : '') +
         (x.note ? '<span class="note">“' + esc(x.note) + '”</span>' : '') + ans +
         (S.isOwner && x.phone ? '<span class="stamp">' + esc(fmtPhone(x.phone)) + '</span>' : '') +
         (S.isOwner && x.replied_at ? '<span class="stamp">Replied ' + esc(fmtStampTime(x.replied_at)) +
           (x.updated_at && new Date(x.updated_at) - new Date(x.replied_at) > 60000 ? ' · changed ' + esc(fmtStampTime(x.updated_at)) : '') + '</span>' : '') +
         (S.isOwner ? '<button type="button" class="link danger" data-act="rm-guest" data-id="' + esc(x.id) + '" data-name="' + esc(x.name) + '">Remove</button>' : '') +
-        '</div></li>';
+        '</div></li>' + pn.map(function (n) {
+          return '<li class="g pg"><div class="grow"><span class="nm">' + esc(n) + '</span><span class="with">with ' + esc(x.first_name || x.name) + '</span></div></li>';
+        }).join('');
     }).join('') + '</ul></div>';
   });
   el.innerHTML = html;
@@ -1631,6 +1697,14 @@ function renderBring() {
     }
     var mine = i.claims.some(function (c) { return c.mine; }), full = i.needed > 0 && i.claims.length >= i.needed;
     var names = i.claims.map(function (c) { return c.mine ? 'You' : c.name; });
+    var notes = i.claims.filter(function (c) { return c.note && !(c.mine && S.noteFor === i.id); }).map(function (c) {
+      return '<span class="cn"><i>' + esc(c.mine ? 'You' : c.name) + ':</i> “' + esc(c.note) + '”</span>';
+    }).join('');
+    var myClaim = i.claims.filter(function (c) { return c.mine; })[0];
+    var noteUi = !myClaim || !S.extras ? '' : S.noteFor === i.id
+      ? '<form class="notef" id="noteForm" data-id="' + esc(i.id) + '" novalidate><input type="text" id="noteText" maxlength="80" autocomplete="off" aria-label="Note for ' + esc(i.label) + '" placeholder="e.g. I’ll bring pumpkin pie" value="' + esc(S.noteText) + '">' +
+        '<button type="submit" class="btn small primary">Save</button><button type="button" class="btn small" data-act="note-cancel">Cancel</button></form>'
+      : '<button type="button" class="link notebtn" data-act="note" data-id="' + esc(i.id) + '">' + (myClaim.note ? '✏️ Edit your note' : '✏️ Add a note') + '</button>';
     var meta = names.length ? names.map(esc).join(', ') + (i.needed > 1 ? ' · ' + i.claims.length + ' of ' + i.needed : i.needed === 0 ? ' · more welcome' : '')
       : (i.needed === 0 ? 'Anyone can bring this · nobody yet' : i.needed > 1 ? 'Needs ' + i.needed + ' people' : 'Nobody yet');
     var btn = mine ? '<button type="button" class="cb" data-act="claim" data-id="' + esc(i.id) + '" aria-pressed="true" aria-label="You are bringing ' + esc(i.label) + '. Tap to undo.">✓ You’re bringing it</button>'
@@ -1638,7 +1712,9 @@ function renderBring() {
       : '<button type="button" class="cb" data-act="claim" data-id="' + esc(i.id) + '" aria-pressed="false">I’ll bring it</button>';
     var own = (S.isOwner || i.mine_added) ? '<div class="ownrow"><button type="button" class="link" data-act="item-edit" data-id="' + esc(i.id) + '">Edit</button>' +
       '<button type="button" class="link danger" data-act="item-rm" data-id="' + esc(i.id) + '">Remove</button></div>' : '';
-    return '<li class="item' + (full && !mine ? ' full' : '') + '"><div><b>' + esc(i.label) + '</b><span class="meta">' + meta + '</span></div>' + btn + own + '</li>';
+    var noteRow = S.noteFor === i.id ? '' : noteUi;
+    return '<li class="item' + (full && !mine ? ' full' : '') + '"><div><b>' + esc(i.label) + '</b><span class="meta">' + meta + '</span>' + notes + noteRow + '</div>' + btn +
+      (S.noteFor === i.id ? noteUi : '') + own + '</li>';
   }).join('') + '</ul>' : '<p class="hint">Nothing on the list yet.</p>';
   if (canAdd) {
     html += '<form id="itemForm" class="addf" novalidate><input type="text" id="newItem" maxlength="80" autocomplete="off" aria-label="' +
@@ -1661,7 +1737,8 @@ function doClaim(id) {
   var i = itemById(id); if (!i) return;
   var mine = i.claims.some(function (c) { return c.mine; });
   if (!mine && needName('bringing it')) return;
-  after(api.claim({ code: S.code, pid: S.pid, name: myName(), item: id, claim: !mine }), mine ? 'Okay, you’re not bringing “' + i.label + '”.' : 'Thanks! You’re bringing “' + i.label + '”.');
+  if (mine && S.noteFor === id) S.noteFor = null;
+  after(api.claim({ code: S.code, pid: S.pid, name: myName(), item: id, claim: !mine }), mine ? 'Okay, you’re not bringing “' + i.label + '”.' : 'Thanks! You’re bringing “' + i.label + '”.' + (S.extras ? ' Add a note if you like.' : ''));
 }
 
 function doAddItem() {
@@ -1801,16 +1878,17 @@ function csvStamp(ts) {
 }
 function exportFiles() {
   var ev = S.ev, qs = ev.questions || [], files = {};
-  var guests = [['First name', 'Last name', 'Phone', 'Response', 'Plus-ones', 'Party size', 'Note'].concat(qs.map(function (q) { return q.text; })).concat(['Replied', 'Last changed'])];
+  var guests = [['First name', 'Last name', 'Phone', 'Response', 'Plus-ones', 'Plus-one names', 'Party size', 'Note'].concat(qs.map(function (q) { return q.text; })).concat(['Replied', 'Last changed'])];
   (S.guests || []).forEach(function (g) {
-    guests.push([g.first_name || g.name, g.last_name || '', fmtPhone(g.phone || ''), STATUS[g.status].label.replace('’', "'"), g.status === 'no' ? 0 : g.plus_ones,
+    guests.push([g.first_name || g.name, g.last_name || '', fmtPhone(g.phone || ''), STATUS[g.status].label.replace('’', "'"), g.status === 'no' ? 0 : g.plus_ones, plusNamesOf(g).join('; '),
       g.status === 'no' ? 0 : 1 + g.plus_ones, g.note].concat(qs.map(function (q) { return (g.answers || {})[q.id] || ''; }))
       .concat([csvStamp(g.replied_at), csvStamp(g.updated_at)]));
   });
   files.guests = toCsv(guests);
-  var bring = [['Item', 'People needed', 'People bringing', 'Who', 'Added by']];
+  var bring = [['Item', 'People needed', 'People bringing', 'Who', 'Notes', 'Added by']];
   S.items.forEach(function (i) {
-    bring.push([i.label, i.needed === 0 ? 'Unlimited' : i.needed, i.claims.length, i.claims.map(function (c) { return c.name; }).join('; '), i.by_host ? 'Host' : (i.added_by || '')]);
+    bring.push([i.label, i.needed === 0 ? 'Unlimited' : i.needed, i.claims.length, i.claims.map(function (c) { return c.name; }).join('; '),
+      i.claims.filter(function (c) { return c.note; }).map(function (c) { return c.name + ': ' + c.note; }).join('; '), i.by_host ? 'Host' : (i.added_by || '')]);
   });
   files.bring = toCsv(bring);
   var cm = [['Name', 'Posted', 'Comment']], an = [['Posted', 'Announcement']];
@@ -1958,6 +2036,9 @@ $app.addEventListener('click', function (e) {
       break;
     case 'item-edit': var it = itemById(id); if (it) { S.editingItem = id; S.editItemText = it.label; S.editItemNeeded = it.needed; renderBring(); var ie = $('#itemEdit'); if (ie) ie.focus(); } break;
     case 'item-edit-cancel': S.editingItem = null; renderBring(); break;
+    case 'note': var ni = itemById(id), nc = ni && ni.claims.filter(function (c) { return c.mine; })[0];
+      if (nc) { S.noteFor = id; S.noteText = nc.note || ''; renderBring(); var nt = $('#noteText'); if (nt) nt.focus(); } break;
+    case 'note-cancel': S.noteFor = null; renderBring(); break;
     case 'to-bring': var bl = $('#bring'); if (bl) { bl.scrollIntoView({ behavior: 'smooth', block: 'start' }); bl.classList.remove('flash'); void bl.offsetWidth; bl.classList.add('flash'); } break;
     case 'item-rm':
       var ri = itemById(id);
@@ -1996,7 +2077,9 @@ $app.addEventListener('input', function (e) {
     else if (t.id === 'rPhone') S.form.phone = t.value;
     else if (t.id === 'rNote') S.form.note = t.value;
     else if (t.dataset.q) S.form.answers[t.dataset.q] = t.value;
+    else if (t.dataset.pn) S.form.plusNames[Number(t.dataset.pn)] = t.value;
   }
+  if (t.id === 'noteText') S.noteText = t.value;
   if (t.id === 'cBody') S.draft.comment = t.value;
   else if (t.id === 'cFirst') S.draft.cfirst = t.value;
   else if (t.id === 'cLast') S.draft.clast = t.value;
@@ -2015,7 +2098,7 @@ $app.addEventListener('change', function (e) {
   if (t.id === 'smsLink') { S.smsLink = t.checked; renderTextList(); return; }
   if (t.name === 'bring_list' && t.form) { $('#bringOpts').hidden = !t.checked; return; }
   if (t.name === 'end_date' && t.form) { $('#multiHint').hidden = !t.value; return; }
-  if (t.id === 'rPlus' && S.form) S.form.plus = Number(t.value);
+  if (t.id === 'rPlus' && S.form) { S.form.plus = Number(t.value); renderMe(); var pi = $('[data-pn="0"]'); if (pi && S.form.plus && !S.form.plusNames[0]) pi.focus(); }
   else if (t.id === 'newItemNeeded') S.draft.needed = Number(t.value);
   else if (t.id === 'itemEditNeeded') S.editItemNeeded = Number(t.value);
 });
@@ -2026,6 +2109,11 @@ $app.addEventListener('submit', function (e) {
   if (id === 'eventForm') submitEvent(e.target);
   else if (id === 'rsvpForm') submitRsvp();
   else if (id === 'itemForm') doAddItem();
+  else if (id === 'noteForm') {
+    var nid = e.target.dataset.id, note = S.noteText.replace(/\s+/g, ' ').trim();
+    after(api.claimNote({ code: S.code, pid: S.pid, item: nid, note: note }), note ? 'Note saved.' : 'Note removed.')
+      .then(function (ok) { if (ok) { S.noteFor = null; renderBring(); } });
+  }
   else if (id === 'cmtForm') doComment();
   else if (id === 'invForm') submitInvite();
   else if (id === 'annForm') {
