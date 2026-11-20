@@ -146,7 +146,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   similar names for the host to confirm. Adding anyone with a number turns on "Require a phone number".
 - **RSVP plus-one names and bring-list notes** (`20261123000000_rsvp_plus_names_claim_notes.sql`): optional names per
   plus-one (`rsvp_guests.plus_names`, saved by `rsvp_plus_names` right after `rsvp_respond`; shown as their own rows
-  "with Amy" in the guest list, unnamed ones stay "+N") and a short note on your own claim (`rsvp_claims.note`,
+  right under the guest in the guest list, unnamed ones stay "+N") and a short note on your own claim (`rsvp_claims.note`,
   `rsvp_claim_note`). `rsvp_get` returns `extras: true` once applied; the page only calls the new functions then
   (a missing `gated_` function would switch lock.js to the plain functions for the whole visit).
   Test: `tests/rsvp_plus_test.js`. (pg_bridge can't pass text arrays, so tests can't send the create form's item list.)

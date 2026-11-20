@@ -183,7 +183,6 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .g .link{display:block;padding:2px 0;font-size:14px}
 .g.pg{padding:6px 0 8px 18px;border-top:0}
 .g.pg .nm{font-weight:500}
-.g .with{display:block;color:var(--muted);font-size:13px}
 .pnames{display:grid;gap:8px;margin:-4px 0 14px;padding:10px 12px;border-radius:12px;background:var(--brand-t)}
 .pnames>span{font-size:14px;font-weight:600}
 .pnames input{min-height:44px}
@@ -1553,7 +1552,7 @@ function renderGuests() {
           (x.updated_at && new Date(x.updated_at) - new Date(x.replied_at) > 60000 ? ' · changed ' + esc(fmtStampTime(x.updated_at)) : '') + '</span>' : '') +
         (S.isOwner ? '<button type="button" class="link danger" data-act="rm-guest" data-id="' + esc(x.id) + '" data-name="' + esc(x.name) + '">Remove</button>' : '') +
         '</div></li>' + pn.map(function (n) {
-          return '<li class="g pg"><div class="grow"><span class="nm">' + esc(n) + '</span><span class="with">with ' + esc(x.first_name || x.name) + '</span></div></li>';
+          return '<li class="g pg"><div class="grow"><span class="nm">' + esc(n) + '</span></div></li>';
         }).join('');
     }).join('') + '</ul></div>';
   });
@@ -1702,7 +1701,7 @@ function renderBring() {
     }).join('');
     var myClaim = i.claims.filter(function (c) { return c.mine; })[0];
     var noteUi = !myClaim || !S.extras ? '' : S.noteFor === i.id
-      ? '<form class="notef" id="noteForm" data-id="' + esc(i.id) + '" novalidate><input type="text" id="noteText" maxlength="80" autocomplete="off" aria-label="Note for ' + esc(i.label) + '" placeholder="e.g. I’ll bring pumpkin pie" value="' + esc(S.noteText) + '">' +
+      ? '<form class="notef" id="noteForm" data-id="' + esc(i.id) + '" novalidate><input type="text" id="noteText" maxlength="80" autocomplete="off" aria-label="Note for ' + esc(i.label) + '" value="' + esc(S.noteText) + '">' +
         '<button type="submit" class="btn small primary">Save</button><button type="button" class="btn small" data-act="note-cancel">Cancel</button></form>'
       : '<button type="button" class="link notebtn" data-act="note" data-id="' + esc(i.id) + '">' + (myClaim.note ? '✏️ Edit your note' : '✏️ Add a note') + '</button>';
     var meta = names.length ? names.map(esc).join(', ') + (i.needed > 1 ? ' · ' + i.claims.length + ' of ' + i.needed : i.needed === 0 ? ' · more welcome' : '')

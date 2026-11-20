@@ -39,7 +39,7 @@ let pass = 0, fail = 0; const check = (ok, m) => ok ? pass++ : (fail++, console.
   const sum = await amy.textContent('.myans');
   check(sum.includes('You’re going +2') && sum.includes('with Bob Lee and +1'), 'summary names the guest: ' + sum);
   const rows = await amy.$$eval('.gbox.going .g', l => l.map(x => x.textContent.replace(/\s+/g, ' ').trim()));
-  check(rows.length === 2 && /^Amy Lee\+1/.test(rows[0]) && /^Bob Lee ?with Amy/.test(rows[1]), 'going list shows Bob under Amy, +1 for the unnamed one: ' + rows.join(' | '));
+  check(rows.length === 2 && /^Amy Lee\+1/.test(rows[0]) && rows[1] === 'Bob Lee', 'going list shows Bob right under Amy, +1 for the unnamed one: ' + rows.join(' | '));
   check((await amy.textContent('.gbox.going .ghead')).includes('(3)'), 'going header counts people');
 
   /* Cal: +1 without a name → just "+1" */
