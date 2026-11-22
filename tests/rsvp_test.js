@@ -155,7 +155,8 @@ async function bridge(ctx) {
   await ana.click('#rsvpForm button[type=submit]');
   await ana.waitForSelector('.myans');
   check((await ana.textContent('.myans')).includes('You’re going +2'), 'ana summary');
-  check((await ana.textContent('.counts')).includes('3 going (incl. 2 plus-ones)'), 'counts include plus-ones');
+  check((await ana.textContent('.counts')).includes('3 going') && !(await ana.textContent('.counts')).includes('incl'), 'bubble is just the number going');
+  check((await ana.textContent('.gbox.going .gsub')) === 'Includes 2 plus-ones', 'going box says how many plus-ones');
   check((await ana.textContent('#guests')).includes('Ana') && (await ana.textContent('#guests')).includes('(you)'), 'ana in list');
   // bring-list reminder after replying, until something is claimed
   check(await ana.locator('.bringnudge').isVisible(), 'bring-list reminder after RSVP');

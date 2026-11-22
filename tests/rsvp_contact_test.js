@@ -27,7 +27,7 @@ let pass = 0, fail = 0; const check = (ok, m) => ok ? pass++ : (fail++, console.
   check(await g.getAttribute('#contact a[href^="sms:"]', 'href') === 'sms:+16125550134', 'text link');
   check((await g.getAttribute('#contact a.btn[href^="mailto:"]', 'href')).startsWith('mailto:ben@example.com?subject=Game%20Night'), 'email link');
   const order = await g.evaluate(() => [...document.querySelectorAll('#app section[id]')].map(s => s.id).join());
-  check(/comments,contact/.test(order), 'contact comes right after comments: ' + order);
+  check(/comments,(faq,)?contact/.test(order), 'contact comes right after comments (and the FAQ): ' + order);
   await g.screenshot({ path: (process.env.SHOTS || '/tmp') + '/rsvp-contact.png', fullPage: true });
 
   // host removes the phone: only email remains; removing both hides the section

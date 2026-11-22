@@ -125,6 +125,18 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .annc{margin-top:18px;display:grid;gap:8px}
 .annc:empty{display:none}
 .rule{border:0;border-top:1px solid var(--line);margin:18px 0 0}
+.faqrow{border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:8px;background:var(--surface)}
+.faqrow input,.faqrow textarea{margin-bottom:6px}
+.faqrow .link{padding:0;min-height:36px}
+.faq{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.faq details+details{border-top:1px solid var(--line)}
+.faq summary{cursor:pointer;min-height:48px;padding:12px 40px 12px 14px;font-weight:600;list-style:none;position:relative;overflow-wrap:anywhere}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:'+';position:absolute;right:14px;top:9px;font-size:22px;font-weight:400;color:var(--muted)}
+.faq details[open] summary::after{content:'−'}
+.faq details p{padding:0 14px 14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.grouptext{margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--brand-t)}
+.grouptext a.btn{display:flex;align-items:center;justify-content:center;text-decoration:none}
 .contact{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
 .crow{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line)}
 .crow:first-of-type{border-top:0}
@@ -163,6 +175,7 @@ legend{font-weight:600;font-size:15px;margin-bottom:6px;padding:0}
 .gbox.no{border-color:#D9908D;background:var(--no-t)}
 .glist{list-style:none;margin:4px 0 0;padding:0}
 .ghead{font-weight:700;font-size:15px;color:var(--muted)}
+.gsub{font-size:14px;color:var(--muted);margin-top:1px}
 .gbox.going .ghead{color:#1D5E3A}.gbox.maybe .ghead{color:#6E5108}.gbox.no .ghead{color:#8A2723}
 .gbox.wait{border-color:#B9C7C1;background:var(--surface)}
 .gbox.replied summary{cursor:pointer;min-height:36px;list-style-position:inside}
@@ -527,7 +540,7 @@ var localApi = {
       emoji: String(p.emoji || '').trim() || '🎉', max_plus_ones: Number(p.max_plus_ones || 0),
       event_date: p.event_date || null, end_date: p.end_date || null, start_time: p.start_time || null, end_time: p.end_time || null, rsvp_by: p.rsvp_by || null,
       hide_guests: !!p.hide_guests, hide_count: !!p.hide_count, guests_add_items: p.guests_add_items !== false,
-      bring_list: p.bring_list !== false, rsvp_lock: p.rsvp_lock !== false, require_phone: !!p.require_phone, questions: [], links: [],
+      bring_list: p.bring_list !== false, rsvp_lock: p.rsvp_lock !== false, require_phone: !!p.require_phone, questions: [], links: [], faq: [],
       host_phone: this.clean(p.host_phone), host_email: this.clean(p.host_email)
     };
     if (!f.title || this.len(f.title) > 120) throw new ApiError('invalid_title');
@@ -552,6 +565,15 @@ var localApi = {
       f.links.push({ label: lab, url: u });
     });
     if (f.links.length > 5) throw new ApiError('too_many_links');
+    (p.faq || []).forEach(function (x) {
+      var q = self.clean(x.q), a = self.text(x.a);
+      if (!q && !a) return;
+      if (!q || self.len(q) > 200) throw new ApiError('invalid_faq_question');
+      if (!a || self.len(a) > 2000) throw new ApiError('invalid_faq_answer');
+      f.faq.push({ q: q, a: a });
+    });
+    if (f.faq.length > 15) throw new ApiError('too_many_faq');
+    if (!p.faq) delete f.faq;
     (p.questions || []).forEach(function (q) { var t = self.clean(q.text); if (t) f.questions.push({ id: q.id, text: t }); });
     if (f.questions.length > 3) throw new ApiError('too_many_questions');
     if (f.questions.some(function (q) { return self.len(q.text) > 120; })) throw new ApiError('question_too_long');
@@ -598,7 +620,7 @@ var localApi = {
         event_date: e.event_date, end_date: e.end_date || null, start_time: e.start_time, end_time: e.end_time, tz: e.tz, theme: e.theme, emoji: e.emoji,
         max_plus_ones: e.max_plus_ones, rsvp_by: e.rsvp_by, rsvp_closed: rsvpClosed(e), hide_guests: e.hide_guests,
         hide_count: e.hide_count, guests_add_items: e.guests_add_items, bring_list: e.bring_list !== false, rsvp_lock: e.rsvp_lock !== false, require_phone: !!e.require_phone,
-        questions: e.questions, links: e.links || [], host_phone: e.host_phone || '', host_email: e.host_email || '' },
+        questions: e.questions, links: e.links || [], faq: e.faq || [], host_phone: e.host_phone || '', host_email: e.host_email || '' },
       is_owner: own, extras: true, me: me, counts: counts, guests: guests,
       posts: e.posts.map(function (p) { return { id: p.id, kind: p.kind, name: p.name, body: p.body, created_at: p.created_at, mine: !!p.pid && p.pid === pid }; }),
       items: e.items.map(function (i) {
@@ -842,6 +864,9 @@ function friendly(e) {
     invalid_link_label: 'Each link button needs a label (up to 40 characters).',
     invalid_link_url: 'One of the link addresses doesn’t look right. It should look like https://example.com',
     too_many_links: 'You can add up to 5 link buttons.',
+    invalid_faq_question: 'Each FAQ answer needs its question (up to 200 characters).',
+    invalid_faq_answer: 'Each FAQ question needs an answer (up to 2,000 characters).',
+    too_many_faq: 'The FAQ can have up to 15 questions.',
     bring_list_off: 'This event doesn’t have a bring list.',
     invalid_status: 'Choose Going, Maybe or Can’t go.',
     note_too_long: 'Your note can be at most 200 characters.',
@@ -1062,7 +1087,15 @@ function checkConnection() {
 var F = null; // theme/emoji picked in the form
 function newFormState(ev) {
   var links = ev && ev.links && ev.links.length ? ev.links.map(function (l) { return { label: l.label, url: l.url }; }) : [{ label: '', url: '' }];
-  return { theme: ev ? ev.theme : 'sunset', emoji: ev ? ev.emoji : '🎉', links: links };
+  var faq = ev && ev.faq && ev.faq.length ? ev.faq.map(function (x) { return { q: x.q, a: x.a }; }) : [{ q: '', a: '' }];
+  return { theme: ev ? ev.theme : 'sunset', emoji: ev ? ev.emoji : '🎉', links: links, faq: faq };
+}
+function faqRowsHtml() {
+  return F.faq.map(function (x, i) {
+    return '<div class="faqrow"><input type="text" data-faq="q" data-i="' + i + '" maxlength="200" autocomplete="off" placeholder="Question, e.g. Can I bring my dog?" aria-label="FAQ question ' + (i + 1) + '" value="' + esc(x.q) + '">' +
+      '<textarea data-faq="a" data-i="' + i + '" rows="2" maxlength="2000" placeholder="Your answer" aria-label="FAQ answer ' + (i + 1) + '">' + esc(x.a) + '</textarea>' +
+      '<button type="button" class="link danger" data-act="faq-rm" data-i="' + i + '">Remove</button></div>';
+  }).join('') + (F.faq.length < 15 ? '<button type="button" class="chipbtn" data-act="faq-add">＋ Add a question</button>' : '');
 }
 function linkRowsHtml() {
   return F.links.map(function (l, i) {
@@ -1102,6 +1135,7 @@ function eventFormHtml(ev) {
     '<p class="hint" style="font-size:13px;margin:-10px 0 14px">If you add either, guests see it under “Contact the host” so they can reach you.</p>' +
     '<label class="fld"><span>Details (optional)</span><textarea name="description" rows="4" maxlength="4000" placeholder="What to expect, parking, what to wear…">' + esc(e.description) + '</textarea><small>Web addresses become tappable links.</small></label>' +
     '<fieldset><legend>Link buttons (optional)</legend><p class="hint" style="font-size:13px;margin:-2px 0 8px">Shown as buttons at the top, e.g. a registry or a sign-up sheet.</p><div id="linkRows">' + linkRowsHtml() + '</div></fieldset>' +
+    '<fieldset><legend>FAQ (optional)</legend><p class="hint" style="font-size:13px;margin:-2px 0 8px">Questions guests often ask, with your answers. Shown after the comments.</p><div id="faqRows">' + faqRowsHtml() + '</div></fieldset>' +
 
     '<h3 class="sect">Guests</h3>' +
     '<label class="fld"><span>Plus-ones</span><select name="max_plus_ones">' + plusOpts.map(function (n) {
@@ -1157,7 +1191,8 @@ function readEventForm(form, ev) {
     max_plus_ones: Number(f.max_plus_ones.value || 0), rsvp_by: f.rsvp_by.value || null,
     hide_guests: f.hide_guests.checked, hide_count: f.hide_count.checked, guests_add_items: f.guests_add_items.checked,
     bring_list: f.bring_list.checked, rsvp_lock: f.rsvp_lock.checked, require_phone: f.require_phone.checked, questions: qs,
-    links: F.links.map(function (l) { return { label: l.label.replace(/\s+/g, ' ').trim(), url: l.url.trim() }; }).filter(function (l) { return l.label || l.url; })
+    links: F.links.map(function (l) { return { label: l.label.replace(/\s+/g, ' ').trim(), url: l.url.trim() }; }).filter(function (l) { return l.label || l.url; }),
+    faq: F.faq.map(function (x) { return { q: x.q.replace(/\s+/g, ' ').trim(), a: x.a.trim() }; }).filter(function (x) { return x.q || x.a; })
   };
 }
 
@@ -1168,6 +1203,8 @@ function validateEvent(p, err) {
   if (p.end_date && p.end_date < p.event_date) return 'The last day can’t be before the first day.';
   if (p.links.some(function (l) { return !l.label; })) return 'Give each link button a label.';
   if (p.links.some(function (l) { return !l.url; })) return 'Add the web address for each link button.';
+  if (p.faq.some(function (x) { return !x.q; })) return 'Each FAQ answer needs its question.';
+  if (p.faq.some(function (x) { return !x.a; })) return 'Each FAQ question needs an answer.';
   if (p.rsvp_by && p.event_date && p.rsvp_by > p.event_date) return 'The RSVP date should be on or before the event.';
   return '';
 }
@@ -1312,6 +1349,7 @@ function renderEvent() {
     '<section id="invites"></section>' +
     '<section id="bring"></section>' +
     '<section id="comments"></section>' +
+    '<section id="faq"></section>' +
     '<section id="contact"></section>' +
     '<section id="host"></section>';
   renderParts();
@@ -1319,7 +1357,7 @@ function renderEvent() {
 
 function renderParts() {
   if (S.mode !== 'view' || !$('#me')) return;
-  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderInvites(); renderBring(); renderComments(); renderContact(); renderHost();
+  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderInvites(); renderBring(); renderComments(); renderFaq(); renderContact(); renderHost();
 }
 
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
@@ -1526,7 +1564,7 @@ function renderGuests() {
   if (!c && !g) { el.innerHTML = '<h3 class="sect">Guest list</h3><p class="hint">The host is keeping the guest list private.</p>'; return; }
   var html = '<h3 class="sect">Guest list</h3>';
   if (c) {
-    html += '<div class="counts"><span class="c-go">' + c.going + ' going' + (c.going_plus ? ' (incl. ' + c.going_plus + ' plus-one' + (c.going_plus === 1 ? '' : 's') + ')' : '') + '</span>' +
+    html += '<div class="counts"><span class="c-go">' + c.going + ' going</span>' +
       '<span class="c-maybe">' + c.maybe + ' maybe</span><span class="c-no">' + c.no + ' can’t go</span></div>';
   }
   if (S.isOwner && (ev.hide_guests || ev.hide_count)) {
@@ -1538,8 +1576,9 @@ function renderGuests() {
   ['going', 'maybe', 'no'].forEach(function (k) {
     var list = g.filter(function (x) { return x.status === k; });
     if (!list.length) return;
-    var people = k === 'no' ? list.length : list.reduce(function (n, x) { return n + 1 + (x.plus_ones || 0); }, 0);
-    html += '<div class="gbox ' + k + '"><div class="ghead">' + STATUS[k].e + ' ' + STATUS[k].group + ' (' + people + ')</div><ul class="glist">' + list.map(function (x) {
+    var plus = k === 'no' ? 0 : list.reduce(function (n, x) { return n + (x.plus_ones || 0); }, 0), people = list.length + plus;
+    html += '<div class="gbox ' + k + '"><div class="ghead">' + STATUS[k].e + ' ' + STATUS[k].group + ' (' + people + ')</div>' +
+      (plus ? '<div class="gsub">Includes ' + plus + ' plus-one' + (plus === 1 ? '' : 's') + '</div>' : '') + '<ul class="glist">' + list.map(function (x) {
       var pn = k === 'no' ? [] : (x.plus_names || []).slice(0, x.plus_ones), rest = k === 'no' ? 0 : (x.plus_ones || 0) - pn.length;
       var ans = S.isOwner && x.answers ? qs.filter(function (q) { return x.answers[q.id]; }).map(function (q) {
         return '<span class="ans"><i>' + esc(q.text) + '</i> ' + esc(x.answers[q.id]) + '</span>';
@@ -1791,6 +1830,15 @@ function doComment() {
     .then(function (ok) { if (ok) { S.draft.comment = ''; renderComments(); } });
 }
 
+/* FAQ (filled in by the host in the event form) */
+function renderFaq() {
+  var el = $('#faq'), list = S.ev.faq || [];
+  if (!el) return;
+  el.innerHTML = list.length ? '<h3 class="sect">FAQ</h3><div class="faq">' + list.map(function (x) {
+    return '<details><summary>' + esc(x.q) + '</summary><p>' + linkify(x.a) + '</p></details>';
+  }).join('') + '</div>' : '';
+}
+
 /* host tools */
 function renderHost() {
   var el = $('#host');
@@ -1806,7 +1854,7 @@ function renderHost() {
       '<button type="button" class="btn small danger" data-act="delete-event">Delete event</button></div>' +
     '<p class="hint" style="margin-top:8px;font-size:13px">The host link gives control of this event on another device. Keep it private.</p>' +
     '<h3 style="font-size:16px;margin-top:20px">Text guests</h3>' +
-    '<p class="hint" style="font-size:13px;margin-top:2px">Each “Text” button opens Messages on your phone with the message ready. Tap Send, come back, and do the next one. Texts come from your number.</p>' +
+    '<p class="hint" style="font-size:13px;margin-top:2px">Send one group text, or text people one at a time. Each button opens Messages on your phone with the message ready; just tap Send. Texts come from your number.</p>' +
     '<div class="aud" role="group" aria-label="Who to text">' + ['going', 'maybe', 'no'].map(function (k) {
       return '<label><input type="checkbox" data-aud="' + k + '"' + (S.aud[k] ? ' checked' : '') + '>' + STATUS[k].label + '</label>';
     }).join('') + (S.invites && S.invites.length ? '<label><input type="checkbox" data-aud="invited"' + (S.aud.invited ? ' checked' : '') + '>Invited, no reply yet</label>' : '') + '</div>' +
@@ -1850,7 +1898,13 @@ function renderTextList() {
   var withPhone = list.filter(function (g) { return g.phone; }), without = list.length - withPhone.length, body = smsBody();
   if (!list.length) { el.innerHTML = '<p class="hint" style="margin-top:8px">Nobody to text yet.</p>'; return; }
   var sent = withPhone.filter(function (g) { return S.texted[g.key]; }).length;
-  el.innerHTML = (withPhone.length ? '<p class="hint" style="margin-top:8px;font-size:14px">' + sent + ' of ' + withPhone.length + ' opened' +
+  // One conversation with everyone (Android: sms:a,b?body=…; iPhone: sms:/open?addresses=a,b&body=…).
+  var nums = withPhone.map(function (g) { return g.phone; }).filter(function (n, i, a) { return a.indexOf(n) === i; });
+  var groupHref = isIOS() ? 'sms:/open?addresses=' + nums.join(',') + '&body=' + encodeURIComponent(body) : 'sms:' + nums.join(',') + '?body=' + encodeURIComponent(body);
+  var group = nums.length >= 2 && body ? '<div class="grouptext"><a class="btn primary small" href="' + esc(groupHref) + '" data-text="group">👥 Group text all ' + nums.length + '</a>' +
+    '<p class="hint" style="font-size:13px;margin-top:6px">Opens one group conversation with everyone in it, so replies go to the whole group.' +
+    (nums.length > 20 ? ' Big groups don’t work on every phone. If it fails, text people one at a time below.' : ' To text people privately, use the buttons below.') + '</p></div>' : '';
+  el.innerHTML = group + (withPhone.length ? '<p class="hint" style="margin-top:8px;font-size:14px">' + sent + ' of ' + withPhone.length + ' opened' +
       (sent ? ' · <button type="button" class="link" style="padding:0;font-size:14px" data-act="texts-reset">Start over</button>' : '') + '</p>' : '') +
     '<ul class="texts">' + withPhone.map(function (g) {
       var href = 'sms:' + g.phone + '?body=' + encodeURIComponent(body);
@@ -1906,6 +1960,7 @@ function exportFiles() {
     ['RSVP by', ev.rsvp_by || ''], ['Details', ev.description], ['Link', shareUrl(S.code)],
     ['Going (incl. plus-ones)', c.going], ['Maybe', c.maybe], ["Can't go", c.no], ['Exported', csvStamp(Date.now())]];
   (ev.links || []).forEach(function (l) { info.push(['Link button: ' + l.label, l.url]); });
+  (ev.faq || []).forEach(function (x) { info.push(['FAQ: ' + x.q, x.a]); });
   files.event = toCsv(info);
   return files;
 }
@@ -1969,7 +2024,11 @@ $app.addEventListener('click', function (e) {
   var tx = e.target.closest('[data-text]');
   if (tx) { // let Messages open, then tick the person off
     var gid = tx.dataset.text;
-    setTimeout(function () { S.texted[gid] = true; renderTextList(); }, 400);
+    setTimeout(function () {
+      if (gid === 'group') document.querySelectorAll('#textList [data-text]').forEach(function (a) { if (a.dataset.text !== 'group') S.texted[a.dataset.text] = true; });
+      else S.texted[gid] = true;
+      renderTextList();
+    }, 400);
     return;
   }
   var sm = e.target.closest('.replied summary');
@@ -1982,6 +2041,8 @@ $app.addEventListener('click', function (e) {
     case 'emoji': F.emoji = id; var ei = $('#eventForm input[name=emoji]'); if (ei) ei.value = id; syncFormUi(); break;
     case 'edit-cancel': S.mode = 'view'; renderEvent(); break;
     case 'link-add': if (F.links.length < 5) { F.links.push({ label: '', url: '' }); $('#linkRows').innerHTML = linkRowsHtml(); var li = document.querySelector('#linkRows .linkrow:last-of-type input'); if (li) li.focus(); } break;
+    case 'faq-add': if (F.faq.length < 15) { F.faq.push({ q: '', a: '' }); $('#faqRows').innerHTML = faqRowsHtml(); var fq = document.querySelector('#faqRows .faqrow:last-of-type input'); if (fq) fq.focus(); } break;
+    case 'faq-rm': F.faq.splice(Number(t.dataset.i), 1); if (!F.faq.length) F.faq.push({ q: '', a: '' }); $('#faqRows').innerHTML = faqRowsHtml(); break;
     case 'link-rm': F.links.splice(Number(t.dataset.i), 1); if (!F.links.length) F.links.push({ label: '', url: '' }); $('#linkRows').innerHTML = linkRowsHtml(); break;
     case 'dl': doDownload(id); break;
     case 'texts-reset': S.texted = {}; renderTextList(); break;
@@ -2066,6 +2127,7 @@ $app.addEventListener('input', function (e) {
   var t = e.target;
   if (t.closest('#eventForm')) {
     if (t.dataset.link) { F.links[Number(t.dataset.i)][t.dataset.link] = t.value; return; }
+    if (t.dataset.faq) { F.faq[Number(t.dataset.i)][t.dataset.faq] = t.value; return; }
     if (t.name === 'emoji') { F.emoji = t.value.trim(); syncFormUi(); }
     else if (t.name === 'title') syncFormUi();
     return;

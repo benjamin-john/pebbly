@@ -150,6 +150,10 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   `rsvp_claim_note`). `rsvp_get` returns `extras: true` once applied; the page only calls the new functions then
   (a missing `gated_` function would switch lock.js to the plain functions for the whole visit).
   Test: `tests/rsvp_plus_test.js`. (pg_bridge can't pass text arrays, so tests can't send the create form's item list.)
+- **RSVP FAQ and group text** (`20261124000000_rsvp_faq.sql`): `rsvp_events.faq` (up to 15 `{q, a}`), edited in the event form
+  like the link buttons and shown as tap-to-open questions after Comments. `_rsvp_event_fields` only returns `faq` when the page
+  sent one, so a save from an older page leaves it alone. Host tools → Text guests has "Group text all N": one `sms:` link with every
+  number (Android `sms:a,b?body=`, iPhone `sms:/open?addresses=a,b&body=`). Test: `tests/rsvp_faq_test.js`.
 - **Secret Santa** (`santa_*`): the draw and pairs live only in the database; `santa_get` returns just
   the calling phone's match (by its participant id). Never add a function that returns all pairs.
 - **Live Quiz** (`live_*`, `/live/`): built for a room of phones, so each answer is its own row in
