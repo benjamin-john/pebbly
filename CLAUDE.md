@@ -140,7 +140,7 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   old reference scripts (`rsvp/*.sql`, `whichdayworks/*.sql`, `play/play.sql`) contain such grants:
   don't re-run them in Supabase. Poll's owner check works by deleting the poll inside a rolled-back
   savepoint, because Poll's tables aren't in the repo.
-- **RSVP invite list** (`rsvp_invites`, `rsvp_invite_*`): host-only, added from Android's Contact Picker
+- **RSVP invite list** (`rsvp_invites`, `rsvp_invite_*`): host-only, shown inside Host tools above Text guests, added from Android's Contact Picker
   (`navigator.contacts.select`; Chrome on Android only, so there's also "Add by hand"). The page matches
   RSVPs to invites (confirmed `guest_id`, any shared phone number, or the identical name) and suggests
   similar names for the host to confirm. Adding anyone with a number turns on "Require a phone number".

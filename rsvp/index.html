@@ -1346,7 +1346,6 @@ function renderEvent() {
     '<hr class="rule">' +
     '<section id="me" class="panel me"></section>' +
     '<section id="guests"></section>' +
-    '<section id="invites"></section>' +
     '<section id="bring"></section>' +
     '<section id="comments"></section>' +
     '<section id="faq"></section>' +
@@ -1357,7 +1356,7 @@ function renderEvent() {
 
 function renderParts() {
   if (S.mode !== 'view' || !$('#me')) return;
-  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderInvites(); renderBring(); renderComments(); renderFaq(); renderContact(); renderHost();
+  renderFacts(); renderAnnc(); renderMe(); renderGuests(); renderBring(); renderComments(); renderFaq(); renderContact(); renderHost();
 }
 
 function isIOS() { return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
@@ -1643,12 +1642,12 @@ function inviteRows() {
   return { rows: rows, free: guests.filter(function (x) { return !used[x.id]; }) };
 }
 function renderInvites() {
-  var el = $('#invites');
+  var el = $('#invites');  // inside Host tools
   if (!el) return;
   if (!S.isOwner || !S.invites) { el.innerHTML = ''; return; }
   var m = inviteRows(), wait = m.rows.filter(function (r) { return !r.guest; }), done = m.rows.filter(function (r) { return r.guest; }), pick = contactsOk();
-  var html = '<h3 class="sect">Invited</h3><p class="hint" style="font-size:14px">' +
-    (m.rows.length ? m.rows.length + ' invited · ' + done.length + ' replied · ' + wait.length + ' no reply yet. ' : 'Keep track of who you invited, then text a reminder to anyone who hasn’t replied. ') + 'Only you see this.</p>' +
+  var html = '<h3 style="font-size:16px;margin-top:20px">Invited</h3><p class="hint" style="font-size:14px">' +
+    (m.rows.length ? m.rows.length + ' invited · ' + done.length + ' replied · ' + wait.length + ' no reply yet. ' : 'Keep track of who you invited, then text a reminder to anyone who hasn’t replied.') + '</p>' +
     '<div class="invbtns">' + (pick ? '<button type="button" class="btn small primary" data-act="inv-contacts">📇 Add from contacts</button>' : '') +
       (S.invForm ? '' : '<button type="button" class="btn small" data-act="inv-manual">＋ Add by hand</button>') + '</div>' +
     (!pick && !m.rows.length ? '<p class="hint" style="font-size:13px;margin-top:6px">Picking people from your contacts works in Chrome on Android. Here you can type them in.</p>' : '');
@@ -1853,6 +1852,7 @@ function renderHost() {
       (REMOTE ? '<button type="button" class="btn small" data-act="lock">🔒 Password</button>' : '') +
       '<button type="button" class="btn small danger" data-act="delete-event">Delete event</button></div>' +
     '<p class="hint" style="margin-top:8px;font-size:13px">The host link gives control of this event on another device. Keep it private.</p>' +
+    '<div id="invites"></div>' +
     '<h3 style="font-size:16px;margin-top:20px">Text guests</h3>' +
     '<p class="hint" style="font-size:13px;margin-top:2px">Send one group text, or text people one at a time. Each button opens Messages on your phone with the message ready; just tap Send. Texts come from your number.</p>' +
     '<div class="aud" role="group" aria-label="Who to text">' + ['going', 'maybe', 'no'].map(function (k) {
@@ -1870,7 +1870,7 @@ function renderHost() {
       '<button type="button" class="btn small" data-act="dl" data-id="comments">Comments</button>' +
       '<button type="button" class="btn small" data-act="dl" data-id="announcements">Announcements</button>' +
       '<button type="button" class="btn small" data-act="dl" data-id="event">Event details</button></div></div>';
-  renderTextList();
+  renderInvites(); renderTextList();
 }
 
 // After an announcement: guests who replied see it under 🔔; offer to text the invited who haven't.

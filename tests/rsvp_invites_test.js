@@ -47,6 +47,7 @@ async function rsvp(b, code, first, last, tel, status) {
   }
 
   check(/Invited/.test(await host.textContent('#invites')), 'host sees the Invited section');
+  check(await host.locator('#host #invites').count() === 1, 'invite list is in Host tools');
   await host.click('[data-act=inv-contacts]');
   await host.waitForSelector('#invites .gbox.wait');
   const t1 = await host.textContent('#invites');
@@ -70,7 +71,7 @@ async function rsvp(b, code, first, last, tel, status) {
 
   // guests can't see it
   const amy = await rsvp(b, code, 'Amy', 'Lee', '612 555 0199', 'going');   // her second number
-  check((await amy.textContent('#invites')).trim() === '', 'guest sees no invite list');
+  check(!(await amy.locator('#invites').count()), 'guest sees no invite list');
   check(/phone/i.test(await amy.evaluate(() => document.body.textContent)), 'guest page loads');
   await rsvp(b, code, 'Michael', 'Smith', '612 555 7777', 'maybe');          // different number, similar name
   await rsvp(b, code, 'Cara', 'Diaz', '612 555 8888', 'no');                 // same name, different number
