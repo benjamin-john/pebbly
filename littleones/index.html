@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#2F7A63">
-<meta name="description" content="Baby log, contraction timer, kick counter and baby names for the two of you.">
+<meta name="description" content="Baby log, contraction timer, kick counter and baby names.">
 <title>Little Ones</title>
 <link rel="icon" type="image/png" href="/icons/favicon.png">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -683,7 +683,7 @@ function renderHome() {
   var owners = load('pebbly_doc_owners', {}) || {}, list = recent();
   $app.innerHTML =
     '<h1 style="margin-top:8px">🧑‍🧑‍🧒 Little Ones</h1>' +
-    '<p class="lede">For the two of you, on both your phones: a contraction timer and kick counter now, then a baby log for feeds, diapers and sleep. ' +
+    '<p class="lede">On both your phones: a contraction timer and kick counter now, then a baby log for feeds, diapers and sleep. ' +
       'Your Baby Names shortlist is part of it too.</p>' +
     (list.length ? '<section class="recent" style="margin-top:0;margin-bottom:22px"><h2>Already started together?</h2>' +
       '<p class="hint" style="margin:0 0 10px">Open your Baby Names shortlist here and everything is in one place, with the same link and password.</p><ul>' +
