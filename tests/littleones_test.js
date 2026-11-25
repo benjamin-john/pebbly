@@ -157,6 +157,31 @@ const until = async (fn, ms) => { const t = Date.now(); while (Date.now() - t < 
   await m.evaluate(() => __lo.sync());
   check(await until(async () => (await ents(a)).some(x => x.k === 'diaper' && x.d.dirty && x.by === 'b')), 'goes up when back online, logged by Amy');
 
+  /* ---- feed reminders */
+  await a.click('[data-act=remind]');
+  await a.waitForSelector('#rmPhone .hint, #rmPhone [data-push]');
+  await a.selectOption('dialog [name=every]', '1.5'); await a.selectOption('dialog [name=repeat]', '15');
+  await a.click('dialog .seg span:has-text("Only at night")'); if (SS) await a.screenshot({ path: SS + '/remind.png' });
+  await a.selectOption('dialog [name=from]', '0'); await a.selectOption('dialog [name=to]', '23');
+  await a.click('dialog [type=submit]');
+  const rm = (await a.evaluate(() => __lo.state())).lo.remind;
+  check(rm.on && rm.every === 1.5 && rm.repeat === 15 && rm.night && rm.from === 0 && rm.to === 23 && rm.tz, 'reminder settings saved: ' + JSON.stringify(rm));
+  check((await a.textContent('[data-act=remind]')).includes('every 1.5 h'), 'reminder button text');
+  check((await a.textContent('.tile.feed')).includes('next'), 'next feed time on the tile');
+  await until(() => sql(`select state->'lo'->'remind'->>'every' from plan_docs where code='${code}'`) === '1.5');
+  const lastFeed = Number(sql(`select max(at) from lo_entries where kind in ('feed','bottle') and not deleted`));
+  const tickAt = ms => sql(`select lo_remind_tick(to_timestamp(${ms} / 1000.0))`);
+  check(tickAt(lastFeed + 80 * 60000) === '0', 'not due yet');
+  check(tickAt(lastFeed + 91 * 60000) === '1', 'due after 1.5 hours');
+  check(tickAt(lastFeed + 95 * 60000) === '0' && tickAt(lastFeed + 107 * 60000) === '1', 'repeats 15 minutes later');
+  check(feed(mpid, lk)[0].items.some(x => x.type === 'little.feed_due') && feed(apid, lk)[0].items.some(x => x.type === 'little.feed_due'), 'both phones get it');
+  const al = await a.evaluate(() => PebblyNotify.alertView({ type: 'little.feed_due', app: 'little', code: 'x', title: 'June', emoji: '🧑‍🧑‍🧒', name: 'June', detail: { n: 1, last: Date.now() } }));
+  check(al.body.startsWith('🍼 Time to feed June') && al.urgent, 'alert wording: ' + al.body);
+  sql(`set role anon; select notify_set_off('[{"app":"little","code":"${code}","role":"guest","key":"${apid}","lock":"${lk}","off":["little.feed_due"]}]')`);
+  check(!feed(apid, lk)[0].items.some(x => x.type === 'little.feed_due'), 'a phone can turn them off for itself');
+  await a.click('[data-act=feed]'); await a.click('dialog .seg span:has-text("Bottle")'); await a.click('dialog [data-amt="2"]'); await a.click('dialog [type=submit]');
+  check(await until(() => sql(`select count(*) from notifications where type='little.feed_due'`) === '0'), 'a new feed clears waiting reminders');
+
   /* ---- history, AI, doctor */
   await a.click('.tabs [data-v=history]');
   check((await a.textContent('.days')).includes('Today'), 'history table');

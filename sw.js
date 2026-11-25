@@ -75,9 +75,10 @@ self.addEventListener('push', e => {
   try { d = e.data ? e.data.json() : {}; } catch (x) {}
   const N = self.PebblyNotify;
   const v = N ? N.alertView(d) : { title: 'Pebbly', body: 'Something new', url: '/', tag: 'pebbly' };
-  e.waitUntil(self.registration.showNotification(v.title, {
+  // urgent ones (feed reminders, labor): stay until dismissed and vibrate longer
+  e.waitUntil(self.registration.showNotification(v.title, Object.assign({
     body: v.body, tag: v.tag, renotify: true, icon: '/icons/icon-192.png', badge: '/icons/badge-96.png', data: { url: v.url }
-  }));
+  }, v.urgent ? { requireInteraction: true, vibrate: [500, 200, 500, 200, 900] } : {})));
 });
 self.addEventListener('notificationclick', e => {
   e.notification.close();

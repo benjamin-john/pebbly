@@ -79,10 +79,15 @@
       text: function (n) { return n + ' wants to see where you are. Tap to open the map and share your location.'; } },
     'little.contractions': { app: 'little', role: 'guest', label: 'Someone starts timing contractions', go: '#labor', icon: function () { return '⏱️'; },
       text: function (n) { return n + ' started timing contractions.'; } },
-    'little.pattern': { app: 'little', role: 'guest', label: 'Contractions reach your pattern (like 5-1-1)', go: '#labor', icon: function () { return '🚨'; },
+    'little.pattern': { app: 'little', role: 'guest', label: 'Contractions reach your pattern (like 5-1-1)', go: '#labor', icon: function () { return '🚨'; }, urgent: true,
       text: function (n, d) { return 'Contractions are ' + (d.rule || '5-1-1') + ': about ' + (d.apart || '?') + ' min apart, ' + (d.len || '?') + ' s long, for an hour. Time to call the doctor or hospital.'; } },
-    'little.water': { app: 'little', role: 'guest', label: 'Water broke', go: '#labor', icon: function () { return '💦'; },
-      text: function (n) { return 'Water broke (logged by ' + n + ').'; } }
+    'little.water': { app: 'little', role: 'guest', label: 'Water broke', go: '#labor', icon: function () { return '💦'; }, urgent: true,
+      text: function (n) { return 'Water broke (logged by ' + n + ').'; } },
+    'little.feed_due': { app: 'little', role: 'guest', label: 'Feed reminders', go: '#view', icon: function () { return '🍼'; }, urgent: true,
+      text: function (n, d) {
+        var t = d.last ? new Date(d.last).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : '';
+        return (d.n > 1 ? 'Reminder: time to feed ' : 'Time to feed ') + n + (t ? '. The last feed started at ' + t + '.' : '.');
+      } }
   };
 
   // What a phone alert says (sw.js, for each push).
@@ -91,7 +96,7 @@
     var t = TYPES[d.type], a = APPS[d.app], det = d.detail || {};
     return { title: (d.emoji ? d.emoji + ' ' : '') + (d.title || (a ? a.name : 'Pebbly')),
       body: t ? t.icon(det) + ' ' + t.text(d.name || 'Someone', det) : 'Something new',
-      url: eventUrl(d.app, d.code), tag: d.tag || 'pebbly' };
+      url: eventUrl(d.app, d.code), tag: d.tag || 'pebbly', urgent: !!(t && t.urgent) };
   }
   // In the service worker: only the wording.
   if (typeof document === 'undefined') { self.PebblyNotify = { TYPES: TYPES, APPS: APPS, alertView: alertView }; return; }

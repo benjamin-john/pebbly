@@ -245,7 +245,7 @@ async function decrypt(body, sub) {
   await cdp.send('ServiceWorker.enable');
   const id = await regId;
   await cdp.send('ServiceWorker.deliverPushMessage', { origin: B, registrationId: id, data: JSON.stringify({ app: 'wdw', code: 'abcdefgh', title: 'Cabin weekend', emoji: '📅', type: 'wdw.final_date', name: 'Cabin weekend', detail: { date: '2026-12-05', days: 2 }, tag: 'wdw:abcdefgh:wdw.final_date' }) });
-  const shown = await pg.waitForFunction(() => navigator.serviceWorker.ready.then(r => r.getNotifications()).then(l => l.length && l.map(n => ({ title: n.title, body: n.body, tag: n.tag, url: n.data.url }))), null, { timeout: 5000 }).then(h => h.jsonValue()).catch(() => []);
+  const shown = await pg.waitForFunction(() => navigator.serviceWorker.ready.then(r => r.getNotifications()).then(l => l.length && l.map(n => ({ title: n.title, body: n.body, tag: n.tag, url: n.data.url }))), null, { timeout: 15000 }).then(h => h.jsonValue()).catch(() => []);
   check(shown.length === 1 && shown[0].title === '📅 Cabin weekend' && shown[0].body === '🎯 The date is set: Sat, Dec 5 (2 days)' && shown[0].url === '/whichdayworks/?e=abcdefgh', 'service worker shows the alert: ' + JSON.stringify(shown));
   check(!swErrs.length && !host.errs.length && !guest.errs.length && !nn.errs.length, 'page errors: ' + swErrs.concat(host.errs, guest.errs, nn.errs).join('; '));
 

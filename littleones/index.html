@@ -400,6 +400,18 @@ function other() { return me() === 'b' ? 'a' : 'b'; }
 function who(slot) { return (S && S.p[slot]) || (slot === 'a' ? 'Parent 1' : slot === 'b' ? 'Your partner' : ''); }
 function ui() { return (load(K_UI, {}) || {})[CODE] || {}; }
 function setUi(k, v) { var all = load(K_UI, {}) || {}; var u = all[CODE] || {}; if (v === undefined) delete u[k]; else u[k] = v; all[CODE] = u; store(K_UI, all); }
+// Feed reminders (shared): sent by the server (lo_remind_tick) as phone alerts; see openRemind.
+function remind() { var r = lo().remind; return r && typeof r === 'object' ? r : {}; }
+function nextFeed() {
+  var r = remind(); if (!r.on) return null;
+  var lf = last(['feed', 'bottle']); if (!lf) return null;
+  return lf.at + (Number(r.every) || 3) * HOUR;
+}
+function hourName(h) { return h === 0 ? 'midnight' : h === 12 ? 'noon' : (h % 12) + (h < 12 ? ' am' : ' pm'); }
+function remindText() {
+  var r = remind(); if (!r.on) return 'Set feed reminders';
+  return 'Reminders every ' + (Number(r.every) || 3) + ' h' + (r.night ? ', ' + hourName(Number(r.from)) + '–' + hourName(Number(r.to)) : '');
+}
 function babyName() { return tidy(lo().baby); }
 function title() { return babyName() || (S && S.p.a && S.p.b ? S.p.a + ' & ' + S.p.b : 'Little Ones'); }
 function recent() { var r = load(K_RECENT, []); return Array.isArray(r) ? r : []; }
@@ -894,11 +906,13 @@ function viewToday() {
     var k = (x.d.name || '').toLowerCase(); if (seenMed[k]) return; seenMed[k] = 1;
     h += '<div class="banner">💊 <b>' + esc(x.d.name || 'Medicine') + '</b> given ' + esc(fmtTime(x.at)) + '. Next dose allowed after <b>' + esc(soon(x.at + x.d.every * HOUR)) + '</b>.</div>';
   });
-  var lf = last(['feed', 'bottle']), ld = last('diaper'), ls = last('sleep', true);
+  var lf = last(['feed', 'bottle']), ld = last('diaper'), ls = last('sleep', true), due = nextFeed();
+  if (due && !fr && now >= due) h += '<div class="banner" role="alert">🍼 <b>Time to feed.</b> The last feed started <span data-for="' + lf.at + '"></span> ago.</div>';
   var nextSide = (function () { var l = entries('feed').filter(function (x) { return typeof x.end === 'number' && x.d && x.d.last; }); l = l[l.length - 1]; return l ? l.d.last : ''; })();
   h += '<div class="tiles">' +
     '<div class="tile feed"><span class="k">🍼 Fed</span><b>' + (fr ? 'Now' : lf ? '<span data-ago="' + lf.at + '"></span>' : '–') + '</b>' +
-      '<small>' + (lf && !fr ? esc(lf.k === 'bottle' ? 'Bottle ' + amt(lf.d.amt, lf.d.unit) : 'Breast') + ' · ' : '') + (nextSide ? 'ended on ' + (nextSide === 'L' ? 'left' : 'right') : lf ? esc(fmtTime(lf.at)) : 'nothing yet') + '</small></div>' +
+      '<small>' + (lf && !fr ? esc(lf.k === 'bottle' ? 'Bottle ' + amt(lf.d.amt, lf.d.unit) : 'Breast') + ' · ' : '') + (nextSide ? 'ended on ' + (nextSide === 'L' ? 'left' : 'right') : lf ? esc(fmtTime(lf.at)) : 'nothing yet') +
+      (due && !fr ? '<br>next ' + esc(fmtTime(due)) : '') + '</small></div>' +
     '<div class="tile diaper"><span class="k">💧 Diaper</span><b>' + (ld ? '<span data-ago="' + ld.at + '"></span>' : '–') + '</b>' +
       '<small>' + (ld ? esc(describe(ld).replace('Diaper: ', '')) : 'nothing yet') + '</small></div>' +
     '<div class="tile sleep"><span class="k">😴 ' + (sr ? 'Asleep' : 'Awake') + '</span><b>' + (sr ? '<span data-for="' + sr.at + '"></span>' : ls ? '<span data-for="' + ls.end + '"></span>' : '–') + '</b>' +
@@ -907,7 +921,8 @@ function viewToday() {
     '<button type="button" class="bigbtn feed" data-act="feed"><span class="e" aria-hidden="true">🍼</span>Feed</button>' +
     '<button type="button" class="bigbtn diaper" data-act="diaper"><span class="e" aria-hidden="true">💧</span>Diaper</button>' +
     '<button type="button" class="bigbtn sleep" data-act="' + (sr ? 'wake' : 'sleep') + '"><span class="e" aria-hidden="true">' + (sr ? '🌤️' : '😴') + '</span>' + (sr ? 'Woke up' : 'Sleep') + '</button>' +
-    '<button type="button" class="bigbtn" data-act="more"><span class="e" aria-hidden="true">➕</span>More</button></div>';
+    '<button type="button" class="bigbtn" data-act="more"><span class="e" aria-hidden="true">➕</span>More</button></div>' +
+    '<button type="button" class="btn wide" style="margin:-4px 0 14px" data-act="remind">⏰ ' + esc(remindText()) + '</button>';
   var t = totals(dayStart(now)), y = totals(dayStart(now) - DAY);
   h += '<section class="card"><h2>Today</h2><div class="totals">' +
     '<div><b>' + t.feeds + '</b><span>feeds</span><small>' + (t.bottle ? esc(amt(t.bottle, unit())) + ' bottle' : '') + '</small><small>yday ' + y.feeds + '</small></div>' +
@@ -1299,6 +1314,89 @@ function openSettings() {
   });
 }
 
+/* ------------------------------------------------------------------ feed reminders */
+// Shared settings in lo.remind; whether this phone gets them is its own (notify_off for 'little.feed_due').
+function myFeed() {
+  if (!window.PebblyNotify) return Promise.resolve(null);
+  return PebblyNotify.load().then(function (list) {
+    return list.filter(function (x) { return x.f.app === 'little' && x.f.code === CODE && x.f.role === 'guest'; })[0] || null;
+  }, function () { return null; });
+}
+function openRemind() {
+  var r = remind(), hours = [], i;
+  for (i = 0; i < 24; i++) hours.push('<option value="' + i + '">' + hourName(i) + '</option>');
+  var opt = function (list, cur) { return list.map(function (o) { return '<option value="' + o[0] + '"' + (String(o[0]) === String(cur) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join(''); };
+  var everyOpts = []; for (i = 1.5; i <= 5; i += 0.5) everyOpts.push([i, 'Every ' + i + ' hours']);
+  var d = dialog('<form novalidate autocomplete="off">' + head('⏰ Feed reminders') +
+    '<label class="chk" style="margin-bottom:12px"><input type="checkbox" name="on"' + (r.on || !('on' in r) ? ' checked' : '') + '><b>Remind us when it’s time to feed</b></label>' +
+    '<div data-on>' +
+    '<label class="fld"><span>How often</span><select name="every">' + opt(everyOpts, r.every || 3) + '</select><small>Counted from when the last feed started. Ask your pediatrician what’s right for your baby.</small></label>' +
+    '<label class="fld"><span>Heads-up</span><select name="lead">' + opt([[0, 'When it’s time'], [10, '10 minutes early'], [15, '15 minutes early'], [30, '30 minutes early']], r.lead || 0) + '</select></label>' +
+    '<label class="fld"><span>If nobody logs a feed</span><select name="repeat">' + opt([[0, 'Remind once'], [15, 'Again every 15 minutes (3 more)'], [30, 'Again every 30 minutes (3 more)']], r.repeat || 0) + '</select></label>' +
+    '<fieldset><legend>When</legend>' + seg('when', [['all', 'Day and night'], ['night', 'Only at night']], r.night ? 'night' : 'all') +
+      '<div class="row2" data-night style="margin-top:10px"' + (r.night ? '' : ' hidden') + '><label class="fld" style="margin:0"><span class="hint">From</span><select name="from">' + hours.join('') + '</select></label>' +
+      '<label class="fld" style="margin:0"><span class="hint">To</span><select name="to">' + hours.join('') + '</select></label></div></fieldset>' +
+    '</div>' +
+    '<p class="hint">Shared: this changes it for both of you.</p>' +
+    '<div class="card" style="margin:14px 0;background:var(--bg)"><h3 style="font-size:17px;margin-bottom:6px">This phone</h3><div id="rmPhone"><p class="hint">Checking…</p></div></div>' +
+    '<div class="dlgbtns"><button type="submit" class="btn primary">Save</button></div>' +
+    '<p class="note">Reminders are phone notifications, so they ring like a text, not like an alarm clock. At night, Do Not Disturb can silence them. To let them through on Android: Settings → Notifications → Do Not Disturb → Apps → add Chrome.</p>' +
+    '<p class="err" role="alert"></p></form>');
+  var f = $('form', d), feedRow = null, wantHere = true;
+  f.from.value = String(r.from != null ? r.from : 21); f.to.value = String(r.to != null ? r.to : 7);
+  function showOn() { $('[data-on]', f).hidden = !f.on.checked; }
+  showOn();
+  f.addEventListener('change', function (ev) {
+    if (ev.target.name === 'on') showOn();
+    if (ev.target.name === 'when') $('[data-night]', f).hidden = radio(f, 'when') !== 'night';
+  });
+  function phone() {
+    var box = $('#rmPhone', d); if (!box) return;
+    var P = window.PebblyNotify && PebblyNotify.push;
+    if (!P) { box.innerHTML = '<p class="hint">Phone alerts aren’t available here.</p>'; return; }
+    Promise.all([P.state(), myFeed()]).then(function (x) {
+      var st = x[0]; feedRow = x[1];
+      wantHere = !(feedRow && feedRow.off.indexOf('little.feed_due') >= 0);
+      if (st === 'on') {
+        box.innerHTML = '<label class="chk"><input type="checkbox" name="here"' + (wantHere ? ' checked' : '') + '>Send reminders to this phone</label>' +
+          '<p class="hint">Phone alerts are on. Turn this off on the phone that sleeps through the night shift.</p>';
+      } else if (st === 'off') {
+        box.innerHTML = '<p class="hint" style="margin-bottom:10px">Phone alerts are off on this phone, so it won’t get reminders.</p>' +
+          '<button type="button" class="btn ghost wide" data-push>🔔 Turn on phone alerts</button>';
+      } else if (st === 'blocked') {
+        box.innerHTML = '<p class="hint">Notifications are blocked for Pebbly. Allow them in Chrome: ⋮ → Settings → Site settings → Notifications.</p>';
+      } else if (st === 'ios-install') {
+        box.innerHTML = '<p class="hint">On iPhone, add Pebbly to the Home Screen first, then turn on alerts.</p>';
+      } else box.innerHTML = '<p class="hint">This browser can’t get phone alerts.</p>';
+    });
+  }
+  d.addEventListener('click', function (ev) {
+    if (!ev.target.closest('[data-push]')) return;
+    var b = ev.target.closest('[data-push]'); b.disabled = true; b.textContent = 'Turning on…';
+    PebblyNotify.push.on().then(function () { phone(); }, function (e) {
+      b.disabled = false; b.textContent = '🔔 Turn on phone alerts';
+      toast(e && e.message === 'blocked' ? 'Notifications are blocked. Allow them in Chrome’s site settings.' : 'Couldn’t turn on alerts. Try again.');
+    });
+  });
+  phone();
+  f.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    var night = radio(f, 'when') === 'night';
+    if (night && f.from.value === f.to.value) { $('.err', f).textContent = 'Pick different start and end times.'; return; }
+    var nr = { on: f.on.checked, every: Number(f.every.value), lead: Number(f.lead.value), repeat: Number(f.repeat.value), night: night,
+      from: Number(f.from.value), to: Number(f.to.value), tz: tz };
+    setLo({ remind: nr });
+    var here = f.here ? f.here.checked : null;
+    if (here !== null && feedRow && here !== wantHere) {
+      var off = feedRow.off.filter(function (t) { return t !== 'little.feed_due'; }); if (!here) off.push('little.feed_due');
+      PebblyNotify.setOff([{ f: feedRow.f, off: off }]).catch(function () { toast('Couldn’t save this phone’s choice. Try again.'); });
+    }
+    d.close();
+    toast(nr.on ? 'Saved. ' + remindText() + '.' : 'Feed reminders are off.');
+  });
+}
+
 /* ------------------------------------------------------------------ AI and the doctor */
 var ASKS = {
   naps: { t: '😴 When are the next naps and bedtime?', kinds: ['sleep', 'feed', 'bottle'], days: 3,
@@ -1418,6 +1516,7 @@ function openMenu() {
   var d = dialog('<div class="in">' + head('Options') + '<div class="menu">' +
     '<button type="button" class="btn" data-m="ai"><span>✨ Ask AI about your log<small>Copy it with a question for ChatGPT, Gemini or Claude</small></span></button>' +
     (born() ? '<button type="button" class="btn" data-m="doctor"><span>🩺 For the doctor<small>A short summary for a checkup</small></span></button>' : '') +
+    (born() ? '<button type="button" class="btn" data-m="remind"><span>⏰ Feed reminders<small>' + esc(remind().on ? remindText() : 'Alerts when it’s time to feed, day or night') + '</small></span></button>' : '') +
     '<button type="button" class="btn" data-m="settings"><span>⚙️ Settings<small>Due date, name, hospital number, units</small></span></button>' +
     '<button type="button" class="btn" data-m="share"><span>🔗 Share the link<small>For ' + esc(who(other())) + ', or a grandparent or sitter who helps log</small></span></button>' +
     '<button type="button" class="btn" data-m="switch"><span>🔄 Use as ' + esc(who(other())) + '<small>If you’re sharing this phone</small></span></button>' +
@@ -1433,7 +1532,8 @@ function openMenu() {
     var b = ev.target.closest('[data-m]'); if (!b) return;
     var k = b.getAttribute('data-m');
     d.close();
-    if (k === 'ai') openAI(); else if (k === 'doctor') openDoctor(); else if (k === 'settings') openSettings(); else if (k === 'share') shareLink();
+    if (k === 'remind') openRemind();
+    else if (k === 'ai') openAI(); else if (k === 'doctor') openDoctor(); else if (k === 'settings') openSettings(); else if (k === 'share') shareLink();
     else if (k === 'born') openBorn();
     else if (k === 'switch') { setPref('me', other()); render({}); toast('Now logging as ' + who(me()) + '.'); }
     else if (k === 'mode') { setUi('mode', m === 'baby' ? 'bump' : 'baby'); setUi('tab', undefined); render({}); }
@@ -1499,6 +1599,7 @@ $app.addEventListener('click', function (ev) {
     case 'sleep': openSleep(); break;
     case 'wake': wake(); break;
     case 'more': openMore(); break;
+    case 'remind': openRemind(); break;
     case 'ai': openAI(); break;
     case 'doctor': openDoctor(); break;
     case 'days': setUi('days', ui().days === 30 ? 7 : 30); render({}); break;

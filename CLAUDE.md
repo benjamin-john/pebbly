@@ -179,7 +179,12 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   temp, growth, first, note, kicks, contraction, water. Notifications app `little` (role guest, key = phone id
   `pebbly_little_pid`, password = the doc one): contractions start (after 2 quiet hours), pattern met (`_lo_pattern`, same
   test as the page's `pattern()`, once per 3 h), water broke. "Copy for AI" builds a prompt with the log (no AI is called).
-  Test: `tests/littleones_test.js`.
+  Feed reminders (`20261127000000_little_ones_reminders.sql`): shared settings `lo.remind` {on, every h, lead min, repeat min,
+  night, from, to, tz}; pg_cron runs `lo_remind_tick()` every minute (job `little-ones-reminders`), adding a
+  `little.feed_due` notification (dedupe by last feed id in `detail.entry`; up to 3 repeats; none while a feed is running;
+  a new feed/bottle deletes waiting ones). Each phone opts out with notify_off (the page's ⏰ dialog). Urgent kinds
+  (`urgent: true` in notify.js TYPES) show with `requireInteraction` and a longer vibration (sw.js).
+  Test: `tests/littleones_test.js` (calls `lo_remind_tick(p_now)` directly; the test database has no pg_cron).
 - **Notifications** (`notifications`, `notify_types`, `notify_off`; `notify.js`): one table for every app. Rows are
   added by triggers on each app's tables (so app functions don't change), each for the event's hosts or for everyone
   who responded (`audience` 'host'/'guest'). Phones read only through `notify_feed` (one call for all their events:
