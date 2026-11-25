@@ -182,6 +182,28 @@ const until = async (fn, ms) => { const t = Date.now(); while (Date.now() - t < 
   await a.click('[data-act=feed]'); await a.click('dialog .seg span:has-text("Bottle")'); await a.click('dialog [data-amt="2"]'); await a.click('dialog [type=submit]');
   check(await until(() => sql(`select count(*) from notifications where type='little.feed_due'`) === '0'), 'a new feed clears waiting reminders');
 
+  /* ---- night alarm */
+  await a.click('[data-act=night]');
+  check(await a.isVisible('#night') && (await a.textContent('#night')).includes('Alarm at'), 'night alarm screen');
+  const at1 = (await a.evaluate(() => __lo.alarm())).at.at;
+  await a.click('#night [data-na="+15"]');
+  check((await a.evaluate(() => __lo.alarm())).at.at - at1 === 15 * 60000, '+15 min moves the alarm');
+  // every recent feed moves back, so the latest one is due in 2.5 s
+  await a.evaluate(() => Object.values(__lo.entries()).filter(x => (x.k === 'bottle' || x.k === 'feed') && x.at > Date.now() - 3 * 3600000)
+    .forEach((x, i) => { x.at = Date.now() - 90 * 60000 + 2500 - i * 60000; if (x.end) x.end = x.at + 60000; __lo.put(x); }));
+  check(await until(async () => (await a.evaluate(() => __lo.alarm())).ringing, 8000), 'rings when it’s time');
+  check(await a.evaluate(() => document.getElementById('night').className === 'ring' && !!document.querySelector('#night .nup')), 'ringing screen with “I’m up”');
+  await shot(a, 'night-ring');
+  await a.click('#night [data-na=snooze]');
+  const sn = await a.evaluate(() => __lo.alarm());
+  check(!sn.ringing && sn.at.at > Date.now() + 4 * 60000, 'snooze 5 minutes');
+  await a.evaluate(() => __lo.put({ id: 'nightfeed2', k: 'bottle', at: Date.now() - 90 * 60000 + 1500, d: { amt: 2, unit: 'oz', milk: 'breast' } }));
+  check(await until(async () => (await a.evaluate(() => __lo.alarm())).ringing, 8000), 'a new feed sets a new alarm (rings again)');
+  await m.evaluate(() => __lo.put({ id: 'nightfeed3', k: 'bottle', at: Date.now(), d: { amt: 3, unit: 'oz', milk: 'breast' } }));
+  check(await until(async () => !(await a.evaluate(() => __lo.alarm())).ringing, 9000), 'stops when the other phone logs a feed');
+  await a.click('#night [data-na=off]');
+  check(!(await a.isVisible('#night')), 'turned off');
+
   /* ---- history, AI, doctor */
   await a.click('.tabs [data-v=history]');
   check((await a.textContent('.days')).includes('Today'), 'history table');

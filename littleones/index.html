@@ -228,6 +228,22 @@ dialog.dlg::backdrop{background:rgba(10,20,16,.55)}
 .diapers button[aria-pressed=true]{border:2px solid var(--diaper)}
 .prompt{white-space:pre-wrap;font:13px/1.45 ui-monospace,Menlo,Consolas,monospace;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0 0;overflow-wrap:anywhere;max-height:260px;overflow:auto}
 
+/* ---------- night alarm (always dark) ---------- */
+#night{position:fixed;inset:0;z-index:15;background:#050807;color:#8FA39B;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:24px 16px calc(24px + env(safe-area-inset-bottom));text-align:center;overflow-y:auto}
+#night .nclock{font:800 76px/1 var(--head);color:#B8C9C2;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+#night .nnext{font-size:19px}
+#night .nnext b{color:#D6E3DE}
+#night .nbtns{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+#night button{min-height:48px;padding:0 16px;border-radius:12px;border:1px solid #26332E;background:#0E1512;color:#9FB3AB;font:600 16px var(--body);cursor:pointer}
+#night .nlink{border:0;background:none;color:#6E8A7F;text-decoration:underline;min-height:44px}
+#night .nhint{font-size:13px;color:#5F7269;max-width:36ch}
+#night .narm{background:#3A3218;color:#F2D98A;border-radius:12px;padding:10px 14px;font-weight:600}
+#night.ring{background:#2F7A63;color:#fff;animation:nflash 1s steps(2) infinite}
+#night.ring .nclock,#night.ring .nnext b{color:#fff}
+#night .nup{min-height:96px !important;min-width:240px;font:800 30px var(--head) !important;background:#fff !important;color:#1F2A27 !important;border:0 !important}
+@keyframes nflash{50%{background:#1F5545}}
+@media (prefers-reduced-motion:reduce){#night.ring{animation:none}}
 #toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top));transform:translate(-50%,-14px);opacity:0;background:var(--ink);color:var(--bg);
   padding:6px 8px 6px 16px;border-radius:12px;max-width:calc(100% - 32px);pointer-events:none;transition:opacity .2s,transform .2s;z-index:20;font-size:15px;font-weight:500;
   display:flex;align-items:center;gap:8px;min-height:44px}
@@ -657,6 +673,7 @@ function route() {
   if (D) { D.close(); D = null; }
   S = null; gone = null; E = {}; SEQ = 0; CODE = ''; setupMissing = false;
   if (window.keepAwake) keepAwake(false);
+  if (NA.on) { hush(); NA.on = false; var ne = $('#night'); if (ne) ne.hidden = true; }
   var q = new URLSearchParams(location.search), code = q.get('d');
   if (!code) { renderHome(); return; }
   openSpace(code.trim().toLowerCase());
@@ -676,6 +693,7 @@ function openSpace(code) {
     if (!d) { forgetSpace(code); renderNotFound(); return; }
     D = d;
     if (d.isOwner && !me()) setPref('me', 'a');
+    if (ui().alarmOn && born()) nightOn();
     if (window.PebblyNotify) PebblyNotify.feed('little', code, 'guest', pid(), pid());
   }, function (e) {
     $app.innerHTML = '<div class="state"><div class="e" aria-hidden="true">📶</div><h1>Couldn’t open this</h1><p class="lede">' + esc(friendly(e)) + '</p>' +
@@ -785,7 +803,7 @@ function render(info) {
   $('#top').innerHTML = top;
   var v = $('#view');
   v.innerHTML = t === 'bump' ? viewBump() : t === 'labor' ? viewLabor() : t === 'today' ? viewToday() : t === 'history' ? viewHistory() : viewNames();
-  if (window.keepAwake) keepAwake(t === 'labor' || !!running('kicks', 2 * HOUR));
+  if (window.keepAwake) keepAwake(NA.on || t === 'labor' || !!running('kicks', 2 * HOUR));
   tick();
   showStatus();
 }
@@ -799,7 +817,7 @@ function tick() {
   $$('[data-ago]').forEach(function (el) { if (el.tagName !== 'BUTTON') el.textContent = agoText(Number(el.getAttribute('data-ago'))); });
   $$('[data-for]').forEach(function (el) { el.textContent = short(now - Number(el.getAttribute('data-for'))); });
 }
-setInterval(tick, 1000);
+setInterval(function () { tick(); nightTick(); }, 1000);
 
 /* ---------- pregnancy tab */
 function viewBump() {
@@ -922,7 +940,8 @@ function viewToday() {
     '<button type="button" class="bigbtn diaper" data-act="diaper"><span class="e" aria-hidden="true">💧</span>Diaper</button>' +
     '<button type="button" class="bigbtn sleep" data-act="' + (sr ? 'wake' : 'sleep') + '"><span class="e" aria-hidden="true">' + (sr ? '🌤️' : '😴') + '</span>' + (sr ? 'Woke up' : 'Sleep') + '</button>' +
     '<button type="button" class="bigbtn" data-act="more"><span class="e" aria-hidden="true">➕</span>More</button></div>' +
-    '<button type="button" class="btn wide" style="margin:-4px 0 14px" data-act="remind">⏰ ' + esc(remindText()) + '</button>';
+    '<div class="dlgbtns" style="margin:-4px 0 14px"><button type="button" class="btn" data-act="remind">⏰ ' + esc(remindText()) + '</button>' +
+    '<button type="button" class="btn" data-act="night">🌙 Night alarm</button></div>';
   var t = totals(dayStart(now)), y = totals(dayStart(now) - DAY);
   h += '<section class="card"><h2>Today</h2><div class="totals">' +
     '<div><b>' + t.feeds + '</b><span>feeds</span><small>' + (t.bottle ? esc(amt(t.bottle, unit())) + ' bottle' : '') + '</small><small>yday ' + y.feeds + '</small></div>' +
@@ -1397,6 +1416,114 @@ function openRemind() {
   });
 }
 
+/* ------------------------------------------------------------------ night alarm */
+// This phone only: a full-screen dark clock that keeps the screen on and rings (Web Audio beeps + vibration) until
+// "I'm up", at the next feed time (last feed's start + the reminder interval − heads-up; 3 h if reminders aren't set).
+// It moves by itself when anyone logs a feed. Per phone, in pebbly_little_ui: alarmOn, alarm {feed, adj, snooze, done}.
+// A browser can't ring with the screen off, so the screen stays on (keepAwake).
+var NA = { on: false, ctx: null, ringing: false, beeper: null, started: 0 };
+function naGet() { var a = ui().alarm; return a && typeof a === 'object' ? a : {}; }
+function naSet(patch) { var a = naGet(); Object.keys(patch).forEach(function (k) { a[k] = patch[k]; }); setUi('alarm', a); }
+function alarmAt() {
+  var lf = last(['feed', 'bottle']); if (!lf) return null;
+  var r = remind(), a = naGet(), mine = a.feed === lf.id;
+  var t = lf.at + (Number(r.every) || 3) * HOUR - (Number(r.lead) || 0) * MIN + (mine ? (a.adj || 0) * MIN : 0);
+  if (mine && a.snooze && a.snooze > t) t = a.snooze;
+  return { at: t, feed: lf, done: mine && a.done };
+}
+function audio() {
+  if (!NA.ctx) { var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null; NA.ctx = new AC(); }
+  if (NA.ctx.state === 'suspended') NA.ctx.resume().catch(function () {});
+  return NA.ctx;
+}
+function beep(vol) {
+  var c = audio(); if (!c) return;
+  var t0 = c.currentTime + 0.02;
+  for (var i = 0; i < 3; i++) {
+    var o = c.createOscillator(), g = c.createGain(), t = t0 + i * 0.32;
+    o.type = 'square'; o.frequency.value = i === 2 ? 1175 : 880;
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.02); g.gain.setValueAtTime(vol, t + 0.2); g.gain.linearRampToValueAtTime(0, t + 0.24);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.26);
+  }
+}
+function ring() {
+  if (NA.ringing) return;
+  NA.ringing = true; NA.started = Date.now();
+  var go = function () {
+    var v = Math.min(0.9, 0.25 + (Date.now() - NA.started) / 40000);   // gets louder over the first half minute
+    beep(v);
+    if (navigator.vibrate) try { navigator.vibrate([700, 300, 700]); } catch (e) {}
+  };
+  go(); NA.beeper = setInterval(go, 1600);
+  nightPaint();
+}
+function hush() {
+  NA.ringing = false; clearInterval(NA.beeper); NA.beeper = null;
+  if (navigator.vibrate) try { navigator.vibrate(0); } catch (e) {}
+}
+function nightOn() {
+  if (!born()) { toast('The night alarm is for after baby arrives.'); return; }
+  audio();                                       // this tap lets the page make sound later
+  NA.on = true; setUi('alarmOn', true);
+  var el = $('#night'); if (!el) { el = document.createElement('div'); el.id = 'night'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Night alarm'); document.body.appendChild(el); }
+  el.hidden = false;
+  if (window.keepAwake) keepAwake(true);
+  nightPaint();
+}
+function nightOff() {
+  hush(); NA.on = false; setUi('alarmOn', undefined);
+  var el = $('#night'); if (el) el.hidden = true;
+  if (window.keepAwake) keepAwake(tab() === 'labor');
+  toast('Night alarm is off.');
+}
+function nightPaint() {
+  var el = $('#night'); if (!el || !NA.on) return;
+  var a = alarmAt(), fr = running('feed', 4 * HOUR), now = Date.now(), armed = NA.ctx && NA.ctx.state === 'running';
+  el.className = NA.ringing ? 'ring' : '';
+  var next = !a ? '<p class="nnext">Log a feed and the alarm sets itself.</p>' :
+    fr ? '<p class="nnext">Feeding now. The alarm sets itself when it’s done.</p>' :
+    a.done ? '<p class="nnext">Up for this one. The next alarm sets itself after the next feed.</p>' :
+    '<p class="nnext">Alarm at <b>' + esc(fmtTime(a.at)) + '</b>' + (a.at > now ? ' · in <span data-for-left="' + a.at + '">' + short(a.at - now) + '</span>' : '') + '</p>';
+  el.innerHTML = '<div class="nclock" data-nclock>' + esc(fmtTime(now).replace(/ [ap]m$/, '')) + '</div>' + next +
+    (NA.ringing ? '<h2 style="font-size:28px;color:#fff">🍼 Time to feed ' + esc(babyName() || 'baby') + '</h2>' +
+      '<button type="button" class="nup" data-na="up">I’m up</button><div class="nbtns"><button type="button" data-na="snooze">Snooze 5 min</button></div>' :
+      (armed ? '' : '<p class="narm">Tap anywhere to turn the sound on.</p>') +
+      (a && !fr && !a.done ? '<div class="nbtns"><button type="button" data-na="-15">−15 min</button><button type="button" data-na="+15">+15 min</button></div>' : '') +
+      '<div class="nbtns"><button type="button" data-na="test">🔊 Test sound</button><button type="button" data-na="off">Turn off</button></div>' +
+      (a && !fr && !a.done ? '<button type="button" class="nlink" data-na="clock">Try setting it in the Clock app</button>' : '') +
+      '<p class="nhint">Leave this screen open, phone plugged in, media volume up. It rings even on Do Not Disturb, but not if the screen is turned off.</p>');
+}
+function nightTick() {
+  if (!NA.on) return;
+  var a = alarmAt(), fr = running('feed', 4 * HOUR), due = a && !fr && !a.done && Date.now() >= a.at;
+  if (due && !NA.ringing) ring();
+  else if (!due && NA.ringing) { hush(); nightPaint(); }           // someone logged a feed
+  var c = $('#night [data-nclock]'); if (c) c.textContent = fmtTime(Date.now()).replace(/ [ap]m$/, '');
+  var l = $('#night [data-for-left]'); if (l) l.textContent = short(Number(l.getAttribute('data-for-left')) - Date.now());
+  if (!NA.ringing && Date.now() % 15000 < 1000) nightPaint();
+}
+function clockUrl(ms) {
+  var d = new Date(ms);
+  return 'intent:#Intent;action=android.intent.action.SET_ALARM;i.android.intent.extra.alarm.HOUR=' + d.getHours() +
+    ';i.android.intent.extra.alarm.MINUTES=' + d.getMinutes() + ';S.android.intent.extra.alarm.MESSAGE=' +
+    encodeURIComponent('Feed ' + (babyName() || 'baby')) + ';B.android.intent.extra.alarm.SKIP_UI=true;end';
+}
+document.addEventListener('click', function (ev) {
+  if (!NA.on || !ev.target.closest('#night')) return;
+  audio();
+  var b = ev.target.closest('[data-na]'), a = alarmAt();
+  if (!b) { nightPaint(); return; }
+  var k = b.getAttribute('data-na');
+  if (k === 'off') { nightOff(); return; }
+  if (k === 'test') { beep(0.6); if (navigator.vibrate) try { navigator.vibrate(300); } catch (e) {} }
+  else if (!a) return;
+  else if (k === '-15' || k === '+15') { var g = naGet(); naSet({ feed: a.feed.id, adj: (g.feed === a.feed.id ? g.adj || 0 : 0) + (k === '-15' ? -15 : 15), snooze: 0, done: false }); }
+  else if (k === 'up') { hush(); naSet({ feed: a.feed.id, done: true, snooze: 0 }); }
+  else if (k === 'snooze') { hush(); naSet({ feed: a.feed.id, snooze: Date.now() + 5 * MIN, done: false }); }
+  else if (k === 'clock') { location.href = clockUrl(a.at); setTimeout(function () { if (document.visibilityState === 'visible') toast('If the Clock app didn’t open, your phone doesn’t allow it from a website. This screen works as the alarm.'); }, 1500); return; }
+  nightPaint();
+});
+
 /* ------------------------------------------------------------------ AI and the doctor */
 var ASKS = {
   naps: { t: '😴 When are the next naps and bedtime?', kinds: ['sleep', 'feed', 'bottle'], days: 3,
@@ -1600,6 +1727,7 @@ $app.addEventListener('click', function (ev) {
     case 'wake': wake(); break;
     case 'more': openMore(); break;
     case 'remind': openRemind(); break;
+    case 'night': nightOn(); break;
     case 'ai': openAI(); break;
     case 'doctor': openDoctor(); break;
     case 'days': setUi('days', ui().days === 30 ? 7 : 30); render({}); break;
@@ -1614,7 +1742,7 @@ setInterval(function () { if (document.visibilityState === 'visible') sync(); },
 // for tests
 window.__lo = { entries: function () { return JSON.parse(JSON.stringify(E)); }, state: function () { return S && JSON.parse(JSON.stringify(S)); },
   pattern: pattern, totals: totals, aiPrompt: function (k, kinds, days) { return aiPrompt(ASKS[k], kinds || ASKS[k].kinds, days || ASKS[k].days); },
-  doctorText: doctorText, put: put, sync: sync, queue: function () { return queue(); } };
+  doctorText: doctorText, put: put, alarm: function () { return { on: NA.on, ringing: NA.ringing, at: alarmAt() }; }, sync: sync, queue: function () { return queue(); } };
 route();
 })();
 </script>

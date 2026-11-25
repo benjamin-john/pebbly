@@ -184,6 +184,11 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   `little.feed_due` notification (dedupe by last feed id in `detail.entry`; up to 3 repeats; none while a feed is running;
   a new feed/bottle deletes waiting ones). Each phone opts out with notify_off (the page's ⏰ dialog). Urgent kinds
   (`urgent: true` in notify.js TYPES) show with `requireInteraction` and a longer vibration (sw.js).
+  Night alarm (Today → 🌙, this phone only; `NA`, `nightOn`/`nightTick`): a full-screen dark clock that keeps the screen on and
+  rings with Web Audio beeps + vibration until "I'm up", at last feed + reminder interval − heads-up (3 h if unset); moves when
+  anyone logs a feed; −15/+15, snooze 5; state in `pebbly_little_ui` (`alarmOn`, `alarm`). A web page can't ring with the screen
+  off, can't set Clock alarms reliably (Chrome adds BROWSABLE to intents; the "Try the Clock app" link may do nothing) and
+  can't create Android notification channels (an installed PWA gets one "General" channel).
   Test: `tests/littleones_test.js` (calls `lo_remind_tick(p_now)` directly; the test database has no pg_cron).
 - **Notifications** (`notifications`, `notify_types`, `notify_off`; `notify.js`): one table for every app. Rows are
   added by triggers on each app's tables (so app functions don't change), each for the event's hosts or for everyone
