@@ -944,9 +944,9 @@ function viewToday() {
     '<button type="button" class="btn" data-act="night">🌙 Night alarm</button></div>';
   var t = totals(dayStart(now)), y = totals(dayStart(now) - DAY);
   h += '<section class="card"><h2>Today</h2><div class="totals">' +
-    '<div><b>' + t.feeds + '</b><span>feeds</span><small>' + (t.bottle ? esc(amt(t.bottle, unit())) + ' bottle' : '') + '</small><small>yday ' + y.feeds + '</small></div>' +
-    '<div><b>' + t.wet + ' / ' + t.dirty + '</b><span>wet / dirty</span><small>yday ' + y.wet + ' / ' + y.dirty + '</small></div>' +
-    '<div><b>' + (t.sleep ? short(t.sleep) : '0m') + '</b><span>sleep</span><small>yday ' + (y.sleep ? short(y.sleep) : '0m') + '</small></div></div></section>';
+    '<div><b>' + t.feeds + '</b><span>feeds</span><small>' + (t.bottle ? esc(amt(t.bottle, unit())) + ' bottle' : '') + '</small><small>Yesterday<br>' + y.feeds + '</small></div>' +
+    '<div><b>' + t.wet + ' / ' + t.dirty + '</b><span>wet / dirty</span><small>Yesterday<br>' + y.wet + ' / ' + y.dirty + '</small></div>' +
+    '<div><b>' + (t.sleep ? short(t.sleep) : '0m') + '</b><span>sleep</span><small>Yesterday<br>' + (y.sleep ? short(y.sleep) : '0m') + '</small></div></div></section>';
   var list = entries(null, dayStart(now)).filter(function (x) { return LABOR.indexOf(x.k) < 0; }).reverse();
   h += '<section class="sec"><h2>Today’s log</h2>' + (list.length ? '<ul class="tl">' + list.map(function (x) { return row(x); }).join('') + '</ul>' :
     '<p class="hint" style="margin-left:4px">Nothing logged today yet. Tap Feed, Diaper or Sleep above.</p>') + '</section>' +
