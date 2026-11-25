@@ -693,7 +693,7 @@ function openSpace(code) {
     if (!d) { forgetSpace(code); renderNotFound(); return; }
     D = d;
     if (d.isOwner && !me()) setPref('me', 'a');
-    if (ui().alarmOn && born()) nightOn();
+    if (ui().alarmOn && mode() === 'baby') nightOn();
     if (window.PebblyNotify) PebblyNotify.feed('little', code, 'guest', pid(), pid());
   }, function (e) {
     $app.innerHTML = '<div class="state"><div class="e" aria-hidden="true">📶</div><h1>Couldn’t open this</h1><p class="lede">' + esc(friendly(e)) + '</p>' +
@@ -1462,7 +1462,6 @@ function hush() {
   if (navigator.vibrate) try { navigator.vibrate(0); } catch (e) {}
 }
 function nightOn() {
-  if (!born()) { toast('The night alarm is for after baby arrives.'); return; }
   audio();                                       // this tap lets the page make sound later
   NA.on = true; setUi('alarmOn', true);
   var el = $('#night'); if (!el) { el = document.createElement('div'); el.id = 'night'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-label', 'Night alarm'); document.body.appendChild(el); }

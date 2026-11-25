@@ -44,6 +44,14 @@ const until = async (fn, ms) => { const t = Date.now(); while (Date.now() - t < 
   await a.click('[data-act=kick-done]');
   check((await a.textContent('#kicks .tl')).includes('10 kicks in'), 'kick session saved');
 
+  /* ---- peek at the baby log before the birth: the night alarm works there too */
+  await a.click('[data-act=menu]'); await a.click('dialog [data-m=mode]');
+  await a.click('[data-act=night]');
+  check(await a.isVisible('#night') && (await a.textContent('#night')).includes('Log a feed'), 'night alarm opens in the preview');
+  await a.click('#night [data-na=off]');
+  await a.click('[data-act=menu]'); await a.click('dialog [data-m=mode]');
+  await a.waitForSelector('.hero');
+
   /* ---- partner joins (password) */
   const m = await phone(b, devices, DB);
   await m.goto(B + '?d=' + code);
