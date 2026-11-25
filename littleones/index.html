@@ -712,13 +712,13 @@ function renderHome() {
   document.title = 'Little Ones';
   var owners = load('pebbly_doc_owners', {}) || {}, list = recent();
   $app.innerHTML =
-    '<h1 style="margin-top:8px">🧑‍🧑‍🧒 Little Ones</h1>' +
+    '<h1 style="margin-top:8px">🤱 Little Ones</h1>' +
     '<p class="lede">On both your phones: a contraction timer and kick counter now, then a baby log for feeds, diapers and sleep. ' +
       'Your Baby Names shortlist is part of it too.</p>' +
     (list.length ? '<section class="recent" style="margin-top:0;margin-bottom:22px"><h2>Already started together?</h2>' +
       '<p class="hint" style="margin:0 0 10px">Open your Baby Names shortlist here and everything is in one place, with the same link and password.</p><ul>' +
       list.map(function (r) {
-        return '<li><a href="?d=' + esc(r.code) + '"><span aria-hidden="true">🧑‍🧑‍🧒</span><span class="t">' + esc(r.title || 'Baby names') + '</span>' +
+        return '<li><a href="?d=' + esc(r.code) + '"><span aria-hidden="true">🤱</span><span class="t">' + esc(r.title || 'Baby names') + '</span>' +
           (owners[r.code] ? '<span class="tag">host</span>' : '') + '</a></li>';
       }).join('') + '</ul></section><h2 style="margin-bottom:10px">Or start a new one</h2>' : '') +
     '<form id="createForm" class="card" novalidate autocomplete="off">' +
@@ -754,7 +754,7 @@ function submitCreate(form) {
 /* ------------------------------------------------------------------ who's on this phone */
 function renderWho() {
   var a = S.p.a, b = S.p.b;
-  $app.innerHTML = '<div class="state" style="padding-top:20px"><div class="e" aria-hidden="true">🧑‍🧑‍🧒</div><h1>' + esc(title()) + '</h1>' +
+  $app.innerHTML = '<div class="state" style="padding-top:20px"><div class="e" aria-hidden="true">🤱</div><h1>' + esc(title()) + '</h1>' +
     '<p class="lede">Who’s using this phone?</p></div>' +
     '<div class="card"><div class="menu">' +
       '<button type="button" class="btn" data-act="iam" data-slot="a">I’m ' + esc(who('a')) + '</button>' +
@@ -794,7 +794,7 @@ function render(info) {
       '<div class="linkbox"><input type="text" readonly value="' + esc(shareUrl(CODE)) + '" aria-label="Link">' +
       '<button type="button" class="btn primary small" data-act="share">Share</button></div></section>';
   }
-  top += '<header class="apphead"><h1>🧑‍🧑‍🧒 ' + esc(title()) + '</h1><button type="button" class="icon-btn" data-act="menu" aria-label="More options">⋯</button></header>' +
+  top += '<header class="apphead"><h1>🤱 ' + esc(title()) + '</h1><button type="button" class="icon-btn" data-act="menu" aria-label="More options">⋯</button></header>' +
     '<p class="sub">' + (b ? esc(ageText(b)) + ' · born ' + esc(fmtDay(b)) : p ? (p.left > 0 ? 'Week ' + p.weeks + (p.days ? ' + ' + p.days : '') + ' · ' + plural(p.left, 'day') + ' to go' :
       p.left === 0 ? 'Due today!' : plural(-p.left, 'day') + ' past the due date') : 'Add your due date in ⋯ → Settings') + '</p>' +
     '<div class="tabs" role="tablist">' + tabs().map(function (x) {

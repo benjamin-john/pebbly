@@ -175,7 +175,7 @@ const until = async (fn, ms) => { const t = Date.now(); while (Date.now() - t < 
   check(tickAt(lastFeed + 91 * 60000) === '1', 'due after 1.5 hours');
   check(tickAt(lastFeed + 95 * 60000) === '0' && tickAt(lastFeed + 107 * 60000) === '1', 'repeats 15 minutes later');
   check(feed(mpid, lk)[0].items.some(x => x.type === 'little.feed_due') && feed(apid, lk)[0].items.some(x => x.type === 'little.feed_due'), 'both phones get it');
-  const al = await a.evaluate(() => PebblyNotify.alertView({ type: 'little.feed_due', app: 'little', code: 'x', title: 'June', emoji: '🧑‍🧑‍🧒', name: 'June', detail: { n: 1, last: Date.now() } }));
+  const al = await a.evaluate(() => PebblyNotify.alertView({ type: 'little.feed_due', app: 'little', code: 'x', title: 'June', emoji: '🤱', name: 'June', detail: { n: 1, last: Date.now() } }));
   check(al.body.startsWith('🍼 Time to feed June') && al.urgent, 'alert wording: ' + al.body);
   sql(`set role anon; select notify_set_off('[{"app":"little","code":"${code}","role":"guest","key":"${apid}","lock":"${lk}","off":["little.feed_due"]}]')`);
   check(!feed(apid, lk)[0].items.some(x => x.type === 'little.feed_due'), 'a phone can turn them off for itself');
