@@ -17,7 +17,7 @@ try { importScripts('/notify.js'); } catch (e) {}
 const CACHE = 'pebbly-v3';
 const FONTS = 'pebbly-fonts';
 const PAGES = ['/', '/install/',
-  '/rsvp/', '/whichdayworks/', '/poll/', '/signup/', '/bill/', '/list/', '/santa/', '/babynames/', '/basecamp/',
+  '/rsvp/', '/whichdayworks/', '/poll/', '/signup/', '/bill/', '/list/', '/santa/', '/babynames/', '/littleones/', '/basecamp/',
   '/bracket/', '/codebreaker/', '/colorstack/', '/darts/', '/dots/', '/farkle/', '/gomoku/', '/mancala/', '/timer/', '/kwiks/', '/namegame/', '/score/', '/teams/', '/trivia/', '/worddash/', '/live/', '/join/', '/admin/', '/notifications/', '/backup/',
   '/qwixx/'];
 const FILES = ['/theme.js', '/nav.js', '/keepawake.js', '/play/sync.js', '/lock.js', '/doc.js', '/migrate.js', '/notify.js', '/backup.js',

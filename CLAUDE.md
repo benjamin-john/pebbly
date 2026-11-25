@@ -29,6 +29,7 @@ database for the apps that share data between people. See README.md for the app 
 | `play/sync.js`, `play/play.sql` | "Play together": share any game between phones with a 5-letter code. |
 | `doc.js` | Shared documents for Sign-up Sheet, Split the Bill, Shared List (doc_* functions): open/change/merge, host keys. Keep lists as objects keyed by id. |
 | `lock.js` | Optional passwords for the Plan apps (gate screen, host's 🔒 Password dialog, key storage). |
+| `littleones/` | Little Ones: baby log, contractions, kicks; shares the Baby Names space (see "Little Ones" below). |
 | `basecamp/` | Basecamp: live group map with waypoints, trails and offline maps (see "Basecamp" below). |
 | `admin/` | One admin page for every app with an admin mode (shared admin password): a section per app (list, open as host, delete). Add new apps' admin functions to `APPS` there. Shared documents and Secret Santa use `doc_admin_*` / `santa_admin_*`: their admin key is `admin_hash` (host checks go through `_doc_is_owner`). Baby Names is list-and-delete only (private; `doc_admin_grant` refuses it). |
 | `notify.js`, `notifications/` | The 🔔 bell (homepage, RSVP, Which Day Works?, Poll, Sign-up Sheet, Secret Santa; Bracket alerts) and its settings page. See "Notifications" below. |
@@ -168,6 +169,17 @@ so simultaneous pushes merge cleanly. Answer words are a curated common list; gu
   catalog (US SSA data, nicknames from the `nicknames-curated` package) is inline in the page; the document only holds
   names the couple added, extra nicknames, AI lists, order, comments. New names (typed or from AI) match an existing
   row by name, then by nickname (`findMatch`). Test: `tests/babynames_test.js`.
+- **Little Ones** (`/littleones/`, `lo_*`, `20261125000000_little_ones.sql`): the space *is* the couple's Baby Names
+  document (kind `names`, same `?d=` code, password, host; Baby Names links back with "← Little Ones"); settings in its state
+  under `lo` (`due`, `baby`, `born` ms, `unit` oz/ml, `tunit` F/C, `rule` 511/411/311, `hosp`). Log entries are rows in
+  `lo_entries` (never in the document, so it can't fill up): ids made on the phone, `lo_sync(code, since, changes, pid)`
+  (gated as 'doc') pushes the phone's queue (`pebbly_little_queue`) and returns rows with `seq` > since (per-space advisory
+  lock so seq arrives in order); deletes are tombstones. The phone keeps a copy (`pebbly_little_cache`; both skipped by
+  backups). Timers are entries with no `end` (feed `d.side/since` per side). Kinds: feed, bottle, pump, diaper, sleep, med,
+  temp, growth, first, note, kicks, contraction, water. Notifications app `little` (role guest, key = phone id
+  `pebbly_little_pid`, password = the doc one): contractions start (after 2 quiet hours), pattern met (`_lo_pattern`, same
+  test as the page's `pattern()`, once per 3 h), water broke. "Copy for AI" builds a prompt with the log (no AI is called).
+  Test: `tests/littleones_test.js`.
 - **Notifications** (`notifications`, `notify_types`, `notify_off`; `notify.js`): one table for every app. Rows are
   added by triggers on each app's tables (so app functions don't change), each for the event's hosts or for everyone
   who responded (`audience` 'host'/'guest'). Phones read only through `notify_feed` (one call for all their events:

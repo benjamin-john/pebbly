@@ -3281,7 +3281,8 @@ function render(info) {
   rememberList(CODE, title());
   if (!me()) { renderWho(); return; }
   if (!$('#view')) {
-    $app.innerHTML = '<nav class="topnav"><a href="' + esc(baseUrl()) + '">＋ New shortlist</a><span id="sync" class="sync" role="status"></span></nav>' +
+    // Baby Names is part of Little Ones (/littleones/): same shared space, same link code
+    $app.innerHTML = '<nav class="topnav"><a href="/littleones/?d=' + esc(CODE) + '">← Little Ones</a><span id="sync" class="sync" role="status"></span></nav>' +
       '<div id="top"></div><div id="view"></div>';
     shownKey = null;
   }

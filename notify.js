@@ -37,7 +37,9 @@
     // a shared bracket: the page picks its game back up by itself, so the link is just the page
     bracket: { name: 'Bracket', path: '/bracket/' },
     // Basecamp: only things meant for one person (key = their member key; the server checks it)
-    basecamp: { name: 'Basecamp', path: '/basecamp/', q: 'm' }
+    basecamp: { name: 'Basecamp', path: '/basecamp/', q: 'm' },
+    // Little Ones: everyone with the link (key = this phone's id); its password is the Baby Names ('doc') one
+    little: { name: 'Little Ones', path: '/littleones/', q: 'd', lock: 'doc' }
   };
   function eventUrl(app, code) { var a = APPS[app]; return !a ? '/' : a.q ? a.path + '?' + a.q + '=' + encodeURIComponent(code || '') : a.path; }
   var RSVP_STATUS = { going: 'Going', maybe: 'Maybe', no: 'Can’t go' };
@@ -74,7 +76,13 @@
     'bracket.champion': { app: 'bracket', role: 'guest', label: 'A winner is crowned', go: '#play', icon: function () { return '🏆'; },
       text: function (n) { return n + ' won!'; } },
     'basecamp.ask': { app: 'basecamp', role: 'guest', label: 'Someone asks where you are', go: '#map', icon: function () { return '📍'; },
-      text: function (n) { return n + ' wants to see where you are. Tap to open the map and share your location.'; } }
+      text: function (n) { return n + ' wants to see where you are. Tap to open the map and share your location.'; } },
+    'little.contractions': { app: 'little', role: 'guest', label: 'Someone starts timing contractions', go: '#labor', icon: function () { return '⏱️'; },
+      text: function (n) { return n + ' started timing contractions.'; } },
+    'little.pattern': { app: 'little', role: 'guest', label: 'Contractions reach your pattern (like 5-1-1)', go: '#labor', icon: function () { return '🚨'; },
+      text: function (n, d) { return 'Contractions are ' + (d.rule || '5-1-1') + ': about ' + (d.apart || '?') + ' min apart, ' + (d.len || '?') + ' s long, for an hour. Time to call the doctor or hospital.'; } },
+    'little.water': { app: 'little', role: 'guest', label: 'Water broke', go: '#labor', icon: function () { return '💦'; },
+      text: function (n) { return 'Water broke (logged by ' + n + ').'; } }
   };
 
   // What a phone alert says (sw.js, for each push).

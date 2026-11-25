@@ -11,6 +11,7 @@ Static site served by GitHub Pages at https://pebbly.dev.
 | `/signup/` | Sign-up Sheet: slots people sign up for from a link, live (Supabase, doc.js) |
 | `/bill/` | Split the Bill: shared expenses (equal or exact splits), balances and fewest payments to settle up (Supabase, doc.js) |
 | `/list/` | Shared List: groceries/packing/to-do list everyone edits live, with sections (Supabase, doc.js) |
+| `/littleones/` | Little Ones: one shared space for a couple (it is their Baby Names shortlist): due date and week, kick counter, contraction timer (5-1-1 alerts to the other phone, water broke), then a baby log (breastfeeding timer, bottles, pumping, diapers, sleep, medicine, temperature, growth, firsts), daily totals, doctor summary and Copy for AI (Supabase `lo_*`, doc.js) |
 | `/babynames/` | Baby Names: two people swipe names (stars for likes), see the ones they both like, reorder and comment; 2,700+ built-in US names with nicknames and popularity, own suggestions, AI imports (Supabase, doc.js) |
 | `/basecamp/` | Basecamp: live group map (everyone's dot while the page is open), waypoints, recorded trails, Map/Satellite/Topo (OpenFreeMap, USGS), heading-up compass, public land (USGS PAD-US), screen-off sharing via the OwnTracks app, offline area downloads, passwords (Supabase `bc_*`, MapLibre in `basecamp/maplibre/`) |
 | `/santa/` | Secret Santa: names, exclusions and a private draw; each phone sees only its own match (Supabase) |

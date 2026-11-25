@@ -15,7 +15,7 @@
   // (Which page uses which link parameter; keep in step with MINE in index.html.)
   try {
     var OPEN = { '/rsvp/': ['rsvp', 'e'], '/whichdayworks/': ['wdw', 'e'], '/poll/': ['poll', 'p'], '/signup/': ['signup', 'd'],
-      '/bill/': ['bill', 'd'], '/list/': ['list', 'd'], '/babynames/': ['names', 'd'], '/santa/': ['santa', 'g'], '/basecamp/': ['basecamp', 'm'] };
+      '/bill/': ['bill', 'd'], '/list/': ['list', 'd'], '/babynames/': ['names', 'd'], '/littleones/': ['names', 'd'], '/santa/': ['santa', 'g'], '/basecamp/': ['basecamp', 'm'] };
     var op = OPEN[location.pathname], oc = op && new URLSearchParams(location.search).get(op[1]);
     if (oc) {
       var ok = op[0] + ':' + oc.trim().toLowerCase(), rd = function (k) { try { return JSON.parse(localStorage.getItem(k)) || {}; } catch (e) { return {}; } };
